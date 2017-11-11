@@ -1,0 +1,4 @@
+mixin label_mixin(label)
+    - var color = public._data['labels'][label]
+    .label(class= ""+label, data-name= ""+label)
+        h3(style='color:'+color)!='#'+label

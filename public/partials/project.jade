@@ -1,0 +1,9 @@
+mixin project_mixin(project)
+    .project(class=project['labels'])
+        h2!=project['name']
+        img(src=project['img'])
+
+        .project_labels
+            each label, i in project['labels']
+                +label_mixin(label)
+

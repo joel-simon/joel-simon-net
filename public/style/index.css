@@ -1,0 +1,143 @@
+@font-face {
+  font-family: Avenir;
+  font-weight: normal;
+  src: url("fonts/avenirnext-ultralight.ttf") format("truetype");
+}
+
+html {
+}
+
+body {
+  font-size: 2em;
+}
+
+* {
+  font-family: 'Avenir', sans-serif;
+  font-weight: normal;
+  text-align: center;
+}
+
+h1 {
+  /*text-align: center;*/
+  font-weight: bold;
+  margin-bottom: 0px;
+  /*font-size: 3em;*/
+}
+
+/* -------------------------------------------------------------------------- */
+
+#label_container {
+  width: 80%;
+  padding-left: 10%;
+  padding-right: 10%;
+  /*text-align: center;*/
+}
+
+#label_container h3 {
+  font-weight: bold;
+}
+
+#project_container {
+  width: 90%;
+  background-color: blue;
+  /*padding-left: 10%;*/
+  /*padding-right: 10%;*/
+}
+
+#label_all {
+  cursor: pointer;
+}
+
+/* -------------------------------------------------------------------------- */
+
+#label_container h3 {
+  margin-bottom: 0px;
+  margin-top: 0px;
+}
+
+
+.label.label_hidden {
+  opacity: 0.2;
+}
+
+
+.label h3:hover {
+  cursor: pointer;
+  text-decoration: underline;
+  /*border: solid;*/
+}
+
+/* -------------------------------------------------------------------------- */
+
+.project {
+  /*width: 30%;*/
+  width: 300px;
+  display: inline-block;
+  border: 1px solid white;
+  float: left;
+  margin: 1%;
+  padding: 1%;
+}
+
+.project img {
+  width: 300px;
+}
+
+.project h2 {
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.project:not(.no_hover):hover {
+  cursor: pointer;
+  text-decoration: underline;
+  /*border: 1px solid gray;*/
+  /*margin: 1%;*/
+  /*padding: calc(1% - 1px);*/
+}
+
+
+/* -------------------------------------------------------------------------- */
+.project_labels {
+  min-height: 120px;
+}
+
+.project .label {
+  float: left;
+  /*font-size: 12px;*/
+  /*margin: 0px;*/
+  margin-top: 0px;
+  margin-right: 5px;
+}
+.project .label h3 {
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+/* ----------- iPhone 5 & 6 ----------- */
+
+/* Portrait and Landscape */
+@media only screen
+  and (min-device-width: 320px)
+  and (max-device-width: 667px)
+  and (-webkit-min-device-pixel-ratio: 2) {
+
+}
+
+/* Portrait */
+@media only screen
+  and (min-device-width: 320px)
+  and (max-device-width: 667px)
+  and (-webkit-min-device-pixel-ratio: 2)
+  and (orientation: portrait) {
+
+}
+
+/* Landscape */
+@media only screen
+  and (min-device-width: 320px)
+  and (max-device-width: 667px)
+  and (-webkit-min-device-pixel-ratio: 2)
+  and (orientation: landscape) {
+
+}
+

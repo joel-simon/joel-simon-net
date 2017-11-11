@@ -1,0 +1,36 @@
+{
+    "labels": {
+        "generative": "rgb(176, 172, 249)",
+        "sculpture": "rgb(192, 114, 234)",
+        "lamps": "rgb(252, 116, 182)",
+        "code": "rgb(255, 193, 213)",
+        "web": "rgb(110, 244, 217)"
+    },
+    "projects": [
+        {
+            "name": "Ecology Modelling",
+            "labels": ["generative", "code"],
+            "img": "imgs/eco-2.jpg"
+        },
+        {
+            "name": "Hands in Corner",
+            "labels": ["sculpture"],
+            "img": "imgs/hands-1.jpg"
+        },
+        {
+            "name": "Facebook Graffiti",
+            "labels": ["code", "web"],
+            "img": "imgs/fb-graffiti.png"
+        },
+        {
+            "name": "Slice",
+            "labels": ["generative", "sculpture", "code"],
+            "img": "imgs/slice.jpg"
+        },
+        {
+            "name": "Simon Lamps",
+            "labels": ["lamps", "web", "code"],
+            "img": "imgs/simon-lamps.png"
+        }
+    ]
+}

@@ -1,0 +1,23 @@
+include partials/label
+include partials/project
+doctype html
+
+html
+    head
+        title Joel Simon
+        script(src='/libs/jquery.min.js')
+        script(src='/src/main.js')
+        script(src='/src/google_analytics.js')
+
+        link(rel='stylesheet', href='/style/index.css')
+    body
+        h1 Joel Simon
+        #label_container
+            #label_all(style='visibility:hidden;')
+                h3(style='color:black')!='all'
+            each color, label in public._data['labels']
+                +label_mixin(label)
+
+        #project_container
+            each project, i in public._data['projects']
+                +project_mixin(project)
