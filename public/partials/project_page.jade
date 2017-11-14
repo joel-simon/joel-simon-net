@@ -1,0 +1,17 @@
+include disqus
+doctype html
+
+html
+    head
+        title Joel Simon
+        script(src='/libs/jquery.min.js')
+        link(rel='stylesheet', href='/style/index.css')
+        link(rel='stylesheet', href='/style/markdown.css')
+    body
+        h2
+            a(href='/')!="< Joel Simon"
+        .text_body
+            block content
+
+
+            //- +disqus_mixin()

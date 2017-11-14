@@ -1,7 +1,16 @@
 mixin project_mixin(project)
+    if 'year' in project
+        - project['labels'].push(project['year'])
+
     .project(class=project['labels'])
-        h2!=project['name']
-        img(src=project['img'])
+        -
+            var name = project["name"];
+            name = name.replace(/\s+/g, '-').toLowerCase();
+            var path = '/'+name+'.html'
+
+        a(href=path)
+            h2!=project['name']
+            img(src=project['img'])
 
         .project_labels
             each label, i in project['labels']

@@ -12,12 +12,26 @@ html
         link(rel='stylesheet', href='/style/index.css')
     body
         h1 Joel Simon
+
         #label_container
-            #label_all(style='visibility:hidden;')
-                h3(style='color:black')!='all'
             each color, label in public._data['labels']
                 +label_mixin(label)
-
+            //- #label_all(style='visibility:hidden;')
+            //-     h3(style='color:black')!='all years'
         #project_container
             each project, i in public._data['projects']
                 +project_mixin(project)
+
+        #footer
+            #contact_container
+                #email.contact_column
+                    p
+                        a(href="mailto:joelsimon6@gmail.com" target="_blank") Email
+
+                #github.contact_column
+                    p
+                        a(href='https://github.com/Sloth6/' target="_blank") Github
+
+                #twitter.contact_column
+                    p
+                        a(href='https://twitter.com/_code_of_form_' target="_blank") Twitter

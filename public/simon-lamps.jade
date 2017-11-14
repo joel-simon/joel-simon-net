@@ -1,0 +1,29 @@
+extends partials/project_page
+
+block content
+    :markdown
+        # [Simon Lamps Website](http://www.simonlamps.com/)
+
+        Simon Lamps (dot com) is a separate website for my lamps. I wanted it to reflect that they are visually cohesive and distinct from my other work.
+
+        ![](/imgs/simon-lamps/simon-lamps-2.png)
+
+        My goals were to show both the photos of exiting lamps and also the connectedness of the designs. Specifically, each lamp is a curve around a box, and there are several types of lamps that come from different orientations of the box.
+
+        This is perhaps best seen in the collection of 3D sketches I have made.
+
+        ![](/imgs/simon-lamps/lamps2017.png)
+
+        I wanted to incorporate this models to show the designs 'pure' and capture all the angles not possible in the photos. Initial designs had these models featured prominently in the UI. Here is a very early prototype using only 3D models with somewhat of a Brady Bunch look.
+
+    video(controls, loop, autoplay, width="600px")
+        source(src="/video/simon-lamps/lamp_www.mov")
+    br
+    :markdown
+        I experimented with multiple inputs to 3D navigation that were also compatible with mobile (including not very good ideas such as phone tilting). Eventually I decided the models had to be supplementary. They could be distracting and would never perform very well on all mobile devices. I ended up using simplified views to demonstrate the commonalities. The bottom navigation tried to convey how each lamp is just a curve.
+
+        ![](/imgs/simon-lamps/nav.png)
+
+        The models became tied the vertical scroll which allowed them to be embedded on a scrolling page on mobile.
+
+        ![](/imgs/simon-lamps/grid.png)

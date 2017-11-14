@@ -12,41 +12,69 @@ label_hover_end = (event) ->
     $('.project').removeClass('no_hover')
     $(".label.#{label_name} h3").css('text-decoration','inherit')
 
+# label_click = (event) ->
+#     $label = $(@)
+#     label_name = $label.data('name')
+
+#     if $label.hasClass('active')
+#         $(".label.#{label_name}").removeClass('active')
+#         $(".label.#{label_name}").addClass('label_hidden')
+#         $(".project.#{label_name}").hide()
+#         $(".project.#{label_name}").removeClass('active')
+
+#     else
+#         # Show the projects with this label.
+#         $(".project.#{label_name}").show()
+#         $(".project.#{label_name}").addClass('active')
+
+#         # Hide other projects.
+#         $('.project').not('.active').hide()
+
+#         # Show the labels with the same name.
+#         $(".label.#{label_name}").addClass('active')
+#         $(".label.#{label_name}").removeClass('label_hidden')
+
+#         # Obscure other labels.
+#         $('.label').not('.active').addClass('label_hidden')
+
+
+#     # Handle cases where 'all' button should change visibility.
+#     if $(".active").length == 0
+#         $('#label_all').trigger 'click'
+
+#     else if $(".label.active").length == $('.label').length
+#         $('#label_all').css('visibility', 'hidden')
+#     else
+#         # Show the clear button.
+#         $('#label_all').css('visibility', 'visible')
+
 label_click = (event) ->
     $label = $(@)
     label_name = $label.data('name')
 
+    # $(".label").removeClass('label_hidden')
+    # $(".label").removeClass('active')
+    # $(".project").show()
+    # $(".label.#{label_name}").removeClass('active')
+
+    # Clicking the active label
     if $label.hasClass('active')
-        $(".label.#{label_name}").removeClass('active')
-        $(".label.#{label_name}").addClass('label_hidden')
-        $(".project.#{label_name}").hide()
-        $(".project.#{label_name}").removeClass('active')
+        $(".label.active").removeClass('active')
+        $(".label.label_hidden").removeClass('label_hidden')
+        $(".project").show()
 
     else
-        # Show the projects with this label.
-        $(".project.#{label_name}").show()
-        $(".project.#{label_name}").addClass('active')
+        # Clear any existing label.
+        $(".label.active").removeClass('active')
+        $(".label.label_hidden").removeClass('label_hidden')
+        $(".project").show()
 
-        # Hide other projects.
-        $('.project').not('.active').hide()
-
-        # Show the labels with the same name.
+        # Hide other labels
+        $('.label').not('.'+label_name).addClass('label_hidden')
+        $('.project').not('.'+label_name).hide()
         $(".label.#{label_name}").addClass('active')
-        $(".label.#{label_name}").removeClass('label_hidden')
-
-        # Obscure other labels.
-        $('.label').not('.active').addClass('label_hidden')
 
 
-    # Handle cases where 'all' button should change visibility.
-    if $(".active").length == 0
-        $('#label_all').trigger 'click'
-
-    else if $(".label.active").length == $('.label').length
-        $('#label_all').css('visibility', 'hidden')
-    else
-        # Show the clear button.
-        $('#label_all').css('visibility', 'visible')
 
 window_resize = () ->
     window_width = $(document).width()
@@ -72,5 +100,5 @@ $ ->
 
         $(@).css 'visibility', 'hidden'
 
-    window_resize()
-    $(window).resize(window_resize)
+    # window_resize()
+    # $(window).resize(window_resize)

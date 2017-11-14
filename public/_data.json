@@ -2,35 +2,112 @@
     "labels": {
         "generative": "rgb(176, 172, 249)",
         "sculpture": "rgb(192, 114, 234)",
-        "lamps": "rgb(252, 116, 182)",
+        "video": "rgb(252, 116, 182)",
+        "lamp": "rgb(252, 116, 182)",
         "code": "rgb(255, 193, 213)",
         "web": "rgb(110, 244, 217)"
     },
     "projects": [
         {
             "name": "Ecology Modelling",
-            "labels": ["generative", "code"],
-            "img": "imgs/eco-2.jpg"
+            "labels": ["generative", "code", "video"],
+            "img": "imgs/ecology-modelling/001100.jpg",
+            "year": 2017
         },
         {
-            "name": "Hands in Corner",
+            "name": "Figuration",
+            "labels": [ "video"],
+            "img": "imgs/figuration.png",
+            "year": 2017
+
+        },
+        {
+            "name": "Desk Lamp 2",
+            "labels": ["lamp"],
+            "img": "imgs/desk-lamp-2/icon.jpg",
+            "year": 2017
+        },
+        {
+            "name": "Simon Lamps",
+            "labels": ["lamp", "web", "code"],
+            "img": "imgs/simon-lamps/icon.jpg",
+            "year": 2016
+        },
+        {
+            "name": "Wall Lamp",
+            "labels": ["lamp"],
+            "img": "imgs/wall-lamp/wall-lamp-icon.jpg",
+            "year": 2016
+        },
+
+
+        {
+            "name": "Sculpture Drop",
+            "labels": ["generative", "sculpture"],
+            "img": "imgs/sculpture-drop.jpg",
+            "year": 2016
+        },
+
+        {
+            "name": "Tanya",
             "labels": ["sculpture"],
-            "img": "imgs/hands-1.jpg"
+            "img": "imgs/tanya.jpg",
+            "year": 2015
+        },
+        {
+            "name": "Table lamp 2",
+            "labels": ["lamp"],
+            "img": "imgs/table-lamp-2/icon.jpg",
+            "year": 2015
         },
         {
             "name": "Facebook Graffiti",
             "labels": ["code", "web"],
-            "img": "imgs/fb-graffiti.png"
+            "img": "imgs/fb-graffiti.png",
+            "year": 2015
+        },
+
+        {
+            "name": "Scrap",
+            "labels": ["web", "code"],
+            "img": "imgs/scrap.png",
+            "year": 2015
         },
         {
             "name": "Slice",
             "labels": ["generative", "sculpture", "code"],
-            "img": "imgs/slice.jpg"
+            "img": "imgs/slice.jpg",
+            "year": 2014
         },
         {
-            "name": "Simon Lamps",
-            "labels": ["lamps", "web", "code"],
-            "img": "imgs/simon-lamps.png"
+            "name": "Graph Contraction",
+            "labels": ["generative", "code", "sculpture"],
+            "img": "imgs/graph-contraction/graph-contraction.png",
+            "year": 2014
+        },
+        {
+            "name": "Image To Paint",
+            "labels": ["generative", "code"],
+            "img": "imgs/image-to-paint/icon.jpg",
+            "year": 2012
+        },
+        {
+            "name": "Cornered Hands",
+            "labels": ["sculpture"],
+            "img": "imgs/cornered-hands/icon.jpg",
+            "year": 2012
+        },
+        {
+            "name": "Small-talk Robot",
+            "labels": ["code"],
+            "img": "imgs/smalltalk/smalltalk_square.jpg",
+            "year": 2012
+        },
+        {
+            "name": "Mosaic Table",
+            "labels": [],
+            "img": "imgs/mosaic-table/table_square.jpg",
+            "year": 2007
         }
     ]
 }
