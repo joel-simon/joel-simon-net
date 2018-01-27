@@ -1,0 +1,113 @@
+extends partials/project_page.jade
+
+block meta_tags
+    - var domain = 'http://www.joelsimon.net'
+    meta(property="og:title", content="Ecosystem Modelling")
+    meta(property="og:description", content="Ecosystem Modelling- 2017.")
+    meta(property="og:image", content=domain+'/imgs/ecosystem-modelling/og.jpg')
+    meta(property="og:url", content=domain+'/ecosystem-modelling.html')
+    meta(property="og:type", content='blog')
+
+block content
+    //- An ecosystem simulator that was inspired by my virtual coral project.
+    //-
+    :markdown
+        # Ecosystem Modelling
+        An abstract plant multi-agent ecosystem simulation for artistic and research purposes. Individuals are simple circles that grow, collect resources, spread seeds and compete with others each timestep. Models are used in ecology by using the output, and its discrepancy from observation, to generate new hypotheses about ecological mechanics. I was inspired to do this project while working on an upcoming project modeling coral growth. I don't have a background in ecosystem modeling but the ideas came from conversations with a PhD student who does. I did an [interview](https://www.labocine.com/spotlight/146) on my design and research interest in this project and its relationship to my virtual coral project.
+        The code is available on [Github](https://github.com/Sloth6/ecology-modeling).
+
+    br
+    h2 First Run
+    video(controls)
+        source(src="https://storage.googleapis.com/joel-simon-net.appspot.com/circle_3/final_half.mov")
+
+    :markdown
+        **First Run**  This simulation is run for 50,000 steps with video of the first 20,000. New seeds (dispersal) occurs during the first 5000 steps. Biodiversity stabilizes at 5 oscillating species.
+
+        This project aspires to be both a generative art project and a useful ecology model, even if only for educational purposes and not research. I was inspired by The [Game of Life](https://bitstorm.org/gameoflife/) and simple systems with emergent properties. Each genome has three properties: (1)how much energy spent growing versus (2) competing versus (3) spreading seeds. It also has arbitrary competitive attributes. Hopefully the underlying model makes the generative art more interesting and the visuals make the modeling more intuitive. An artist can work with this generative medium through the interface of ecology, for instance, exploring which conditions that lead to a mass extinction event or emergence of stable biodiversity. I have been interested lately in the natural underpinnings of beauty and its abstraction from morphology to systems.
+
+        ## Species Inspection
+        By examining the species that stabilized, we can get a better understanding of the ecosystem and hopefully how relationship networks affect biodiversity.
+
+    .figure()
+        img(src='/imgs/ecosystem-modelling/circle3/species_graph.png', style="width:300px;")
+        :markdown
+            **Competition Graph** showing the likelihood of one species out-competing another based upon its arbitrary competitive attributes. The thickness of each line corresponds to higher probability of winning competition. The final probability is also based upon an individuals size and energy spent towards competition. Colors are those shown above.
+    br
+    .figure()
+        img(src='/imgs/ecosystem-modelling/circle3/history_cropped.png', style='width:800px;')
+        :markdown
+            **Species Abundance** A labeled version of the graph in the video. The first few thousands steps are somewhat chaotic as new seeds are being entered; this is to make the simulation more robust to the starting conditions. By step 10,000 there are only the five final species remaining.
+    br
+    .figure()
+        img(src='/imgs/ecosystem-modelling/circle3/attributes.png')
+        :markdown
+            **Genomes** Each species allocates its energy differently - split among fighting, growing and spreading seeds. All three are important and different distributions can allow for different strategies. Additionally, they can change the size of their seeds. Larger seeds are less frequent but have a higher chance of surviving. ID's correspond to the graph above.
+
+    p There are many interesting patterns to discern from the graphs above; however, being just one sample it isn't worth getting too carried away yet. My goal is more to lay down the beginnings of the kind of analysis that could be done in an art-ecology model and the types of patterns that may be looked for when studying many runs.
+    //- p It is interesting that two pairs of species are similar, (0-1 and 3-4) and have one in the pair strongly out-competes the other. Species zero and one seem to be the fighters. Species one spends more energy fighting, perhaps to compensate for weaker competitive relationships. Species three and four are the most out-competed and spend the least energy fighting and the most spreading seeds. Three and four are identical except that four's seeds are nearly twice as big, perhaps to compensate for always being out-competed it needs stronger seeds. Species two is the 'grower' - spending much more than the others on growth Do the the oscillating patterns all species come close to extinction at least once.
+    //-
+
+    br
+    //- br
+    h2 Second Run
+    video(controls)
+        source(src="https://storage.googleapis.com/joel-simon-net.appspot.com/circle_4/final_half.mov")
+
+    :markdown
+        **Second Run** Simulation run for 100,000 steps with video of the first 20,000. New seeds (dispersal) occurs during the first 5000 steps. The following plots are for the halfway simulation state at step 50,000. Unfortunately the two greens look very similar[1].
+    //- br
+    .figure()
+        img(src='/imgs/ecosystem-modelling/circle4/download.png', style="width:300px;")
+        :markdown
+            **Competition Graph** Graph showing competitive relationships of the six species at step 50,000. Thickness of line corresponds to higher probability of winning competition. Colors correspond to those above.
+
+    .figure()
+        img(src='/imgs/ecosystem-modelling/circle4/history.png', style='width:800px;')
+        :markdown
+            **Species Abundance** A more descriptive plot of species abundance over time.
+    //- br
+    .figure()
+        img(src='/imgs/ecosystem-modelling/circle4/download-1.png')
+        :markdown
+            **Genomes** - ID's correspond to graph above.
+
+    //- p It's hard to infer too much from this graph, particularly because this one is partially stable at step 50,000 - two species go extinct near 90,000.
+    br
+    :markdown
+        ## Fonts
+        I was working on this project at the same time I was taking participating in a short film competition. I used the opportunity to experiment with using the simulation as a generative typeface. I was interested in this because I could create designs using the interface of an ecology model. For example if I wanted fewer colors I could introduce a genetic bottleneck.
+
+        Watch the the film [here](/figuration.html)
+
+    video(controls, poster="/imgs/ecosystem-modelling/animation_poster.jpg", type='video/mp4')
+        source(src="/imgs/ecosystem-modelling/animation.mp4")
+
+    video(controls, poster="/imgs/ecosystem-modelling/animation2_poster.jpg", type='video/mp4')
+        source(src="/imgs/ecosystem-modelling/animation2.mp4")
+
+    :markdown
+        ## Future
+
+        There are many possible directions to take this when I have the time. I started playing with spatially varying competitive advantages and also sub-regions that join and separate over time. The big next goal is to understand the network dynamics enough to be able to artificially seed worlds with species that maintain diversity. My original intention was to measure the effect of different world properties on biodiversity, including theories such as the [intermediate disturbance hypothesis](https://en.wikipedia.org/wiki/Intermediate_disturbance_hypothesis).
+        Additionally, adding evolution will significant complexity and I don't want to increase the complexity of the system faster than my ability to understand it. However, adding evolution may improve robustness by allowing each species to better occupy its niche strategy space and be less dependent upon starting conditions. I'll have to see.
+
+        If you found this interesting then check out:
+
+    div.align_left(style='display:inline-block;')
+        :markdown
+            * [Netlogo](http://ccl.northwestern.edu/netlogo/index.shtml) - a multi-agent programmable modeling environment
+            * [Paradox of the plankton](https://en.wikipedia.org/wiki/Paradox_of_the_plankton)
+            * [Competitive exclusion principle](https://en.wikipedia.org/wiki/Competitive_exclusion_principle)
+            * [Coexistence theory](https://en.wikipedia.org/wiki/Coexistence_theory)
+            * [Zombie ideas in ecology](https://dynamicecology.wordpress.com/2011/06/17/zombie-ideas-in-ecology/)
+
+
+    :markdown
+        **Notes:**
+
+        [1] An unfortunate occurrence when using random colors. Ideally I would create the colors after the simulation has finished when I could optimize for color distinction of species alive at the same time.
+
+        [2] It's worth taking a moment to defend the usefulness of multi agent modeling in ecology vs equations such as [Lotka Volterra equations](https://en.wikipedia.org/wiki/Lotka%E2%80%93Volterra_equations). I found a very direct quote in the paper [*A mechanistic verification of the competitive exclusion principle*](https://arxiv.org/pdf/1211.1869.pdf)
+
+        > "Phenomenological models are difficult to interpret mechanistically and thus they are of limited usefulness. They may superficially show what happens with modeled object but cannot show how it happens in physical sense. They describe some empirical observations, but have no foundations in mechanisms or first principles. Phenomenological models are rather of 'black-box' type what means that they are not transparent for understanding of underlying mechanisms. In contrast to the phenomenological black-box models, cellular automata models can be of a 'white box' type. A white box model has 'transparent walls' and directly shows underlined mechanistic mechanisms – all events at micro-, mini- (meso-) and macro- levels of the simulated dynamic system are directly visible at all stages. We consider mechanistic mechanisms as consisting of two inter-related constituents – (1) cause-effect relations and (2) part-whole relations. The causes of the mechanisms should be sufficient to understand their effects and the parts should be sufficient to understand the whole. In our research, the 'whole' is a specific ecosystem with populations of competing species. The 'parts' are individuals, micro-habitats and interactions between the individuals and their immediate environment (neighborhood). Mechanicalness of models may be achieved by using individual-based cellular automata approach. A logical deterministic individual-based cellular automata modeling may help us to find a mechanism of coexistence by the simplest way."

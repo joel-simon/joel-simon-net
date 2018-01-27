@@ -1,8 +1,9 @@
 mixin label_mixin(label)
-    if label in public._data['labels']
-        - var color = public._data['labels'][label]
-    else
-        - var color = 'rgb(128, 128, 128)'
-
+    //- if label in public._data['labels']
+    //-     - var color = public._data['labels'][label]
+    //- else
+    //-     - var color = 'rgb(128, 128, 128)'
     .label(class= ""+label, data-name= ""+label)
-        h3(style='color:'+color)!=label
+        //- a(href='/#'+label)
+        h3()!=label
+        //- style='color:'+color,

@@ -1,17 +1,21 @@
 include disqus
+include footer
+include google_analytics
 doctype html
 
 html
     head
+        +ga_mixin()
         title Joel Simon
         script(src='/libs/jquery.min.js')
+        script(src='/src/project.js')
         link(rel='stylesheet', href='/style/index.css')
         link(rel='stylesheet', href='/style/markdown.css')
+        block meta_tags
     body
         h2
             a(href='/')!="< Joel Simon"
         .text_body
             block content
-
-
             //- +disqus_mixin()
+        +footer_mixin()

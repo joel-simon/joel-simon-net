@@ -1,13 +1,3 @@
-/*@font-face {
-  font-family: Avenir;
-  font-weight: normal;
-  src: url("fonts/avenirnext-ultralight.ttf") format("truetype");
-}
-*/
-html {
-
-  /*height: 100%;*/
-}
 
 body {
   font-size: 1.0em;
@@ -20,6 +10,10 @@ body {
   text-align: center;
 }
 
+h1, h2, h3, h4 {
+  font-weight: bold;
+}
+
 h1 {
   /*text-align: center;*/
   /*font-weight: bold;*/
@@ -30,16 +24,6 @@ h1 {
 a {
   color: black;
   text-decoration: none;
-}
-
-.label {
-  -webkit-touch-callout: none; /* iOS Safari */
-    -webkit-user-select: none; /* Safari */
-     -khtml-user-select: none; /* Konqueror HTML */
-       -moz-user-select: none; /* Firefox */
-        -ms-user-select: none; /* Internet Explorer/Edge */
-            user-select: none; /* Non-prefixed version, currently
-                                  supported by Chrome and Opera */
 }
 
 
@@ -62,6 +46,7 @@ a {
   width: 100%;
   padding-left: 0%;
   margin-bottom: 100px;
+  margin-top: 2%;
 }
 
 
@@ -70,8 +55,17 @@ a {
 
 .label {
   /*float: left;*/
+  color: gray;
   display:inline-block;
-  margin-right: .5em;
+  margin-right: 1em;
+
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+   -khtml-user-select: none; /* Konqueror HTML */
+     -moz-user-select: none; /* Firefox */
+      -ms-user-select: none; /* Internet Explorer/Edge */
+          user-select: none; /* Non-prefixed version, currently
+                                supported by Chrome and Opera */
 }
 #label_container h3 {
 /*  margin-bottom: 0px;
@@ -87,29 +81,37 @@ a {
   text-decoration: underline;
   /*border: solid;*/
 }
-
-
+/*
+.label.generative:hover {
+  color: rgb(176, 172, 249);
+}
+.label.sculpture:hover {
+  color: rgb(192, 114, 234);
+}
+.label.generative:hover {
+  color: rgb(176, 172, 249);
+}*/
 /* -------------------------------------------------------------------------- */
 /* Projects. */
 
 .project {
-  /*position: relative;*/
-  width: 300px;
-  /*max-width: 300px;*/
+  width: 320px;
   display: inline-block;
   vertical-align: top;
   border: 1px solid white;
 
-  /*float: left;*/
-  margin-left: 2%;
-  margin-right: 2%;
-  margin-bottom: 3%;
+  /*margin-left: 2%;*/
+  /*margin-right: 2%;*/
+  /*margin-bottom: 3%;*/
 
   padding: 1%;
-  /*margin: 4%;*/
 }
 
 .project h2 {
+  visibility: hidden;
+  margin-top: 0px;
+  margin-bottom: 0px;
+  /*color: gray;*/
   /*background-color: red;*/
   /*height: 2.5em;*/
 
@@ -120,15 +122,9 @@ a {
 }
 
 .project img {
-  max-width: 300px;
-  max-height: 300px;
+  max-width: 320px;
+  max-height: 320px;
   /*background-color: red;*/
-}
-
-.project:not(:hover) img {
-  -webkit-filter: grayscale(0%); /* Safari 6.0 - 9.0 */
-  filter: grayscale(0%);
-
 }
 
 .project:not(:hover) .project_labels {
@@ -138,13 +134,21 @@ a {
 
 .project:not(.no_hover):hover {
   cursor: pointer;
+
+  -ms-transform: scale(1.05, 1.05); /* IE 9 */
+  -webkit-transform: scale(1.05, 1.05); /* Safari */
+  transform: scale(1.05, 1.05);
+  /*border: 1px dashed;*/
+  /*box-shadow: 10px 10px 5px gray;*/
+   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
   /*border: 1px solid gray;*/
   /*margin: 1%;*/
   /*padding: calc(1% - 1px);*/
 }
 
 .project:not(.no_hover):hover h2 {
-  text-decoration: underline;
+  visibility: visible;
+  /*text-decoration: underline;*/
 }
 
 
@@ -168,6 +172,19 @@ a {
   margin-top: 0px;
   margin-bottom: 0px;
 }
+/* -------------------------------------------------------------------------- */
+/* Image Grid. */
+.image_grid {
+  /*display:inline-block;*/
+
+}
+.image_grid img {
+  display:inline-block;
+  width: 180px;
+  /*max-width: 25vw;*/
+  /*float: left;*/
+  margin: 10px;
+}
 
 /* -------------------------------------------------------------------------- */
 /* Footer and contact. */
@@ -184,7 +201,7 @@ a {
 
 #contact_container .contact_column {
     float: left;
-    width: 33.33%;
+    width: 25%;
 }
 
 /* Clear floats after the columns */
@@ -204,6 +221,12 @@ a {
 }
 
 /* -------------------------------------------------------------------------- */
+video {
+  cursor: pointer;
+}
+
+/* -------------------------------------------------------------------------- */
+
 /* ----------- iPhone 5 & 6 ----------- */
 
 /* Portrait and Landscape */
@@ -212,10 +235,8 @@ a {
   and (max-device-width: 667px)
   and (-webkit-min-device-pixel-ratio: 2) {
 
-  .project:not(:hover) img {
-    -webkit-filter: grayscale(0%); /* Safari 6.0 - 9.0 */
-    filter: grayscale(0%);
-
+  .project h2 {
+    visibility: visible;
   }
 
 }
@@ -234,7 +255,7 @@ a {
       font-weight: bold;
     }*/
     .project {
-      width: 400px;
+      width: 320px;
     }
 
     .project h2 {

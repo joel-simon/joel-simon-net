@@ -12,84 +12,71 @@ label_hover_end = (event) ->
     $('.project').removeClass('no_hover')
     $(".label.#{label_name} h3").css('text-decoration','inherit')
 
-# label_click = (event) ->
-#     $label = $(@)
-#     label_name = $label.data('name')
+filter_by_label = (label_name) ->
+    $('.label').not('.'+label_name).addClass('label_hidden')
+    $('.project').not('.'+label_name).hide()
+    $(".label.#{label_name}").addClass('active')
 
-#     if $label.hasClass('active')
-#         $(".label.#{label_name}").removeClass('active')
-#         $(".label.#{label_name}").addClass('label_hidden')
-#         $(".project.#{label_name}").hide()
-#         $(".project.#{label_name}").removeClass('active')
-
-#     else
-#         # Show the projects with this label.
-#         $(".project.#{label_name}").show()
-#         $(".project.#{label_name}").addClass('active')
-
-#         # Hide other projects.
-#         $('.project').not('.active').hide()
-
-#         # Show the labels with the same name.
-#         $(".label.#{label_name}").addClass('active')
-#         $(".label.#{label_name}").removeClass('label_hidden')
-
-#         # Obscure other labels.
-#         $('.label').not('.active').addClass('label_hidden')
-
-
-#     # Handle cases where 'all' button should change visibility.
-#     if $(".active").length == 0
-#         $('#label_all').trigger 'click'
-
-#     else if $(".label.active").length == $('.label').length
-#         $('#label_all').css('visibility', 'hidden')
-#     else
-#         # Show the clear button.
-#         $('#label_all').css('visibility', 'visible')
+clear_label_filter = () ->
+    $(".label.active").removeClass('active')
+    $(".label.label_hidden").removeClass('label_hidden')
+    $(".project").show()
 
 label_click = (event) ->
     $label = $(@)
-    label_name = $label.data('name')
 
-    # $(".label").removeClass('label_hidden')
-    # $(".label").removeClass('active')
-    # $(".project").show()
-    # $(".label.#{label_name}").removeClass('active')
-
-    # Clicking the active label
     if $label.hasClass('active')
-        $(".label.active").removeClass('active')
-        $(".label.label_hidden").removeClass('label_hidden')
-        $(".project").show()
-
+        window.location.hash = ''
     else
-        # Clear any existing label.
-        $(".label.active").removeClass('active')
-        $(".label.label_hidden").removeClass('label_hidden')
-        $(".project").show()
-
-        # Hide other labels
-        $('.label').not('.'+label_name).addClass('label_hidden')
-        $('.project').not('.'+label_name).hide()
-        $(".label.#{label_name}").addClass('active')
-
-
+        # history.pushState(null, null, "?page=1");
+        window.location.hash = '#'+$label.data('name')
 
 window_resize = () ->
-    window_width = $(document).width()
-    project_width  = $('.project').outerWidth(true)
-    n_cols = Math.floor($('#project_container').width() / project_width)
-    padding_left = (window_width - (project_width * n_cols)) / 2.0
-    $('#project_container').css 'padding-left', padding_left
+    # container_width = $('#project_container').width()
+
+    # innerwidth = $('.project').innerWidth()
+    # outerwidth = $('.project').outerWidth()
+
+
+    # num_projects = Math.floor(container_width / outerwidth)
+    # margin = container_width - (num_projects * outerwidth)
+    # console.log 'inner:', innerwidth
+    # console.log 'outer', outerwidth
+    # console.log 'num_Projects', num_projects
+    # console.log container_width, num_projects*outerwidth
+    # console.log 'margin', margin
+    # console.log
+    # $('.project').css('margin-left', margin/(2*num_projects))
+    # $('.project').css('margin-right', margin/(2*num_projects))
+
+window.onpopstate = (event) ->
+    clear_label_filter()
+
+    if window.location.hash
+        label_name = window.location.hash.slice(1)
+        if label_name of labels
+            filter_by_label(label_name)
 
 $ ->
     is_mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent)
-    console.log('Hello World')
+    console.log('Hello Friend <3')
 
     $('.label').click label_click
+    $(window).resize window_resize
 
-    $('.label').hover label_hover_start, label_hover_end
+    window_resize()
+
+    window.onpopstate()
+    # if window.location.hash
+    #     label_name = window.location.hash.slice(1)
+    #     $('.label').not('.'+label_name).addClass('label_hidden')
+    #     $('.project').not('.'+label_name).hide()
+    #     $(".label.#{label_name}").addClass('active')
+
+    # Because of the annoying fact that on iphones clicking the first time
+    # only triggers hover.
+    $('.project').bind 'touchstart', ()->
+        $(@).find('a').trigger("click")
 
     $('#label_all').click () ->
         $('.label').removeClass('label_hidden')
@@ -99,6 +86,3 @@ $ ->
         $('.project').show()
 
         $(@).css 'visibility', 'hidden'
-
-    # window_resize()
-    # $(window).resize(window_resize)

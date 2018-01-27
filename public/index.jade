@@ -1,37 +1,37 @@
 include partials/label
 include partials/project
+include partials/footer
+include partials/google_analytics
 doctype html
 
 html
     head
+        +ga_mixin()
         title Joel Simon
         script(src='/libs/jquery.min.js')
         script(src='/src/main.js')
-        script(src='/src/google_analytics.js')
-
         link(rel='stylesheet', href='/style/index.css')
+
+        - var domain = 'http://www.joelsimon.net'
+        meta(property="og:title", content="Joel Simon")
+        meta(property="og:description", content="Joel Simon Website")
+        meta(property="og:image", content=domain+'/imgs/cornered-hands/1.jpg')
+        meta(property="og:url", content=domain)
+        meta(property="og:type", content='blog')
+
+        script.
+            var labels = !{JSON.stringify(public._data['labels'])}
+
     body
         h1 Joel Simon
 
         #label_container
             each color, label in public._data['labels']
                 +label_mixin(label)
-            //- #label_all(style='visibility:hidden;')
-            //-     h3(style='color:black')!='all years'
+
         #project_container
             each project, i in public._data['projects']
                 +project_mixin(project)
 
-        #footer
-            #contact_container
-                #email.contact_column
-                    p
-                        a(href="mailto:joelsimon6@gmail.com" target="_blank") Email
+        +footer_mixin()
 
-                #github.contact_column
-                    p
-                        a(href='https://github.com/Sloth6/' target="_blank") Github
-
-                #twitter.contact_column
-                    p
-                        a(href='https://twitter.com/_code_of_form_' target="_blank") Twitter

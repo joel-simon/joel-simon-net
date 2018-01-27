@@ -1,5 +1,13 @@
 extends partials/project_page.jade
 
+block meta_tags
+    - var domain = 'www.joelsimon.net'
+    meta(property="og:title", content="Cornered Hands")
+    meta(property="og:description", content="Hands Sculpture - 2012.")
+    meta(property="og:image", content=domain+'/imgs/cornered-hands/1.jpg')
+    meta(property="og:url", content=domain+'/cornered-hands.html')
+    meta(property="og:type", content='blog')
+
 block content
     :markdown
         # Cornered Hands

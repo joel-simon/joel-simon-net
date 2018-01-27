@@ -1,0 +1,27 @@
+extends partials/project_page
+include partials/image_grid
+
+block meta_tags
+    - var domain = 'http://www.joelsimon.net'
+    meta(property="og:title", content="Evolving Virtual Corals")
+    meta(property="og:description", content="Virtual Corals - 2017.")
+    meta(property="og:image", content=domain+'/imgs/ecology-modelling/icon2.jpg')
+    meta(property="og:url", content=domain+'/ecology-modelling.html')
+    meta(property="og:type", content='blog')
+
+    script.
+        $(window).load(function(){
+            var myVideo = document.getElementsByTagName( 'video' );
+            myVideo[0].controls = false
+        })
+
+block content
+
+    h1 Evolving Virtual Corals
+
+    h2 Writeup coming soon.
+
+    video(controls, width="600px", autoplay="autoplay", playsinline)
+        source(src="/imgs/virtual-corals/foo4.mp4")
+
+

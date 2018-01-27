@@ -1,4 +1,6 @@
 {
+    "domain": "http://joelsimon.net/",
+    "storage": "https://storage.googleapis.com/joel-simon-net.appspot.com/",
     "labels": {
         "generative": "rgb(176, 172, 249)",
         "sculpture": "rgb(192, 114, 234)",
@@ -9,17 +11,31 @@
     },
     "projects": [
         {
-            "name": "Ecology Modelling",
+            "name": "Virtual Corals",
             "labels": ["generative", "code", "video"],
-            "img": "imgs/ecology-modelling/001100.jpg",
+            "img": "imgs/virtual-corals/icon.png",
+            "hide": true,
+            "year": 2017
+        },
+        {
+            "name": "Ecosystem Modelling",
+            "labels": ["generative", "code", "video"],
+            "img": "imgs/ecosystem-modelling/005300.jpg",
+            "hide": false,
             "year": 2017
         },
         {
             "name": "Figuration",
             "labels": [ "video"],
-            "img": "imgs/figuration.png",
+            "img": "imgs/figuration.jpg",
             "year": 2017
 
+        },
+        {
+            "name": "Plant Lamp",
+            "labels": ["lamp"],
+            "img": "imgs/plant-lamp/IMG_5435_4.jpg",
+            "year": 2017
         },
         {
             "name": "Desk Lamp 2",
@@ -39,13 +55,17 @@
             "img": "imgs/wall-lamp/wall-lamp-icon.jpg",
             "year": 2016
         },
-
-
         {
             "name": "Sculpture Drop",
             "labels": ["generative", "sculpture"],
             "img": "imgs/sculpture-drop.jpg",
             "year": 2016
+        },
+        {
+            "name": "Table lamp 3",
+            "labels": ["lamp"],
+            "img": "imgs/table-lamp-3/icon.jpg",
+            "year": 2015
         },
 
         {
@@ -85,10 +105,16 @@
             "img": "imgs/graph-contraction/graph-contraction.png",
             "year": 2014
         },
+
         {
             "name": "Image To Paint",
             "labels": ["generative", "code"],
             "img": "imgs/image-to-paint/icon.jpg",
+            "year": 2012
+        },{
+            "name": "Head in Hands",
+            "labels": ["sculpture"],
+            "img": "imgs/head-in-hands/icon.JPG",
             "year": 2012
         },
         {

@@ -1,0 +1,142 @@
+extends partials/project_page
+include partials/image_grid
+
+block meta_tags
+    - var domain = 'http://www.joelsimon.net'
+    meta(property="og:title", content="Evolving Virtual Corals")
+    meta(property="og:description", content="Virtual Corals - 2017.")
+    meta(property="og:image", content=domain+'/imgs/ecology-modelling/icon2.jpg')
+    meta(property="og:url", content=domain+'/ecology-modelling.html')
+    meta(property="og:type", content='blog')
+
+    script.
+        $(window).load(function(){
+            var myVideo = document.getElementsByTagName( 'video' );
+            myVideo[0].controls = false
+        })
+
+block content
+
+    h1 Evolving Virtual Corals
+
+    //- img(src='/imgs/virtual-corals/icon2.png', width=500)
+    video(controls, width="600px", autoplay="autoplay", playsinline)
+        source(src="/imgs/virtual-corals/foo4.mp4")
+
+    :markdown
+        This work is part of series of personal side projects exploring emergence and generative forms. Specifically, how growth enables complexity by expanding - or decoding - the genotype into the phenotype. In the very large body of work on generative plants most use L-systems and other formal grammars to create fractal-like patterns. These approaches produce wonderful patterns but ultimately attempt to mimic the forms and not the processes that give rise to them.
+
+    img(src='/imgs/virtual-corals/l-system.png', style='width:600px;')
+    :markdown
+        From [The Algorithmic Beauty of Plants](http://algorithmicbotany.org/papers/abop/abop.pdf)
+
+        Beautiful mathematical equations are observed in the patterns of plants but plants are not mathematical equations. They are a thoroughly optimized genome emergent in billions of coordinating cells adapting to their environment.
+
+        In this work I did not desire to generate forms that look precisely like existing biology. Real plants and corals are solutions to problem defined by the physics of environments and complexities of ecosystems. The goal here is to see the emergence of complex solutions in an alien world that is coral inspired. I am inspired by the work of [Karl Sims](http://www.karlsims.com/evolved-virtual-creatures.html) and biologically-inspired generative designers such as [nervous system](https://n-e-r-v-o-u-s.com/projects/). The idea of species competition gave rise to this [ecology-modeling](/ecology-modeling.html) project as discussed in this [interview](https://www.labocine.com/spotlight/146).
+
+        ## Corals
+    img(src='/imgs/virtual-corals/elkhorn_coral.jpg', width=400)
+    :markdown
+        Corals are colonies of genetically identical polyps which collect nutrients from photosynthetic bacteria living inside them called Zooxanthellae and from small plankton which they catch. Polyps from stony corals deposit calcium carbonate which produces their structures. Corals were chosen because their properties were compatible with the simplifications of this model such as only modeling the surface. Additionally, plants would require modeling multiple cell types and soft deformations, which I would eventually like to add. Therefore, what makes these forms corals is essentially a fitness function that rewards capturing sunlight and current flow.
+
+    //- ### An Elkhorn Coral
+
+    br
+    h1 Algorithm
+
+    h2 A simple neural-net is computed for every polyp.
+    img(src='/imgs/virtual-corals/Digraph.gv.svg', width=400)
+    p Example network with two, two-chemical morphogens. The 'genome' of a coral is the single network and the properties of the chemicals.
+
+    h2 During each growth step:
+    div.align_left(style='display:inline-block;')
+        :markdown
+            2. **Compute polyp network outputs.**
+                * Each polyp may grow in its normal direction and output morphogens
+            3. **Move polyps.**
+            4. **Fix collisions.**
+                * I used a spatial binning with triangle-triangle intersection detection.
+            5. **Relax mesh.**
+                * Move each vert to the average of its neighbors and then move to projection of old position onto new normal vector.
+            6. **Subdivide mesh and create new polyps.**
+                * I implemented [this](https://www.graphics.rwth-aachen.de/media/papers/sqrt31.pdf) adaptive sqrt3 subdivision method.
+            1. **Calculate new polyp attributes.**
+                * Light, water-flow, surface curvature, morphogens.
+            2. **Calculate new fitness.**
+                * Simply the (total\_light + total\_flow) / volume
+
+
+    h2 Over many time steps a coral is grown.
+    img(src='/imgs/virtual-corals/growth3.jpg')
+
+    //- h2 Evolve network with NEAT algorithm.
+    h2 Over many generations the coral is optimized.
+    img(src='/imgs/virtual-corals/evolution2.jpg')
+    :markdown
+        Optimization is done with [NEAT](http://nn.cs.utexas.edu/downloads/papers/stanley.ec02.pdf), each run is done with a population size of 60 for 100 generations.
+
+    h2 Each polyp is a mesh vertex which has local information.
+    img(src='/imgs/virtual-corals/coral_stuff.jpg')
+    :markdown
+        Polyps receive light according to their distance to the surface and angle of incidence. Polyps also are given the angle between themselves and the pull of gravity as well as the local surface curvature.
+
+        ### Morphogens
+        Morphogens are chemicals which give rise to pattern formation during development.
+        Reaction-diffusion is one set of equations that describe the interaction of multiple chemicals that may be used as morphogens. Varying the properties of two (U & V) chemicals can give rise to the patters seen below and are used commonly for artistic purposes.
+        I used [gray-scott](https://groups.csail.mit.edu/mac/projects/amorphous/GrayScott/) over others (such as [Gierer–Meinhardt](http://www.scholarpedia.org/article/Gierer-Meinhardt_model)) because I found it more stable and that the parameter space was [well documented](https://mrob.com/pub/comp/xmorphia/). Given more time I would love to explore the efficacy of varying models.
+
+
+    img(src='http://www.karlsims.com/rd-kf-examples.png')
+    :markdown
+        Examples of Gray-Scott patterns with varying feed and kill rates taken from [this](http://www.karlsims.com/rd.html) excellent tutorial.
+
+        In this system each polyp receives one chemical (U) as input and outputs another (V). The diffusion of the two was fixed and the feed and kill rates were traits that were evolved independently of the genome.
+
+    h1 Early Results
+    p Run #1 - 100 generations
+    p This was the very first run of the most recent version. The green and blue color components is each determined by the concentration of one of the two morphogens.
+
+    video(controls, width="600px")
+        source(src=public._data['storage']+"coral-growth/QVVU_merged_2.mp4")
+
+    img(src='/imgs/virtual-corals/evolution_QVVU.png', width=350)
+    p Large jumps in fitness correspond to the innovation of growing tall before branching out.
+
+    p Run #2 - 100 generations
+    p The second run was less successful, but produced some very interesting morphogen patterns along the way.
+
+    video(controls, width="600px")
+        source(src=public._data['storage']+"coral-growth/YITI_merged.mp4")
+
+    img(src='/imgs/virtual-corals/evolution_YITI.png', width=350)
+
+    p An earlier run with slightly different fitness functions provided some very interesting forms as well.
+
+    video(controls, width="600px")
+        source(src='/imgs/virtual-corals/KY8T_evolution_titles.mp4')
+
+    h1 Gallery
+    -
+        var dir = '/imgs/virtual-corals/'
+        var images = [dir + 'icon.png', dir + 'icon.png', dir + 'icon.png',
+                      dir + 'icon.png', dir + 'icon.png', dir + 'icon.png']
+    +image_grid_mixin(images)
+
+    :markdown
+        #Conclusion
+
+        Given the limited abilities of each polyp and simplicity of the network, I was surprised how well this worked. For genomes with around 22 dimensions, complex forms with 10,000+ vertexes are generated. Nature can only be the ultimate designer by first being the ultimate de-compressor.
+
+    div.align_left(style='display:inline-block;')
+        p Next Steps...
+        :markdown
+            * More varied environments - also vary importance of water and light and see corresponding changes in morphology.
+            * Average across multiple environments (phenotypic palsticity)
+            * Polyp memory
+            * Other methods of signaling and morphogens
+            * Try more modern optimizers - (learn reinforcement learning like the cool kids)
+            * Learn to render (cinema4d?) like the really cool kids
+    br
+    //- img(src='https://insideclimatenews.org/sites/default/files/styles/colorbox_full/public/Coral-bleaching-at-Heron-Island.jpeg?itok=BRW6J_Xr')
+
+//- [Biological Pattern Formation : from Basic Mechanisms to Complex Structures](http://eb.tuebingen.mpg.de/fileadmin/uploads/images/Research/emeriti/Hans_Meinhardt/Old_Paper_PDF/km.pdf) which dicussed Gierer–Meinhardt model.

@@ -6,13 +6,18 @@ img {
     margin-left:auto;
     margin-right:auto;
 }
-
+.text_body blockquote {
+  font-size: .75em;
+}
 
 .text_body {
-  width: 600px;
-  margin-left: calc(50% - 300px);
-  position:absolute;
-  overflow:hidden;
+  width: 800px;
+  max-width: 90%;
+  left: 0px;
+
+  /*overflow: hidden;*/
+  margin: 0 auto;
+  margin-bottom: 100px;
 }
 .text_body p {
   text-align: justify;
@@ -25,4 +30,25 @@ img {
 
 a:hover {
     text-decoration: underline;
+}
+
+video {
+  max-width: 100%;
+  max-height: calc(100vh - 100px);
+}
+video::-webkit-media-controls-start-playback-button {
+    display: none;
+}
+
+
+.align_left * {
+  text-align: left;
+}
+
+/*.figure p {
+  text-align: center;
+}*/
+
+strong {
+  font-weight: bold;
 }
