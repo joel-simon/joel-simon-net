@@ -7,15 +7,17 @@ html
     head
         +ga_mixin()
         title Joel Simon
-        script(src='/libs/jquery.min.js')
-        script(src='/src/project.js')
+        script(defer, src='/libs/jquery.1.8.3.min.js')
+        script(defer, src='/src/project.js')
         link(rel='stylesheet', href='/style/index.css')
         link(rel='stylesheet', href='/style/markdown.css')
         block meta_tags
     body
+        block pre_header
         h2
-            a(href='/')!="< Joel Simon"
+            a(href='/')!="Joel Simon"
         .text_body
             block content
+        block post_text
             //- +disqus_mixin()
         +footer_mixin()

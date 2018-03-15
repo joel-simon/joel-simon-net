@@ -10,12 +10,20 @@ mixin project_mixin(project)
                 name = name.replace(/\s+/g, '-').toLowerCase();
                 var path = '/'+name+'.html'
 
-            a(href=path)
+            //- .show-on-hover
+                //- h2!=project['name']
 
+            a(href=path)
                 img(src=project['img'])
+            
+            .show-on-hover
                 h2!=project['name']
 
-            .project_labels
-                each label, i in project['labels']
-                    +label_mixin(label)
+                //- p!=project['description']
+
+                .project_labels
+                    each label, i in project['labels']
+                        +label_mixin(label)
+
+
 

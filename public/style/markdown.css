@@ -1,23 +1,28 @@
 img {
-    max-width: 100%;
-    max-height: 80vh;
-    margin-top: 2%;
-    display:block;
-    margin-left:auto;
-    margin-right:auto;
+  max-width: 100%;
+  max-height: 80vh;
+  margin-top: 2%;
+  display:block;
+  margin-left:auto;
+  margin-right:auto;
 }
+
+body {
+  margin-bottom: 100px;
+}
+
 .text_body blockquote {
   font-size: .75em;
 }
 
 .text_body {
-  width: 800px;
+  width: 1000px;
   max-width: 90%;
   left: 0px;
 
   /*overflow: hidden;*/
   margin: 0 auto;
-  margin-bottom: 100px;
+  /*margin-bottom: 100px;*/
 }
 .text_body p {
   text-align: justify;
@@ -25,11 +30,13 @@ img {
 }
 
 .text_body a {
-  color: rgb(176, 172, 249);
+  /*color: rgb(176, 172, 249);*/
+  color: gray;
+  text-decoration: underline;
 }
 
 a:hover {
-    text-decoration: underline;
+  /*text-decoration: underline;*/
 }
 
 video {

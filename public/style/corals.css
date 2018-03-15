@@ -1,0 +1,274 @@
+@font-face {
+    font-family: TrajanPro;
+    font-style: normal;
+    font-weight: normal;
+    src: url("/style/fonts/TrajanPro-Regular.otf") format("opentype");
+}
+#header_container h1 {
+    font-family: 'TrajanPro', serif;
+    font-weight: lighter;
+}
+
+#scroll_padding {
+    width: 100%;
+    margin-bottom: 100px;
+    padding-bottom: -50px;
+    /*height: 100vh;*/
+}
+
+#footer {
+    display: none;
+}
+
+#fullscreen_container {
+    position: fixed;
+    left: 0px;
+    top: 0px;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* Portrait */
+@media only screen
+  and (min-device-width: 320px)
+  and (max-device-width: 667px)
+  and (-webkit-min-device-pixel-ratio: 2)
+  and (orientation: portrait) {
+}
+
+
+@media (max-aspect-ratio: 1/1) {
+    #fullscreen_container {
+    }
+}
+
+img#haeckal {
+    max-height: 100%;
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+}
+
+
+h1,h2 {
+    position: relative;
+    z-index: 9;
+}
+
+h1, h2 {
+    margin-top: 2em;
+}
+
+.nav a {
+    margin-right: 20px;
+    font-size: 1.3em;
+}
+
+.center {
+    text-align: center !important;
+}
+
+#header_container {
+    width: 100vw;
+    height: 100vh;
+    position:absolute;
+    transform: translateY(50%);
+    z-index: 9;
+}
+
+#header_container h1 {
+    font-size:4em;
+    text-align: center;
+    margin-top: 0px;
+    transform: translateY(-50%);
+}
+
+@media only screen and (min-width: 1000px) {
+    #header_container h1 {
+        font-size:7em;
+    }
+}
+
+#webgl_container {
+    height: 70vh;
+    position: relative;
+    cursor: move;
+}
+
+canvas {
+    /* The below is a fix for safari bug.*/
+    background: black;
+}
+
+.controls {
+    position: absolute;
+    left: 5px;
+    cursor: pointer;
+}
+
+/*.controls.img {
+    width: 40px;
+}
+*/
+.controls.zoom-in {
+    top: 5px;
+}
+
+.controls.zoom-out {
+    top: 50px;
+}
+
+.controls.maximize {
+    top: 95px;
+}
+
+.controls.clear {
+    top: 140px;
+}
+
+.controls.add_coral {
+    width: 100%;
+    max-width: 100%;
+
+}
+
+.no_select {
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    user-select: none
+}
+
+.controls.add_coral p {
+    text-align: center;
+    display:inline-block;
+}
+
+.slidecontainer {
+    width: 100%;
+}
+
+.slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 15px;
+    border-radius: 5px;
+    background: #d3d3d3;
+    outline: none;
+    opacity: 0.7;
+    -webkit-transition: .2s;
+    transition: opacity .2s;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #3632ff;
+    cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #3632ff;
+    cursor: pointer;
+}
+
+/* Portrait and Landscape */
+@media only screen
+  and (min-device-width: 320px)
+  and (max-device-width: 667px)
+  and (-webkit-min-device-pixel-ratio: 2) {
+
+    .slider::-webkit-slider-thumb {
+        width: 60px;
+        height: 60px;
+    }
+
+    .slider::-moz-range-thumb {
+        width: 60px;
+        height: 60px;
+    }
+}
+
+.img_small {
+    max-height: 250px;
+}
+
+.carousel {
+    overflow-x: scroll;
+    overflow-y: hidden;
+    white-space:nowrap;
+    border-left: 2px dashed;
+    border-right: 2px dashed;
+}
+
+.carousel .slide {
+    display: inline-block;
+}
+
+.evolve_description {
+    margin-bottom: 0px;
+}
+
+.carousel::-webkit-scrollbar {
+    -webkit-appearance: none;
+}
+
+.carousel::-webkit-scrollbar:horizontal {
+    height: 12px;
+}
+
+.carousel::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+    border: 2px solid white;
+    background-color: rgba(0, 0, 0, .5);
+}
+
+
+.image_grid2 {
+    width: 100%;
+    position: relative;
+}
+
+.image_grid2 .container {
+    display: inline-block;
+    width: 264px;
+    border: 1px solid black;
+}
+
+.image_grid2 img {
+    display: inline-block;
+    width: 266px;
+    cursor: pointer;
+}
+.image_grid_left {
+    left:-440px;
+    top: 400px;
+    height: 0px;
+    margin: 0px;
+}
+
+.vertical_text {
+    -webkit-transform: rotate(-90deg);
+    position:relative;
+
+}
+
+img {
+    max-width: inherit;
+    max-height: inherit;
+    margin-top: inherit;
+    display:inherit;
+    margin-left:inherit;
+    margin-right:inherit;
+}

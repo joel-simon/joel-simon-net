@@ -1,6 +1,6 @@
 $ ->
-    $('video').click () ->
-        if @.paused
-            @play()
-        else
-            @pause()
+    # $('video').click () ->
+    #     if @.paused
+    #         @play()
+    #     else
+    #         @pause()

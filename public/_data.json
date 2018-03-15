@@ -4,11 +4,12 @@
     "labels": {
         "generative": "rgb(176, 172, 249)",
         "sculpture": "rgb(192, 114, 234)",
-        "video": "rgb(252, 116, 182)",
-        "lamp": "rgb(252, 116, 182)",
         "code": "rgb(255, 193, 213)",
-        "web": "rgb(110, 244, 217)"
+        "lighting": "rgb(252, 116, 182)",
+        "web": "rgb(110, 244, 217)",
+        "video": "rgb(252, 116, 182)"
     },
+    
     "projects": [
         {
             "name": "Virtual Corals",
@@ -22,36 +23,44 @@
             "labels": ["generative", "code", "video"],
             "img": "imgs/ecosystem-modelling/005300.jpg",
             "hide": false,
+            "description": "Visualizing ecosystem simulations",
             "year": 2017
         },
         {
             "name": "Figuration",
             "labels": [ "video"],
             "img": "imgs/figuration.jpg",
+            "description": "A si-fi short film.",
             "year": 2017
 
         },
         {
             "name": "Plant Lamp",
-            "labels": ["lamp"],
+            "labels": ["lighting"],
             "img": "imgs/plant-lamp/IMG_5435_4.jpg",
             "year": 2017
         },
         {
             "name": "Desk Lamp 2",
-            "labels": ["lamp"],
+            "labels": ["lighting"],
             "img": "imgs/desk-lamp-2/icon.jpg",
             "year": 2017
         },
         {
             "name": "Simon Lamps",
-            "labels": ["lamp", "web", "code"],
+            "labels": ["lighting", "web", "code"],
             "img": "imgs/simon-lamps/icon.jpg",
             "year": 2016
         },
         {
+            "name": "Desk Lamp 1",
+            "labels": ["lighting"],
+            "img": "imgs/desk_lamp_1b/icon2.jpg",
+            "year": 2016
+        },
+        {
             "name": "Wall Lamp",
-            "labels": ["lamp"],
+            "labels": ["lighting"],
             "img": "imgs/wall-lamp/wall-lamp-icon.jpg",
             "year": 2016
         },
@@ -63,7 +72,7 @@
         },
         {
             "name": "Table lamp 3",
-            "labels": ["lamp"],
+            "labels": ["lighting"],
             "img": "imgs/table-lamp-3/icon.jpg",
             "year": 2015
         },
@@ -76,7 +85,7 @@
         },
         {
             "name": "Table lamp 2",
-            "labels": ["lamp"],
+            "labels": ["lighting"],
             "img": "imgs/table-lamp-2/icon.jpg",
             "year": 2015
         },
@@ -105,13 +114,19 @@
             "img": "imgs/graph-contraction/graph-contraction.png",
             "year": 2014
         },
-
+        {
+            "name": "Maria",
+            "labels": ["sculpture"],
+            "img": "imgs/maria/icon2.png",
+            "year": 2013
+        },
         {
             "name": "Image To Paint",
             "labels": ["generative", "code"],
             "img": "imgs/image-to-paint/icon.jpg",
             "year": 2012
-        },{
+        },
+        {
             "name": "Head in Hands",
             "labels": ["sculpture"],
             "img": "imgs/head-in-hands/icon.JPG",
