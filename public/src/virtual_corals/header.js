@@ -24,48 +24,21 @@ var animation = window.requestAnimationFrame ||
     var last_frame = null;
     var last_scroll = null;
 
-
     function loop() {
-        var frame, y, percent, scroll, src;
-        scroll = window.pageYOffset;
+        var frame, y, percent, src;
 
-        if (scroll == last_scroll) {
-            return animation(loop);
-        } else {
-            last_scroll = scroll;
+        var scroll = window.pageYOffset;
+        var top = $('img#haeckal').offset().top;
+
+        percent = (scroll / top) * 1.1;
+        frame = Math.min(Math.floor(percent * n_frames[size]), n_frames[size] - 1);
+        frame = (frame<0) ? 0 : frame; // Don't allow negative.
+
+        if (frame !== last_frame) {
+            last_frame = frame;
+            src = images[ size ][ frame ].src
+            $img[ 0 ].src = images[ size ][ frame ].src;
         }
-
-        if (scroll < video_scroll_length + after_padding) {
-            y = 0;
-            percent = .5 + (scroll / video_scroll_length) /2;
-
-            frame = Math.min(Math.floor(percent * n_frames[size]), n_frames[size] - 1);
-            frame = (frame<0) ? 0 : frame; // Don't allow negative.
-
-            if (frame !== last_frame) {
-                last_frame = frame;
-                src = images[ size ][ frame ].src
-                $img[ 0 ].src = images[ size ][ frame ].src;
-                // $container.css('background-image', 'url('+ src +')');
-            }
-
-        } else {
-            y = video_scroll_length + after_padding - scroll;
-        }
-
-        if (scroll > height / 4 ) {
-            $img.css('filter', '');
-            $img.css('-webkit-filter', '');
-
-        } else {
-            $img.css('filter', 'blur(3px)');
-            $img.css('-webkit-filter', 'blur(3px)');
-        }
-
-        var transform = 'translate3d(0px, ' + y + 'px, 0)';
-        $container[0].style.MozTransform = transform;
-        $container[0].style.webkitTransform = transform;
-        return animation(loop);
     };
 
     function load_images() {
@@ -83,8 +56,9 @@ var animation = window.requestAnimationFrame ||
 
         function incrementCounter() {
             counter++;
+            // resize()
+            // loop()
             if ( counter == n-1 ) {
-
                 console.timeEnd('load_header');
                 if (!others_loaded) {
                     window.load_all_images();
@@ -99,18 +73,28 @@ var animation = window.requestAnimationFrame ||
 
         for (var i = 1; i <= n; i++) {
             img = new Image();
-            if (width > height){
-                img.src = '/imgs/virtual-corals/haeckal_half/frame-' + i + '.jpeg';
-                images[0].push(img);
+            if (size == 0){
+                img.src = '/imgs/corals/haeckal_half/frame-' + i + '.jpeg';
+                images[size].push(img);
             } else {
-                img.src = '/imgs/virtual-corals/haeckal_tall/frame-' + i + '.jpeg';
-                images[1].push(img);
+                img.src = '/imgs/corals/haeckal_tall/frame-' + i + '.jpeg';
+                images[size].push(img);
             }
             img.addEventListener( 'load', incrementCounter, false );
         }
     }
 
     function resize() {
+
+        var $title_container = $('#title_container');
+        var $video = $title_container.find('video');
+        var $h1 = $title_container.find('h1');
+        var height = ($title_container.height() - $h1.outerHeight(true));
+        $video.css('padding-top', height*0.1)
+        $video.height(height * 0.8);
+        $video.show()[0].play()
+
+        // return
         height = $(window).height();
         width = $(window).width();
         size = width>height ? 0:1
@@ -119,37 +103,29 @@ var animation = window.requestAnimationFrame ||
         var padding_top = 0;
 
         if (width / img_aspect[size] > height) {
-            // console.log('landscape');
             // Limiting factor is height.
             var img_width = height * img_aspect[size];
-            $img.css('height', '100%');
+            $img.css('height', '100vh');
             $img.css('width', 'auto');
-            $img.css('padding-left', (width - img_width) / 2);
-            $img.css('padding-top', 0);
+            // $img.css('padding-left', (width - img_width) / 2);
+            // $img.css('padding-top', 0);
         } else {
             // Limiting factor is width.
             var img_height = width / img_aspect[size];
             padding_top = Math.floor((height - img_height) / 2)
-            $img.css('width', '100%');
+            $img.css('width', '100vw');
             $img.css('height', 'auto');
-            $img.css('padding-top', padding_top);
             $img.css('padding-left', 0);
         }
-
-        $('#scroll_padding').height(video_scroll_length + height + after_padding - padding_top);
     };
 
     $(function() {
-        var i, j, ref;
-
         $container = $('#fullscreen_container');
         $img = $container.find('img');
-
         resize();
-
         $(window).resize( resize );
-        // return $(window).scroll(loop);
-        return window.requestAnimationFrame(loop);
+        return $(window).scroll(loop);
+        // return window.requestAnimationFrame(loop);
     });
 
 })();

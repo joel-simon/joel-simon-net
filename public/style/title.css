@@ -1,0 +1,25 @@
+#title_container {
+    width: 100vw;
+    height: 100vh;
+    display: inline-block;
+}
+
+#title_container h1 {
+    font-family: 'TrajanPro', serif;
+    font-weight: lighter;
+    font-size: 14vw;
+    text-align: center;
+    width: 100%;
+    margin-bottom: 0.5em;
+}
+
+#title_container video {
+    cursor: pointer;
+}
+
+@media only screen and (min-width: 1000px) {
+    #title_container h1 {
+        font-size: 8vw;
+        /*margin-top: 1em;*/
+    }
+}

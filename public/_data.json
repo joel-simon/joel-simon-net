@@ -9,12 +9,12 @@
         "web": "rgb(110, 244, 217)",
         "video": "rgb(252, 116, 182)"
     },
-    
+
     "projects": [
         {
-            "name": "Virtual Corals",
+            "name": "Alien Corals",
             "labels": ["generative", "code", "video"],
-            "img": "imgs/virtual-corals/icon.png",
+            "img": "imgs/corals/icon.png",
             "hide": true,
             "year": 2017
         },

@@ -4,10 +4,7 @@
     font-weight: normal;
     src: url("/style/fonts/TrajanPro-Regular.otf") format("opentype");
 }
-#header_container h1 {
-    font-family: 'TrajanPro', serif;
-    font-weight: lighter;
-}
+
 
 #scroll_padding {
     width: 100%;
@@ -21,11 +18,11 @@
 }
 
 #fullscreen_container {
-    position: fixed;
-    left: 0px;
-    top: 0px;
-    width: 100vw;
-    height: 100vh;
+    /*position: fixed;*/
+    /*left: 0px;*/
+    /*top: 0px;*/
+    /*width: 100vw;*/
+    /*height: 100vh;*/
 }
 
 /* Portrait */
@@ -58,10 +55,19 @@ img#haeckal {
 h1,h2 {
     position: relative;
     z-index: 9;
+
 }
 
-h1, h2 {
-    margin-top: 2em;
+h2 {
+    margin-top:2em;
+    /*padding-top: 1em;*/
+    /*margin-bottom: 2em;*/
+
+}
+
+.text_body h1 {
+    margin: 3em;
+    margin-bottom: 1em;
 }
 
 .nav a {
@@ -73,26 +79,7 @@ h1, h2 {
     text-align: center !important;
 }
 
-#header_container {
-    width: 100vw;
-    height: 100vh;
-    position:absolute;
-    transform: translateY(50%);
-    z-index: 9;
-}
-
-#header_container h1 {
-    font-size:4em;
-    text-align: center;
-    margin-top: 0px;
-    transform: translateY(-50%);
-}
-
-@media only screen and (min-width: 1000px) {
-    #header_container h1 {
-        font-size:7em;
-    }
-}
+/* TITLE */
 
 #webgl_container {
     height: 70vh;
@@ -108,13 +95,27 @@ canvas {
 .controls {
     position: absolute;
     left: 5px;
+
+    width: 40px;
+}
+/* Portrait */
+@media only screen
+  and (min-device-width: 320px)
+  and (max-device-width: 667px)
+  and (-webkit-min-device-pixel-ratio: 2)
+  and (orientation: portrait) {
+    .controls {
+        width: 50px;
+    }
+}
+img.controls {
     cursor: pointer;
 }
 
-/*.controls.img {
-    width: 40px;
+.controls p {
+    cursor: pointer;
 }
-*/
+
 .controls.zoom-in {
     top: 5px;
 }
@@ -132,9 +133,14 @@ canvas {
 }
 
 .controls.add_coral {
+    font-size: 1.5em;
+
     width: 100%;
     max-width: 100%;
+}
 
+.add_coral p {
+    margin-top: .5em;
 }
 
 .no_select {
@@ -201,9 +207,10 @@ canvas {
 }
 
 .img_small {
-    max-height: 250px;
+    max-height: 200px;
+    max-width: 200px;
 }
-
+/*
 .carousel {
     overflow-x: scroll;
     overflow-y: hidden;
@@ -234,26 +241,22 @@ canvas {
     background-color: rgba(0, 0, 0, .5);
 }
 
-
+*/
 .image_grid2 {
-    width: 100%;
+    margin: auto;
+    width: 605px;
     position: relative;
-}
-
-.image_grid2 .container {
-    display: inline-block;
-    width: 264px;
-    border: 1px solid black;
 }
 
 .image_grid2 img {
     display: inline-block;
-    width: 266px;
+    width: 200px;
+    max-width: 33vw;
     cursor: pointer;
 }
 .image_grid_left {
-    left:-440px;
-    top: 400px;
+    left:-340px;
+    top: 300px;
     height: 0px;
     margin: 0px;
 }
@@ -264,6 +267,17 @@ canvas {
 
 }
 
+.figure {
+    max-width: 600px;
+    margin: auto;
+    border: 1px dashed;
+    padding: 15px;
+}
+.figure h3 {
+    margin-top: 0px;
+}
+
+/*
 img {
     max-width: inherit;
     max-height: inherit;
@@ -271,4 +285,4 @@ img {
     display:inherit;
     margin-left:inherit;
     margin-right:inherit;
-}
+}*/

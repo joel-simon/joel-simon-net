@@ -1,7 +1,7 @@
 $(function(){
 
 
-    const get_url = (p, f) => { return '/imgs/virtual-corals/corals/'+p+'/frame-'+f+'.jpeg' }
+    const get_url = (p, f) => { return '/imgs/corals/corals/'+p+'/frame-'+f+'.jpeg' }
 
     const data = {
         'options': [
@@ -20,7 +20,7 @@ $(function(){
 
         // for (var i = 0; i <= num; i++) {
         //     var $img = $('<img>').addClass('slide img_small');
-        //     $img.attr('src', '/imgs/virtual-corals/corals/'+path+'/frame-'+i+'.jpeg');
+        //     $img.attr('src', '/imgs/corals/corals/'+path+'/frame-'+i+'.jpeg');
         //     $(this).append($img);
         // }
     });

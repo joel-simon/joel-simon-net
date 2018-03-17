@@ -202,7 +202,9 @@ function init() {
     })
 
     $('.controls.add_coral p').on('click touchend', function(event) {
-        console.log('add_coral');
+
+        $(this).text('Add Another Coral')
+
         if (coral_options.length == 0) {
             alert('Can\'t add more corals.');
             return;

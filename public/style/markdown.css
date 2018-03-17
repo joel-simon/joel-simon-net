@@ -16,7 +16,7 @@ body {
 }
 
 .text_body {
-  width: 1000px;
+  width: 900px;
   max-width: 90%;
   left: 0px;
 
@@ -41,7 +41,7 @@ a:hover {
 
 video {
   max-width: 100%;
-  max-height: calc(100vh - 100px);
+  /*max-height: calc(100vh - 100px);*/
 }
 video::-webkit-media-controls-start-playback-button {
     display: none;
