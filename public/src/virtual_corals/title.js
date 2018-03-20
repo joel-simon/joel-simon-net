@@ -9,26 +9,27 @@
         var $sources = $video.children();
 
         function resize() {
+            console.log('resize');
             var height = ($title_container.height() - $h1.outerHeight(true));
             $video.css('padding-top', height*0.1);
             $video.height(height * 0.8);
-            $video.show()[0].play();
+            $video.show()
         };
 
-        $video.load(resize);
-
         /*
-            Pick a random video ID.
+        //     Pick a random video ID.
         */
-        var id = 1+ Math.floor((Math.random() * 4));
-        $sources[0].src = '/imgs/corals/58A2_g360/out'+id+'.webm';
-        $sources[1].src = '/imgs/corals/58A2_g360/out'+id+'.mp4';
+        // var id = 1+ Math.floor((Math.random() * 4));
+        // $sources[0].src = '/imgs/corals/58A2_g360/out'+id+'.mp4';
+        // $sources[1].src = '/imgs/corals/58A2_g360/out'+id+'.webm';
+
+        $video.on('loadeddata', resize);
         $video[0].load();
 
         /*
             Clicking video scrolls to animation.
         */
-        $video.on('click touchend', function(event) {
+        $video.on('click', function(event) {
             $('html,body').animate({
                 scrollTop: $animation_container.offset().top
             }, 2000);

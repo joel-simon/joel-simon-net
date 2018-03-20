@@ -1,14 +1,5 @@
 $(function(){
-
-
-    const get_url = (p, f) => { return '/imgs/corals/corals/'+p+'/frame-'+f+'.jpeg' }
-
-    const data = {
-        'options': [
-            ['2F64_evolve', 30], []
-        ]
-
-    }
+    const get_url = (p, f) => { return '/imgs/corals/corals/'+p+'/frame-'+f+'.jpeg' };
 
     $('.evolution_item').each(function() {
         var num = $(this).data('num');
@@ -30,8 +21,7 @@ $(function(){
         var slider = $(this).find(".slider")[0];
 
         slider.oninput = function() {
-            // var percent = Math.min(parseInt(this.value) / 100, 0.99);
-            var percent = Math.min(parseFloat(this.value), 0.99);
+            var percent = Math.min(parseFloat(this.value), .999);
 
             $items.each(function() {
                 var path = $(this).data('path');

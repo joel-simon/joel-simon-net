@@ -17,7 +17,7 @@
     cursor: pointer;
 }
 
-@media only screen and (min-width: 1000px) {
+@media only screen and (min-width: 800px) {
     #title_container h1 {
         font-size: 8vw;
         /*margin-top: 1em;*/

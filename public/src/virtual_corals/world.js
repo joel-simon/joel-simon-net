@@ -26,6 +26,8 @@ window.webgl_show = false;
 window.webgl_world_add_coral = add_coral;
 
 
+var use_stats = false;
+
 var coral_options = ['2F64_g488','B3DN_g111', 'H2ED_g362', 'KX43_g91',
                      'NG08_g307_pca',  'WJBI_g44', '53F2_g216', 'C0JH_g62',
                      'IV74_g85', 'LEXL_g100', 'NJFG_g183', 'Y0KA_g50',
@@ -71,20 +73,6 @@ function init_particles() {
     scene.add(particleSystem);
 }
 
-// var foo = 0;
-// function load_coral(path, x=0, z=0, ry = 0) {
-//     return new Promise(function(resolve, reject) {
-//         var coral = new CoralAnimationViewer(path);
-//         coral.loadLastFrame().then(() => {
-//             // var x = points[foo][0]*120;
-//             // var z = points[foo++][1]*120;
-//             // console.log(points[foo]);
-//             coral.setPosition(x, 0, z).setRotation(0, ry, 0).addToScene(scene);
-//             resolve(coral)
-//         }).catch(reject)
-//     })
-// }
-
 function init() {
     container = document.getElementById('webgl_container');
 
@@ -114,8 +102,10 @@ function init() {
     container.appendChild( renderer.domElement );
 
     // STATS
-    stats = new Stats();
-    container.appendChild( stats.dom );
+    if (use_stats) {
+        stats = new Stats();
+        container.appendChild( stats.dom );
+    }
 
     // CONTROLS
     controls = new THREE.OrbitControls( camera, renderer.domElement );
@@ -223,7 +213,6 @@ function init() {
         }
         onResize()
     })
-//     add_coral('coral_data/coral/CJNT_g48/')
 }
 
 function new_coral_position(coral) {
@@ -236,7 +225,6 @@ function new_coral_position(coral) {
     // var sphere = coral.dynamicMesh.geometry.boundingSphere;
     var valid_positions = [ ];
     var valid_position_distances = [];
-
 
     console.log(box);
 
@@ -294,8 +282,6 @@ function new_coral_position(coral) {
     var p2 = valid_positions[i];
     max_coral_distance = Math.max(max_coral_distance, p2.length());
     return p2;
-
-    // return null;
 }
 
 function add_coral(path) {
@@ -303,8 +289,6 @@ function add_coral(path) {
         var coral = new CoralAnimationViewer(path);
         coral.loadAllFrames().then(() => {
             var p = new_coral_position(coral);
-
-
             if (!p) {
                 return reject('Cannot add coral to reef.')
             }
@@ -314,23 +298,10 @@ function add_coral(path) {
             click_objects.push(coral.dynamicMesh.mesh);
             coral.addToScene(scene)
             corals.push(coral);
+            lookAt(coral);
             resolve(coral);
         }).catch(reject)
     })
-
-    // load_coral('coral_data/coral/2F64_g488/', 0, 0).then(function(result){
-    //     // corals = result;
-    //     for (var i = 0; i < result.length; i++) {
-    //         corals.push(result[i]);
-    //         corals[i].addToScene(scene)
-    //         click_objects.push(corals[i].dynamicMesh.mesh)
-    //     }
-    //     console.log('test');
-    //     animate();
-    //     for (var i = 0; i < elements.length; i++) {
-    //     expression
-    // }
-    // }).catch((err) => console.log(err))
 }
 
 
@@ -342,7 +313,6 @@ function onMouseMove(event) {
         $(container).css('cursor','move');
     }
 }
-
 
 function onResize() {
     var width = $(container).width();
@@ -358,7 +328,9 @@ function animate() {
     if (window.webgl_show) {
         update();
         render();
-        stats.update();
+        if (use_stats) {
+            stats.update();
+        }
         controls.update();
     }
 }
@@ -381,9 +353,7 @@ function getCoralUnderMouse( event ) {
 
     raycaster.setFromCamera( mouse, camera );
 
-    // console.time('intersectObjects');
     var intersects = raycaster.intersectObjects( click_objects );
-    // console.timeEnd('intersectObjects');
     var i;
 
     if ( intersects.length > 0 ) {
@@ -392,6 +362,18 @@ function getCoralUnderMouse( event ) {
     } else {
         return null;
     }
+}
+
+function lookAt(coral){
+    var p = coral.getCenter().clone().add(coral.getPosition());
+    var start = {x: controls.target.x, y: controls.target.y, z: controls.target.z}
+    var end = {x: p.x, y: p.y, z: p.z}
+    $(start).animate(end, {
+        duration: 500,
+        step: function(now, fx) {
+            controls.target.set( this.x, this.y, this.z );
+        }
+    });
 }
 
 function onMouseDown( event ) {
@@ -404,19 +386,11 @@ function onMouseDown( event ) {
         } else {
             coral.setFrame( 0 );
         }
+        lookAt(coral);
     } else {
 
     }
 }
-
-// function onMouseHold( event ) {
-//     var coral = getCoralUnderMouse(event);
-
-//     if (coral) {
-//         controls.target = coral.getPosition().clone();
-//         controls.target.y += 2;
-//     }
-// }
 
 function update() {
     var d = Date.now()

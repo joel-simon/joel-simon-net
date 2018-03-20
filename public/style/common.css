@@ -25,3 +25,51 @@ a {
   color: black;
   text-decoration: none;
 }
+
+
+/* Portrait */
+@media only screen
+  and (min-device-width: 320px)
+  and (max-device-width: 667px)
+  and (-webkit-min-device-pixel-ratio: 2)
+  and (orientation: portrait) {
+    body {
+      font-size: 2em;
+
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Footer and contact. */
+
+#footer {
+  position: fixed;
+  z-index: 999;
+  bottom: 0px;
+  width: 100vw;
+  background-color: white;
+  /*height: 2em;*/
+  border-top: 1px solid black;
+}
+
+#contact_container .contact_column {
+    float: left;
+    width: 25%;
+}
+
+/* Clear floats after the columns */
+#contact_container:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+#contact_container a {
+  color: black;
+  text-decoration: none;
+}
+
+#contact_container a:hover {
+  text-decoration: underline;
+}
+/* -------------------------------------------------------------------------- */

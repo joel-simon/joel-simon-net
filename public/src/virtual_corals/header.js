@@ -11,7 +11,7 @@ var animation = window.requestAnimationFrame ||
     var width, height
 
     var n_frames = [97, 103];
-    var img_aspect = [1920 / 1080, 1081 / 1358];
+    var img_aspect = [1920/1080, 1081/1358 ];
     var images = [null, null];
     var size = 0;
     var others_loaded = false;
@@ -21,10 +21,11 @@ var animation = window.requestAnimationFrame ||
 
     var $container = null;
     var $img = null;
+    var $footer = $('#footer');
     var last_frame = null;
     var last_scroll = null;
 
-    function loop() {
+    function scroll() {
         var frame, y, percent, src;
 
         var scroll = window.pageYOffset;
@@ -38,6 +39,11 @@ var animation = window.requestAnimationFrame ||
             last_frame = frame;
             src = images[ size ][ frame ].src
             $img[ 0 ].src = images[ size ][ frame ].src;
+        }
+        if (percent > 1.2) {
+            $footer.show()
+        } else {
+            $footer.hide()
         }
     };
 
@@ -57,7 +63,7 @@ var animation = window.requestAnimationFrame ||
         function incrementCounter() {
             counter++;
             // resize()
-            // loop()
+            // scroll()
             if ( counter == n-1 ) {
                 console.timeEnd('load_header');
                 if (!others_loaded) {
@@ -87,12 +93,6 @@ var animation = window.requestAnimationFrame ||
     function resize() {
 
         var $title_container = $('#title_container');
-        var $video = $title_container.find('video');
-        var $h1 = $title_container.find('h1');
-        var height = ($title_container.height() - $h1.outerHeight(true));
-        $video.css('padding-top', height*0.1)
-        $video.height(height * 0.8);
-        $video.show()[0].play()
 
         // return
         height = $(window).height();
@@ -124,7 +124,7 @@ var animation = window.requestAnimationFrame ||
         $img = $container.find('img');
         resize();
         $(window).resize( resize );
-        return $(window).scroll(loop);
+        return $(window).scroll(scroll);
         // return window.requestAnimationFrame(loop);
     });
 
