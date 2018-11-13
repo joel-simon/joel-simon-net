@@ -1,6 +1,5 @@
 
 body {
-
   margin: 0px;
 }
 
@@ -8,25 +7,25 @@ body {
 /* -------------------------------------------------------------------------- */
 
 #label_container {
-  /*overflow:auto;*/
   width: 80%;
   padding-left: 10%;
-  /*padding-right: 10%;*/
-  /*text-align: center;*/
-  /*height: 2em;*/
 }
 
 #label_container h3 {
-  /*font-weight: bold;*/
 }
 
 #project_container {
   width: 100%;
-  padding-left: 0%;
+  /*padding-left: 0%;*/
   margin-bottom: 100px;
-  margin-top: 2%;
+  margin-top: 1%;
+
 }
 
+h1 {
+  font-size: 3em;
+  margin-bottom: .25em;
+}
 
 /* -------------------------------------------------------------------------- */
 /* Labels. */
@@ -57,51 +56,44 @@ body {
 .label h3:hover {
   cursor: pointer;
   text-decoration: underline;
-  /*border: solid;*/
 }
-/*
-.label.generative:hover {
-  color: rgb(176, 172, 249);
-}
-.label.sculpture:hover {
-  color: rgb(192, 114, 234);
-}
-.label.generative:hover {
-  color: rgb(176, 172, 249);
-}*/
+
 /* -------------------------------------------------------------------------- */
 /* Projects. */
 
 .project {
-  width: 360px;
+  width: 320px;
+  transition: all .2s ease-in-out;
   display: inline-block;
   vertical-align: top;
   border: 1px solid white;
 
   padding: 2%;
-  margin-left: 2%;
-  margin-right: 2%;
+  /*margin: 3%;*/
+  /*margin-left: 2%;*/
+  /*margin-right: 2%;*/
+  position: relative;
+  margin-top: 0px;
+  margin-bottom: 0px;
+
 
 }
-
-
 
 .project p.date {
   position: absolute;
 }
 
 .project img {
-  max-width: 360px;
-  max-height: 360px;
+  max-width: 320px;
+  max-height: 320px;
 }
 
-.project {
-  transition: all .2s ease-in-out;
+.project a {
+  /*display: inline-block;*/
 }
-
-.project  {
-  margin-top: 0px;
-  margin-bottom: 0px;
+.project .project_content {
+  /*position: absolute;*/
+  /*bottom: 0px;*/
 }
 
 .show-on-hover {
@@ -111,10 +103,12 @@ body {
 
 .project:not(.no_hover):hover {
   cursor: pointer;
-  -ms-transform: scale(1.05, 1.05); /* IE 9 */
-  -webkit-transform: scale(1.05, 1.05); /* Safari */
-  transform: scale(1.05, 1.05);
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  /*-ms-transform: scale(1.1, 1.1);*/
+  /*-webkit-transform: scale(1.1, 1.1);*/
+  /*transform: scale(1.1, 1.1);*/
+  /*box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);*/
+  /*-webkit-filter: grayscale(1);*/
+  /*filter: grayscale(1);*/
   /*box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.5), 0 6px 20px 0 rgba(0, 0, 0, 0.19);*/
 }
 
@@ -128,6 +122,7 @@ body {
 
 
 .project .label {
+
   display: inline-block;
   /*float: left;*/
   font-size: 1em;
@@ -139,6 +134,7 @@ body {
   margin-top: 0px;
   margin-bottom: 0px;
 }
+
 
 .project .project_labels {
   /*position: absolute;*/

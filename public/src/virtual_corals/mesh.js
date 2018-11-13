@@ -1,6 +1,6 @@
 
 class CoralAnimationViewer {
-    constructor(path, max_points=15000) {
+    constructor(path, max_points=20000) {
         this.path = path;
         this.frame = null;
         this.num_frames = null;

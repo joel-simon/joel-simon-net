@@ -12,17 +12,15 @@
 
     "projects": [
         {
-            "name": "Alien Corals",
-            "labels": ["generative", "code", "video"],
-            "img": "imgs/corals/icon.png",
-            "hide": true,
-            "year": 2017
+            "name": "Corals",
+            "labels": ["generative", "code" ],
+            "img": "imgs/corals/icon.jpg",
+            "year": 2018
         },
         {
             "name": "Ecosystem Modelling",
             "labels": ["generative", "code", "video"],
             "img": "imgs/ecosystem-modelling/005300.jpg",
-            "hide": false,
             "description": "Visualizing ecosystem simulations",
             "year": 2017
         },
@@ -44,6 +42,13 @@
             "name": "Desk Lamp 2",
             "labels": ["lighting"],
             "img": "imgs/desk-lamp-2/icon.jpg",
+            "year": 2017
+        },
+        {
+            "name": "Evolving Floorplans",
+            "labels": ["generative", "code"],
+            "img": "imgs/evo_plans/icon.png",
+            "path": "/evo_floorplans.html",
             "year": 2017
         },
         {

@@ -66,8 +66,8 @@ h2 {
 }
 
 .text_body h1 {
-    margin: 3em;
-    margin-bottom: 1em;
+    margin-top: 2.5em;
+    /*margin-bottom: 1em;*/
 }
 
 .nav a {
@@ -98,16 +98,7 @@ canvas {
 
     width: 40px;
 }
-/* Portrait */
-@media only screen
-  and (min-device-width: 320px)
-  and (max-device-width: 667px)
-  and (-webkit-min-device-pixel-ratio: 2)
-  and (orientation: portrait) {
-    .controls {
-        width: 50px;
-    }
-}
+
 img.controls {
     cursor: pointer;
 }
@@ -130,6 +121,28 @@ img.controls {
 
 .controls.clear {
     top: 140px;
+}
+
+/* Portrait */
+@media only screen
+  and (min-device-width: 320px)
+  and (max-device-width: 667px)
+  and (-webkit-min-device-pixel-ratio: 2)
+  and (orientation: portrait) {
+    .controls {
+        width: 100px;
+    }
+    .controls.zoom-in {
+        top: 5px;
+    }
+
+    .controls.zoom-out {
+        top: 95px;
+    }
+
+    .controls.maximize {
+        top: 185px;
+    }
 }
 
 .controls.add_coral {
@@ -206,10 +219,10 @@ img.controls {
     }
 }
 
-.img_small {
-    max-height: 200px;
-    max-width: 200px;
-}
+/*.img_small {
+    max-height: 250px;
+    max-width: 250px;
+}*/
 /*
 .carousel {
     overflow-x: scroll;
@@ -255,7 +268,7 @@ img.controls {
     cursor: pointer;
 }
 .image_grid_left {
-    left:-340px;
+    left:-380px;
     top: 300px;
     height: 0px;
     margin: 0px;
@@ -268,7 +281,7 @@ img.controls {
 }
 
 .figure {
-    max-width: 700px;
+    max-width: 800px;
     margin: auto;
     border: 1px dashed;
     padding: 15px;

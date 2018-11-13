@@ -7,7 +7,7 @@
 #title_container h1 {
     font-family: 'TrajanPro', serif;
     font-weight: lighter;
-    font-size: 14vw;
+    font-size: 8vw;
     text-align: center;
     width: 100%;
     margin-bottom: 0.5em;
@@ -19,7 +19,20 @@
 
 @media only screen and (min-width: 800px) {
     #title_container h1 {
-        font-size: 8vw;
+        /*font-size: 8vw;*/
         /*margin-top: 1em;*/
+    }
+}
+
+
+/* Portrait */
+@media only screen
+  and (min-device-width: 320px)
+  and (max-device-width: 667px)
+  and (-webkit-min-device-pixel-ratio: 2)
+  and (orientation: portrait) {
+    #title_container h1 {
+       font-size: auto;
+       font-size: 14vw;
     }
 }

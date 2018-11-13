@@ -1,6 +1,6 @@
 img {
   max-width: 100%;
-  max-height: 80vh;
+  /*max-height: 80vh;*/
   margin-top: 2%;
   display:block;
   margin-left:auto;
@@ -24,9 +24,17 @@ body {
   margin: 0 auto;
   /*margin-bottom: 100px;*/
 }
+
+
 .text_body p {
-  text-align: justify;
   font-size: 1.25em;
+}
+.text_body p:not(.centered) {
+  text-align: justify;
+}
+
+.centered {
+  text-align: center;
 }
 
 .text_body a {

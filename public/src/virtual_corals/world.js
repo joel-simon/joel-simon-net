@@ -1,5 +1,5 @@
 // (function(){
-
+'use strict'
 var renderer, scene, camera;
 var mouse;
 var line;
@@ -9,7 +9,7 @@ var click_objects = [];
 
 var show_3d = true;
 var container, stats;
-var camera, scene, renderer;
+var camera, scene, renderer, controls, raycaster;
 var particleSystem;
 var particles;
 var laoder;
@@ -25,13 +25,11 @@ window.webgl_world_initiated = false;
 window.webgl_show = false;
 window.webgl_world_add_coral = add_coral;
 
+var data_root = 'https://storage.googleapis.com/joel-simon-net.appspot.com/coral_data/';
 
 var use_stats = false;
 
-var coral_options = ['2F64_g488','B3DN_g111', 'H2ED_g362', 'KX43_g91',
-                     'NG08_g307_pca',  'WJBI_g44', '53F2_g216', 'C0JH_g62',
-                     'IV74_g85', 'LEXL_g100', 'NJFG_g183', 'Y0KA_g50',
-                      '9QEM_g430', 'CJNT_g48', 'J2PQ_g320', 'NG08_g307', 'P8QV_g101'];
+var coral_options = ['2F64_g488', '3G6T_g415', '53F2_g216', '5JF8_g88', '58A2_g360', '6VNA_g115','83M6_g269', '96LG_g94', '9QEM_g430', 'B3DN_g111', 'C0JH_g62', 'CJNT_g112', 'H2ED_g362', 'H2ED_g399', 'IV74_g85', 'J2PQ_g320', 'KX43_g91', 'LEXL_g100', 'NG08_g307', 'NG08_g307_pca', 'NJFG_g183', 'P8QV_g101','UXR7_g94', 'VDVB_g252', 'WJBI_g44', 'WJBI_g92', 'Y0KA_g50']
 
 function remove(array, element) {
     var index = array.indexOf(element);
@@ -44,7 +42,7 @@ function remove(array, element) {
 function init_particles() {
     var particleCount = 500;
     particles = new THREE.Geometry()
-    particle_velocities = [];
+    var particle_velocities = [];
 
     // create the particle variables
     var pMaterial = new THREE.ParticleBasicMaterial({
@@ -137,7 +135,7 @@ function init() {
 
     init_particles();
 
-    loader = new THREE.JSONLoader();
+    var loader = new THREE.JSONLoader();
 
     loader.load( 'coral_data/half_sphere_smooth4.js', function(geometry) {
         var groundMaterial = new THREE.MeshPhongMaterial( {
@@ -191,17 +189,29 @@ function init() {
         }
     })
 
+    var loading = false;
     $('.controls.add_coral p').on('click touchend', function(event) {
-
-        $(this).text('Add Another Coral')
-
+        if (loading) {
+            return
+        }
+        loading = true;
         if (coral_options.length == 0) {
             alert('Can\'t add more corals.');
             return;
         }
+        $(this).text('loading...')
         var id = coral_options[Math.floor(Math.random() * coral_options.length)];
         remove(coral_options, id);
-        add_coral('coral_data/coral/'+id+'/');
+
+        add_coral('coral_data/coral/'+id+'/').then(() => {
+            $(this).text('Add Another Coral');
+            loading = false;
+        }).catch((error, a) => {
+            console.log('Error adding coral', error, a);
+            $(this).text('Add Another Coral');
+            loading = false;
+        });
+
         event.stopPropagation();
     })
 
@@ -222,11 +232,8 @@ function new_coral_position(coral) {
     var n_tries = 20;
     var neighbor;
     var r, a, found_collision;
-    // var sphere = coral.dynamicMesh.geometry.boundingSphere;
     var valid_positions = [ ];
     var valid_position_distances = [];
-
-    console.log(box);
 
     if (corals.length == 0) {
         max_coral_distance = Math.sqrt( box.max.x*box.max.x + box.max.z*box.max.z )*2;
@@ -285,16 +292,18 @@ function new_coral_position(coral) {
 }
 
 function add_coral(path) {
+    // var path = data_root +'2F64_g488/';
+    ga('send', 'event', 'World', 'coral');
     return new Promise(function(resolve, reject) {
         var coral = new CoralAnimationViewer(path);
         coral.loadAllFrames().then(() => {
+
             var p = new_coral_position(coral);
             if (!p) {
                 return reject('Cannot add coral to reef.')
             }
             coral.setFrame(0);
             coral.setPosition(p.x, p.y, p.z);
-            // coral.setRotation(0, Math.random()*2*Math.PI, 0);
             click_objects.push(coral.dynamicMesh.mesh);
             coral.addToScene(scene)
             corals.push(coral);

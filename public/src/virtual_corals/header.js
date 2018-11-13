@@ -25,11 +25,16 @@ var animation = window.requestAnimationFrame ||
     var last_frame = null;
     var last_scroll = null;
 
-    function scroll() {
+    function on_scroll() {
         var frame, y, percent, src;
 
         var scroll = window.pageYOffset;
         var top = $('img#haeckal').offset().top;
+
+        if (scroll == last_scroll){
+            return; //window.requestAnimationFrame(on_scroll);
+        }
+        last_scroll = scroll;
 
         percent = (scroll / top) * 1.1;
         frame = Math.min(Math.floor(percent * n_frames[size]), n_frames[size] - 1);
@@ -45,6 +50,7 @@ var animation = window.requestAnimationFrame ||
         } else {
             $footer.hide()
         }
+        // return window.requestAnimationFrame(on_scroll);
     };
 
     function load_images() {
@@ -124,8 +130,8 @@ var animation = window.requestAnimationFrame ||
         $img = $container.find('img');
         resize();
         $(window).resize( resize );
-        return $(window).scroll(scroll);
-        // return window.requestAnimationFrame(loop);
+        return $(window).scroll(on_scroll);
+        // return window.requestAnimationFrame(on_scroll);
     });
 
 })();
