@@ -12,6 +12,12 @@
 
     "projects": [
         {
+            "name": "Ganbreeder",
+            "labels": ["generative", "code", "web" ],
+            "img": "imgs/ganbreeder2.jpg",
+            "year": 2018
+        },
+        {
             "name": "Corals",
             "labels": ["generative", "code" ],
             "img": "imgs/corals/icon.jpg",
