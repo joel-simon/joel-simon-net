@@ -39,7 +39,7 @@ a {
     }
 }
 
-video {
+video, img {
   max-height: 90vh;
 }
 

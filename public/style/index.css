@@ -1,6 +1,7 @@
 
 body {
   margin: 0px;
+  background-color: #fafafa;
 }
 
 
@@ -15,10 +16,10 @@ body {
 }
 
 #project_container {
-  width: 100%;
+  /*width: 100%;*/
   /*padding-left: 0%;*/
   margin-bottom: 100px;
-  margin-top: 1%;
+  margin: 1%;
 
 }
 
@@ -35,6 +36,7 @@ h1 {
   color: gray;
   display:inline-block;
   margin-right: 1em;
+  text-transform: capitalize;
 
   -webkit-touch-callout: none; /* iOS Safari */
   -webkit-user-select: none; /* Safari */
@@ -62,21 +64,27 @@ h1 {
 /* Projects. */
 
 .project {
-  width: 320px;
+  width: 256px;
   transition: all .2s ease-in-out;
   display: inline-block;
   vertical-align: top;
-  border: 1px solid white;
-
-  padding: 2%;
-  /*margin: 3%;*/
-  /*margin-left: 2%;*/
-  /*margin-right: 2%;*/
+  margin: 10px;
   position: relative;
-  margin-top: 0px;
-  margin-bottom: 0px;
+  background-color: white;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.04);
 
 
+
+}
+
+.project .project_name {
+  margin: 0.25em;
+}
+
+.project .description {
+  margin: 0.25em;
 }
 
 .project p.date {
@@ -84,8 +92,8 @@ h1 {
 }
 
 .project img {
-  max-width: 320px;
-  max-height: 320px;
+  width: 256px;
+  max-height: 256px;
 }
 
 .project a {
@@ -96,8 +104,14 @@ h1 {
   /*bottom: 0px;*/
 }
 
+.project:hover {
+    /*box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.05);*/
+
+}
+
 .show-on-hover {
-  opacity: 0;
+
+  opacity: 0.2;
   transition: opacity 0.2s ease-in-out;
 }
 
@@ -125,7 +139,7 @@ h1 {
 
   display: inline-block;
   /*float: left;*/
-  font-size: 1em;
+  font-size: 0.8em;
   /*margin: 0px;*/
   margin-top: 0px;
   /*margin-right: 5px;*/
@@ -188,17 +202,26 @@ video {
       font-size: 2em;
 
     }
+    .project .label {
+      font-size: 0.6em;
+    }
+
+    #label_container h3 {
+      font-size: 1.5em;
+      margin-top: 0.5em;
+      margin-bottom: 0.5em;
+    }
 /*    * {
       font-weight: bold;
     }*/
     .project {
-      width: 80%;
-      margin-bottom: 10%;
+      width: calc(50% - 20px);
+      padding-bottom: 10px;
     }
     .project img {
-      min-width: 60vw;
-      /*max-width: 80%;*/
-      max-height: 50vh;
+      width: 100%;
+      max-width: inherit;
+      max-height: inherit;
 
     }
     .project h2 {
@@ -206,9 +229,14 @@ video {
       margin: 0px;
     }
 
+    .project .label h3 {
+      font-size: 1.5em;
+    }
+
     #project_container {
       width: 100%;
       padding-left: 0%;
+      margin-bottom: 20%;
     }
 
 /*    #label_container h3 {

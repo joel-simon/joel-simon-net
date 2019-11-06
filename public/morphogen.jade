@@ -1,0 +1,11 @@
+extends partials/project_page
+
+block content
+    :markdown
+        # [Morphogen Website](https://www.morphogen.io/)
+        Morphogen is a website created using multiple reaction diffusion simulations running on the GPU. The primary chemical from each simulation inhibits the other, which allows them to form stable patterns when seeded in different locations. This is just a first version and I think there is a large amount of potential for other interesting designs from the interactions of page elements and the simulations.
+
+        [Source](https://github.com/joel-simon/morphogen_website)
+
+    video(controls, loop, autoplay, width="600px")
+        source(src="https://storage.googleapis.com/joel-simon-net.appspot.com/MORPHOGEN_5.mp4")

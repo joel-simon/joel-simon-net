@@ -1,14 +1,41 @@
 extends partials/project_page.jade
 
+
+block style
+    style.
+        li {
+            text-align: left;
+        }
+
 block content
+    //- I studied computer science and fine art at Carnegie Mellon University before working on bioinformatics at Rockefeller University in NYC where I worked until 2018. I am interested in the intersection of computer science, biology and design as well as furniture-design, collaborative-creativity, sculpture and game-design.
+    //- I am
+
     :markdown
-        I studied computer science and fine art at Carnegie Mellon University before working on bioinformatics at Rockefeller University in NYC where I worked until recently. I am interested in the intersection of computer science, biology and design as well as furniture-design, collaborative-creativity, sculpture and game-design.
+        I am a multidisciplinary artist and toolmaker who studied computer science and art at Carnegie Mellon University before working on bioinformatics at Rockefeller University. I am currently pursuing [Morphogen](https://www.morphogen.io/), a generative design company and developing [Artbreeder](https://www.artbreeder.com/), a massively collaborative creative tool and network.  My works are somewhere in the region between art, design and research and inspired by the systems of biology computation and creativity.
 
-        Interviews:
+    .left(style='width:50%;float:left;')
+        :markdown
+            Interviews:
 
-        [Creators Projects - Facebook Graffiti](https://creators.vice.com/en_us/article/78exwy/now-you-can-graffiti-your-friends-facebook-walls)
+            * [Tech+Art Podcast](https://www.maketechart.com/techart-podcast-joel-simon/)
+            * [Dezeen - Evolving Floor Plans](https://www.dezeen.com/2019/01/03/evolving-floor-plans-research-joel-simon/)
+            * [Creators Projects - Facebook Graffiti](https://creators.vice.com/en_us/article/78exwy/now-you-can-graffiti-your-friends-facebook-walls)
+            * [Labocine - Ecology Modeling](https://www.labocine.com/spotlight/146)
 
-        [Labocine - Ecology Modeling](https://www.labocine.com/spotlight/146)
+            Exhibits:
+
+            * Ars Electronica 2019
+
+    .right(style='width:50%;float:left;')
+        :markdown
+            Talks:
+
+            * *Biologically Inspired* - [Recess Art](https://www.recessart.org/), May 30th
+            * *Augmenting Creativity With Massively Collaborative Creative Tools* - Bay Area Maker Faire,  May 19.
+            * Uber AI Labs - Apr 24
+            * [*Computational / Biological Design*](https://www.youtube.com/watch?v=8L1bNz4YYjg) - Rutgers University, March 13
+            * Adobe AI Labs - Feb 14
 
     br
-    img(src='/imgs/lamp_me.jpg', width=400)
+    img(src='/imgs/lamp_me2.jpg', width=600)

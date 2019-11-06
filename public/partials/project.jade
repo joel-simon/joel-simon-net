@@ -14,12 +14,13 @@ mixin project_mixin(project)
                 //- h2!=project['name']
 
             a(href=path)
-                img(src=project['img'])
+                - var title = project['name']
+                img(src=project['img'], alt=title, title=title)
 
             .project_content.show-on-hover
-                h2(style='margin-bottom:0px;margin-top:.5em;')!=project['name']
-
-                //- p!=project['description']
+                h3.project_name!=project['name']
+                if project['description']
+                    p.description!=project['description']
 
                 .project_labels
                     each label, i in project['labels']
