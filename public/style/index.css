@@ -16,10 +16,8 @@ body {
 }
 
 #project_container {
-  /*width: 100%;*/
-  /*padding-left: 0%;*/
-  margin-bottom: 100px;
   margin: 1%;
+  margin-bottom: 20%;
 
 }
 
@@ -74,9 +72,7 @@ h1 {
   border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.04);
-
-
-
+  padding-bottom: 5px;
 }
 
 .project .project_name {
@@ -236,7 +232,7 @@ video {
     #project_container {
       width: 100%;
       padding-left: 0%;
-      margin-bottom: 20%;
+
     }
 
 /*    #label_container h3 {

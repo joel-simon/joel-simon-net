@@ -7,19 +7,22 @@ mixin project_mixin(project)
         .project(class=project['labels'])
             -
                 var name = project["name"];
+                var target = ''
                 name = name.replace(/\s+/g, '-').toLowerCase();
-                var path = project['path'] ? project['path'] : '/'+name+'.html'
-
-            //- .show-on-hover
-                //- h2!=project['name']
-
-            a(href=path)
+                var path = name + '.html'
+                if (project.path) {
+                    path = project.path + '.html'
+                } else if (project.external_path){
+                    path = project.external_path
+                    target = '_blank'
+                }
+            a(href=path, target=target)
                 - var title = project['name']
                 img(src=project['img'], alt=title, title=title)
 
             .project_content.show-on-hover
                 h3.project_name!=project['name']
-                if project['description']
+                // if project['description']
                     p.description!=project['description']
 
                 .project_labels

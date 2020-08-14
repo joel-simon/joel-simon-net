@@ -12,9 +12,25 @@
 
     "projects": [
         {
-            "name": "DOD Tablets",
-            "labels": ["generative", "code", "sculpture" ],
+            "name": "Antimander",
+            "labels": ["generative", "code", "web" ],
+            "img": "imgs/download.png",
+            "year": 2020,
+            "hide": false,
+            "description": "Generative Tablets.",
+            "external_path": "http://www.antimander.org"
+        },
+        {
+            "name": "Table Lamp 4",
+            "labels": ["lighting" ],
+            "img": "imgs/table-lamp-4/icon.jpg",
+            "year": 2019
+        },
+        {
+            "name": "Neural Tablets",
+            "labels": ["generative","sculpture" ],
             "img": "imgs/tablets/icon.jpg",
+            "path": "/tablets",
             "year": 2019,
             "hide": false,
             "description": "Generative Tablets."
@@ -28,7 +44,8 @@
             "description": "Video of generative corals."
         },
         {
-            "name": "Morphogen",
+            "name": "Morphogen Site",
+            "path": "/morphogen",
             "labels": ["generative", "code", "web" ],
             "img": "imgs/morphogen.jpg",
             "year": 2019,
@@ -96,7 +113,7 @@
             "name": "Evolving Floorplans",
             "labels": ["generative", "code"],
             "img": "imgs/evo_plans/icon.png",
-            "path": "/evo_floorplans.html",
+            "path": "/evo_floorplans",
             "year": 2017
         },
         {
