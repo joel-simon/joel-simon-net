@@ -1,18 +1,22 @@
 mixin footer_mixin(project)
     #footer
-        #contact_container
-            #email.contact_column
-                p
-                    a(href="mailto:joelsimon6@gmail.com" target="_blank") Email
+        //- #home.contact_column
+            //- h2(style='text-decoration: underline;')
+            p: a(href='/')!="< Projects"
+        #about.contact_column
+            a(href="/about.html" About)
+                img(src='/imgs/icons/info.svg')
+        #email.contact_column
+            //- a(href="mailto:joelsimon6@gmail.com" target="_blank")
+            //-     img(src='/imgs/icons/mail.svg')
+            a(onclick="alert('joelsimon6@gmail.com')", style='cursor:pointer;')
+                img(src='/imgs/icons/mail.svg')
 
-            #about.contact_column
-                p
-                    a(href="/about.html" About) About
+        #github.contact_column
+            //- p
+            a(href='https://github.com/joel-simon/' target="_blank")
+                img(src='/imgs/icons/github.svg')
 
-            #github.contact_column
-                p
-                    a(href='https://github.com/joel-simon/' target="_blank") Github
-
-            #twitter.contact_column
-                p
-                    a(href='https://twitter.com/_joelsimon' target="_blank") Twitter
+        #twitter.contact_column
+            a(href='https://twitter.com/_joelsimon' target="_blank")
+                img(src='/imgs/icons/twitter.svg') 

@@ -1,21 +1,19 @@
 mixin project_mixin(project)
+    -
+        var name = project["name"];
+        var target = ''
+        name = name.replace(/\s+/g, '-').toLowerCase();
+        var path = name + '.html'
+        if (project.path) {
+            path = project.path + '.html'
+        } else if (project.external_path){
+            path = project.external_path
+            target = '_blank'
+        }
     if 'year' in project
         - project['labels'].push(project['year'])
-
     if !('hide' in project && project['hide'])
-
-        .project(class=project['labels'])
-            -
-                var name = project["name"];
-                var target = ''
-                name = name.replace(/\s+/g, '-').toLowerCase();
-                var path = name + '.html'
-                if (project.path) {
-                    path = project.path + '.html'
-                } else if (project.external_path){
-                    path = project.external_path
-                    target = '_blank'
-                }
+        .project(class=project['labels'], class=project.classes, class=name)
             a(href=path, target=target)
                 - var title = project['name']
                 img(src=project['img'], alt=title, title=title)

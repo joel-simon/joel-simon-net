@@ -12,12 +12,20 @@
 
     "projects": [
         {
+            "name": "Forms Of Life",
+            "labels": [ "generative", "code" ],
+            "img": "imgs/forms-of-life/icon.png",
+            "year": 2020,
+            "hide": false,
+            "description": ""
+        },
+        {
             "name": "Antimander",
             "labels": ["generative", "code", "web" ],
             "img": "imgs/download.png",
             "year": 2020,
             "hide": false,
-            "description": "Generative Tablets.",
+            "description": "",
             "external_path": "http://www.antimander.org"
         },
         {
@@ -29,7 +37,7 @@
         {
             "name": "Neural Tablets",
             "labels": ["generative","sculpture" ],
-            "img": "imgs/tablets/icon.jpg",
+            "img": "imgs/tablets/icon.png",
             "path": "/tablets",
             "year": 2019,
             "hide": false,
@@ -138,7 +146,7 @@
         {
             "name": "Sculpture Drop",
             "labels": ["generative", "sculpture"],
-            "img": "imgs/sculpture-drop.jpg",
+            "img": "imgs/sculpture-drop/icon.png",
             "year": 2016
         },
         {
@@ -151,7 +159,7 @@
         {
             "name": "Tanya",
             "labels": ["sculpture"],
-            "img": "imgs/tanya.jpg",
+            "img": "imgs/tanya/icon.png",
             "year": 2015
         },
         {

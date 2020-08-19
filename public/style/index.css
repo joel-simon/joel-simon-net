@@ -1,3 +1,6 @@
+* {
+  font-weight: 100;
+}
 
 body {
   margin: 0px;
@@ -16,14 +19,16 @@ body {
 }
 
 #project_container {
-  margin: 1%;
-  margin-bottom: 20%;
-
+  /* margin: 1%; */
+  /* margin: .5em;
+  margin-bottom: 20%; */
+  margin: 20px;
 }
 
 h1 {
-  font-size: 3em;
-  margin-bottom: .25em;
+  font-size: 2.5em;
+  margin: 20px;
+  /* margin-bottom: .25em; */
 }
 
 /* -------------------------------------------------------------------------- */
@@ -45,8 +50,7 @@ h1 {
                                 supported by Chrome and Opera */
 }
 #label_container h3 {
-/*  margin-bottom: 0px;
-  margin-top: 0px;*/
+  margin: 0px;
 }
 
 .label.label_hidden {
@@ -62,18 +66,25 @@ h1 {
 /* Projects. */
 
 .project {
-  width: 256px;
+  width: 264px;
   transition: all .2s ease-in-out;
   display: inline-block;
   vertical-align: top;
-  margin: 10px;
+  margin: 6px;
   position: relative;
-  background-color: white;
-  border-radius: 4px;
+  /* background-color: white; */
+  /* border-radius: 4px; */
   overflow: hidden;
-  box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.04);
+  /* box-shadow: 0 0px 6px 0 rgba(0, 0, 0, 0.05); */
   padding-bottom: 5px;
 }
+
+
+.project:hover {
+  /* box-shadow: 0 0px 8px 0 rgba(0, 0, 0, 0.3); */
+  background-color: white;
+}
+
 
 .project .project_name {
   margin: 0.25em;
@@ -88,8 +99,8 @@ h1 {
 }
 
 .project img {
-  width: 256px;
-  max-height: 256px;
+  width: 264px;
+  max-height: 264px;
 }
 
 .project a {
@@ -98,11 +109,6 @@ h1 {
 .project .project_content {
   /*position: absolute;*/
   /*bottom: 0px;*/
-}
-
-.project:hover {
-    /*box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.05);*/
-
 }
 
 .show-on-hover {
@@ -126,6 +132,14 @@ h1 {
   opacity: 1.0;
 }
 
+.project.forms-of-life img {
+  image-rendering: pixelated;
+  filter: drop-shadow(0px 0px 4px rgba(0, 0, 0, 0.4));
+}
+
+.project.neural-tablets img {
+  /* filter: drop-shadow(0px 0px 4px rgba(0, 0, 0, 0.2)); */
+}
 
 /* -------------------------------------------------------------------------- */
 /* Labels in projects. */
@@ -171,48 +185,14 @@ video {
   cursor: pointer;
 }
 
-/* -------------------------------------------------------------------------- */
 
-/* ----------- iPhone 5 & 6 ----------- */
-
-/* Portrait and Landscape */
-@media only screen
-  and (min-device-width: 320px)
-  and (max-device-width: 667px)
-  and (-webkit-min-device-pixel-ratio: 2) {
-
-  .project .show-on-hover {
-    opacity: 1.0;
-  }
-
-
-}
-
-/* Portrait */
-@media only screen
-  and (min-device-width: 320px)
-  and (max-device-width: 667px)
-  and (-webkit-min-device-pixel-ratio: 2)
-  and (orientation: portrait) {
-    body {
-      font-size: 2em;
-
+@media only screen and (max-device-width: 800px) {
+    h1 {
+      margin: 12px;;
     }
-    .project .label {
-      font-size: 0.6em;
-    }
-
-    #label_container h3 {
-      font-size: 1.5em;
-      margin-top: 0.5em;
-      margin-bottom: 0.5em;
-    }
-/*    * {
-      font-weight: bold;
-    }*/
     .project {
-      width: calc(50% - 20px);
-      padding-bottom: 10px;
+      width: calc(50% - 4px);
+      margin: 2px;
     }
     .project img {
       width: 100%;
@@ -220,37 +200,13 @@ video {
       max-height: inherit;
 
     }
-    .project h2 {
-      /*height: 2.5em;*/
-      margin: 0px;
-    }
-
-    .project .label h3 {
-      font-size: 1.5em;
-    }
-
     #project_container {
-      width: 100%;
-      padding-left: 0%;
-
+      margin-left: 2px;
+      margin-right: 2px;
     }
 
-/*    #label_container h3 {
-      font-weight: bold;
-      font-size: 3em;
-    }*/
-
-}
-
-/* Landscape */
-@media only screen
-  and (min-device-width: 320px)
-  and (max-device-width: 667px)
-  and (-webkit-min-device-pixel-ratio: 2)
-  and (orientation: landscape) {
     #label_container h3 {
-      font-size: 2em;
+      font-size: 1em;
     }
 
 }
-

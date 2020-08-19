@@ -2,11 +2,23 @@ body {
   font-size: 1.0em;
   /*font-size: 1.25em;*/
   margin: 0px;
+  margin-bottom: 50px;
+}
+
+#back-button img {
+  width: 36px;
+  height: 36px;
+  position: fixed;
+  top: 18px;
+  left: 4px;
+}
+#back-button img:hover {
+  filter: drop-shadow(0px 3px 3px rgba(0, 0, 0, 0.4));
 }
 
 * {
   font-family: 'Avenir', sans-serif;
-  font-weight: normal;
+  font-weight: 100;
   text-align: center;
 }
 
@@ -15,20 +27,20 @@ h1, h2, h3, h4 {
 }
 
 h1 {
-  /*text-align: center;*/
-  /*font-weight: bold;*/
-  /*margin-bottom: 0px;*/
-  /*font-size: 3em;*/
 }
 
 a {
   color: black;
   text-decoration: none;
 }
-
-
+.italic {
+  font-style: italic;
+}
+b {
+  font-weight: 500;
+}
 /* Portrait */
-@media only screen
+/* @media only screen
   and (min-device-width: 320px)
   and (max-device-width: 667px)
   and (-webkit-min-device-pixel-ratio: 2)
@@ -37,10 +49,21 @@ a {
       font-size: 2em;
 
     }
-}
+} */
 
 video, img {
   max-height: 90vh;
+}
+
+
+.flex-cols2 {
+  display: flex;
+}
+ 
+.flex-col {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -50,15 +73,32 @@ video, img {
   position: fixed;
   z-index: 999;
   bottom: 0px;
+  left: 0px;
   width: 100vw;
   background-color: white;
-  /*height: 2em;*/
   border-top: 1px solid black;
+  /* border-bottom: 1px solid black; */
+  display: inline-flex;
+  justify-content: center;
 }
 
-#contact_container .contact_column {
-    float: left;
-    width: 25%;
+#footer .contact_column {
+  display: flex;
+  margin-left: 12px;
+  margin-right: 30px;
+  /* width: 25%; */
+}
+
+.contact_column img {
+  width: 32px;
+  height: 32px;
+  margin: 4px;
+  margin-top: 6px;
+  display: block;
+}
+
+.contact_column img:hover {
+  filter: drop-shadow(0px 3px 3px rgba(0, 0, 0, 0.4));
 }
 
 /* Clear floats after the columns */
@@ -75,5 +115,32 @@ video, img {
 
 #contact_container a:hover {
   text-decoration: underline;
+}
+
+@media only screen and (max-width: 800px) {
+
+  .contact_column img {
+    /* width: 64px;
+    height: 64px; */
+  }
+  #back-button img {
+    border-radius: 50%;
+    background-color: #79797945;
+    backdrop-filter: blur(2px);
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 999;
+    /* border */
+  }
+
+  #footer .contact_column {
+    display: flex;
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+
+  .contact_column img {
+    width: 28px;
+    height: 28px;
+  }
 }
 /* -------------------------------------------------------------------------- */

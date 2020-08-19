@@ -1,0 +1,78 @@
+.gol-container {
+    display: inline-flex;
+    width: 100%;
+    cursor: pointer;
+    position: relative;
+    /* opacity: .8; */
+}
+.gol-container.active {
+    /* opacity: 1.0; */
+}
+.gol-container .images {
+    width: 100%;
+    display: flex;
+    opacity: .7;
+}
+.gol-container .images img {
+    width: 25%;
+    height: 100%;
+    align-self: stretch;
+    transform: scaleY(-1);
+    image-rendering: pixelated;
+    filter: drop-shadow(0px 0px 3px rgba(0, 0, 0, 0.3));
+}
+.gol-container.eight .images img {
+    width: 12.5%;
+} 
+.hidden {
+    display: none !important;
+}
+canvas.narrow {
+    height: 80%;
+}
+canvas {     
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    filter: drop-shadow(0px 0px 4px rgba(0, 0, 0, 0.5));
+}
+.no-canvas-filter {
+    /*  */
+}
+.no-canvas-filter canvas, .no-canvas-filter img {
+    filter: none !important;
+    /* box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.5); */
+}
+
+.text_body p.quote {
+    font-size: 1.1em;
+    font-style: italic;
+}
+.flex-col p {
+    margin: 20px;
+}
+.flex-col img {
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+}
+.gol-container:not(:first-of-type) {
+    margin-top: -10px;
+    margin-bottom: -10px;
+}
+
+/* a {
+    line-height: 1em;
+    display: inline-block;
+    color: #414042;
+    text-decoration: none !important;
+    border-bottom: solid 1px #414042;
+    padding: 0;
+} */
+
+@media only screen and (max-width: 800px) {
+    .flex-cols2  {
+      flex-direction: column;
+    }
+
+}

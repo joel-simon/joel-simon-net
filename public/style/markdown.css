@@ -1,4 +1,4 @@
-img {
+.text_body img {
   max-width: 100%;
   /*max-height: 80vh;*/
   /*margin-top: 2%;*/
@@ -11,11 +11,11 @@ img {
 
 }
 
-body {
+/* body {
   margin-bottom: 6em;
-}
+} */
 
-h2, h3 {
+.text_body h2, .text_body h3 {
   margin-top: 1.5em;
 }
 
@@ -51,26 +51,16 @@ h2, h3 {
   text-decoration: underline;
 }
 
-a:hover {
-  /*text-decoration: underline;*/
-}
-
 video {
   max-width: 100%;
-  /*max-height: calc(100vh - 100px);*/
 }
 video::-webkit-media-controls-start-playback-button {
-    display: none;
+  display: none;
 }
-
 
 .align_left * {
   text-align: left;
 }
-
-/*.figure p {
-  text-align: center;
-}*/
 
 strong {
   font-weight: bold;
