@@ -33,6 +33,6 @@ for root, dirs, filenames in os.walk(indir):
             imga[imga[:,:,0] == 0] = GREEN
 
             # print((imga[1:-1,1:-1,-1] == 0).sum())
-            imga[1:-1, 1:-1][imga[1:-1,1:-1,-1] == 0] = 255
+            # imga[1:-1, 1:-1][imga[1:-1,1:-1,-1] == 0] = 255
 
             cv2.imwrite(os.path.join(root, '+'+f), imga)

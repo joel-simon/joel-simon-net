@@ -7,7 +7,7 @@ const create_shader = (regl, buffers, map_texture) => ({
             varying vec2 uv;
             uniform vec2 size;
             void main() {
-                if (texture2D(map_texture, uv).r == 1.0) {
+                if (texture2D(map_texture, uv).a == 0.0) {
                     discard;
                 }
                 float n = 0.0;
@@ -43,7 +43,7 @@ const create_shader = (regl, buffers, map_texture) => ({
             const vec3 GREEN2 = vec3(158.0/256., 224.0/256., 170.0/256.);
             const vec3 BLACK = vec3(0.0);
             void main() {
-                if (texture2D(map_texture, uv).r == 1.0) {
+                if (texture2D(map_texture, uv).a == 0.0) {
                     discard;
                 }
                 float state = texture2D(prevState, uv).r;
