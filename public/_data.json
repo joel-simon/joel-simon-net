@@ -12,6 +12,14 @@
 
     "projects": [
         {
+            "name": "Artbreeder Interviews",
+            "labels": [ "generative", "web", "video" ],
+            "img": "imgs/ab_interviews/icon.png",
+            "year": 2020,
+            "hide": false,
+            "description": ""
+        },
+        {
             "name": "Forms Of Life",
             "labels": [ "generative", "code" ],
             "img": "imgs/forms-of-life/icon.png",
