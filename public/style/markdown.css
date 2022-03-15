@@ -47,7 +47,8 @@
 
 .text_body a {
   /*color: rgb(176, 172, 249);*/
-  color: gray;
+  /* color: gray; */
+  color: #4f4f4f;
   text-decoration: underline;
 }
 

@@ -12,12 +12,36 @@
 
     "projects": [
         {
+            "name": "About",
+            "labels": [ ],
+            "img": "imgs/lamp_me_square.jpg",
+            "year": null,
+            "hide": false,
+            "description": "Hi, I'm Joel",
+            "path": "/about"
+        },
+        {
+            "name": "Derivative Works",
+            "year": 2020,
+            "labels": [ "generative", "web", "code" ],
+            "img": "imgs/derivative-works-1.jpg",
+            "external_path": "https://derivative.works",
+            "description": "Generative face collages using machine learning."
+        },
+        {
+            "name": "Generative Portraits",
+            "year": 2020,
+            "labels": [ "generative", "web", "code" ],
+            "img": "imgs/evo-portraits/icon2.png",
+            "description": "Generative faces using genetic algorithms."
+        },
+        {
             "name": "Artbreeder Interviews",
             "labels": [ "generative", "web", "video" ],
-            "img": "imgs/ab_interviews/icon.png",
+            "img": "imgs/ab_interviews_icon.png",
             "year": 2020,
             "hide": false,
-            "description": ""
+            "description": "Generative video of interviews with members of the Artbreeder community about how they are using machine learning and Artbreeder in their creative practices."
         },
         {
             "name": "Forms Of Life",
@@ -25,7 +49,7 @@
             "img": "imgs/forms-of-life/icon.png",
             "year": 2020,
             "hide": false,
-            "description": ""
+            "description": "Experimental generative architecture for artificial life."
         },
         {
             "name": "Antimander",
@@ -33,14 +57,23 @@
             "img": "imgs/download.png",
             "year": 2020,
             "hide": false,
-            "description": "",
-            "external_path": "http://www.antimander.org"
+            "external_path": "http://www.antimander.org",
+            "description": "A research paper, interactive blog and open-source library for fighting gerrymandering via generative methods."
+        },
+        {
+            "name": "Reaction Diffusion 3D",
+            "year": 2020,
+            "img": "imgs/webgl-rd.png",
+            "labels": ["code", "web"],
+            "external_path": "https://joels-share.s3.amazonaws.com/rd_shapes/index.html",
+            "description": "View a 3D reaction diffusion simulation in the browser."
         },
         {
             "name": "Table Lamp 4",
             "labels": ["lighting" ],
             "img": "imgs/table-lamp-4/icon.jpg",
-            "year": 2019
+            "year": 2019,
+            "description": "Table lamp."
         },
         {
             "name": "Neural Tablets",
@@ -49,7 +82,7 @@
             "path": "/tablets",
             "year": 2019,
             "hide": false,
-            "description": "Generative Tablets."
+            "description": "An extension of my Dimensions of Dialogue set in clay tablets."
         },
         {
             "name": "Coral Video",
@@ -57,7 +90,7 @@
             "img": "imgs/coral_video/icon.jpg",
             "year": 2019,
             "hide": false,
-            "description": "Video of generative corals."
+            "description": "A music video of my Corals project."
         },
         {
             "name": "Morphogen Site",
@@ -75,13 +108,13 @@
             "img2": "imgs/dod/grid_3x3.jpg",
             "year": 2018,
             "hide": false,
-            "description": "Neural art experiments."
+            "description": "Experiments inspired by early proto-writing systems such as cuneiform and hieroglyphs. Here, new writing systems are created by challenging two neural networks to communicate information via images"
         },
         {
             "name": "Ganbreeder",
             "labels": ["generative", "code", "web" ],
             "img": "imgs/ganbreeder2.jpg",
-            "description": "Breed images collaboratively.",
+            "description": "A website to breed images collaboratively.",
             "year": 2018
         },
         {
@@ -108,7 +141,7 @@
             "name": "Figuration",
             "labels": [ "video"],
             "img": "imgs/figuration.jpg",
-            "description": "A si-fi short film.",
+            "description": "A si-fi short film made during the Imagine Science film festival.",
             "year": 2017
 
         },
@@ -130,7 +163,8 @@
             "labels": ["generative", "code"],
             "img": "imgs/evo_plans/icon.png",
             "path": "/evo_floorplans",
-            "year": 2017
+            "year": 2017,
+            "description": "Floorplans optimized with a custom genetic algorithm."
         },
         {
             "name": "Simon Lamps",
@@ -155,7 +189,8 @@
             "name": "Sculpture Drop",
             "labels": ["generative", "sculpture"],
             "img": "imgs/sculpture-drop/icon.png",
-            "year": 2016
+            "year": 2016,
+            "description": "Simulating the destruction of my sculptures by being dropped in a fracture simulation."
         },
         {
             "name": "Table lamp 3",
@@ -168,7 +203,8 @@
             "name": "Tanya",
             "labels": ["sculpture"],
             "img": "imgs/tanya/icon.png",
-            "year": 2015
+            "year": 2015,
+            "description": "Clay figure sculpture cast in plaster."
         },
         {
             "name": "Table lamp 2",
@@ -180,7 +216,8 @@
             "name": "Facebook Graffiti",
             "labels": ["code", "web"],
             "img": "imgs/fb-graffiti.jpg",
-            "year": 2015
+            "year": 2015,
+            "description": "A collaborative anarchist art making chrome extension."
         },
 
         {
@@ -193,25 +230,29 @@
             "name": "Slice",
             "labels": ["generative", "sculpture", "code"],
             "img": "imgs/slice.jpg",
-            "year": 2014
+            "year": 2014,
+            "description": "Parametric geometric sculpture."
         },
         {
             "name": "Graph Contraction",
             "labels": ["generative", "code", "sculpture"],
             "img": "imgs/graph-contraction/graph-contraction.png",
-            "year": 2014
+            "year": 2014,
+            "description": "Graph contraction algorithms applied to 3D meshes."
         },
         {
             "name": "Maria",
             "labels": ["sculpture"],
             "img": "imgs/maria/icon2.png",
-            "year": 2013
+            "year": 2013,
+            "description": "A life size figure sculpture cast in plaster."
         },
         {
             "name": "Image To Paint",
             "labels": ["generative", "code"],
             "img": "imgs/image-to-paint/icon.jpg",
-            "year": 2012
+            "year": 2012,
+            "description": "Software to convert an image to strokes."
         },
         {
             "name": "Head in Hands",
@@ -229,7 +270,8 @@
             "name": "Small-talk Robot",
             "labels": ["code"],
             "img": "imgs/smalltalk/smalltalk_square.jpg",
-            "year": 2012
+            "year": 2012,
+            "description": "A robot that will make small talk with the viewer."
         },
         {
             "name": "Mosaic Table",

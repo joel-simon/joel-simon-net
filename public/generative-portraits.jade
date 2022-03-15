@@ -1,0 +1,13 @@
+
+extends partials/project_page
+
+block content
+    .text_body
+        h1 Generative Portraits
+        p
+            | A short experiment optimizing strokes with a genetic-algorithm to be recognized by a face detector. Each &apos;genome&apos; is a list of bezier control points and the objective function was the dlib face classifier.
+        img(src='/imgs/evo-portraits/grid.png' style='filter:invert(1)')
+        p
+            | In the above images the objective function was a composite of accuracy - number_control_points. Below are the results of a multi objective optimization (NSGA2) on accuracy and number of control points.
+        img(src='/imgs/evo-portraits/grid2.jpg' style='filter:invert(1)')
+        img(src='/imgs/evo-portraits/max-faces.jpg' style='filter:invert(1)')

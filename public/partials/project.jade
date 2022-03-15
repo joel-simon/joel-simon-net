@@ -14,15 +14,19 @@ mixin project_mixin(project)
         - project['labels'].push(project['year'])
     if !('hide' in project && project['hide'])
         .project(class=project['labels'], class=project.classes, class=name)
+        
             a(href=path, target=target)
-                - var title = project['name']
-                img(src=project['img'], alt=title, title=title)
-
+                .preview-container
+                    - var title = project['name']
+                    img(src=project['img'], alt=title, title=title)
+                    .description-container
+                        if project['description']
+                            p.description!=project['description']
+                    //- else 
+                    //-     p.description Lorem ipsum dolor sit amet consectetur adipisicing elit. Repellat, alias. Recusandae asperiores repellat ullam dolore reiciendis. Atque tempore ipsa sit id temporibus velit quisquam inventore. Esse at aspernatur minima rem.
             .project_content.show-on-hover
                 h3.project_name!=project['name']
-                // if project['description']
-                    p.description!=project['description']
-
+                
                 .project_labels
                     each label, i in project['labels']
                         +label_mixin(label)
