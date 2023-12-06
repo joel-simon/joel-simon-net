@@ -1,0 +1,121 @@
+extends ../partials/project_page.jade
+
+block meta_tags
+    script(src='/src/lazy-load-images.js')
+
+block style
+    style.
+        li {
+            text-align: left;
+        }
+        .row {
+            display: flex;
+            //- flex-wrap: wrap;
+        }
+        .row img {
+            display: flex;
+        }
+        .column2 {
+            //- max-width: 50%/;
+            display: flex;
+            flex-direction: column;
+            //- max-height: 20vh;
+        }
+        .column3 {
+            //- max-width: calc(33% - 4px);
+            //- max-height: 20vh;
+            //- width: 33%;
+            display: flex;
+            flex-direction: column;
+            margin: 1px;
+        }
+        .column3 img {
+            display: flex;
+            //- object-fit: contain;
+            object-fit: cover;
+        }
+        p {
+            text-align:center;
+        }
+
+mixin imageBlock(images, description)
+    .row
+        each filename in images
+            .column3(style='')
+                img.lazy(
+                    src="/lamps/ceramic-lamp/placeholder.jpeg"
+                    data-srcset='/lamps/ceramic-lamp/process/'+filename+'.jpeg'
+                )
+    if description.length
+        p(style='margin-top:8px')=description
+
+block content
+    h1 Ceramic Lamp 1
+    p.centered stoneware, porcelain, acrylic, LED's. 2022
+
+    
+    .row
+        .column2
+            img(src='/lamps/ceramic-lamp/IMG_4581.jpg')
+        .column2
+            img(src='/lamps/ceramic-lamp/IMG_4587.jpg')
+
+    P For several years I have been making box lamps out of rice paper and curved wood. Last year I decided to experiment with more 3-dimensional forms and explore mould making to rapidly create multiple variations. During the pandemic it was also very helpful to have more time to work off screen. The above is the first completed lamp and multiple combinations of glazes, clays and rice paper are upcoming.
+    //- 'IMG_3803'
+    
+    
+  
+    
+    h1 Process
+    //- p.centered Below is the full processfrom casting to initial doodle.
+    
+    //- IMG_3734.jpeg
+    //- IMG_4580
+    +imageBlock([ 'IMG_3734','IMG_2928', 'IMG_2963'], 'I keep oil clay on my desk to occupy my hands while on video calls. Sometimes I look down and see an interesting form has emerged accidentally. The small one (above-left) was the original seed for the lamp. I then created sketches and an armature to flesh out the form. It took a very long time to get the curves to harmonize together the way I wanted.')
+    //- h2 Casting
+    p Background - slip casting is a traditional process where a plaster mould is made and liquefied clay (slip) poured in. The plaster acts like a sponge and absorbs moisture from the clay, leaving a solid and hollow form. 
+
+    +imageBlock(['IMG_3596','IMG_3599', 'IMG_3614'], 'Once the clay was sculpted a plaster mould had to be build. This was my first time slip casting and it was a bit of a puzzle to design an assembly with the fewest pieces. I filled in the center part first which was a little unusual. The extensions to the center piece were added on afterwards. Those will support it inside the larger mould.')
+    //- The first step in slip casting is to cover all surfaces in murphey\'s oil that should not bind to the plaster. 
+    +imageBlock(['IMG_3680','IMG_3688','IMG_3689'], '')
+    +imageBlock(['IMG_3690','IMG_3707','IMG_3708'], 'I made several L-shaped wood pieces that could be clamped into a box for casting the rest of the mould. The pour was done in two parts so that I could create a terraced form to reduce the mass. All wood and existing plaster had to be thoroughly covered in layers of murphey\'s oil soap to prevent binding to the new plaster. Once dried the metal of the armature was cut to remove the wood.')
+    
+    +imageBlock(['IMG_3722','IMG_3725','IMG_3726'], 'To create the bottom piece clay extensions were added to the lamp bottom that would serve as entrances to the mould and to give the mould some buffer space. The mould needs extra room so the slip can shrink during casting. Holes were carved to create mounting points between the plaster main and bottom pieces.')
+    //- 'IMG_3730',
+    +imageBlock(['IMG_3729','IMG_3731'],'The clay was then extracted and the mould cleaned. The clay was soaked so it would expand to help remove the plaster. The inner piece didn\'t work out perfectly so I had to manually sculpt the top of the curve back on in plaster.')
+    //- img(style='max-width:600px', src='/lamps/ceramic-lamp/process/IMG_3731.jpeg')
+    //- p The clay was then extracted and the mould cleaned. The clay was soaked so it would expand to help remove the plaster. The inner piece didn\'t work out perfectly so I had to manually sculpt the top of the curve back on in plaster.'
+
+    +imageBlock(['IMG_3852', 'IMG_3778','IMG_3853',], 'Left: Pouring the slip. The mould needs to be rotated to prevent air bubbles and more slip added every few minutes as the slip rapidly shrinks due to moisture absorption. Center: The first attempt was a failure since I based the timings on number I found online. This mould is much larger and retains moisture longer so the slip needs 3 hours before first pour and 2-3 days before it\'s removed from the mould. Thankfully this clay was able to be recycled. Right: Another failure from slip that was too thick before pouring and became solid; thankfully I was able to carve out the center manually to save it.')
+
+    +imageBlock(['IMG_3818', 'IMG_3856'], 'A successful casting and extraction. There is still work to be done smoothign the curves, cleaning the edges and cutting a hole in the top.')
+    //- - var castingImages = ['IMG_3818', 'IMG_3856'];
+    //- .row
+    //-     each filename in castingImages
+    //-         .column3(style='')
+    //-             img.lazy(
+    //-                 src="/lamps/ceramic-lamp/IMG_4581.jpg"
+    //-                 data-srcset='/lamps/ceramic-lamp/process/'+filename+'.jpeg'
+    //-             )
+    //-             img.lazy(src='/lamps/ceramic-lamp/process/'+filename+'.jpeg')
+    +imageBlock(['IMG_3858', 'IMG_4056' ], '')
+    p(style='margin-top:8px')
+        | Left: dried clay ready to be fired. Right: fired pieces painted with glaze to be fired again. The lighter color is <a target="_blank" href="https://www.theceramicshop.com/product/7436/green-patina-6-lb-dry/">Green Patina</a> and the brown color is <a target="_blank" href="https://www.theceramicshop.com/product/10901/green-ash-8-oz-w/">Green Ash.</a>
+
+    +imageBlock(['IMG_4086', 'IMG_4103' ], 'Of the first two fired one turned out alright (with some unfortunate distortions) and the other had a serious crack and uneven glaze. I had only painted the outside with glaze but was advised painting the inside as well may help avoid warping during firing.')
+    
+    +imageBlock(['IMG_4573', 'IMG_4567', 'IMG_4572' ], 'Finally, an acrylic support was built with LED\'s and epoxied to the base. Then, the acrylic box was assembled with acrylic cement before having the rice paper attached. The box is sprayed with adhesive and the paper is soaked, enlarging it, so that it tightens once attached to prevent any bubbling.' )
+
+    p As of writing two pieces have made it out of the kiln, I will keep testing combinations of clay types, glazes and rice papers also have red terracotta slip on the way.
+
+    p And that's it! Thanks to everyone who helped during the process :) Especially Laura, Chia, Olivia and Vero for helping me to transport lamp bases to the potters studio in Berkeley.
+    
+    
+
+    .row
+        .column2
+            img(src='/lamps/ceramic-lamp/process/friends/IMG_4050.jpeg')
+        .column2
+            img(src='/lamps/ceramic-lamp/process/friends/IMG_3892.jpeg')
+
+    br

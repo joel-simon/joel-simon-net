@@ -21,6 +21,22 @@
             "path": "/about"
         },
         {
+            "name": "New Words",
+            "year": 2023,
+            "path": "new-words",
+            "labels": [ "generative"],
+            "img": "imgs/new-words/cover4.webp",
+            "description": "Expanding the english language."
+        },
+        {
+            "name": "Ceramic Lamp 1",
+            "year": 2022,
+            "path": "lamps/ceramic-lamp",
+            "labels": [ "lighting", "sculpture" ],
+            "img": "lamps/ceramic-lamp/icon.png",
+            "description": "Learning the process of slip casting."
+        },
+        {
             "name": "Derivative Works",
             "year": 2020,
             "labels": [ "generative", "web", "code" ],

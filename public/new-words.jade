@@ -1,0 +1,207 @@
+extends partials/project_page
+
+block meta_tags
+    meta(charset="utf-8")
+    - var domain = 'http://www.joelsimon.net/';
+    //- meta(content="width=device-width, maximum-scale=1, user-scalable=no" name="viewport")
+    meta(property="og:title", content="New Words")
+    meta(property="og:description", content="New Words. An art/research work by Joel Simon & Ryan Murdock.")
+    meta(property="og:image", content=domain+'imgs/new-words/preview.jpg')
+    meta(property="og:image:width", content="1600")
+    meta(property="og:image:height", content="772")
+    meta(property="og:image:type", content="image/jpeg")
+    meta(property="og:url", content='http://joelsimon.net/new-words.html')
+    meta(name="twitter:card", content="summary_large_image")
+    meta(name="twitter:creator", content="@_joelsimon")
+    meta(name="twitter:text:title", content="New Words")
+    meta(name="twitter:image", content=domain+'imgs/new-words/preview.jpg')
+    meta(name="Description", content="New Words. An art/research work by Joel Simon.")
+    link(rel='stylesheet', href='/style/new-words.css')
+    script. 
+        window.addEventListener("load", (event) => {
+            const words = document.querySelectorAll('.new-word')
+            for (const word of words) {
+                const img = word.querySelector('img.volume')
+                const audio = word.querySelector('audio')
+                const name = word.dataset.name
+                function clickHandler() {
+                    audio.play()
+                    //- const soundEffect = new Audio();
+                    //- soundEffect.autoplay = true;
+
+                    // onClick of first interaction on page before I need the sounds
+                    // (This is a tiny MP3 file that is silent and extremely short - retrieved from https://bigsoundbank.com and then modified)
+                    //- soundEffect.src = "/new_words/audio/"+name.toLowerCase()+".mp3"
+
+                    //- console.log('on click!', soundEffect)
+                    // later on when you actually want to play a sound at any point without user interaction
+                    //- soundEffect.src = 'path/to/file.mp3';
+                }
+                //- if (audio) {
+                //- }
+                img.addEventListener("click", clickHandler)
+                img.addEventListener("touchstart", clickHandler)
+                //- console.log(img, audio)
+            } 
+        });
+    //- script(defer, src='/src/virtual_corals/world.js')
+
+mixin imageWithDefinition(word)
+    .new-word(data-name=word.name)
+        //- .new-word-text
+        //-     p.title=word
+        //- img(src="/imgs/new-words/"+word.toLowerCase()+'.jpg')
+        .image(style='background: url("/imgs/new-words/'+word.name.toLowerCase()+'.jpg")')
+        .new-word-text
+            .title_block(style='display:flex; width:fit-content;align-items:center;')
+                p.title=word.name
+                img.volume(src="/imgs/icons/volume_up.png", width=48, height=48, style='width:28px;height:28px; cursor: pointer;')
+                audio(src="/new_words/audio/"+word.name.toLowerCase()+".mp3", preload="auto") 
+           
+            //- p.type adjective
+            p.name=word.definition
+            if word.phonetic
+                p.phonetic="[ "+word.phonetic+" ]"
+            if word.usage
+                p 
+                    |#[strong Usage:] 
+                    span=word.usage
+script.
+
+block content
+
+block post_content
+    .text_body
+        :markdown
+            # New Words
+            New Words is a speculative research project exploring the use of machine learning for the evolution of language. Large language models (LLM's) are fantastic at capturing our language as it currently is - but language is constantly evolving and adapting. Can machine learning help us create something truly new and  unbounded by its training data?
+
+            A collaboration with [Ryan Murdock](https://rynmurdock.github.io/) 
+
+    h2 Samples
+    .new-words-container 
+        each word in public.new_words._data
+            +imageWithDefinition(word)
+        
+    .text_body
+        h2 Background
+
+        .div.two-col-container(style='')
+            .two-column
+                //- h3 Ryan
+                p #[strong Ryan:] My part of this project started with images, asking: how would a CLIP model caption an image given severe restraints on its vocabulary that were progressively tightened? Providing the constraint that no typical description could be applied turned into a sort of forced novelty search, testing how far these limits could be pushed while still producing a fitting caption. For example, the image below was titled 'Menstruhaunted Rainfall' (2021) using this method with the constraint that no obvious words like "tree" or "blood" that first come to mind could be used. As is often the case for humans, constraints can provide a clear path towards more interesting results. 
+                img(src='/imgs/new-words/fasdfasd.jpg', style='height: 300px;')
+
+            .two-column
+                //- h3 Joel 
+                p  #[strong Joel:] My earlier works - Dimensions of Dialogue (#[a(href='/dimensions-of-dialogue.html') part1] and #[a(href='/tablets.html') part2 - tablets]) - were attempts to explore how machine learning networks could create new and emergent language artifacts via relatively simple rules and new ML architectures. This was part of a small wave of research exploring data-free generative ML. The rise of LLM's has many implications for language, but are they capable of truly new things or merely using the existing language frozen? When asked, ChatGPT is unable to invent new works beyond simple portmanteaus. This work is motivated by the organic & social evolution of language. Generative technology is at its best when it can inspire us with the possibilities of what can be.
+                img(src='/imgs/tablets/IMG_9727.jpg', style='height: 300px;')
+
+
+        h2 Methodology
+        :markdown
+            ### **Part 1** - Discover candidate phrases or word spaces.
+
+            To generate candidate phrases we surveyed sparse areas of clip space and also manually selected phrases by exploring known words in other language or common english expressions without words.
+            
+            **Discovering empty clip spaces:** All english nouns, verbs and adjectives were embedded into clip-text space to form the "word-set." Then, 1000 random "probe" embeddings were generated to form the "probe-set." Each probe was iteratively moved to the midpoint of its nearest neighbors in the word-set until convergence. Then, elements of the probe-set with the highest average distance to their nearest neighbors in the word set were selected and manually filtered. These words were the midpoints of large empty spaces.
+
+            ### **Part2** - Generate
+
+            After we've found the phenomenon that needs word, we create a set of learnable parameters that each represent one word in CLIP's vocabulary for each token we want to learn. We then use the [Gumbel Softmax Trick](https://sassafras13.github.io/GumbelSoftmax/) to map each set of parameters to a single possible CLIP token, and optimize the cosine similarity of the produced CLIP embedding and whatever other image/text embedding we like. We constrain the model to use words outside of the description and to only learn a few tokens without spaces in them.
+            
+            [Hard Prompts Made Easy by Wen et al.](https://arxiv.org/abs/2302.03668) uses a similar approach but approximates  gradients to obtain real word embeddings. Before Wen et al., RiversHaveWings & I separately found that the Gumbel Softmax trick works & separately decided not to release notebooks due to bias concerns.
+
+
+            ## Future work
+            
+            **Vector arithmetic:** We can also do Word2Vec-styled addition and subtraction of embeddings, e.g. learning what maps in CLIP space from "humans" minus "beasts", producing the approximate difference between the two concepts (which is, optimistically per the system, "ethics").
+            
+            **Language games between language models:** The original plan (out of scope for a one day hack) was to use dynamically generated conbersations between existing language model. Given multiple candidate words a language model would have to correctly guess which word was assigned to the given meaning out of a set of random words. This would ensure the new words were vaguely guessable. There is also the goal of modeling language evolution within simualtions of agent-based social networks.
+
+        :markdown
+            ## Acknowledgments 
+            This project was done while Joel & Ryan were residents at [Stochastic Labs](https://stochasticlabs.org/) summer 2023 residency on AI and specifically during a sunday hackathon at [replicate](https://twitter.com/replicate/status/1704207937307357547). 
+        
+        .padding(style='height:24px;')
+    //- img(src="/imgs/dod/dimensions0.jpg", style="width:100%;max-width:600px;")
+
+    //- :markdown
+    //-     Above: two entities from Jan Švankmajer's [*Dimensions of Dialogue*](https://vimeo.com/116020064) that have learned their own language.
+
+    //- h2 1) Learning a language of 100 characters
+    //- p The 'information' the first neural network is communicating is a 100-length vector with one of the values as a one - ex: [0, 0, 1, 0]
+    //- img(src="/imgs/dod/grid3.jpg", width="100%")
+    //- p Above are samples of twenty five characters from each of six different languages. Each language was produced by re-running the neural networks with the same parameters. Each language is a distinct, structured visual system, often with micro and macro structures. The larger forms are a method of being resilient to the noise. The size of the forms vary with the amount of noise.
+
+    //- h2 2) Learning languages with 10,000 characters in color
+    //- img(src="/imgs/dod/grid-color.jpg", width="100%")
+    //- p From left to right are: high, medium and low amount of noise. Adding color did not generally change the output and most languages became dual colored.
+
+    //- h2 3) Learning data vectors
+    //- p Here, rather than each image being one character (one-hot encoding), each image encodes a vector of information. With 20 dimensions there are over a million possibilities - ex: [1, 0, 1, 0] The animations represent the evolution of the characters with training.
+    //- .img_container(style='width:100%;display:inline-block;')
+    //-     img(src="/imgs/dod/gif/binary_1.gif", width="33%", style='float:left;')
+    //-     img(src="/imgs/dod/gif/binary_2.gif", width="33%", style='float:left;')
+    //-     img(src="/imgs/dod/gif/binary_4.gif", width="33%", style='float:left;')
+    //- p By examining the output of specific input we can try to understand how the languages work. Below the first three of the twenty dimensions are varied.
+    //- img(src="/imgs/dod/vectors.svg", width="100%")
+    //- p We can observe some patterns, for example, the first dimension of the second language is represented with a type of macron (bar above the letter).
+
+    //- h2 4) Learning words
+    //- P Next, the networks were challenged to learn not just distinct characters but English words. The words are fed through a word-to-vector library (trained on Wikipedia) before being given to the networks. These vectors are the 'ideas' that must be communicated.
+    //- img(src="/imgs/dod/gif/w2v1.gif", width="100%")
+    //- img(src="/imgs/dod/gif/w2v2.gif", width="100%")
+
+    //- :markdown
+    //-     The networks did extremely well, of the top 10,000 words only about 200 were lost in translation.
+    //-     Some examples:
+    //-     all-they,
+    //-     three-four,
+    //-     now-they,
+    //-     tuesday-monday,
+    //-     five-four,
+    //-     wednesday-monday,
+    //-     thursday-monday,
+    //-     however-not,
+    //-     six-four,
+    //-     took-after,
+    //-     see-what,
+    //-     does-you,
+    //-     came-when,
+    //-     march-june,
+    //-     come-what,
+    //-     july-june,
+    //-     although-though,
+    //-     april-june,
+    //-     already-have,
+    //-     though-even,
+    //-     others-they,
+    //-     ...
+
+    //-     ### Similar concepts produce somewhat similar images
+
+    //- img(src="/imgs/dod/name_chart.svg", style="width:100%;max-height:40vh;")
+
+    //- //- img(src="/imgs/dod/dimensions0.jpg", style="width:100%;max-width:500px;")
+    //- :markdown
+    //-     ##5) Lastly, learning language
+    //-     A document to vector model was trained on [300,000 lines of movie dialogue](https://www.cs.cornell.edu/~cristian/Cornell_Movie-Dialogs_Corpus.html) and those vectors were given to the networks. Below are examples with random sentences from the database.
+    //- img(src="/imgs/dod/gif/d2v.gif", width="100%")
+    //- img(src="/imgs/dod/gif/d2v2.gif", width="100%")
+    //- p Any sentence can be given to the first network. By also giving components of the sentence we can try to see what's going on.
+    //- img(src="/imgs/dod/vector3.svg", style="width:100%;max-height:40vh;")
+
+    //- :markdown
+    //-     ##Reflections and future work
+    //-     The intent of this work was for me to get my feet wet with custom neural networks and think more about their poetics. While the original intention was more about language I think it turned out to be more about typography and calligraphy. Writing systems, while emergent pieces of culture, are also results of optimization processes to produce images that are understandable (mutually distinctive) and robust to noise.
+
+    //-     Further work with language could explore its adversarial and collaborative nature. We  communicate information while also [playing games](http://www.ericberne.com/games-people-play/) with our language. Additionally, language is constantly evolving. Networks of neural networks could have each network acting in both collaborative and adversarial ways. One network may try to communicate information to one and disinformation to another using the same characters. The result could be an unstable, constantly shifting language with in-groups attempting to evolve their own language faster than it could be disseminated.
+
+    //-     While these images a very low res and crude, I could possibly see custom designed QR codes being an interesting application. Also, it might be interesting to create a custom typeface optimized for JPEG compression and also readability.
+
+    //- img(src="/imgs/dod/dimensions22.jpg", style="width:100%;max-width:600px;")
+    //- p Above: an example of a pair of neural networks that are adversarial or have simply not learned how to communicate well.
+
+    //- :markdown
+    //-     ## [Source Code](https://github.com/joel-simon/dimensions-of-dialogue)
