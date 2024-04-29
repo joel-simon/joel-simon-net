@@ -5,6 +5,7 @@ export const labels = [
     'sculpture',
     'code',
     'lighting',
+    'AI',
     'web',
     // 'tool'
     // 'video'
@@ -21,10 +22,17 @@ export const projects: Project[] = [
         path: '/about'
     },
     {
+        name: 'Ceramic Lamp 2',
+        year: 2023,
+        labels: ['lighting', 'sculpture'],
+        img: 'imgs/thumbnails/ceramic-lamp-2.jpeg',
+        description: 'Hand built ceramic lamp.'
+    },
+    {
         name: 'LatentScape',
         year: 2023,
         externalPath: 'https://latentscape.com',
-        labels: ['web', 'code'],
+        labels: ['web', 'code', 'AI'],
         img: 'imgs/thumbnails/latentscape.jpg',
         description: 'A virtual world for exploring and creating images with others.'
     },
@@ -32,7 +40,7 @@ export const projects: Project[] = [
         name: 'New Words',
         year: 2023,
         path: 'new-words',
-        labels: ['generative'],
+        labels: ['generative', 'code', "AI"],
         img: 'imgs/new-words/cover4.webp',
         description: 'Expanding the english language.'
     },
@@ -45,9 +53,16 @@ export const projects: Project[] = [
         description: 'Learning the process of slip casting.'
     },
     {
+        name: 'GAN Portraits',
+        year: 2021,
+        labels: ['generative', 'code', 'AI'],
+        img: 'imgs/thumbnails/gan-portrait.jpg',
+        description: 'Generative face collages using machine learning.'
+    },
+    {
         name: 'Derivative Works',
         year: 2020,
-        labels: ['generative', 'web', 'code'],
+        labels: ['generative', 'web', 'code', 'AI'],
         img: 'imgs/derivative-works-2.jpg',
         externalPath: 'https://derivative.works',
         description: 'Generative face collages using machine learning.'
@@ -103,7 +118,7 @@ export const projects: Project[] = [
     },
     {
         name: 'Neural Tablets',
-        labels: ['generative', 'sculpture'],
+        labels: ['generative', 'sculpture', 'AI'],
         img: 'imgs/tablets/icon.png',
         path: '/tablets',
         year: 2019,
@@ -129,7 +144,7 @@ export const projects: Project[] = [
     },
     {
         name: 'Dimensions of Dialogue',
-        labels: ['generative', 'code'],
+        labels: ['generative', 'code', 'AI'],
         img: 'imgs/dod/binary_model_10.png',
         img2: 'imgs/dod/grid-3x3.jpg',
         year: 2018,
@@ -139,7 +154,7 @@ export const projects: Project[] = [
     },
     {
         name: 'Ganbreeder',
-        labels: ['generative', 'code', 'web'],
+        labels: ['generative', 'code', 'web', 'AI'],
         img: 'imgs/ganbreeder2.jpg',
         description: 'A website to breed images collaboratively.',
         year: 2018
