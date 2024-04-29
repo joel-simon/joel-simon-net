@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <meta charset="utf-8">
+    <meta property="og:title" content="New Words">
+    <meta property="og:description" content="New Words. An art/research work by Joel Simon &amp; Ryan Murdock.">
+    <meta property="og:image" content="http://www.joelsimon.net/imgs/new-words/preview.jpg">
+    <meta property="og:image:width" content="1600">
+    <meta property="og:image:height" content="772">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:url" content="http://joelsimon.net/new-words.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:creator" content="@_joelsimon">
+    <meta name="twitter:text:title" content="New Words">
+    <meta name="twitter:image" content="http://www.joelsimon.net/imgs/new-words/preview.jpg">
+    <meta name="Description" content="New Words. An art/research work by Joel Simon.">
+    <link rel="stylesheet" href="/style/new-words.css">
+    <script>
+      window.addEventListener("load", (event) => {
+          const words = document.querySelectorAll('.new-word')
+          for (const word of words) {
+              const img = word.querySelector('img.volume')
+              const audio = word.querySelector('audio')
+              const name = word.dataset.name
+              function clickHandler() {
+                  audio.play()
+                  //- const soundEffect = new Audio();
+                  //- soundEffect.autoplay = true;
+      
+                  // onClick of first interaction on page before I need the sounds
+                  // (This is a tiny MP3 file that is silent and extremely short - retrieved from https://bigsoundbank.com and then modified)
+                  //- soundEffect.src = "/new_words/audio/"+name.toLowerCase()+".mp3"
+      
+                  //- console.log('on click!', soundEffect)
+                  // later on when you actually want to play a sound at any point without user interaction
+                  //- soundEffect.src = 'path/to/file.mp3';
+              }
+              //- if (audio) {
+              //- }
+              img.addEventListener("click", clickHandler)
+              img.addEventListener("touchstart", clickHandler)
+              //- console.log(img, audio)
+          } 
+      });
+    </script>
+    <title>Joel Simon</title>
+    <script src="/libs/jquery.1.8.3.min.js"></script>
+    <link rel="stylesheet" href="/style/common.css">
+    <link rel="stylesheet" href="/style/markdown.css">
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+      
+      ga('create', 'UA-101632858-2', 'auto');
+      ga('send', 'pageview');
+    </script>
+  </head>
+  <body><a id="back-button" href="/"><img src="imgs/icons/chevron-left.svg"></a>
+    <div class="text_body">
+    </div>
+    <div class="text_body"><h1>New Words</h1>
+<p>New Words is a speculative research project exploring the use of machine learning for the evolution of language. Large language models (LLM&#39;s) are fantastic at capturing our language as it currently is - but language is constantly evolving and adapting. Can machine learning help us create something truly new and  unbounded by its training data?</p>
+<p>A collaboration with <a href="https://rynmurdock.github.io/">Ryan Murdock</a> </p>
+
+    </div>
+    <h2>Samples</h2>
+    <div class="new-words-container"> 
+    </div>
+    <div class="text_body">
+      <h2>Background</h2>
+      <div style="" class="div two-col-container">
+        <div class="two-column">
+          <p><strong>Ryan:</strong> My part of this project started with images, asking: how would a CLIP model caption an image given severe restraints on its vocabulary that were progressively tightened? Providing the constraint that no typical description could be applied turned into a sort of forced novelty search, testing how far these limits could be pushed while still producing a fitting caption. For example, the image below was titled 'Menstruhaunted Rainfall' (2021) using this method with the constraint that no obvious words like "tree" or "blood" that first come to mind could be used. As is often the case for humans, constraints can provide a clear path towards more interesting results. </p><img src="/imgs/new-words/fasdfasd.jpg" style="height: 300px;">
+        </div>
+        <div class="two-column">
+          <p> <strong>Joel:</strong> My earlier works - Dimensions of Dialogue (<a href="/dimensions-of-dialogue.html">part1</a> and <a href="/tablets.html">part2 - tablets</a>) - were attempts to explore how machine learning networks could create new and emergent language artifacts via relatively simple rules and new ML architectures. This was part of a small wave of research exploring data-free generative ML. The rise of LLM's has many implications for language, but are they capable of truly new things or merely using the existing language frozen? When asked, ChatGPT is unable to invent new works beyond simple portmanteaus. This work is motivated by the organic & social evolution of language. Generative technology is at its best when it can inspire us with the possibilities of what can be.</p><img src="/imgs/tablets/IMG_9727.jpg" style="height: 300px;">
+        </div>
+      </div>
+      <h2>Methodology</h2><h3><strong>Part 1</strong> - Discover candidate phrases or word spaces.</h3>
+<p>To generate candidate phrases we surveyed sparse areas of clip space and also manually selected phrases by exploring known words in other language or common english expressions without words.</p>
+<p><strong>Discovering empty clip spaces:</strong> All english nouns, verbs and adjectives were embedded into clip-text space to form the &quot;word-set.&quot; Then, 1000 random &quot;probe&quot; embeddings were generated to form the &quot;probe-set.&quot; Each probe was iteratively moved to the midpoint of its nearest neighbors in the word-set until convergence. Then, elements of the probe-set with the highest average distance to their nearest neighbors in the word set were selected and manually filtered. These words were the midpoints of large empty spaces.</p>
+<h3><strong>Part2</strong> - Generate</h3>
+<p>After we&#39;ve found the phenomenon that needs word, we create a set of learnable parameters that each represent one word in CLIP&#39;s vocabulary for each token we want to learn. We then use the <a href="https://sassafras13.github.io/GumbelSoftmax/">Gumbel Softmax Trick</a> to map each set of parameters to a single possible CLIP token, and optimize the cosine similarity of the produced CLIP embedding and whatever other image/text embedding we like. We constrain the model to use words outside of the description and to only learn a few tokens without spaces in them.</p>
+<p><a href="https://arxiv.org/abs/2302.03668">Hard Prompts Made Easy by Wen et al.</a> uses a similar approach but approximates  gradients to obtain real word embeddings. Before Wen et al., RiversHaveWings &amp; I separately found that the Gumbel Softmax trick works &amp; separately decided not to release notebooks due to bias concerns.</p>
+<h2>Future work</h2>
+<p><strong>Vector arithmetic:</strong> We can also do Word2Vec-styled addition and subtraction of embeddings, e.g. learning what maps in CLIP space from &quot;humans&quot; minus &quot;beasts&quot;, producing the approximate difference between the two concepts (which is, optimistically per the system, &quot;ethics&quot;).</p>
+<p><strong>Language games between language models:</strong> The original plan (out of scope for a one day hack) was to use dynamically generated conbersations between existing language model. Given multiple candidate words a language model would have to correctly guess which word was assigned to the given meaning out of a set of random words. This would ensure the new words were vaguely guessable. There is also the goal of modeling language evolution within simualtions of agent-based social networks.</p>
+<h2>Acknowledgments</h2>
+<p>This project was done while Joel &amp; Ryan were residents at <a href="https://stochasticlabs.org/">Stochastic Labs</a> summer 2023 residency on AI and specifically during a sunday hackathon at <a href="https://twitter.com/replicate/status/1704207937307357547">replicate</a>. </p>
+
+      <div style="height:24px;" class="padding"></div>
+    </div>
+    <div id="footer">
+      <div id="email" class="contact_column"><a onclick="alert('joelsimon6@gmail.com')" style="cursor:pointer;"><img src="/imgs/icons/mail.svg"/></a>
+      </div>
+      <div id="github" class="contact_column"><a href="https://github.com/joel-simon/" target="_blank"><img src="/imgs/icons/github.svg"/></a>
+      </div>
+      <div id="twitter" class="contact_column"><a href="https://twitter.com/_joelsimon" target="_blank"><img src="/imgs/icons/twitter.svg"/></a></div>
+    </div>
+  </body>
+</html>

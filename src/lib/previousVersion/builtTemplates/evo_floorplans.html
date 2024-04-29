@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <meta property="og:title" content="Evolving Floorplans">
+    <meta property="og:description" content="Evolving Floorplans - 2017.">
+    <meta property="og:image" content="http://www.joelsimon.net/imgs/evo_plans/results_bottom.jpeg">
+    <meta property="og:url" content="http://www.joelsimon.net/evo_floorplans.html">
+    <meta property="og:type" content="blog">
+    <!--meta(name="viewport", content="width=device-width, initial-scale=1")-->
+    <meta name="Description" content="evolving floorplans generative 2017 joel simon">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@_joelsimon">
+    <meta name="twitter:title" content="Evolving Floorplans">
+    <meta name="twitter:description" content="Evolving Floorplans - 2017.">
+    <meta name="twitter:image" content="http://www.joelsimon.net/imgs/evo_plans/results_bottom.jpeg">
+    <title>Joel Simon</title>
+    <script src="/libs/jquery.1.8.3.min.js"></script>
+    <link rel="stylesheet" href="/style/common.css">
+    <link rel="stylesheet" href="/style/markdown.css">
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+      
+      ga('create', 'UA-101632858-2', 'auto');
+      ga('send', 'pageview');
+    </script>
+  </head>
+  <body><a id="back-button" href="/"><img src="imgs/icons/chevron-left.svg"></a>
+    <div class="text_body"><h1 id="evolving-floorplans">Evolving Floorplans</h1>
+<p>Evolving Floor Plans is an experimental research project exploring speculative, optimized floor plan layouts. The rooms and expected flow of people are given to a genetic algorithm which attempts to optimize the layout to minimize walking time, the use of hallways, etc. The creative goal is to approach floor plan design solely from the perspective of optimization and without regard for convention, constructability, etc. The research goal is to see how a combination of explicit, implicit and emergent methods allow floor plans of high complexity to evolve. The floorplan is &#39;grown&#39; from its genetic encoding using indirect methods such as graph contraction and emergent ones such as growing hallways using an ant-colony inspired algorithm.</p>
+<p>The results were biological in appearance, intriguing in character and wildly irrational in practice. It was a fun learning experience and I plan to re-use methods in other projects.</p>
+
+      <h2>Original layout</h2><img src="/imgs/evo_plans/results_top.png" style="width:350px">
+      <p class="centered">The original elementary school. Found somewhere in Maine.</p>
+      <h2 style="margin-top:50px">'Optimized'</h2><img src="/imgs/evo_plans/results_bottom.jpeg">
+      <!-- :marked-->
+      <p class="centered">Left: Optimized for minimizing traffic flow bewteen classes and material usage. Right: Also optimized for minimizing fire escape paths.</p>
+      <h2 style="margin-top:50px">Windows</h2><img src="/imgs/evo_plans/windows2x2.jpg" style="max-height:80vh">
+      <p>Windows were also experimented with as an additional fitness function. Classrooms had a higher priority than storage rooms. This led to many interior courtyards.</p>
+      <!-- ![](/imgs/evo_plans/results_top.png)-->
+      <!-- ![](/imgs/evo_plans/results_bottom.jpeg)-->
+      <!-- img(src='/imgs/evo_plans/Untitled-1.jpg')-->
+      <!-- p.centered Left is the original school and center and right are optimzied layouts.--><h1 id="background">Background</h1>
+<p>A central challenge of spatial design problems is optimizing the relative positions, shapes and sizes of forms. Within architectural design, the layout of rooms is an early stage of the design process that is guided by multiple competing objective and subjective measures.</p>
+<p>Recent computational tools that model the simulation of traffic, acoustics and heat conservation, among others, are allowing a more quantitative objective evaluation of forms. Converging with those abilities are advances in manufacturing, including CNC milling, on-site 3D printing, self-assembling structures and others, which are enabling new and more complex possible forms for which there are no simple means of designing. New tools for managing this complexity can empower designers to explore and optimize the increasingly high dimensional fitness spaces.</p>
+<h1 id="methods">Methods</h1>
+<p>Two simulations, graph-contraction and ant-colony pathing, are used as &#39;growth processes&#39;. Graph contraction is a family of algorithms that aim to create visually appealing layouts of a graphs. Ant-colony algorithms are probabilistic methods for finding optimal paths using a hive of emergent agents. Attribute genes encode meta-parameters that control various aspects of the simulations. This is analogous to developmental genes that establish patterns and guide development. Instead of encoding every path of all the hallways, a few attribute genes can optimize the entire layout.</p>
+<p>The floor plan genome is a weighted, connected and undirected graph. Every desired room is represented with a node gene that contains information such as the room&#39;s size. Connection genes specify two node genes to span as well as a randomly initialized weight; they are added in a random manner until the graph is connected. Adjacency requirements create a subgraph with maximum edge weight. For example, the cafeteria must be adjacent to the kitchen. The genetic encoding is a generalization of NeuroEvolution of Augmenting Topologies (NEAT) that allows the artificial evolution of neural networks to graphs. This applies historical markers to allow crossover of graphs with varying topology. This allows floor plans to differ in the number of rooms they have.</p>
+<h2 id="genotype-to-phenotype-mapping">Genotype To Phenotype Mapping</h2>
+<p>The mapping process from genome to phenotype is done in four parts. First, each node in the graph is arranged with a spectral layout to an intermediary position (figure 1a). Second, a physics simulation maps the intermediate positions to final coordinates that are the center of that room in the floor plan (figure 1b). Third, the room centers are converted into a polygonal mesh representing the walls (figure 1c, 1d). Fourth, the hallways are created along the edges of the mesh, and then pruned and finalized using an algorithm inspired by ant-colonies behavior and converted into a final geometry (figure 1e, 1f).</p>
+
+      <h2>Mapping Overview</h2><img src="/imgs/evo_plans/overview_figure.jpg" style="width:700px"><p><strong>Figure 1:</strong> The complete mapping process. a) The initial physics simulation using a spectral layout as input. b) The final result of the physics simulation. c) The concave hull of points (red) has been inflated to produce boundary Voronoi seeds (purple circles). d) The Voronoi tessellation creates geometry mesh. e) The floor plan with interior edges added and results of the hallway algorithm drawn in yellow. f) The final floor plan phenotype. Hallways are merged into a final geometry and interior edges used for door placement.</p>
+
+      <h2>Hallways</h2><img src="/imgs/evo_plans/hallway_process.jpg" style="width:700px"><p><strong>Figure 2:</strong> A representational overview of the hallway generation process. a) The mesh representation of a floor plan phenotype with three rooms. b) The creation of interior nodes and edges shown as hollow circles and dotted lines. c) The initial results of the OHP. Selected edges drawn in red. d) Smoothing of hallways by moving hallway vertices halfway to their projection onto the segment formed by neighbors. e) Creation of hallway geometry by using outer tangent lines of circles with radius proportional to travel load. f) The final hallway geometry with doors placed from interior edges with travel loads.</p>
+
+      <h1>Future Work</h1>
+      <p>A direction of work specific to schools is the mutual evolution of students' class schedules and floor plan layout. This would allow a unified optimization process of the entire school day experience. Genetic algorithms are already currently applied to optimal scheduling problems.</p>
+      <p>The metrics could be expanded to include terrain maps, sun paths, existing trees and other environmental input, allowing the buildings to be highly adaptive to their context. The physics simulation could force certain boundary shape constraints.</p>
+      <p>The method could be evaluated with other applications such as office layouts or hospitals. Hospitals could minimize critical routes such as between surgery and pathology labs or between nurses' rooms and patients. Office plans could aim to minimize acoustical problems, a common issue in open offices, or to minimize walking paths, while also maximizing the percentage of walking paths that are shared with employees from other departments.</p>
+      <h1>Conclusion</h1>
+      <p>I have very mixed feelings about this project. It was my first large generative design project, and I think the underlying ideas have a lot of potential. The work required for all the various steps is probably overly complicated. By not obeying any laws of architecture or design, it also made the results very hard to evaluate. I hope it elicits some ideas in the reader about the future of generativity and design.</p>
+      <h2>References
+        <div style="display:inline-block;font-size:.8em;" class="align_left"><ol>
+<li>Michalek, J.J., Choudhary, R., Papalambros, P.Y.: Architectural layout design optimization. Eng. Optimization (2002)</li>
+<li>Merrell, Paul, Eric Schkufza, and Vladlen Koltun. &quot;Computer generated residential building layouts.&quot; ACM Transactions on Graphics (TOG). Vol. 29. No. 6. ACM, 2010.</li>
+<li>Liu, Han, et al. &quot;Constraint aware interior layout exploration for pre-cast concrete based buildings.&quot; The Visual Computer (2013)</li>
+<li>Nassar, Khaled. &quot;New advances in the automated architectural space plan layout problem.&quot; Proceedings Computing in Civil and Building Engineering (2010).</li>
+<li>O&#39;Reilly, UnaMay, and Martin Hemberg. &quot;Integrating generative growth and evolutionary computation for form exploration.&quot; Genetic Programming and Evolvable Machines (2007)</li>
+<li>Bentley, P. J. &amp; Kumar, S. (1999). Three Ways to Grow Designs: A Comparison of Embryogenies for an Evolutionary Design Problem. Genetic &amp; Evolutionary Computation Conference.</li>
+<li>Hornby, Gregory S., and Jordan B. Pollack. &quot;The advantages of generative grammatical encodings for physical design.&quot; Evolutionary Computation, 2001. Proceedings of the 2001 Congress on. Vol. 1. IEEE, 2001.</li>
+<li>Feng, Tian, et al. &quot;Crowddriven midscale layout design.&quot; ACM Transactions on Graphics 35.4 (2016).</li>
+<li>Stanley, Kenneth O., and Risto Miikkulainen. &quot;Evolving Neural Networks through Augmenting Topologies.&quot; Evolutionary Computation (2002).</li>
+<li>Weisstein, Eric W. &quot;Graph Embedding.&quot; From MathWorld Wolfram Web Resource. <a href="http://mathworld.wolfram.com/GraphEmbedding.html">http://mathworld.wolfram.com/GraphEmbedding.html</a></li>
+<li>Luo, Bin, Richard C. Wilson, and Edwin R. Hancock. &quot;Spectral Embedding of Graphs.&quot; Pattern Recognition 36.10 (2003): 2213230. Print.</li>
+<li>Fruchterman, Thomas M. J., and Edward M. Reingold. &quot;Graph Drawing by Forcedirected Placement.&quot; Software: Practice and Experience 21.11 (1991): 1129164. Print.</li>
+</ol>
+
+        </div>
+      </h2>
+    </div>
+    <div id="footer">
+      <div id="email" class="contact_column"><a onclick="alert('joelsimon6@gmail.com')" style="cursor:pointer;"><img src="/imgs/icons/mail.svg"/></a>
+      </div>
+      <div id="github" class="contact_column"><a href="https://github.com/joel-simon/" target="_blank"><img src="/imgs/icons/github.svg"/></a>
+      </div>
+      <div id="twitter" class="contact_column"><a href="https://twitter.com/_joelsimon" target="_blank"><img src="/imgs/icons/twitter.svg"/></a></div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <meta charset="utf-8">
+    <meta property="og:title" content="Forms Of Life">
+    <meta property="og:description" content="Forms Of Life. An art/research work by Joel Simon.">
+    <meta property="og:image" content="http://www.joelsimon.net/imgs/form-of-life/preview.png">
+    <meta property="og:image:width" content="512">
+    <meta property="og:image:height" content="256">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:url" content="http://www.joelsimon.net/forms-of-life.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:creator" content="@_joelsimon">
+    <meta name="twitter:text:title" content="Forms Of Life">
+    <meta name="twitter:image" content="http://www.joelsimon.net/imgs/form-of-life/preview.png">
+    <meta name="Description" content="Forms Of Life. An art/research work by Joel Simon.">
+    <link rel="stylesheet" href="/style/index.css">
+    <link rel="stylesheet" href="/style/forms-of-life.css">
+    <title>Joel Simon</title>
+    <script src="/libs/jquery.1.8.3.min.js"></script>
+    <link rel="stylesheet" href="/style/common.css">
+    <link rel="stylesheet" href="/style/markdown.css">
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+      
+      ga('create', 'UA-101632858-2', 'auto');
+      ga('send', 'pageview');
+    </script>
+  </head>
+  <body><a id="back-button" href="/"><img src="imgs/icons/chevron-left.svg"></a>
+    <div class="text_body">
+      <h1>Forms of Life</h1>
+      <p>Inspired by the idea of <i>Life</i> by architect Christopher Alexander and the artificial life simulation <i>Game Of Life</i> by John Conway, the living environments of GOL are optimized to maximize their total life. <i>i.e</i> a generative architecture for artificial life. </p>
+      <div class="gol-container">
+        <div class="images"><img src="imgs/forms-of-life/ga_direct_64/+0381.png"><img src="imgs/forms-of-life/ga_direct_64/+0347.png"><img src="imgs/forms-of-life/ga_direct_64/+0397.png"><img src="imgs/forms-of-life/ga_direct_64/+0370.png">
+        </div>
+      </div>
+      <p class="quote">
+         
+        "The more living patterns there are in a place - a room, a building, or a town - the more it comes to life as an entirety, the more it glows, the more it has that self-maintaining fire which is the quality without a name."<br>- Christopher Alexander
+      </p><br>
+      <div class="flex-cols2">
+        <div class="flex-col"><img src="imgs/forms-of-life/pulsar.gif" style="height:200px;">
+          <p class="centered"><a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life" target="_blank"><i>Life</i></a> or <i>Game of Life</i> by mathematician <a href="https://en.wikipedia.org/wiki/John_Horton_Conway" target="_blank">John Conway</a> is one of the most simple and well known instances of computational emergence. Each active pixel represents 'life' and a few simple rules dictate how they spread and die.</p>
+        </div>
+        <div class="flex-col"><img src="imgs/forms-of-life/courtyard.jpg" style="height:200px;">
+          <p class="centered"> <a href="https://bofh.org.uk/2003/07/29/the-quality-without-a-name/" target="_blank"><i>Life</i></a> or the <i>Quality Without a Name</i> by architect and mathematician <a href="https://en.wikipedia.org/wiki/Christopher_Alexander" target="_blank">Christopher Alexander</a> is <a href="http://zeta.math.utsa.edu/~yxk833/Chris.text.html" target="_blank">not easy to define</a> but is roughly the capacity for design to nurture and spur life and positive experience.</p>
+        </div>
+      </div>
+      <p>All life is guided by its environment and subtle changes in spaces can have profound effects. Architectural generative design is the practice of using software to assist with the design of buildings so that they may be 'better' for the either the environment, developer or future inhabitants.  Despite the appeal, <i>how</i> to make it better and <i>what</i> kind of better and for <i>whom</i> are rarely clear. Here, the <i>what</i> and <i>who</i> are radically simplified since we can simulate the life completely and the focus is on the <i>how</i>. Essentially, it is the most simple but pure generative architecture project possible. </p>
+      <h2>Randoms</h2>
+      <p>To get a feel for the optimization results, random forms are shown below for contrast. These were generated using <a href="https://www.redblobgames.com/maps/terrain-from-noise/" target="_blank">Perlin noise</a>.</p>
+      <div class="gol-container">
+        <div class="images"><img src="imgs/forms-of-life/randoms/+download-4.png"><img src="imgs/forms-of-life/randoms/+download-1.png"><img src="imgs/forms-of-life/randoms/+download-2.png"><img src="imgs/forms-of-life/randoms/+download-3.png"></div>
+      </div>
+      <h2>Hostile Design</h2>
+      <p>Below is optimizing for minimum life and maximum resources. This is the bad architecture of GOL. Sometimes only missing a few things makes a large difference.</p>
+      <div style="margin-top:0px;" class="gol-container no-canvas-filter">
+        <div class="images"><img src="imgs/forms-of-life/anti/+0182.png"><img src="imgs/forms-of-life/anti/+0221.png"><img src="imgs/forms-of-life/anti/+0229.png"><img src="imgs/forms-of-life/anti/+0273.png"></div>
+      </div>
+      <h2>Metrics</h2>
+      <p>Even in this radically simplified environment a description of goodness has some subjectivity. Originally, simply  the total average amount of life was used. But this yielded many static patterns. So do we want more static or dynamic life? The other runs use the amount of created life / area as the objective. <b>Below</b>: examples of static patterns with original fitness function.</p>
+      <div class="gol-container">
+        <div class="images"><img src="imgs/forms-of-life/ga_direct_64/archive/+0296-1.png"><img src="imgs/forms-of-life/scalar_err/stillife/+0169.png"><img src="imgs/forms-of-life/scalar_err/stillife/+41700.png"><img src="imgs/forms-of-life/ga_direct_64/archive/+0289.png">
+        </div>
+      </div>
+      <p class="centered"> </p>
+      <h2>Varying amounts of space</h2>
+      <p>Doing a multi-objective optimization (NSGA-II) enables optimizing for life and resource usage (used pixels) separately. <b>Below</b>: options from the Pareto front of solutions.</p>
+      <div class="gol-container eight">
+        <div class="images"><img src="imgs/forms-of-life/ga_direct_64/2_obj/+download.png"><img src="imgs/forms-of-life/ga_direct_64/2_obj/+download-1.png"><img src="imgs/forms-of-life/ga_direct_64/2_obj/+download-8.png"><img src="imgs/forms-of-life/ga_direct_64/2_obj/+download-3.png"><img src="imgs/forms-of-life/ga_direct_64/2_obj/+download-4.png"><img src="imgs/forms-of-life/ga_direct_64/2_obj/+download-5.png"><img src="imgs/forms-of-life/ga_direct_64/2_obj/+download-6.png"><img src="imgs/forms-of-life/ga_direct_64/2_obj/+download-9.png">
+        </div>
+      </div>
+      <H2>Methods</H2>
+      <p>This project was an opportunity to experiment with spatial optimization methods. The simplicity of this problem makes it a useful test environment, but also illustrates how algorithms always have their own biases and impact output designs as much as metrics or datasets. All methods were averaged over 5 runs with 80,000 evaluations and the same starting seed.</p>
+      <h3>1: Genetic algorithms directly on the images.</h3>
+      <div class="gol-container">
+        <div class="images"><img src="imgs/forms-of-life/scalar_err/direct/+0220.png"><img src="imgs/forms-of-life/scalar_err/direct/+0317.png"><img src="imgs/forms-of-life/scalar_err/direct/+0377.png"><img src="imgs/forms-of-life/scalar_err/direct/+0386.png"></div>
+      </div>
+      <h3>2. Train a GAN on Perlin noise images and do a genetic algorithm within the latent space.</h3>
+      <div class="gol-container">
+        <div class="images"><img src="imgs/forms-of-life/scalar_err/latent/+0390.png"><img src="imgs/forms-of-life/scalar_err/latent/+0393.png"><img src="imgs/forms-of-life/scalar_err/latent/+0400 copy.png"><img src="imgs/forms-of-life/scalar_err/latent/+0400-1.png">
+        </div>
+      </div>
+      <h3>3. Use the same GAN but use Covariance Matrix Adaptation Evolution Strategy (CMA-ES).</h3>
+      <div class="gol-container">
+        <div class="images"><img src="imgs/forms-of-life/scalar_err/cmae/+55400.png"><img src="imgs/forms-of-life/scalar_err/cmae/+09600.png"><img src="imgs/forms-of-life/scalar_err/cmae/+14600.png"><img src="imgs/forms-of-life/scalar_err/cmae/+15700.png"></div>
+      </div>
+      <h3>4: Use a Content and Pattern Producing Network (CPPN) with neural-evolution.</h3>
+      <div class="gol-container">
+        <div class="images"><img src="imgs/forms-of-life/scalar_err/cppn/+0156.png"><img src="imgs/forms-of-life/scalar_err/cppn/+0141.png"><img src="imgs/forms-of-life/scalar_err/cppn/+0199.png"><img src="imgs/forms-of-life/scalar_err/cppn/+0019.png">
+        </div>
+      </div><img src="imgs/forms-of-life/compare.svg">
+      <p> CMA-ES latent evolution did best but the difference was close enough that it could be made up with meta-parameter tuning. Machine learning methods may be very powerful for organizing search spaces for exploration. However, this 'smoothness' corresponds to a decrease in resolution. This is evident in the  above images where the direct evolution had a hard time cleaning up certain details but was able to produce more diverse forms. Remarkably, they still managed to produce a near-equal average fitness. </p>
+      <p>Evolution in latent space has other nice properties not fully evident here. It is capable of producing a crossover operator and arbitrarily large mutations where none might exist (such as <a href="/evo_floorplans.html">floor-plans</a> or <a href="https://www.antimander.org">congressional districts</a>), the ability to define the design space via examples and the performance benefits of a smaller search space.</p>
+      <p>CPPN's are attractive for their capacity to create novelty unburdened by datasets. However, the shapes bias towards simpler geometric shapes defined by the node operators and most runs stayed stuck in the local optimum of a circle. </p>
+      <h2>Implementation </h2>
+      <p class="centered"><a href="https://github.com/joel-simon/FormsOfLife">Source</a></p>
+      <p>The code is written in Python and uses Pytorch (for ML models), <a href="https://cython.org/">Cython</a> (for image operators) and <a href="https://github.com/taichi-dev/taichi">Taichi</a> (for running GOL in Cuda). These enable extremely efficient but also highly compact and readable code. Two-hundred GOl boards can be run in parallel for 1000 steps in a fraction of a second and a whole optimization run takes just a few minutes. The GA uses <a href="https://pymoo.org/">pymoo</a> and the evolutionary strategy uses <a href="https://github.com/CMA-ES/pycma">pycma</a>. The WebGL viewers use <a href="http://regl.party/">regl</a>.</p>
+      <h2>Future Work</h2>
+      <p>Broadening the imagination for artificial life is a goal, and there are several other AL domains where it is fun to imagine how they might want to live and what their architecture and communities could look like. For improved spatial optimization, hybrid latent-direct methods that can leverage the advantage of both is exciting. Additionally, incorporating fitness into the ML models and applying it to other generative design problems is a current area of my research. </p>
+      <h2>Related</h2>
+      <p>Here are other examples of my speculative-design and computational-art projects in the medium of spatial optimization:</p>
+    </div>
+    <script src="https://npmcdn.com/regl/dist/regl.js"></script>
+    <script src="/src/utils.js"></script>
+    <script src="/src/forms_of_life/shader.js"></script>
+    <script src="/src/forms_of_life/gol-viewer.js"></script>
+    <script src="/src/forms_of_life/index.js"></script>
+    <div id="footer">
+      <div id="email" class="contact_column"><a onclick="alert('joelsimon6@gmail.com')" style="cursor:pointer;"><img src="/imgs/icons/mail.svg"/></a>
+      </div>
+      <div id="github" class="contact_column"><a href="https://github.com/joel-simon/" target="_blank"><img src="/imgs/icons/github.svg"/></a>
+      </div>
+      <div id="twitter" class="contact_column"><a href="https://twitter.com/_joelsimon" target="_blank"><img src="/imgs/icons/twitter.svg"/></a></div>
+    </div>
+  </body>
+</html>

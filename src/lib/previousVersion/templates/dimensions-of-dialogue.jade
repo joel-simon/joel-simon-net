@@ -1,0 +1,109 @@
+extends partials/project_page
+
+block meta_tags
+    meta(charset="utf-8")
+    - var domain = 'http://www.joelsimon.net/';
+    //- meta(content="width=device-width, maximum-scale=1, user-scalable=no" name="viewport")
+    meta(property="og:title", content="Dimensions of Dialogue")
+    meta(property="og:description", content="Dimensions of Dialogue. An art/research work by Joel Simon.")
+    meta(property="og:image", content=domain+'imgs/dod/grid_3x3.jpg')
+    meta(property="og:image:width", content="993")
+    meta(property="og:image:height", content="662")
+    meta(property="og:image:type", content="image/jpeg")
+    meta(property="og:url", content='http://joelsimon.net/dimensions-of-dialogue.html')
+    meta(name="twitter:card", content="summary_large_image")
+    meta(name="twitter:creator", content="@_joelsimon")
+    meta(name="twitter:text:title", content="Dimensions of Dialogue")
+    meta(name="twitter:image", content=domain+'imgs/dod/grid_3x3.jpg')
+    meta(name="Description", content="Dimensions of Dialogue. An art/research work by Joel Simon.")
+
+block content
+    :marked
+        # Dimensions of Dialogue
+        A series of small experiments inspired by early proto-writing systems such as cuneiform and hieroglyphs. Here, new writing systems are created by challenging two neural networks to communicate information via images. Using the magic of machine learning, the networks attempt to create their own emergent [language isolate](https://en.wikipedia.org/wiki/Language_isolate) that is robust to  noise. This is similar to a machine learning architecture called [*generative adversarial networks*](https://en.wikipedia.org/wiki/Generative_adversarial_network) (GANs) except that the networks are collaborating and not competing.
+
+    img(src="/imgs/dod/dimensions0.jpg", style="width:100%;max-width:600px;")
+
+    :marked
+        Above: two entities from Jan Švankmajer's [*Dimensions of Dialogue*](https://vimeo.com/116020064) that have learned their own language.
+
+    //- A neural network is given a piece of information (as a vector) that it turns into an image and gives to another neural network which attempts to decode the information from the image.
+    //- They represent the two neural networks.
+    //-  Language is the emergent, noisy channel of images and ideas that is both formal and intimate, cultural and individual. Transmission is never fully verified, ideas and images elicited from the communication never quite matching those that motived it.
+
+    h2 1) Learning a language of 100 characters
+    p The 'information' the first neural network is communicating is a 100-length vector with one of the values as a one - ex: [0, 0, 1, 0]
+    img(src="/imgs/dod/grid3.jpg", width="100%")
+    p Above are samples of twenty five characters from each of six different languages. Each language was produced by re-running the neural networks with the same parameters. Each language is a distinct, structured visual system, often with micro and macro structures. The larger forms are a method of being resilient to the noise. The size of the forms vary with the amount of noise.
+
+    h2 2) Learning languages with 10,000 characters in color
+    img(src="/imgs/dod/grid-color.jpg", width="100%")
+    p From left to right are: high, medium and low amount of noise. Adding color did not generally change the output and most languages became dual colored.
+
+    h2 3) Learning data vectors
+    p Here, rather than each image being one character (one-hot encoding), each image encodes a vector of information. With 20 dimensions there are over a million possibilities - ex: [1, 0, 1, 0] The animations represent the evolution of the characters with training.
+    .img_container(style='width:100%;display:inline-block;')
+        img(src="/imgs/dod/gif/binary_1.gif", width="33%", style='float:left;')
+        img(src="/imgs/dod/gif/binary_2.gif", width="33%", style='float:left;')
+        img(src="/imgs/dod/gif/binary_4.gif", width="33%", style='float:left;')
+    p By examining the output of specific input we can try to understand how the languages work. Below the first three of the twenty dimensions are varied.
+    img(src="/imgs/dod/vectors.svg", width="100%")
+    p We can observe some patterns, for example, the first dimension of the second language is represented with a type of macron (bar above the letter).
+
+    h2 4) Learning words
+    P Next, the networks were challenged to learn not just distinct characters but English words. The words are fed through a word-to-vector library (trained on Wikipedia) before being given to the networks. These vectors are the 'ideas' that must be communicated.
+    img(src="/imgs/dod/gif/w2v1.gif", width="100%")
+    img(src="/imgs/dod/gif/w2v2.gif", width="100%")
+
+    :marked
+        The networks did extremely well, of the top 10,000 words only about 200 were lost in translation.
+        Some examples:
+        all-they,
+        three-four,
+        now-they,
+        tuesday-monday,
+        five-four,
+        wednesday-monday,
+        thursday-monday,
+        however-not,
+        six-four,
+        took-after,
+        see-what,
+        does-you,
+        came-when,
+        march-june,
+        come-what,
+        july-june,
+        although-though,
+        april-june,
+        already-have,
+        though-even,
+        others-they,
+        ...
+
+        ### Similar concepts produce somewhat similar images
+
+    img(src="/imgs/dod/name_chart.svg", style="width:100%;max-height:40vh;")
+
+    //- img(src="/imgs/dod/dimensions0.jpg", style="width:100%;max-width:500px;")
+    :marked
+        ##5) Lastly, learning language
+        A document to vector model was trained on [300,000 lines of movie dialogue](https://www.cs.cornell.edu/~cristian/Cornell_Movie-Dialogs_Corpus.html) and those vectors were given to the networks. Below are examples with random sentences from the database.
+    img(src="/imgs/dod/gif/d2v.gif", width="100%")
+    img(src="/imgs/dod/gif/d2v2.gif", width="100%")
+    p Any sentence can be given to the first network. By also giving components of the sentence we can try to see what's going on.
+    img(src="/imgs/dod/vector3.svg", style="width:100%;max-height:40vh;")
+
+    :marked
+        ##Reflections and future work
+        The intent of this work was for me to get my feet wet with custom neural networks and think more about their poetics. While the original intention was more about language I think it turned out to be more about typography and calligraphy. Writing systems, while emergent pieces of culture, are also results of optimization processes to produce images that are understandable (mutually distinctive) and robust to noise.
+
+        Further work with language could explore its adversarial and collaborative nature. We  communicate information while also [playing games](http://www.ericberne.com/games-people-play/) with our language. Additionally, language is constantly evolving. Networks of neural networks could have each network acting in both collaborative and adversarial ways. One network may try to communicate information to one and disinformation to another using the same characters. The result could be an unstable, constantly shifting language with in-groups attempting to evolve their own language faster than it could be disseminated.
+
+        While these images a very low res and crude, I could possibly see custom designed QR codes being an interesting application. Also, it might be interesting to create a custom typeface optimized for JPEG compression and also readability.
+
+    img(src="/imgs/dod/dimensions22.jpg", style="width:100%;max-width:600px;")
+    p Above: an example of a pair of neural networks that are adversarial or have simply not learned how to communicate well.
+
+    :marked
+        ## [Source Code](https://github.com/joel-simon/dimensions-of-dialogue)
