@@ -35,10 +35,12 @@
 
 <style>
   #project-container {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(275px, max-content));
+    padding: 16px;
+    gap: 16px;
+    justify-items: center;
     justify-content: center;
-    margin: 16px;
   }
 
   :global(.label) {

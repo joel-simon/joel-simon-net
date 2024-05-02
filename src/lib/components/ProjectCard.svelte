@@ -91,13 +91,21 @@
 
 <style>
   .project {
-    width: 315px;
+    width: 375px;
+    max-width: 100%;
+    /* height: 200px; */
+    display: flex;
+    /* max-width: 350px;
+    min-width: 300px; */
+    flex-grow: 1;
+    display: flex;
+    /* background-color: red; */
+
     transition: all 0.2s ease-in-out;
-    display: inline-block;
     vertical-align: top;
-    margin: 16px;
-    margin-bottom: 0px;
-    position: relative;
+    /* margin: 16px;
+    margin-bottom: 0px; */
+    /* position: relative; */
     overflow: hidden;
     /* padding-bottom: 4px; */
   }
@@ -140,7 +148,8 @@
   }
 
   .project img {
-    width: 315px;
+    width: 100%;
+    /* width: 315px; */
   }
 
   .show-on-hover {
