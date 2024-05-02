@@ -72,6 +72,7 @@ export const projects: Project[] = [
         year: 2020,
         labels: ['generative', 'web', 'code'],
         img: 'imgs/evo-portraits/icon2.png',
+        // img: 'imgs/thumbnails/evo-portraits.jpg',
         description: 'Generative faces using genetic algorithms.'
     },
     {

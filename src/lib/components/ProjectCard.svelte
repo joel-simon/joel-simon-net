@@ -73,13 +73,13 @@
         <img src={project.img} alt={project.name} title={project.name} />
         <div class="description-container">
           {#if project.description}
-            <p class="description">{project.description}</p>
+            <p class="description text-lg">{project.description}</p>
           {/if}
         </div>
       </div>
-      <div class="project-content show-on-hover">
-        <h3 class="project-name">{project.name}</h3>
-        <div class="project-labels">
+      <div class="project-content mt-1">
+        <h3 class="project-name text-lg">{project.name}</h3>
+        <div class="project-labels show-on-hover">
           {#each state.labels as label}
             <Label {label} {selectedLabel} />
           {/each}
@@ -88,3 +88,82 @@
     </a>
   </div>
 {/if}
+
+<style>
+  .project {
+    width: 315px;
+    transition: all 0.2s ease-in-out;
+    display: inline-block;
+    vertical-align: top;
+    margin: 16px;
+    margin-bottom: 0px;
+    position: relative;
+    overflow: hidden;
+    /* padding-bottom: 4px; */
+  }
+  .project .preview-container {
+    position: relative;
+    /* display: flex; */
+    /* background-color: white; */
+    -webkit-mask-image: url(/imgs/squircle-white.png);
+    mask-image: url(/imgs/squircle-white.png);
+    mask-size: cover;
+    mask-size: 100%, 100%;
+    -webkit-mask-size: cover;
+    -webkit-mask-size: 100%, 100%;
+    mask-repeat: no-repeat;
+    -webkit-mask-repeat: no-repeat;
+  }
+
+  .project:hover .description-container {
+    background: rgba(0, 0, 0, 0.8);
+    opacity: 1;
+  }
+
+  .description-container {
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    position: absolute;
+    opacity: 0;
+    bottom: 0px;
+
+    -webkit-transition: background-color 300ms ease;
+    -ms-transition: background-color 300ms ease;
+    transition: background-color 300ms ease;
+  }
+  .project .description {
+    color: white;
+    opacity: 1;
+    /* font-size: 1.2em; */
+    margin: 16px;
+  }
+
+  .project img {
+    width: 315px;
+  }
+
+  .show-on-hover {
+    opacity: 0;
+  }
+  .project:hover .show-on-hover {
+    opacity: 1;
+  }
+
+  .project.forms-of-life img {
+    image-rendering: pixelated;
+    filter: drop-shadow(0px 0px 4px rgba(0, 0, 0, 0.4));
+  }
+
+  .project.reaction-diffusion-3d img {
+    filter: invert() drop-shadow(0px 0px 4px rgba(0, 0, 0, 0.4));
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /* Labels in projects. */
+
+  .project .label h3 {
+    margin-top: 0px;
+    margin-bottom: 0px;
+  }
+</style>
