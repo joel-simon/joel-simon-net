@@ -30,8 +30,9 @@
     </script>
   </head>
   <body><a id="back-button" href="/"><img src="imgs/icons/chevron-left.svg"></a>
-    <div class="text_body"><h1 id="dimensions-of-dialogue">Dimensions of Dialogue</h1>
-<p>A series of small experiments inspired by early proto-writing systems such as cuneiform and hieroglyphs. Here, new writing systems are created by challenging two neural networks to communicate information via images. Using the magic of machine learning, the networks attempt to create their own emergent <a href="https://en.wikipedia.org/wiki/Language_isolate">language isolate</a> that is robust to  noise. This is similar to a machine learning architecture called <a href="https://en.wikipedia.org/wiki/Generative_adversarial_network"><em>generative adversarial networks</em></a> (GANs) except that the networks are collaborating and not competing.</p>
+    <div class="text_body">
+      <h1>Dimensions of Dialogue</h1>
+      <p style="text-align:center;">2018</p><p>A series of small experiments inspired by early proto-writing systems such as cuneiform and hieroglyphs. Here, new writing systems are created by challenging two neural networks to communicate information via images. Using the magic of machine learning, the networks attempt to create their own emergent <a href="https://en.wikipedia.org/wiki/Language_isolate">language isolate</a> that is robust to  noise. This is similar to a machine learning architecture called <a href="https://en.wikipedia.org/wiki/Generative_adversarial_network"><em>generative adversarial networks</em></a> (GANs) except that the networks are collaborating and not competing.</p>
 <img src="/imgs/dod/dimensions0.jpg" style="width:100%;max-width:600px;"><p>Above: two entities from Jan Švankmajer&#39;s <a href="https://vimeo.com/116020064"><em>Dimensions of Dialogue</em></a> that have learned their own language.</p>
 
       <h2>1) Learning a language of 100 characters</h2>
@@ -70,13 +71,14 @@ though-even,
 others-they,
 ...</p>
 <h3 id="similar-concepts-produce-somewhat-similar-images">Similar concepts produce somewhat similar images</h3>
-<img src="/imgs/dod/name_chart.svg" style="width:100%;max-height:40vh;"><p>##5) Lastly, learning language
-A document to vector model was trained on <a href="https://www.cs.cornell.edu/~cristian/Cornell_Movie-Dialogs_Corpus.html">300,000 lines of movie dialogue</a> and those vectors were given to the networks. Below are examples with random sentences from the database.</p>
+<img src="/imgs/dod/name_chart.svg" style="width:100%;max-height:40vh;"><h2 id="5-lastly-learning-language">5) Lastly, learning language</h2>
+<p>A document to vector model was trained on <a href="https://www.cs.cornell.edu/~cristian/Cornell_Movie-Dialogs_Corpus.html">300,000 lines of movie dialogue</a> and those vectors were given to the networks. Below are examples with random sentences from the database.</p>
 <img src="/imgs/dod/gif/d2v.gif" width="100%"><img src="/imgs/dod/gif/d2v2.gif" width="100%">
-      <p>Any sentence can be given to the first network. By also giving components of the sentence we can try to see what's going on.</p><img src="/imgs/dod/vector3.svg" style="width:100%;max-height:40vh;"><p>##Reflections and future work
-The intent of this work was for me to get my feet wet with custom neural networks and think more about their poetics. While the original intention was more about language I think it turned out to be more about typography and calligraphy. Writing systems, while emergent pieces of culture, are also results of optimization processes to produce images that are understandable (mutually distinctive) and robust to noise.</p>
+      <p>Any sentence can be given to the first network. By also giving components of the sentence we can try to see what's going on.</p><img src="/imgs/dod/vector3.svg" style="width:100%;max-height:40vh;"><h2 id="reflections-and-future-work">Reflections and future work</h2>
+<p>The intent of this work was for me to get my feet wet with custom neural networks and think more about their poetics. While the original intention was more about language I think it turned out to be more about typography and calligraphy. Writing systems, while emergent pieces of culture, are also results of optimization processes to produce images that are understandable (mutually distinctive) and robust to noise.</p>
 <p>Further work with language could explore its adversarial and collaborative nature. We  communicate information while also <a href="http://www.ericberne.com/games-people-play/">playing games</a> with our language. Additionally, language is constantly evolving. Networks of neural networks could have each network acting in both collaborative and adversarial ways. One network may try to communicate information to one and disinformation to another using the same characters. The result could be an unstable, constantly shifting language with in-groups attempting to evolve their own language faster than it could be disseminated.</p>
 <p>While these images a very low res and crude, I could possibly see custom designed QR codes being an interesting application. Also, it might be interesting to create a custom typeface optimized for JPEG compression and also readability.</p>
+<p>Update - the earlier idea became <a href="/tablets">Neural Tablets (Dimensions of Dialogue Pt 2) </a></p>
 <img src="/imgs/dod/dimensions22.jpg" style="width:100%;max-width:600px;">
       <p>Above: an example of a pair of neural networks that are adversarial or have simply not learned how to communicate well.</p><h2 id="source-code"><a href="https://github.com/joel-simon/dimensions-of-dialogue">Source Code</a></h2>
 

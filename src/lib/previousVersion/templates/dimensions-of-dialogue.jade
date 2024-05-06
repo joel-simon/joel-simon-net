@@ -18,8 +18,9 @@ block meta_tags
     meta(name="Description", content="Dimensions of Dialogue. An art/research work by Joel Simon.")
 
 block content
+    h1 Dimensions of Dialogue
+    p(style='text-align:center;') 2018
     :marked
-        # Dimensions of Dialogue
         A series of small experiments inspired by early proto-writing systems such as cuneiform and hieroglyphs. Here, new writing systems are created by challenging two neural networks to communicate information via images. Using the magic of machine learning, the networks attempt to create their own emergent [language isolate](https://en.wikipedia.org/wiki/Language_isolate) that is robust to  noise. This is similar to a machine learning architecture called [*generative adversarial networks*](https://en.wikipedia.org/wiki/Generative_adversarial_network) (GANs) except that the networks are collaborating and not competing.
 
     img(src="/imgs/dod/dimensions0.jpg", style="width:100%;max-width:600px;")
@@ -87,20 +88,25 @@ block content
 
     //- img(src="/imgs/dod/dimensions0.jpg", style="width:100%;max-width:500px;")
     :marked
-        ##5) Lastly, learning language
+        ## 5) Lastly, learning language
+
         A document to vector model was trained on [300,000 lines of movie dialogue](https://www.cs.cornell.edu/~cristian/Cornell_Movie-Dialogs_Corpus.html) and those vectors were given to the networks. Below are examples with random sentences from the database.
+    
     img(src="/imgs/dod/gif/d2v.gif", width="100%")
     img(src="/imgs/dod/gif/d2v2.gif", width="100%")
     p Any sentence can be given to the first network. By also giving components of the sentence we can try to see what's going on.
     img(src="/imgs/dod/vector3.svg", style="width:100%;max-height:40vh;")
 
     :marked
-        ##Reflections and future work
+        ## Reflections and future work
+
         The intent of this work was for me to get my feet wet with custom neural networks and think more about their poetics. While the original intention was more about language I think it turned out to be more about typography and calligraphy. Writing systems, while emergent pieces of culture, are also results of optimization processes to produce images that are understandable (mutually distinctive) and robust to noise.
 
         Further work with language could explore its adversarial and collaborative nature. We  communicate information while also [playing games](http://www.ericberne.com/games-people-play/) with our language. Additionally, language is constantly evolving. Networks of neural networks could have each network acting in both collaborative and adversarial ways. One network may try to communicate information to one and disinformation to another using the same characters. The result could be an unstable, constantly shifting language with in-groups attempting to evolve their own language faster than it could be disseminated.
 
         While these images a very low res and crude, I could possibly see custom designed QR codes being an interesting application. Also, it might be interesting to create a custom typeface optimized for JPEG compression and also readability.
+
+        Update - the earlier idea became [Neural Tablets (Dimensions of Dialogue Pt 2) ](/tablets)
 
     img(src="/imgs/dod/dimensions22.jpg", style="width:100%;max-width:600px;")
     p Above: an example of a pair of neural networks that are adversarial or have simply not learned how to communicate well.
