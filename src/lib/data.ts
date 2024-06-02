@@ -7,7 +7,7 @@ export const labels = [
     'lighting',
     'AI',
     'web',
-    // 'tool'
+    'tool'
     // 'video'
 ]
 
@@ -51,6 +51,13 @@ export const projects: Project[] = [
         labels: ['lighting', 'sculpture'],
         img: 'imgs/thumbnails/ceramic-lamp.jpg',
         description: 'Learning the process of slip casting.'
+    },
+    {
+        name: 'ProsePainter',
+        year: 2021,
+        labels: ['AI', 'tool'],
+        img: 'imgs/thumbnails/prosepainter.jpg',
+        description: 'An interactive tool to “paint with words.” It incorporates guidable text-to-image generation into a traditional digital painting interface. '
     },
     {
         name: 'GAN Portraits',
@@ -155,7 +162,7 @@ export const projects: Project[] = [
     },
     {
         name: 'Ganbreeder',
-        labels: ['generative', 'code', 'web', 'AI'],
+        labels: ['generative', 'web', 'AI', 'tool'],
         img: 'imgs/ganbreeder2.jpg',
         description: 'A website to breed images collaboratively.',
         year: 2018
