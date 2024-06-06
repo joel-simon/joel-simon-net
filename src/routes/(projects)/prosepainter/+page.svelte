@@ -1,8 +1,8 @@
 <script>
   import ImageGallery from "$lib/components/ImageGallery.svelte";
   const images = [
-    "/imgs/prosepainter/7bf3ad4c-dce8-4633-84cc-02b60ba39cf1.jpeg",
     "/imgs/prosepainter/4d79c46b-6e09-4486-8332-1491ee82f7ee.jpeg",
+    "/imgs/prosepainter/7bf3ad4c-dce8-4633-84cc-02b60ba39cf1.jpeg",
 
     "/imgs/prosepainter/image copy.jpeg",
     "/imgs/prosepainter/image.jpeg",
@@ -43,5 +43,5 @@
 
   <h2>Gallery</h2>
 
-  <ImageGallery minWidth={400} maxWidth={600} {images} />
+  <ImageGallery minWidth={300} maxWidth={600} {images} />
 </div>

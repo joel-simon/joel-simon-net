@@ -1,6 +1,6 @@
 <script lang="ts">
   export let images: string[] = [];
-  export let minWidth = 100;
+  export let minWidth = 100; // If this is more than 375 will mess up mobile views.
   export let maxWidth = 200;
 </script>
 
@@ -22,6 +22,7 @@
     grid-template-columns: repeat(auto-fill, minmax(var(--min-width), 1fr));
     justify-items: center;
     align-items: center;
+    width: 100%;
   }
 
   .image-container {
