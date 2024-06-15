@@ -70,7 +70,12 @@
     <!-- use data-sveltekit-reload to let the browser handle these links. -->
     <a href={state.path} data-sveltekit-reload target={state.target}>
       <div class="preview-container">
-        <img src={project.img} alt={project.name} title={project.name} />
+        <img
+          class="main-image"
+          src={project.img}
+          alt={project.name}
+          title={project.name}
+        />
         <div class="description-container">
           {#if project.description}
             <p class="description text-lg">{project.description}</p>
@@ -78,7 +83,19 @@
         </div>
       </div>
       <div class="project-content mt-1">
-        <h3 class="project-name text-lg">{project.name}</h3>
+        <div class="flex w-full justify-center">
+          {#if project.externalPath}
+            <!-- Offset -->
+            <img class="opacity-0" src="/imgs/icons/arrow-up-right.svg" />
+          {/if}
+          <h3 class="project-name text-lg">
+            {project.name}
+          </h3>
+          {#if project.externalPath}
+            <img src="/imgs/icons/arrow-up-right.svg" />
+          {/if}
+        </div>
+
         <div class="project-labels show-on-hover">
           {#each state.labels as label}
             <Label {label} {selectedLabel} />
@@ -147,7 +164,7 @@
     margin: 16px;
   }
 
-  .project img {
+  .project .main-image {
     width: 100%;
     /* width: 315px; */
   }

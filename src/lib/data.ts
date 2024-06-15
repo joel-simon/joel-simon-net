@@ -67,6 +67,14 @@ export const projects: Project[] = [
         description: 'Generative face collages using machine learning.'
     },
     {
+        name: 'Emotional Bounds',
+        year: 2020,
+        labels: ['web', 'AI'],
+        img: 'imgs/emotional-bounds/preview.png',
+        externalPath: 'https://joels-share.s3.amazonaws.com/emotional-bounds/prototype/index.html',
+        description: 'Capturing the expressions that most confuse machine learning classifiers. Mapping beyond the bounds of classification allows users to create an intimate understanding of their own spaces of expression.'
+    },
+    {
         name: 'Derivative Works',
         year: 2020,
         labels: ['generative', 'web', 'code', 'AI'],
