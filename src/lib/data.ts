@@ -22,6 +22,16 @@ export const projects: Project[] = [
         path: '/about'
     },
     {
+        name: 'Puppets App',
+        year: 2024,
+        labels: ['web', 'tool'],
+
+        img: 'imgs/puppets/preview.jpg',
+        // path: 'puppets',
+        externalPath: 'https://puppets.app/',
+        description: 'Collaborative online puppet studio and theater. An experiment in creative tools based on principles of craft, play and collaboration by StudioMorphogen.'
+    },
+    {
         name: 'Ceramic Lamp 2',
         year: 2023,
         labels: ['lighting', 'sculpture'],
@@ -32,7 +42,7 @@ export const projects: Project[] = [
         name: 'LatentScape',
         year: 2023,
         externalPath: 'https://latentscape.com',
-        labels: ['web', 'code', 'AI'],
+        labels: ['web', 'AI'],
         img: 'imgs/thumbnails/latentscape.jpg',
         description: 'A virtual world for exploring and creating images with others.'
     },
