@@ -86,13 +86,20 @@
         <div class="flex w-full justify-center">
           {#if project.externalPath}
             <!-- Offset -->
-            <img class="opacity-0" src="/imgs/icons/arrow-up-right.svg" />
+            <img
+              class="opacity-0"
+              style="width:28px;height:28px;"
+              src="/imgs/icons/arrow-up-right.svg"
+            />
           {/if}
           <h3 class="project-name text-lg">
             {project.name}
           </h3>
           {#if project.externalPath}
-            <img src="/imgs/icons/arrow-up-right.svg" />
+            <img
+              style="width:28px;height:28px;"
+              src="/imgs/icons/arrow-up-right.svg"
+            />
           {/if}
         </div>
 
@@ -108,7 +115,8 @@
 
 <style>
   .project {
-    width: 375px;
+    width: 100%;
+    /* width: 375px; */
     max-width: 100%;
     /* height: 200px; */
     display: flex;

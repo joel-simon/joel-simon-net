@@ -36,11 +36,19 @@
 <style>
   #project-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(275px, max-content));
+    grid-template-columns: repeat(auto-fit, minmax(325px, max-content));
     padding: 16px;
     gap: 16px;
     justify-items: center;
     justify-content: center;
+  }
+
+  @media (max-width: 768px) {
+    #project-container {
+      grid-template-columns: repeat(2, 1fr);
+      padding: 8px;
+      gap: 8px;
+    }
   }
 
   :global(.label) {
