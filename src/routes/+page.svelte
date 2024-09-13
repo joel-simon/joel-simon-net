@@ -15,9 +15,9 @@
   type="blog"
 />
 
-<h1 class="text-4xl">Joel Simon</h1>
+<h1 class="text-4x -mb-1">Joel Simon</h1>
 
-<div id="label-container" class="w-full">
+<div id="label-container" class="w-full my-4 md:my-8">
   {#each labels as label}
     {#key label}
       <Label {label} {selectedLabel} />
@@ -37,7 +37,8 @@
   #project-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(325px, max-content));
-    padding: 16px;
+    padding-left: 16px;
+    padding-right: 16px;
     gap: 16px;
     justify-items: center;
     justify-content: center;
@@ -46,7 +47,8 @@
   @media (max-width: 768px) {
     #project-container {
       grid-template-columns: repeat(2, 1fr);
-      padding: 8px;
+      padding-left: 8px;
+      padding-right: 8px;
       gap: 8px;
     }
   }
