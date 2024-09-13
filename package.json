@@ -42,6 +42,8 @@
     },
     "type": "module",
     "dependencies": {
+        "date-fns": "^3.6.0",
+        "open-simplex-noise": "^2.5.0",
         "pkg-dir": "^8.0.0"
     }
 }
