@@ -7,6 +7,13 @@
   export let projects: Array<ProjectData> = [];
 
   let selectedProject: ProjectData | null = null;
+  function removeCodeBlocks(input: string): string {
+    // This regex matches code blocks (including the ``` delimiters) and any optional language identifier
+    const codeBlockRegex = /```[\s\S]*?```/g;
+
+    // Replace all matches with an empty string
+    return input.replace(codeBlockRegex, "");
+  }
 
   onMount(() => {
     // Select the first project as default when the component loads
@@ -41,19 +48,20 @@
       </h2> -->
       <!-- <p class="mb-4">{selectedProject.project.projectDescription}</p> -->
       <img
-        src={`/ideas/images/${selectedProject.key}.png`}
+        src={`/ideas/images/${selectedProject.key}.webp`}
         alt="project preview"
+        class="w-3/5"
       />
 
       <h3 class="font-semibold">Steps:</h3>
-      <ol class="list-decimal ml-6 mb-4 text-left">
+      <!-- <ol class="list-decimal ml-6 mb-4 text-left">
         {#each selectedProject.template.steps as step}
           <li class="whitespace-normal text-left">{step}</li>
         {/each}
-      </ol>
-      <pre
-        class="bg-gray-100 p-4 rounded-md overflow-x-auto whitespace-pre-wrap">{selectedProject
-          .project.completedTemplate}</pre>
+      </ol> -->
+      <p class=" p-4 text-left rounded-md overflow-x-auto whitespace-pre-wrap">
+        {removeCodeBlocks(selectedProject.project.completedTemplate)}
+      </p>
     {/if}
   </div>
 

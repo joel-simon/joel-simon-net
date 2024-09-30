@@ -22,8 +22,13 @@
     return numbers;
   }
 
+  // Function to get full citation data
+  function getCitation(name: string): Citation | undefined {
+    return citationsData.find((c) => c.paperName === name);
+  }
+
   // Provide the context to child components
-  setContext<ContextType>("citationContext", { registerCitation });
+  setContext<ContextType>("citationContext", { registerCitation, getCitation });
 </script>
 
 <!-- Slot for document content -->
