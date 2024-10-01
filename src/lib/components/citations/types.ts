@@ -5,4 +5,5 @@ export interface Citation {
 
 export interface ContextType {
   registerCitation: (names: string[]) => number[];
+  getCitation: (name: string) => Citation | undefined;
 }

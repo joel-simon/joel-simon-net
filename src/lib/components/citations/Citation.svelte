@@ -6,7 +6,7 @@
   export let name: string[]; // Array of paper names
 
   const context: ContextType = getContext("citationContext");
-  const numbers = context.registerCitation(name);
+  const numbers = context?.registerCitation(name);
 
   // Get full citations for tooltip
   $: fullCitations = name.map((n) => context.getCitation(n)?.fullCitation || n);
@@ -22,7 +22,7 @@
     <slot></slot>
   </i>
   <span
-    class="citation-number z-10"
+    class="citation-number z-10 font-medium"
     title={fullCitations.join("\n\n")}
     use:tooltip
   >

@@ -17,12 +17,17 @@
 
 <h1 class="text-4x -mb-1">Joel Simon</h1>
 
-<div id="label-container" class="w-full my-4 md:my-8">
-  {#each labels as label}
-    {#key label}
-      <Label {label} {selectedLabel} />
-    {/key}
-  {/each}
+<div
+  id="label-container"
+  class="w-full my-4 md:my-6 sticky top-0 bg-white z-10 py-2"
+>
+  <div class="flex gap-2 w-full justify-center">
+    {#each labels as label}
+      {#key label}
+        <Label {label} {selectedLabel} />
+      {/key}
+    {/each}
+  </div>
 </div>
 
 <div id="project-container">

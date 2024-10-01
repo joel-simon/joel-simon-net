@@ -1,4 +1,4 @@
-import type { PageLoad } from "./$types";
+import type { PageLoad } from "../ideas/$types";
 
 export const load: PageLoad = async ({ fetch }) => {
   // Fetch the JSONL file from the static folder
@@ -9,8 +9,23 @@ export const load: PageLoad = async ({ fetch }) => {
   // Parse the JSONL file into an array of objects
   const projects = textData
     .split("\n")
-    .filter((line) => line.trim() !== "")
-    .map((line) => JSON.parse(line).data);
+    .filter((line) => {
+      try {
+        return line.trim().length > 2000;
+      } catch (error) {
+        console.error("Error filtering line:", error);
+        return false;
+      }
+    })
+    .map((line) => {
+      try {
+        return JSON.parse(line).data;
+      } catch (error) {
+        console.error("Error parsing JSON:", error);
+        return null;
+      }
+    })
+    .filter((project) => project !== null);
   // console.log(projects);
 
   return {

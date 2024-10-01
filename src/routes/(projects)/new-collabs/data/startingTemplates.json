@@ -1,0 +1,177 @@
+[
+  {
+    "name": "Csikszentmihalyi's Systems Model of Creativity",
+    "steps": [
+      "Identify a cultural catalyst",
+      "Map individual domains of expertise",
+      "Define the collaborative field",
+      "Establish flow-inducing challenges",
+      "Design iterative feedback loops",
+      "Synthesize a system-changing output"
+    ]
+  },
+  {
+    "name": "De Bono's Lateral Thinking",
+    "steps": [
+      "Choose a provocative cultural element",
+      "Apply Six Thinking Hats to individual backgrounds",
+      "Generate lateral connections between fields",
+      "Craft paradoxical core questions",
+      "Induce conceptual collisions",
+      "Crystallize a paradigm-shifting solution"
+    ]
+  },
+  {
+    "name": "Guilford's Divergent Thinking",
+    "steps": [
+      "Select a culturally resonant theme",
+      "Brainstorm diverse interpretations of expertise",
+      "Formulate expansive research inquiries",
+      "Encourage cross-pollination of concepts",
+      "Synthesize a multifaceted, novel outcome"
+    ]
+  },
+  {
+    "name": "Amabile's Componential Theory of Creativity",
+    "steps": [
+      "Discover a mutually inspiring cultural phenomenon",
+      "Align project with intrinsic motivations",
+      "Map overlapping domain-relevant skills",
+      "Define creativity-challenging questions",
+      "Nurture a supportive collaborative environment",
+      "Produce an intrinsically revolutionary output"
+    ]
+  },
+  {
+    "name": "Kaufman and Beghetto's Four C Model of Creativity",
+    "steps": [
+      "Identify a Big-C cultural inspiration",
+      "Connect personal (mini-c) interpretations",
+      "Formulate Pro-c level research questions",
+      "Foster transitions between creativity types",
+      "Manifest a creativity-transcending breakthrough"
+    ]
+  },
+  {
+    "name": "Sternberg and Lubart's Investment Theory",
+    "steps": [
+      "Recognize an undervalued cultural concept",
+      "Inventory individual creative resources",
+      "Craft resource-optimizing core questions",
+      "Invest in high-risk, high-reward ideas",
+      "Produce and 'sell' a revolutionary concept"
+    ]
+  },
+  {
+    "name": "Koestler's Bisociation Theory",
+    "steps": [
+      "Select distinct cultural matrices",
+      "Map individual thought matrices",
+      "Identify potential bisociative links",
+      "Formulate matrix-bridging questions",
+      "Synthesize a bisociative breakthrough"
+    ]
+  },
+  {
+    "name": "Simonton's Chance-Configuration Theory",
+    "steps": [
+      "Choose a serendipitous cultural inspiration",
+      "Allow random combinations of ideas",
+      "Design chance-embracing methodologies",
+      "Selectively retain promising accidents",
+      "Crystallize a stochastically emergent innovation"
+    ]
+  },
+  {
+    "name": "Wallas's Stage Theory",
+    "steps": [
+      "Immerse in a shared cultural stimulus",
+      "Prepare individual knowledge bases",
+      "Allow collaborative incubation period",
+      "Capture moments of joint illumination",
+      "Verify and refine shared insights",
+      "Manifest an unconsciously nurtured breakthrough"
+    ]
+  },
+  {
+    "name": "Finke, Ward, and Smith's Geneplore Model",
+    "steps": [
+      "Generate preinventive structures from cultural input",
+      "Explore individual interpretations of structures",
+      "Craft structure-probing core questions",
+      "Design alternating generative-exploratory methods",
+      "Synthesize a genre-defying creative product"
+    ]
+  },
+  {
+    "name": "Synectics",
+    "steps": [
+      "Identify a culturally paradoxical problem",
+      "Generate individual direct analogies",
+      "Explore symbolic analogies together",
+      "Craft fantasy analogies as core questions",
+      "Synthesize a creatively analogous solution"
+    ]
+  },
+  {
+    "name": "TRIZ (Theory of Inventive Problem Solving)",
+    "steps": [
+      "Select a cultural contradiction as inspiration",
+      "Identify relevant inventive principles",
+      "Formulate contradiction-resolving questions",
+      "Apply collaborative contradiction matrix",
+      "Manifest an innovative technical solution"
+    ]
+  },
+  {
+    "name": "Design Thinking",
+    "steps": [
+      "Empathize with a cultural user group",
+      "Define individual problem spaces",
+      "Ideate collaborative solution approaches",
+      "Prototype rapid joint methodologies",
+      "Test assumptions through shared experiments",
+      "Synthesize a human-centered innovation"
+    ]
+  },
+  {
+    "name": "Collaborative Knowledge Building",
+    "steps": [
+      "Identify a culturally significant knowledge gap",
+      "Converge on collective cognitive responsibility",
+      "Craft knowledge-advancing questions",
+      "Engage in collaborative idea improvement",
+      "Manifest a community knowledge breakthrough"
+    ]
+  },
+  {
+    "name": "Combinational Creativity",
+    "steps": [
+      "Identify diverse elements from each collaborator's expertise",
+      "Create unexpected pairings of ideas",
+      "Explore analogies between disparate concepts",
+      "Synthesize hybrid methodologies",
+      "Articulate a novel combinatorial outcome"
+    ]
+  },
+  {
+    "name": "Exploratory Creativity",
+    "steps": [
+      "Map the boundaries of the shared conceptual space",
+      "Systematically vary parameters",
+      "Discover hidden patterns or rules",
+      "Extend existing methodologies to their limits",
+      "Formulate insights from thorough exploration"
+    ]
+  },
+  {
+    "name": "Transformational Creativity",
+    "steps": [
+      "Identify fundamental assumptions in the conceptual space",
+      "Challenge core rules or constraints",
+      "Envision radical alterations to the space",
+      "Construct a new framework or methodology",
+      "Articulate a revolutionary new approach or solution"
+    ]
+  }
+]

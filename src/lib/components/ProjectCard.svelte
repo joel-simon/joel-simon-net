@@ -117,7 +117,7 @@
   .project {
     width: 100%;
     /* width: 375px; */
-    max-width: 100%;
+    max-width: 400px;
     /* height: 200px; */
     display: flex;
     /* max-width: 350px;
