@@ -1,9 +1,9 @@
 <!-- ProjectGrid.svelte -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { type ProjectData } from "./types";
+  import { type ProjectData } from "../types";
   import Project from "./Project.svelte";
-  import SvelteMarkdown from "svelte-markdown";
+  // import SvelteMarkdown from "svelte-markdown";
 
   export let projects: Array<ProjectData> = [];
 
@@ -31,6 +31,13 @@
     return removeCodeBlocks(template);
   }
 </script>
+
+<div class="flex flex-col gap-2">
+  <h2 id="examples" class="!m-0">Examples</h2>
+  <p class="w-full !text-center !m-0">
+    Select an idea to see its creative chain of thought.
+  </p>
+</div>
 
 <!-- Main container for grid and sticky sidebar -->
 <div class="flex flex-col md:flex-row w-full gap-4">

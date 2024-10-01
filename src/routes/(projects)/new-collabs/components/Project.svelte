@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type ProjectData } from "./types";
+  import { type ProjectData } from "../types";
 
   export let project: ProjectData;
   export let selectedProject: ProjectData | null = null;
