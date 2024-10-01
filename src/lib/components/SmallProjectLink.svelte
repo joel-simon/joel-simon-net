@@ -16,7 +16,7 @@
     <!-- <div class=""> -->
     <img src={project.img} class="h-full" />
     <div class="flex flex-col m-1 my-2">
-      <p class="!text-left no-underline">{project.name}</p>
+      <p class="!text-left !text-sm !md:text-lg no-underline">{project.name}</p>
       <!-- <p class="!text-left">{project.description}</p> -->
     </div>
     <!-- </div> -->

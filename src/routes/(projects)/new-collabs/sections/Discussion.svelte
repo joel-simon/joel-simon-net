@@ -126,7 +126,7 @@
       playsinline
       loop
       src="/ideas/idea_pond.mp4"
-      class="max-w-[600px] border rounded"
+      class="w-full max-w-[600px] border rounded"
     />
   </div>
 </div>

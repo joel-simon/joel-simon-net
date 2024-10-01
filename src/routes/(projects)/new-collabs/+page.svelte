@@ -65,7 +65,7 @@
           If you enjoyed this you may also enjoy my other independent
           research-art projects.
         </p> -->
-          <div class="w-full grid grid-cols-4 gap-4 my-4">
+          <div class="w-full grid grid-cols-2 md:grid-cols-4 gap-4 my-4">
             {#each projects as project}
               {#if project.labels.includes("research-art")}
                 <SmallProjectLink projectName={project.name} />
