@@ -2,7 +2,7 @@
   import { type ProjectData } from "../types";
 
   export let project: ProjectData;
-  export let selectedProject: ProjectData | null = null;
+  // export let hoveredProject: ProjectData | null = null;
   $: displayDescription = project.project.projectDescription.startsWith(
     "Create "
   )
@@ -14,35 +14,31 @@
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <!-- svelte-ignore a11y-click-events-have-key-events -->
-<div
+<!-- <div
   class="relative p-2 px-8 cursor-pointer transition border-b border-r border-dashed border-gray-200 flex flex-col justify-between hover:bg-sky-50"
-  class:selected={selectedProject === project}
-  class:bg-sky-100={selectedProject === project}
-  on:click={() => (selectedProject = project)}
-  on:mouseover={() => (selectedProject = project)}
->
-  <!-- Content of the project -->
-  <h2 class="text-lg font-bold relative z-10">
-    {project.project.projectName}
-  </h2>
-  <p class="text-sm text-gray-600 mb-2 relative z-10 text-justify">
-    {displayDescription}
-  </p>
-  <!-- <div class="flex flex-grow"></div> -->
-  <p class="text-sm relative z-10 lowercase">
-    <!-- <a href=></a> -->
-    <a
-      href="https://twitter.com/{project.creatorNames[0]}"
-      target="_blank"
-      class="font-semibold hover:underline"
-      rel="noopener noreferrer">{project.creatorNames[0]}</a
-    >
-    <a
-      href="https://twitter.com/{project.creatorNames[1]}"
-      target="_blank"
-      class="font-semibold hover:underline"
-      rel="noopener noreferrer">{project.creatorNames[1]}</a
-    >
-    <!-- {project.creatorNames.join(", ")} -->
-  </p>
-</div>
+> -->
+<!-- Content of the project -->
+<h2 class="text-lg font-bold relative z-10">
+  {project.project.projectName}
+</h2>
+<p class="text-sm text-gray-600 mb-2 relative z-10 text-justify">
+  {displayDescription}
+</p>
+<!-- <div class="flex flex-grow"></div> -->
+<p class="text-sm relative z-10 lowercase">
+  <!-- <a href=></a> -->
+  <a
+    href="https://twitter.com/{project.creatorNames[0]}"
+    target="_blank"
+    class="font-semibold hover:underline"
+    rel="noopener noreferrer">{project.creatorNames[0]}</a
+  >
+  <a
+    href="https://twitter.com/{project.creatorNames[1]}"
+    target="_blank"
+    class="font-semibold hover:underline"
+    rel="noopener noreferrer">{project.creatorNames[1]}</a
+  >
+  <!-- {project.creatorNames.join(", ")} -->
+</p>
+<!-- </div> -->

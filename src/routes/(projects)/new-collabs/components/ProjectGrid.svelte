@@ -1,13 +1,17 @@
 <!-- ProjectGrid.svelte -->
 <script lang="ts">
   import { onMount } from "svelte";
+  import { Button, Modal } from "flowbite-svelte";
   import { type ProjectData } from "../types";
   import Project from "./Project.svelte";
-  // import SvelteMarkdown from "svelte-markdown";
-
+  import SvelteMarkdown from "svelte-markdown";
   export let projects: Array<ProjectData> = [];
 
+  // let defaultModal = false;
+
+  let hoveredProject: ProjectData | null = null;
   let selectedProject: ProjectData | null = null;
+
   function removeCodeBlocks(input: string): string {
     // This regex matches code blocks (including the ``` delimiters) and any optional language identifier
     const codeBlockRegex = /```[\s\S]*?```/g;
@@ -15,13 +19,6 @@
     // Replace all matches with an empty string
     return input.replace(codeBlockRegex, "");
   }
-
-  onMount(() => {
-    // Select the first project as default when the component loads
-    if (projects.length > 0) {
-      selectedProject = projects[0];
-    }
-  });
 
   function parseCompletedTemplate(template: string): string {
     template = template.replace(
@@ -31,6 +28,29 @@
     return removeCodeBlocks(template);
   }
 </script>
+
+<Modal
+  title={selectedProject?.project.projectName}
+  open={selectedProject != null}
+  autoclose
+  class="mb-[50px]"
+>
+  {#if selectedProject}
+    <div class="flex w-full justify-center">
+      <img
+        src={`/ideas/images_dev/${selectedProject?.key}.webp`}
+        alt="project preview"
+        class="border border-gray-200 max-w-[300px] rounded-md"
+      />
+    </div>
+    <SvelteMarkdown
+      source={parseCompletedTemplate(selectedProject.project.completedTemplate)}
+    />
+    <!-- <p class="text-gray-500 dark:text-gray-400 whitespace-pre-line">
+      {parseCompletedTemplate(selectedProject.project.completedTemplate)}
+    </p> -->
+  {/if}
+</Modal>
 
 <div class="flex flex-col gap-2">
   <h2 id="examples" class="!m-0">Examples</h2>
@@ -48,7 +68,19 @@
       class="grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 border-t border-dashed border-gray-200 h-fit"
     >
       {#each projects as project, index}
-        <Project {project} bind:selectedProject />
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <!-- svelte-ignore a11y-mouse-events-have-key-events -->
+        <div
+          role="button"
+          class="relative p-2 px-8 cursor-pointer transition border-b border-r border-dashed border-gray-200 flex flex-col justify-between hover:bg-sky-50"
+          tabindex="0"
+          class:selected={hoveredProject === project}
+          class:bg-sky-100={hoveredProject === project}
+          on:click={() => (selectedProject = project)}
+          on:mouseover={() => (hoveredProject = project)}
+        >
+          <Project {project} />
+        </div>
       {/each}
     </div>
   </div>
@@ -58,50 +90,21 @@
     class="hidden md:block md:sticky md:top-0 md:h-screen bg-white p-4 shadow-lg md:overflow-y-auto border-dashed border-gray-200"
     style="width: 400px;"
   >
-    {#if selectedProject}
+    {#if hoveredProject}
       <!-- <h2 class="text-xl font-bold mb-4">
-        {selectedProject.project.projectName}
+        {hoveredProject.project.projectName}
       </h2> -->
-      <!-- <p class="mb-4">{selectedProject.project.projectDescription}</p> -->
       <img
-        src={`/ideas/images_dev/${selectedProject.key}.webp`}
+        src={`/ideas/images_dev/${hoveredProject.key}.webp`}
         alt="project preview"
         class="border border-gray-200"
       />
-      <!-- class="w-3/5" -->
-
       <h3 class="font-semibold mt-2">Steps:</h3>
       <ol class="list-decimal ml-6 mb-4 text-left">
-        {#each selectedProject.template.steps as step}
+        {#each hoveredProject.template.steps as step}
           <li class="whitespace-normal text-left">{step}</li>
         {/each}
       </ol>
-      <!-- <p
-        class=" p-4 !text-left rounded-md overflow-x-auto whitespace-pre-wrap text-sm"
-      >
-        {parseCompletedTemplate(selectedProject.project.completedTemplate)}
-      </p> -->
-    {/if}
-  </div>
-
-  <!-- Sidebar for Mobile -->
-  <div
-    class="md:hidden bg-white p-4 shadow-lg border-t border-dashed border-gray-300 mt-4"
-  >
-    {#if selectedProject}
-      <h2 class="text-xl font-bold mb-4">
-        {selectedProject.project.projectName}
-      </h2>
-      <!-- <p class="mb-4">{selectedProject.project.projectDescription}</p> -->
-      <h3 class="font-semibold">Steps:</h3>
-      <ol class="list-decimal ml-6 mb-4 text-left">
-        {#each selectedProject.template.steps as step}
-          <li class="whitespace-normal">{step}</li>
-        {/each}
-      </ol>
-      <pre
-        class="bg-gray-100 p-4 rounded-md overflow-x-auto whitespace-pre-wrap">{selectedProject
-          .project.completedTemplate}</pre>
     {/if}
   </div>
 </div>
@@ -110,19 +113,5 @@
   /* Ensure no gap between grid items */
   .grid > div {
     position: relative;
-  }
-
-  @media (max-width: 768px) {
-    /* Horizontal scrolling for grid on mobile */
-    .grid {
-      display: flex;
-      overflow-x: auto;
-      scroll-snap-type: x mandatory;
-    }
-    .grid > div {
-      flex: 0 0 auto;
-      scroll-snap-align: start;
-      width: 100%;
-    }
   }
 </style>
