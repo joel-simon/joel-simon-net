@@ -28,12 +28,14 @@
 <p class="text-sm relative z-10 lowercase">
   <!-- <a href=></a> -->
   <a
+    on:click|stopPropagation
     href="https://twitter.com/{project.creatorNames[0]}"
     target="_blank"
     class="font-semibold hover:underline"
     rel="noopener noreferrer">{project.creatorNames[0]}</a
   >
   <a
+    on:click|stopPropagation
     href="https://twitter.com/{project.creatorNames[1]}"
     target="_blank"
     class="font-semibold hover:underline"
