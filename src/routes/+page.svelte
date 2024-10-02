@@ -21,7 +21,7 @@
   id="label-container"
   class="w-full my-4 md:my-6 sticky top-0 bg-white z-10 py-2"
 >
-  <div class="flex gap-2 w-full justify-center">
+  <div class="flex md:gap-2 w-full justify-center flex-wrap">
     {#each labels as label}
       {#key label}
         <Label {label} {selectedLabel} />
