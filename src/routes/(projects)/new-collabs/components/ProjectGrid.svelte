@@ -55,7 +55,7 @@
 
   <!-- Sticky Sidebar Section -->
   <div
-    class="hidden md:block md:sticky md:top-0 md:h-screen bg-white p-4 shadow-lg md:overflow-y-auto border-l border-t border-dashed border-gray-200"
+    class="hidden md:block md:sticky md:top-0 md:h-screen bg-white p-4 shadow-lg md:overflow-y-auto border-dashed border-gray-200"
     style="width: 400px;"
   >
     {#if selectedProject}
@@ -64,25 +64,23 @@
       </h2> -->
       <!-- <p class="mb-4">{selectedProject.project.projectDescription}</p> -->
       <img
-        src={`/ideas/images/${selectedProject.key}.webp`}
+        src={`/ideas/images_dev/${selectedProject.key}.webp`}
         alt="project preview"
-        class="w-3/5"
+        class="border border-gray-200"
       />
+      <!-- class="w-3/5" -->
 
-      <h3 class="font-semibold">Steps:</h3>
-      <!-- <ol class="list-decimal ml-6 mb-4 text-left">
+      <h3 class="font-semibold mt-2">Steps:</h3>
+      <ol class="list-decimal ml-6 mb-4 text-left">
         {#each selectedProject.template.steps as step}
           <li class="whitespace-normal text-left">{step}</li>
         {/each}
-      </ol> -->
-      <p
+      </ol>
+      <!-- <p
         class=" p-4 !text-left rounded-md overflow-x-auto whitespace-pre-wrap text-sm"
       >
         {parseCompletedTemplate(selectedProject.project.completedTemplate)}
-        <!-- <SvelteMarkdown
-          source={removeCodeBlocks(selectedProject.project.completedTemplate)}
-        /> -->
-      </p>
+      </p> -->
     {/if}
   </div>
 

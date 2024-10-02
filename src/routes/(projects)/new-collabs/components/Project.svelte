@@ -3,6 +3,13 @@
 
   export let project: ProjectData;
   export let selectedProject: ProjectData | null = null;
+  $: displayDescription = project.project.projectDescription.startsWith(
+    "Create "
+  )
+    ? project.project.projectDescription.slice(7).charAt(0).toUpperCase() +
+      project.project.projectDescription.slice(8)
+    : project.project.projectDescription.charAt(0).toUpperCase() +
+      project.project.projectDescription.slice(1);
 </script>
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -19,13 +26,23 @@
     {project.project.projectName}
   </h2>
   <p class="text-sm text-gray-600 mb-2 relative z-10 text-justify">
-    {project.project.projectDescription}
+    {displayDescription}
   </p>
   <!-- <div class="flex flex-grow"></div> -->
-  <p class="text-sm font-semibold relative z-10">
+  <p class="text-sm relative z-10 lowercase">
     <!-- <a href=></a> -->
-    {project.creatorNames[0]}
-    {project.creatorNames[1]}
+    <a
+      href="https://twitter.com/{project.creatorNames[0]}"
+      target="_blank"
+      class="font-semibold hover:underline"
+      rel="noopener noreferrer">{project.creatorNames[0]}</a
+    >
+    <a
+      href="https://twitter.com/{project.creatorNames[1]}"
+      target="_blank"
+      class="font-semibold hover:underline"
+      rel="noopener noreferrer">{project.creatorNames[1]}</a
+    >
     <!-- {project.creatorNames.join(", ")} -->
   </p>
 </div>

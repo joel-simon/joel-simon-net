@@ -88,6 +88,13 @@
     collaborate on that let me know!)
   </p>
   <p>
+    <b>Improved Archive:</b> The archive is not as useful as it could be since it
+    only sends the N most previous idea from teh same creators, which causes repetition
+    of similar themes in the output. The system could go in epochs where it summarizes
+    the common themes and techniques of the past and that is used to generate the
+    next batch of ideas.
+  </p>
+  <p>
     <b>Learned Styles:</b> The original thesis for this work was to co-evolve artifacts
     and aesthetic preferences. However, it is hard enough to evaluate the quality
     of ideas let alone aesthetic preferences of ideas.

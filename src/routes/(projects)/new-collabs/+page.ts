@@ -25,8 +25,8 @@ export const load: PageLoad = async ({ fetch }) => {
         return null;
       }
     })
-    .filter((project) => project !== null)
-    .slice(0, 30);
+    .filter((project) => project !== null);
+  // .slice(0, 30);
   // console.log(projects);
 
   return {
