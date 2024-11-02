@@ -24,6 +24,16 @@ export const projects: Project[] = [
     path: "/about",
   },
   {
+    name: "ClickSynth",
+    year: 2024,
+    labels: ["web", "tool", "AI"],
+
+    img: "imgs/thumbnails/clicksynth.jpg",
+    // path: 'puppets',
+    externalPath: "https://clicksynth.com",
+    description: "A kind of 'shader-breeder' using language models.",
+  },
+  {
     name: "Puppets App",
     year: 2024,
     labels: ["web", "tool"],
@@ -35,20 +45,20 @@ export const projects: Project[] = [
       "Collaborative online puppet studio and theater. An experiment in creative tools based on principles of craft, play and collaboration by StudioMorphogen.",
   },
   {
-    name: "Ceramic Lamp 2",
-    year: 2023,
-    labels: ["lighting", "sculpture"],
-    img: "imgs/thumbnails/ceramic-lamp-2.jpeg",
-    description: "Hand built ceramic lamp.",
-  },
-  {
     name: "LatentScape",
-    year: 2023,
+    year: 2024,
     externalPath: "https://latentscape.com",
     labels: ["web", "AI"],
     img: "imgs/thumbnails/latentscape.jpg",
     description:
       "A virtual world for exploring and creating images with others.",
+  },
+  {
+    name: "Ceramic Lamp 2",
+    year: 2023,
+    labels: ["lighting", "sculpture"],
+    img: "imgs/thumbnails/ceramic-lamp-2.jpeg",
+    description: "Hand built ceramic lamp.",
   },
   {
     name: "New Words",
