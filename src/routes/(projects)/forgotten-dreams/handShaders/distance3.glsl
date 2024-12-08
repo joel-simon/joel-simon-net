@@ -46,7 +46,7 @@ void main() {
     //     texture2D(distanceTexture, uv + vec2(1.0/256., 0.0)).r +
     //     texture2D(distanceTexture, uv + vec2(-1.0/256., 0.0)).r
     // ) / 5.0;
-    float distanceValue = texture2D(distanceTexture, uv).r;
+    float distanceValue = 1.0 - clamp(texture2D(distanceTexture, uv).r * distanceScale, 0.0, 5.0);
     
     // Normalize the UV coordinates for square aspect ratio
     vec2 fragCoord = vec2(
@@ -127,13 +127,13 @@ void main() {
     //  if (invertedDistance == 1.0) {
     //     invertedDistance = 0.0;
     // }
+    // gl_FragColor = vec4(finalColor, opacity);
     // float opacity = smoothstep(0.75, 0.6, distanceValue);
     // float opacity = distanceValue > .75 || distanceValue == 0. ? 0.0 : 1.0;
-    // gl_FragColor = vec4(finalColor, opacity);
     
     // Smooth interpolation near 0 and above 0.75
-    float opacity = smoothstep(0.0, 0.1, distanceValue) * (1.0 - smoothstep(0.6, 0.75, distanceValue));
-    gl_FragColor = vec4(finalColor, opacity);
+    // float opacity = smoothstep(0.0, 0.05, distanceValue) * (1.0 - smoothstep(0.6, 0.75, distanceValue));
+    gl_FragColor = vec4(finalColor, distanceValue == 1.0 ? 0.0 : distanceValue);
 
     // gl_FragColor = vec4(distanceValue, distanceValue, distanceValue, 1.0);
     // float scaledDistance = distanceValue * 5.0;  // Adjust this multiplier as needed

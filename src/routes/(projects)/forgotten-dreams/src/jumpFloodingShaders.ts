@@ -1,8 +1,8 @@
-import type { Regl } from 'regl';
+import type { Regl } from "regl";
 
 export const makeInitJumpFlooding = (regl: Regl) =>
-	regl({
-		frag: `
+  regl({
+    frag: `
     precision mediump float;
     uniform sampler2D maskTexture;
     uniform vec2 resolution;
@@ -27,27 +27,30 @@ export const makeInitJumpFlooding = (regl: Regl) =>
      
     }
     `,
-		vert: `
+    vert: `
     precision mediump float;
     attribute vec2 position;
     void main() {
       gl_Position = vec4(position, 0, 1);
     }
     `,
-		framebuffer: regl.prop('framebuffer'),
-		uniforms: {
-			maskTexture: regl.prop('maskTexture'),
-			resolution: ({ viewportWidth, viewportHeight }) => [viewportWidth, viewportHeight]
-		},
-		attributes: {
-			position: [-4, -4, 4, -4, 0, 4]
-		},
-		count: 3
-	});
+    framebuffer: regl.prop("framebuffer"),
+    uniforms: {
+      maskTexture: regl.prop("maskTexture"),
+      resolution: ({ viewportWidth, viewportHeight }) => [
+        viewportWidth,
+        viewportHeight,
+      ],
+    },
+    attributes: {
+      position: [-4, -4, 4, -4, 0, 4],
+    },
+    count: 3,
+  });
 
 export const jumpFloodingPass = (regl: Regl) =>
-	regl({
-		frag: `
+  regl({
+    frag: `
     precision mediump float;
     uniform sampler2D prevPass;
     uniform vec2 resolution;
@@ -81,7 +84,7 @@ export const jumpFloodingPass = (regl: Regl) =>
     }
     `,
 
-		vert: `
+    vert: `
     precision mediump float;
     attribute vec2 position;
     void main() {
@@ -89,25 +92,29 @@ export const jumpFloodingPass = (regl: Regl) =>
     }
     `,
 
-		uniforms: {
-			prevPass: regl.prop('prevPass'),
-			resolution: ({ viewportWidth, viewportHeight }) => [viewportWidth, viewportHeight],
-			stepSize: regl.prop('stepSize')
-		},
-		framebuffer: regl.prop('framebuffer'),
-		attributes: {
-			position: [-4, -4, 4, -4, 0, 4]
-		},
+    uniforms: {
+      prevPass: regl.prop("prevPass"),
+      resolution: ({ viewportWidth, viewportHeight }) => [
+        viewportWidth,
+        viewportHeight,
+      ],
+      stepSize: regl.prop("stepSize"),
+    },
+    framebuffer: regl.prop("framebuffer"),
+    attributes: {
+      position: [-4, -4, 4, -4, 0, 4],
+    },
 
-		count: 3
-	});
+    count: 3,
+  });
 
 export const makeDrawDebugJFAShader = (regl: Regl) =>
-	regl({
-		frag: `
+  regl({
+    frag: `
             precision mediump float;
             uniform sampler2D texture;
             uniform vec2 resolution;
+            uniform float distanceScale;
             varying vec2 uv;
             
             void main() {
@@ -116,7 +123,7 @@ export const makeDrawDebugJFAShader = (regl: Regl) =>
                 
                 // Normalize the distance for visualization
                 // Adjust the divisor to control the contrast
-                float normalizedDist = clamp(dist * 10.0, 0.0, 1.0);
+                float normalizedDist = clamp(dist * distanceScale, 0.0, 1.0);
                 
                 // Output grayscale
                 gl_FragColor = vec4(vec3(normalizedDist), 1.0);
@@ -124,7 +131,7 @@ export const makeDrawDebugJFAShader = (regl: Regl) =>
                 // gl_FragColor = vec4(vec3(color), 1.0);
             }
             `,
-		vert: `
+    vert: `
             precision mediump float;
             attribute vec2 position;
             varying vec2 uv;
@@ -133,12 +140,16 @@ export const makeDrawDebugJFAShader = (regl: Regl) =>
                 gl_Position = vec4(2.0 * position - 1.0, 0, 1);
             }
             `,
-		attributes: {
-			position: [-2, 0, 0, -2, 2, 2]
-		},
-		uniforms: {
-			texture: regl.prop('texture'),
-			resolution: ({ viewportWidth, viewportHeight }) => [viewportWidth, viewportHeight]
-		},
-		count: 3
-	});
+    attributes: {
+      position: [-2, 0, 0, -2, 2, 2],
+    },
+    uniforms: {
+      distanceScale: regl.prop("distanceScale"),
+      texture: regl.prop("texture"),
+      resolution: ({ viewportWidth, viewportHeight }) => [
+        viewportWidth,
+        viewportHeight,
+      ],
+    },
+    count: 3,
+  });

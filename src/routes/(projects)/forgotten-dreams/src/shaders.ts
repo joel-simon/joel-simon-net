@@ -1,8 +1,8 @@
-import type { Regl } from 'regl';
+import type { Regl } from "regl";
 
 export const distanceTransform = (regl: Regl) =>
-	regl({
-		frag: `
+  regl({
+    frag: `
     precision mediump float;
     uniform sampler2D maskTexture;
     uniform vec2 resolution;
@@ -33,7 +33,7 @@ export const distanceTransform = (regl: Regl) =>
     }
     `,
 
-		vert: `
+    vert: `
     precision mediump float;
     attribute vec2 position;
     varying vec2 uv;
@@ -43,23 +43,26 @@ export const distanceTransform = (regl: Regl) =>
     }
     `,
 
-		uniforms: {
-			maskTexture: regl.prop('maskTexture'),
-			resolution: ({ viewportWidth, viewportHeight }) => [viewportWidth, viewportHeight]
-		},
+    uniforms: {
+      maskTexture: regl.prop("maskTexture"),
+      resolution: ({ viewportWidth, viewportHeight }) => [
+        viewportWidth,
+        viewportHeight,
+      ],
+    },
 
-		attributes: {
-			position: [-4, -4, 4, -4, 0, 4]
-		},
+    attributes: {
+      position: [-4, -4, 4, -4, 0, 4],
+    },
 
-		count: 3,
-		framebuffer: regl.prop('framebuffer')
-	});
+    count: 3,
+    framebuffer: regl.prop("framebuffer"),
+  });
 
 export function makeDrawShaderViewer(regl: Regl) {
-	return regl({
-		frag: regl.prop('fragmentShader'),
-		vert: `
+  return regl({
+    frag: regl.prop("fragmentShader"),
+    vert: `
         precision mediump float;
         attribute vec2 position;
         varying vec2 uv;
@@ -68,36 +71,40 @@ export function makeDrawShaderViewer(regl: Regl) {
             gl_Position = vec4(2.0 * position - 1.0, 0, 1);
         }
     `,
-		attributes: {
-			position: [-2, 0, 0, -2, 2, 2]
-		},
-		uniforms: {
-			time: ({ time }) => {
-				// console.log(time);
-				// return time * 0.2;
-				return time * 4.0;
-			},
-			width: regl.context('viewportWidth'),
-			height: regl.context('viewportHeight'),
-			distanceTexture: regl.prop('distanceTexture'),
-			resolution: ({ viewportWidth, viewportHeight }) => [viewportWidth, viewportHeight]
-		},
-		blend: {
-			enable: true,
-			func: {
-				srcRGB: 'src alpha',
-				srcAlpha: 1,
-				dstRGB: 'one minus src alpha',
-				dstAlpha: 1
-			}
-		},
-		count: 3
-	});
+    attributes: {
+      position: [-2, 0, 0, -2, 2, 2],
+    },
+    uniforms: {
+      time: ({ time }) => {
+        // console.log(time);
+        // return time * 0.2;
+        return time * 4.0;
+      },
+      width: regl.context("viewportWidth"),
+      height: regl.context("viewportHeight"),
+      distanceTexture: regl.prop("distanceTexture"),
+      distanceScale: regl.prop("distanceScale"),
+      resolution: ({ viewportWidth, viewportHeight }) => [
+        viewportWidth,
+        viewportHeight,
+      ],
+    },
+    blend: {
+      enable: true,
+      func: {
+        srcRGB: "src alpha",
+        srcAlpha: 1,
+        dstRGB: "one minus src alpha",
+        dstAlpha: 1,
+      },
+    },
+    count: 3,
+  });
 }
 
 export const makeDrawDebugShader = (regl: Regl) =>
-	regl({
-		frag: `
+  regl({
+    frag: `
     precision mediump float;
     uniform sampler2D texture;
     varying vec2 uv;
@@ -105,7 +112,7 @@ export const makeDrawDebugShader = (regl: Regl) =>
         gl_FragColor = texture2D(texture, uv);
     }
 `,
-		vert: `
+    vert: `
     precision mediump float;
     attribute vec2 position;
     varying vec2 uv;
@@ -114,11 +121,11 @@ export const makeDrawDebugShader = (regl: Regl) =>
         gl_Position = vec4(position * 2.0 - 1.0, 0, 1);
     }
 `,
-		attributes: {
-			position: [-2, 0, 0, -2, 2, 2] // Triangle that covers viewport
-		},
-		uniforms: {
-			texture: regl.prop('texture')
-		},
-		count: 3
-	});
+    attributes: {
+      position: [-2, 0, 0, -2, 2, 2], // Triangle that covers viewport
+    },
+    uniforms: {
+      texture: regl.prop("texture"),
+    },
+    count: 3,
+  });

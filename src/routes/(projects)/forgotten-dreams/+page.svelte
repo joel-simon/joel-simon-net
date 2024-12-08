@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, onMount } from "svelte";
+  import { onDestroy, onMount, tick } from "svelte";
   import REGL from "regl";
   import {
     distanceTransform,
@@ -22,6 +22,14 @@
   import { drawSmoothPolygon } from "./src/drawing";
   import { smoothPolygon } from "./src/geometry";
   import hull from "hull.js";
+  import { downloadCanvas } from "$lib/Downloads";
+  import { debounce } from "$lib/Functions";
+  import {
+    ArrowLeftOutline,
+    ArrowRightOutline,
+    CameraPhotoOutline,
+    DownloadSolid,
+  } from "flowbite-svelte-icons";
 
   const { Hands } = handsModule;
   const { Camera } = cameraModule;
@@ -58,11 +66,21 @@
   }
 
   function onResize() {
+    console.log("onResize");
     if (!backgroundCanvas) return;
     backgroundCanvas.width = width;
     backgroundCanvas.height = height;
-    bgCtx.drawImage(caveWall, 0, 0, width, height);
+    console.log("drawing cave wall", backgroundCanvas, caveWall);
+
+    const scale = Math.max(width / caveWall.width, height / caveWall.height);
+    const scaledWidth = caveWall.width * scale;
+    const scaledHeight = caveWall.height * scale;
+    const x = (width - scaledWidth) / 2;
+    const y = (height - scaledHeight) / 2;
+    bgCtx.drawImage(caveWall, x, y, scaledWidth, scaledHeight);
   }
+
+  const onResizeDebounced = debounce(onResize, 50);
 
   function handleKeyDown(event: KeyboardEvent) {
     if (event.code === "Space") {
@@ -100,7 +118,7 @@
     const initJFA = makeInitJumpFlooding(regl);
     const drawDebugJFAShader = makeDrawDebugJFAShader(regl);
     caveWall = new Image();
-    caveWall.src = "/imgs/cave-wall.jpg";
+    caveWall.src = "/imgs/cave-wall-2x.jpg";
 
     caveWall.onload = () => {
       onResize();
@@ -203,11 +221,13 @@
             // 	texture: currentFbo // Use the final FBO
             // });
             // drawDebugJFAShader({
-            // 	texture: currentFbo // Use the final FBO
+            //   texture: currentFbo, // Use the final FBO
+            //   distanceScale: 3.0,
             // });
             drawShaderViewer({
-              fragmentShader: shaders[shaderIndex],
+              fragmentShader: shaders[1], //[shaderIndex],
               distanceTexture: currentFbo, // Use the final FBO
+              distanceScale: 20.0,
             });
           } else {
             distanceTransformShader({
@@ -217,6 +237,7 @@
             drawShaderViewer({
               fragmentShader: shaders[shaderIndex],
               distanceTexture: fbo1,
+              distanceScale: 2.0,
             });
           }
         }
@@ -247,7 +268,7 @@
     });
 
     window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("resize", onResize);
+    window.addEventListener("resize", onResizeDebounced);
 
     return () => {
       if (fbo1) fbo1.destroy();
@@ -259,45 +280,45 @@
     };
   });
 
-  function drawPoints(
-    points: number[][],
-    handCenter: { x: number; y: number },
-    useBezierCurve: boolean,
-    ctx: CanvasRenderingContext2D
-  ) {
-    // Scale points outward from center
-    const scaleAmount = 1.5; // Adjust this to scale the shape
-    const offsetPixels = 50; // Additional pixel offset
+  //   function drawPoints(
+  //     points: number[][],
+  //     handCenter: { x: number; y: number },
+  //     useBezierCurve: boolean,
+  //     ctx: CanvasRenderingContext2D
+  //   ) {
+  //     // Scale points outward from center
+  //     const scaleAmount = 3; // Adjust this to scale the shape
+  //     const offsetPixels = 50; // Additional pixel offset
 
-    const scaledPoints = points.map((point) => {
-      const dx = point[0] - handCenter.x;
-      const dy = point[1] - handCenter.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      const normalizedDx = dx / distance;
-      const normalizedDy = dy / distance;
+  //     const scaledPoints = points.map((point) => {
+  //       const dx = point[0] - handCenter.x;
+  //       const dy = point[1] - handCenter.y;
+  //       const distance = Math.sqrt(dx * dx + dy * dy);
+  //       const normalizedDx = dx / distance;
+  //       const normalizedDy = dy / distance;
 
-      return [
-        handCenter.x + dx * scaleAmount + normalizedDx * offsetPixels,
-        handCenter.y + dy * scaleAmount + normalizedDy * offsetPixels,
-      ];
-    });
+  //       return [
+  //         handCenter.x + dx * scaleAmount + normalizedDx * offsetPixels,
+  //         handCenter.y + dy * scaleAmount + normalizedDy * offsetPixels,
+  //       ];
+  //     });
 
-    ctx.beginPath();
-    ctx.moveTo(scaledPoints[0][0], scaledPoints[0][1]);
+  //     ctx.beginPath();
+  //     ctx.moveTo(scaledPoints[0][0], scaledPoints[0][1]);
 
-    if (useBezierCurve) {
-      drawSmoothPolygon(ctx, scaledPoints);
-    } else {
-      // Draw straight lines between points
-      for (let i = 1; i < scaledPoints.length; i++) {
-        ctx.lineTo(scaledPoints[i][0], scaledPoints[i][1]);
-      }
-    }
+  //     if (useBezierCurve) {
+  //       drawSmoothPolygon(ctx, scaledPoints);
+  //     } else {
+  //       // Draw straight lines between points
+  //       for (let i = 1; i < scaledPoints.length; i++) {
+  //         ctx.lineTo(scaledPoints[i][0], scaledPoints[i][1]);
+  //       }
+  //     }
 
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-  }
+  //     ctx.closePath();
+  //     ctx.fill();
+  //     ctx.stroke();
+  //   }
 
   function handleResults(results: {
     multiHandLandmarks: NormalizedLandmarkList[];
@@ -311,13 +332,6 @@
     // Clear canvas
     handCtx.fillStyle = "black";
     handCtx.fillRect(0, 0, handCanvas.width, handCanvas.height);
-
-    // handCtx.fillStyle = 'white';
-    // handCtx.fillRect(1, 1, handCanvas.width - 2, handCanvas.height - 2);
-    // handCtx.fillStyle = 'white';
-    // handCtx.fillRect(1, 1, handCanvas.width - 2, handCanvas.height - 2);
-    // handCtx.fillStyle = 'white';
-    // handCtx.fillRect(0, 0, handCanvas.width, handCanvas.height);
 
     if (results.multiHandLandmarks) {
       for (const landmarks of results.multiHandLandmarks) {
@@ -337,11 +351,11 @@
         });
         //
         // Generate concave hull
-        const hullPoints = smoothPolygon(
-          hull(points, Infinity) as number[][],
-          2,
-          0.2
-        );
+        // const hullPoints = smoothPolygon(
+        //   hull(points, Infinity) as number[][],
+        //   2,
+        //   0.2
+        // );
         // console.log(hullPoints.length);
         // Calculate hand center
         const handCenter = {
@@ -351,22 +365,41 @@
 
         handCtx.fillStyle = "white";
         // Draw the points with bezier curves or straight lines
-        drawPoints(hullPoints, handCenter, true, handCtx); // Change to false for straight lines
+        // drawPoints(hullPoints, handCenter, true, handCtx); // Change to false for straight lines
+        // handCtx.fillRect(10, 10, handCanvas.width - 20, handCanvas.height - 20);
+        // Draw white circle around hand
+        handCtx.beginPath();
+        handCtx.strokeStyle = "white";
+        handCtx.lineWidth = 4;
+        const radius =
+          Math.max(
+            ...points.map((p) =>
+              Math.hypot(p[0] - handCenter.x, p[1] - handCenter.y)
+            )
+          ) * 2.0; // 20% larger than furthest point
+        handCtx.arc(handCenter.x, handCenter.y, radius, 0, Math.PI * 2);
+        // handCtx.stroke();
+        handCtx.fill();
 
         drawHand(handCtx, scaledLandmarks, "black");
       }
     }
     handCtx.restore();
   }
-
-  function downloadCanvas() {
-    const link = document.createElement("a");
-    const image = backgroundCanvas.toDataURL("image/png");
-    link.download = `hand-drawing-${Date.now()}.png`;
-    link.href = image;
-    link.click();
-  }
 </script>
+
+<svelte:head>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin={"true"}
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300..700;1,300..700&display=swap"
+    rel="stylesheet"
+  />
+</svelte:head>
 
 <div
   bind:clientWidth={width}
@@ -401,7 +434,7 @@
 
 <div class="absolute bottom-4 left-0 flex w-full flex-col items-center gap-2">
   <p
-    class="text-2xl text-white/80 transition-all"
+    class="text-2xl text-white/80 transition-all drop-shadow-[0_2px_2px_rgba(0,0,0,1)]"
     class:opacity-0={handVisible}
   >
     Hand not visible
@@ -411,10 +444,10 @@
       on:click={() =>
         (shaderIndex = (shaderIndex - 1 + shaders.length) % shaders.length)}
     >
-      ←
+      <ArrowLeftOutline />
     </button>
     <button on:click={() => (shaderIndex = (shaderIndex + 1) % shaders.length)}
-      >→</button
+      ><ArrowRightOutline /></button
     >
     <button disabled={!handVisible} on:click={() => (needsFrame = true)}
       >Stamp</button
@@ -422,11 +455,15 @@
     <button
       on:click={() => {
         onResize();
-        // bgCtx.fillStyle = 'black';
-        // bgCtx.fillRect(0, 0, width, height);
       }}>Clear</button
     >
-    <button on:click={downloadCanvas}>↓</button>
+    <button
+      on:click={() =>
+        downloadCanvas(backgroundCanvas, { filename: "hand-drawing" })}
+    >
+      <DownloadSolid />
+      <!-- <CameraPhotoOutline /> -->
+    </button>
   </div>
   <!-- <UI /> -->
 </div>
@@ -445,12 +482,22 @@
   </div>
 {/if}
 
+<!-- 
+<div class="fixed top-0 left-0 w-full h-full p-16 text-white/80 bg-black/50">
+  <h1 class="text-8xl uppercase drop-shadow-lg">webpage of forgotten dreams</h1>
+  <p class="text-4xl drop-shadow-lg">
+    Inspired by cave paintings, this app allows you to draw with your hand and
+    then use a shader to process the drawing.
+  </p>
+</div> -->
+
 <style lang="postcss">
   :global(body) {
     background-color: black;
   }
   button {
-    @apply rounded-2xl border-2 border-dotted border-white bg-white/10 px-6 py-3 text-lg text-white mix-blend-difference backdrop-blur-md transition-all hover:bg-white/20;
+    @apply rounded-xl border border-dashed border-white bg-white/10 px-6 py-3 text-lg text-white backdrop-blur-md transition-all hover:bg-white/20;
+    /* mix-blend-difference  */
   }
   button:disabled {
     @apply cursor-not-allowed opacity-50;
@@ -463,5 +510,11 @@
   }
   .relative {
     position: relative;
+  }
+  * {
+    font-family: "Cormorant", serif;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
   }
 </style>
