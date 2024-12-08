@@ -48,7 +48,19 @@ void main() {
     // ) / 5.0;
     vec2 derp = uv;
     derp.y = .1 +  (uv.y * 0.8);
-    float distanceValue = 1.0 - clamp(texture2D(distanceTexture,derp ).r * distanceScale, 0.0, 5.0);
+    float distanceValue = 1.0 - texture2D(distanceTexture, derp).r * distanceScale;
+
+    // Apply easing function to make distance transition more gradual
+    // First 33% is 0, then cubic ease-in for the rest
+    // if (distanceValue < 0.33) {
+    //     distanceValue = 1.0;
+    // } else {
+    //     // Remap remaining range (0.33-1.0) to (0-1) before applying curve
+    //     float remapped = (distanceValue - 0.33) / 0.67;
+    //     distanceValue = remapped * remapped * remapped;
+    // }
+
+
     
     // Normalize the UV coordinates for square aspect ratio
     vec2 fragCoord = vec2(
@@ -115,32 +127,8 @@ void main() {
                      depthColor * (0.5 + distanceValue * 0.2) +
                      reflectColor * (0.3 + distanceValue * 0.2);
 
-    // Enhance overall intensity near objects
-    // finalColor *= (1.0 + distanceValue * 0.2);
 
-    // float invertedDistance = sqrt(clamp(1.0 - distanceValue, 0.0, 1.0));
-    // if (invertedDistance == 1.0) {
-    //     invertedDistance = 0.0;
-    // }
-    // gl_FragColor = vec4(finalColor, invertedDistance);
-    
-    // gl_FragColor = vec4(finalColor * 0.9, 1.0);
-    // float invertedDistance = clamp(1.0 - distanceValue, 0.0, 1.0);
-    //  if (invertedDistance == 1.0) {
-    //     invertedDistance = 0.0;
-    // }
-    // gl_FragColor = vec4(finalColor, opacity);
-    // float opacity = smoothstep(0.75, 0.6, distanceValue);
-    // float opacity = distanceValue > .75 || distanceValue == 0. ? 0.0 : 1.0;
-    
-    // Smooth interpolation near 0 and above 0.75
-    // float opacity = smoothstep(0.0, 0.05, distanceValue) * (1.0 - smoothstep(0.6, 0.75, distanceValue));
-    gl_FragColor = vec4(finalColor, distanceValue == 1.0 ? 0.0 : distanceValue);
+    gl_FragColor = vec4(finalColor, distanceValue > .9999 ? 0.0 : distanceValue);
+    // gl_FragColor = vec4(distanceValue);
 
-    // gl_FragColor = vec4(distanceValue, distanceValue, distanceValue, 1.0);
-    // float scaledDistance = distanceValue * 5.0;  // Adjust this multiplier as needed
-    // gl_FragColor = vec4(vec3(scaledDistance), 1.0);
-
-    // vec4 rawValue = texture2D(distanceTexture, uv);
-    // gl_FragColor = rawValue;
 }

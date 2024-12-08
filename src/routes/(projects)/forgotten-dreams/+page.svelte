@@ -17,11 +17,11 @@
   import shaderSrcDist3 from "./handShaders/distance3.glsl?raw";
   import shaderSrcDist4 from "./handShaders/distance4.glsl?raw";
   import handsModule, { type NormalizedLandmarkList } from "@mediapipe/hands";
-  import cameraModule from "@mediapipe/camera_utils";
+  //   import cameraModule from "@mediapipe/camera_utils";
   import { drawHand } from "./src/drawHand";
-  import { drawSmoothPolygon } from "./src/drawing";
-  import { smoothPolygon } from "./src/geometry";
-  import hull from "hull.js";
+  //   import { drawSmoothPolygon } from "./src/drawing";
+  //   import { smoothPolygon } from "./src/geometry";
+  //   import hull from "hull.js";
   import { downloadCanvas } from "$lib/Downloads";
   import { debounce } from "$lib/Functions";
   import {
@@ -54,12 +54,15 @@
   let caveWall: HTMLImageElement;
   let handsLoaded = false;
   let handVisible = false;
+  let hasBegun = false;
   let lastHandVisible = false;
 
   let fps = 0;
   let frameCount = 0;
   let lastTime = performance.now();
   const DEV = import.meta.env.DEV;
+
+  let isMobile: boolean;
 
   function captureCanvas() {
     // Draw the current frame onto the background canvas
@@ -135,6 +138,11 @@
   }
 
   onMount(() => {
+    isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      );
+
     let clickIndex = 0;
     const regl = REGL({
       canvas: mainCanvas,
@@ -243,7 +251,7 @@
             drawShaderViewer({
               fragmentShader: shaders[1], //[shaderIndex],
               distanceTexture: currentFbo, // Use the final FBO
-              distanceScale: 20.0,
+              distanceScale: 10.0,
             });
           } else {
             distanceTransformShader({
@@ -446,65 +454,91 @@
   <canvas bind:this={handCanvas} class="w-32"></canvas>
 </div>
 
-<div class="absolute bottom-4 left-0 flex w-full flex-col items-center gap-2">
-  <p
-    class="text-2xl text-white/80 transition-all drop-shadow-[0_2px_2px_rgba(0,0,0,1)]"
-    class:opacity-0={handVisible}
+{#if isMobile}
+  <div
+    class="fixed top-0 left-0 w-full h-full p-8 text-white/80 bg-black/90 flex flex-col justify-center items-center gap-8"
   >
-    {!handsLoaded ? "Loading hands..." : "Hand not visible"}
-    <!-- Hand not visible -->
-  </p>
-  <div class="flex w-fit gap-4">
-    <button
-      on:click={() =>
-        (shaderIndex = (shaderIndex - 1 + shaders.length) % shaders.length)}
-    >
-      <ArrowLeftOutline />
-    </button>
-    <button on:click={() => (shaderIndex = (shaderIndex + 1) % shaders.length)}
-      ><ArrowRightOutline /></button
-    >
-    <button disabled={!handVisible} on:click={() => (needsFrame = true)}
-      >Stamp</button
-    >
-    <button
-      on:click={() => {
-        onResize();
-      }}>Clear</button
-    >
-    <button
-      on:click={() =>
-        downloadCanvas(backgroundCanvas, { filename: "hand-drawing" })}
-    >
-      <DownloadSolid />
-      <!-- <CameraPhotoOutline /> -->
-    </button>
+    <h1 class="text-4xl text-center uppercase drop-shadow-lg">
+      This experience requires a desktop browser with a webcam
+    </h1>
+    <p class="text-xl text-center drop-shadow-lg">
+      Please visit on desktop to create your own cave paintings
+    </p>
   </div>
-  <!-- <UI /> -->
-</div>
-
+{:else if hasBegun}
+  <div class="absolute bottom-4 left-0 flex w-full flex-col items-center gap-2">
+    <p
+      class="text-2xl text-white/80 transition-all drop-shadow-[0_2px_2px_rgba(0,0,0,1)]"
+      class:opacity-0={handVisible}
+    >
+      {!handsLoaded ? "Loading hands..." : "Hand not visible"}
+      <!-- Hand not visible -->
+    </p>
+    <div class="flex w-fit gap-4">
+      <button
+        on:click={() =>
+          (shaderIndex = (shaderIndex - 1 + shaders.length) % shaders.length)}
+      >
+        <ArrowLeftOutline />
+      </button>
+      <button
+        on:click={() => (shaderIndex = (shaderIndex + 1) % shaders.length)}
+        ><ArrowRightOutline /></button
+      >
+      <button disabled={!handVisible} on:click={() => (needsFrame = true)}
+        >Stamp</button
+      >
+      <button
+        on:click={() => {
+          onResize();
+        }}>Clear</button
+      >
+      <button
+        on:click={() =>
+          downloadCanvas(backgroundCanvas, { filename: "hand-drawing" })}
+      >
+        <DownloadSolid />
+        <!-- <CameraPhotoOutline /> -->
+      </button>
+    </div>
+    <!-- <UI /> -->
+  </div>
+{:else}
+  <div
+    class="fixed top-0 left-0 w-full h-full p-16 text-white/80 bg-black/50 flex flex-col justify-center items-center gap-8 cursor-pointer"
+    on:click={() => (hasBegun = true)}
+  >
+    <h1 class="text-8xl uppercase drop-shadow-lg">
+      webpage of forgotten dreams
+    </h1>
+    <p class="text-4xl drop-shadow-lg">
+      Inspired by prehistoric cave paintings of Lascaux and Cueva de las Manos,
+      as well as Werner Herzog's
+      <a
+        class="hover:underline drop-shadow-lg"
+        target="_blank"
+        href="https://en.wikipedia.org/wiki/Cave_of_Forgotten_Dreams"
+      >
+        documentary</a
+      >
+      , this app allows simple browser-based hand drawing.
+    </p>
+    <p class="text-4xl mt-8">Click to begin</p>
+  </div>
+{/if}
 <!-- Add hidden video element -->
-<video
+<!-- <video
   bind:this={videoElement}
   class="absolute left-0 top-0 z-[100]"
   width="768"
   height="768"
-/>
+/> -->
 
 {#if DEV}
   <div class="fixed right-2 top-2 font-mono text-sm text-white/80">
     {fps} FPS
   </div>
 {/if}
-
-<!-- 
-<div class="fixed top-0 left-0 w-full h-full p-16 text-white/80 bg-black/50">
-  <h1 class="text-8xl uppercase drop-shadow-lg">webpage of forgotten dreams</h1>
-  <p class="text-4xl drop-shadow-lg">
-    Inspired by cave paintings, this app allows you to draw with your hand and
-    then use a shader to process the drawing.
-  </p>
-</div> -->
 
 <style lang="postcss">
   :global(body) {

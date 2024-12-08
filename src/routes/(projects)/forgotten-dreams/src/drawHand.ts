@@ -1,6 +1,29 @@
 import type { NormalizedLandmarkList } from "@mediapipe/hands";
 import handsModule from "@mediapipe/hands";
 const palmIndices = [0, 1, 2, 5, 9, 13, 17];
+// Add HAND_CONNECTIONS constant
+const HAND_CONNECTIONS: [number, number][] = [
+  [0, 1],
+  [1, 2],
+  [2, 3],
+  [3, 4], // thumb
+  [0, 5],
+  [5, 6],
+  [6, 7],
+  [7, 8], // index finger
+  [0, 9],
+  [9, 10],
+  [10, 11],
+  [11, 12], // middle finger
+  [0, 13],
+  [13, 14],
+  [14, 15],
+  [15, 16], // ring finger
+  [0, 17],
+  [17, 18],
+  [18, 19],
+  [19, 20], // pinky
+];
 
 type Connection = [number, number];
 
@@ -57,7 +80,7 @@ export function drawHand(
 
   // @ts-ignore
   const { drawLandmarks } = window;
-  drawConnectors(handCtx, landmarks, handsModule.HAND_CONNECTIONS, {
+  drawConnectors(handCtx, landmarks, HAND_CONNECTIONS, {
     color,
     lineWidth: fingerWidth,
   });
