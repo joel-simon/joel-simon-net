@@ -84,6 +84,8 @@ export function makeDrawShaderViewer(regl: Regl) {
       height: regl.context("viewportHeight"),
       distanceTexture: regl.prop("distanceTexture"),
       distanceScale: regl.prop("distanceScale"),
+      handX: regl.prop("handX"),
+      handY: regl.prop("handY"),
       resolution: ({ viewportWidth, viewportHeight }) => [
         viewportWidth,
         viewportHeight,

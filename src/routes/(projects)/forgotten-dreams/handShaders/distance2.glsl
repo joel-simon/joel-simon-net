@@ -84,6 +84,6 @@ void main() {
     // Use inverted distance for final output
     // gl_FragColor = vec4(finalColor * invertedDistance, 1.0);
 
-    float opacity = smoothstep(0.0, 0.1, distanceValue) * (1.0 - smoothstep(0.6, 0.75, distanceValue));
-    gl_FragColor = vec4(finalColor, opacity);
+    // float opacity = smoothstep(0.0, 0.1, distanceValue) * (1.0 - smoothstep(0.6, 0.75, distanceValue));
+    gl_FragColor = vec4(finalColor, distanceValue);
 }

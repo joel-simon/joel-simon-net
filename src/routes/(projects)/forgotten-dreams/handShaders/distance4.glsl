@@ -52,19 +52,7 @@ void main() {
     if (distanceValue >= DISTANCE_START) {
         distanceValue = mix(DISTANCE_START, 0.0, (distanceValue - DISTANCE_START) / DISTANCE_THRESHOLD);
     }
-    // Apply easing function to make distance transition more gradual
-    // First 33% is 1.0, then cubic ease-in for the rest
-    // if (distanceValue > 0.7) {
-    //     distanceValue = 1.0;
-    // } else {
-    //     // Remap remaining range
-    //     float t = distanceValue / 0.7;
-    //     // distanceValue = t * t * t;
-    //     // distanceValue = sqrt(t);
-    //     distanceValue = t;
-    // }
 
-    
     // Normalize the UV coordinates for square aspect ratio
     vec2 fragCoord = vec2(
         (uv.x - 0.5) * max(width / height, 1.0) + 0.5,
@@ -107,22 +95,6 @@ void main() {
 
     // Final color adjustment with enhanced glow near objects
     color *= 1.2 + glow * (0.8 + distanceValue * 0.4);
-
-    // // Calculate inverted distance for alpha
-    // float invertedDistance = (clamp(1.0 - distanceValue, 0.0, 1.0));
-    // if (invertedDistance == 1.0) {
-    //     invertedDistance = 0.0;
-    // }
     
-    // gl_FragColor = vec4(color, invertedDistance);
-
-    // float opacity = smoothstep(0.0, 0.1, distanceValue) * (1.0 - smoothstep(0.6, 0.75, distanceValue));
     gl_FragColor = vec4(color, distanceValue);
-    //  float invertedDistance = clamp(1.0 - distanceValue, 0.0, 1.0);
-    //  if (invertedDistance == 1.0) {
-    //     invertedDistance = 0.0;
-    // }
-    // // float opacity = distanceValue > .75 || distanceValue == 0. ? 0.0 : 1.0;
-    // float opacity = smoothstep(0.75, 0.7, distanceValue);
-    // gl_FragColor = vec4(color, opacity);
 }

@@ -11,11 +11,6 @@
     jumpFloodingPass,
     makeDrawDebugJFAShader,
   } from "./src/jumpFloodingShaders";
-  // import shaderSrc from './src/shaders/test.glsl?raw';
-  import shaderSrcDist1 from "./handShaders/distanceTest.glsl?raw";
-  import shaderSrcDist2 from "./handShaders/distance2.glsl?raw";
-  import shaderSrcDist3 from "./handShaders/distance3.glsl?raw";
-  import shaderSrcDist4 from "./handShaders/distance4.glsl?raw";
   import handsModule, { type NormalizedLandmarkList } from "@mediapipe/hands";
   //   import cameraModule from "@mediapipe/camera_utils";
   import { drawHand } from "./src/drawHand";
@@ -30,6 +25,7 @@
     CameraPhotoOutline,
     DownloadSolid,
   } from "flowbite-svelte-icons";
+  import { handShaders } from "./handShaders/handShaders";
 
   //   const { Hands } = handsModule;
   //   const { Camera } = cameraModule;
@@ -45,7 +41,7 @@
   let handCtx: CanvasRenderingContext2D;
   let handTexture: REGL.Texture2D;
 
-  const shaders = [shaderSrcDist1, shaderSrcDist3, shaderSrcDist4];
+  //   const shaders = [shaderSrcDist1, shaderSrcDist3, shaderSrcDist4];
   let shaderIndex = 1;
 
   let needsFrame = false;
@@ -56,6 +52,8 @@
   let handVisible = false;
   let hasBegun = false;
   let lastHandVisible = false;
+  let handX = 0;
+  let handY = 0;
 
   let fps = 0;
   let frameCount = 0;
@@ -91,10 +89,10 @@
       needsFrame = true;
       event.preventDefault();
     } else if (event.code === "ArrowLeft") {
-      shaderIndex = (shaderIndex - 1 + shaders.length) % shaders.length;
+      shaderIndex = (shaderIndex - 1 + handShaders.length) % handShaders.length;
       event.preventDefault();
     } else if (event.code === "ArrowRight") {
-      shaderIndex = (shaderIndex + 1) % shaders.length;
+      shaderIndex = (shaderIndex + 1) % handShaders.length;
       event.preventDefault();
     }
   }
@@ -249,9 +247,11 @@
             // croppedTexture.subimage(currentFbo, 0, 0, 0, Math.floor(768 * cropPercent), 768, croppedHeight);
 
             drawShaderViewer({
-              fragmentShader: shaders[shaderIndex],
+              fragmentShader: handShaders[shaderIndex],
               distanceTexture: currentFbo, // Use the final FBO
               distanceScale: 10.0,
+              handX,
+              handY,
             });
           } else {
             distanceTransformShader({
@@ -259,7 +259,7 @@
               framebuffer: fbo1,
             });
             drawShaderViewer({
-              fragmentShader: shaders[shaderIndex],
+              fragmentShader: handShaders[shaderIndex],
               distanceTexture: fbo1,
               distanceScale: 2.0,
             });
@@ -361,7 +361,7 @@
         // const points = scaledLandmarks.map((point) => {
         //   return [point.x * handCanvas.width, point.y * handCanvas.height];
         // });
-        //
+
         // Generate concave hull
         // const hullPoints = smoothPolygon(
         //   hull(points, Infinity) as number[][],
@@ -374,6 +374,16 @@
         //   x: points.reduce((sum, p) => sum + p[0], 0) / points.length,
         //   y: points.reduce((sum, p) => sum + p[1], 0) / points.length,
         // };
+        const palmIndices = [0, 1, 2, 5, 9, 13, 17];
+        handX =
+          1 -
+          palmIndices.reduce((sum, i) => sum + scaledLandmarks[i].x, 0) /
+            palmIndices.length;
+        handY =
+          1 -
+          palmIndices.reduce((sum, i) => sum + scaledLandmarks[i].y, 0) /
+            palmIndices.length;
+        // console.log(handX, handY);
 
         handCtx.fillStyle = "white";
         handCtx.fillRect(0, 1, handCanvas.width, handCanvas.height - 2);
