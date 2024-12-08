@@ -12,11 +12,7 @@
     makeDrawDebugJFAShader,
   } from "./src/jumpFloodingShaders";
   import handsModule, { type NormalizedLandmarkList } from "@mediapipe/hands";
-  //   import cameraModule from "@mediapipe/camera_utils";
   import { drawHand } from "./src/drawHand";
-  //   import { drawSmoothPolygon } from "./src/drawing";
-  //   import { smoothPolygon } from "./src/geometry";
-  //   import hull from "hull.js";
   import { downloadCanvas } from "$lib/Downloads";
   import { debounce } from "$lib/Functions";
   import {
@@ -26,9 +22,6 @@
     DownloadSolid,
   } from "flowbite-svelte-icons";
   import { handShaders } from "./handShaders/handShaders";
-
-  //   const { Hands } = handsModule;
-  //   const { Camera } = cameraModule;
 
   let mainCanvas: HTMLCanvasElement;
   let videoElement: HTMLVideoElement;
@@ -41,7 +34,6 @@
   let handCtx: CanvasRenderingContext2D;
   let handTexture: REGL.Texture2D;
 
-  //   const shaders = [shaderSrcDist1, shaderSrcDist3, shaderSrcDist4];
   let shaderIndex = 1;
 
   let needsFrame = false;
@@ -61,6 +53,8 @@
   const DEV = import.meta.env.DEV;
 
   let isMobile: boolean;
+
+  let handWidth = 0;
 
   function captureCanvas() {
     // Draw the current frame onto the background canvas
@@ -244,12 +238,11 @@
             // });
 
             // // Copy the bottom portion using subimage
-            // croppedTexture.subimage(currentFbo, 0, 0, 0, Math.floor(768 * cropPercent), 768, croppedHeight);
-
+            // console.log(1.5 / handWidth);
             drawShaderViewer({
               fragmentShader: handShaders[shaderIndex],
               distanceTexture: currentFbo, // Use the final FBO
-              distanceScale: 12.0,
+              distanceScale: Math.max(8.5, 1.5 / handWidth),
               handX,
               handY,
             });
@@ -291,52 +284,12 @@
     };
   });
 
-  //   function drawPoints(
-  //     points: number[][],
-  //     handCenter: { x: number; y: number },
-  //     useBezierCurve: boolean,
-  //     ctx: CanvasRenderingContext2D
-  //   ) {
-  //     // Scale points outward from center
-  //     const scaleAmount = 3; // Adjust this to scale the shape
-  //     const offsetPixels = 50; // Additional pixel offset
-
-  //     const scaledPoints = points.map((point) => {
-  //       const dx = point[0] - handCenter.x;
-  //       const dy = point[1] - handCenter.y;
-  //       const distance = Math.sqrt(dx * dx + dy * dy);
-  //       const normalizedDx = dx / distance;
-  //       const normalizedDy = dy / distance;
-
-  //       return [
-  //         handCenter.x + dx * scaleAmount + normalizedDx * offsetPixels,
-  //         handCenter.y + dy * scaleAmount + normalizedDy * offsetPixels,
-  //       ];
-  //     });
-
-  //     ctx.beginPath();
-  //     ctx.moveTo(scaledPoints[0][0], scaledPoints[0][1]);
-
-  //     if (useBezierCurve) {
-  //       drawSmoothPolygon(ctx, scaledPoints);
-  //     } else {
-  //       // Draw straight lines between points
-  //       for (let i = 1; i < scaledPoints.length; i++) {
-  //         ctx.lineTo(scaledPoints[i][0], scaledPoints[i][1]);
-  //       }
-  //     }
-
-  //     ctx.closePath();
-  //     ctx.fill();
-  //     ctx.stroke();
-  //   }
-
   function handleResults(results: {
     multiHandLandmarks: NormalizedLandmarkList[];
   }) {
     if (!handCtx) return;
     handVisible = results.multiHandLandmarks.length > 0;
-    console.log(results);
+
     handCtx.save();
     handCtx.scale(-1, -1);
     handCtx.translate(-handCanvas.width, -handCanvas.height);
@@ -346,6 +299,7 @@
     handCtx.fillRect(0, 0, handCanvas.width, handCanvas.height);
     handCtx.fillStyle = "white";
     handCtx.fillRect(0, 1, handCanvas.width, handCanvas.height - 2);
+
     if (results.multiHandLandmarks) {
       for (const landmarks of results.multiHandLandmarks) {
         const handScale = 0.25;
@@ -360,22 +314,14 @@
           };
         });
 
-        // const points = scaledLandmarks.map((point) => {
-        //   return [point.x * handCanvas.width, point.y * handCanvas.height];
-        // });
+        // Calculate hand width (distance between thumb and pinky base)
+        const thumbBase = scaledLandmarks[2];
+        const pinkyBase = scaledLandmarks[17];
+        handWidth = Math.sqrt(
+          Math.pow(thumbBase.x - pinkyBase.x, 2) +
+            Math.pow(thumbBase.y - pinkyBase.y, 2)
+        );
 
-        // Generate concave hull
-        // const hullPoints = smoothPolygon(
-        //   hull(points, Infinity) as number[][],
-        //   2,
-        //   0.2
-        // );
-        // console.log(hullPoints.length);
-        // Calculate hand center
-        // const handCenter = {
-        //   x: points.reduce((sum, p) => sum + p[0], 0) / points.length,
-        //   y: points.reduce((sum, p) => sum + p[1], 0) / points.length,
-        // };
         const palmIndices = [0, 1, 2, 5, 9, 13, 17];
         handX =
           1 -
@@ -385,8 +331,6 @@
           1 -
           palmIndices.reduce((sum, i) => sum + scaledLandmarks[i].y, 0) /
             palmIndices.length;
-        // console.log(handX, handY);
-
         drawHand(handCtx, scaledLandmarks, "black");
       }
     }
@@ -467,6 +411,7 @@
     </p>
     <div class="flex w-fit gap-4">
       <button
+        disabled={!handVisible}
         on:click={() =>
           (shaderIndex =
             (shaderIndex - 1 + handShaders.length) % handShaders.length)}
@@ -474,7 +419,8 @@
         <ArrowLeftOutline />
       </button>
       <button
-        zon:click={() => (shaderIndex = (shaderIndex + 1) % handShaders.length)}
+        disabled={!handVisible}
+        on:click={() => (shaderIndex = (shaderIndex + 1) % handShaders.length)}
         ><ArrowRightOutline /></button
       >
       <button disabled={!handVisible} on:click={() => (needsFrame = true)}
