@@ -249,7 +249,7 @@
             // croppedTexture.subimage(currentFbo, 0, 0, 0, Math.floor(768 * cropPercent), 768, croppedHeight);
 
             drawShaderViewer({
-              fragmentShader: shaders[1], //[shaderIndex],
+              fragmentShader: shaders[shaderIndex],
               distanceTexture: currentFbo, // Use the final FBO
               distanceScale: 10.0,
             });
@@ -347,19 +347,20 @@
     if (results.multiHandLandmarks) {
       for (const landmarks of results.multiHandLandmarks) {
         const handScale = 0.25;
+        const offsetY = 0.2;
         const scaledLandmarks = landmarks.map((landmark) => {
           const centerX = landmarks[0].x;
           const centerY = landmarks[0].y;
           return {
             x: centerX + (landmark.x - centerX) * handScale,
-            y: centerY + (landmark.y - centerY) * handScale,
+            y: centerY + (landmark.y - centerY) * handScale - offsetY,
             z: landmark.z * handScale,
           };
         });
 
-        const points = scaledLandmarks.map((point) => {
-          return [point.x * handCanvas.width, point.y * handCanvas.height];
-        });
+        // const points = scaledLandmarks.map((point) => {
+        //   return [point.x * handCanvas.width, point.y * handCanvas.height];
+        // });
         //
         // Generate concave hull
         // const hullPoints = smoothPolygon(
@@ -369,33 +370,13 @@
         // );
         // console.log(hullPoints.length);
         // Calculate hand center
-        const handCenter = {
-          x: points.reduce((sum, p) => sum + p[0], 0) / points.length,
-          y: points.reduce((sum, p) => sum + p[1], 0) / points.length,
-        };
+        // const handCenter = {
+        //   x: points.reduce((sum, p) => sum + p[0], 0) / points.length,
+        //   y: points.reduce((sum, p) => sum + p[1], 0) / points.length,
+        // };
 
         handCtx.fillStyle = "white";
-        // Draw the points with bezier curves or straight lines
-        // drawPoints(hullPoints, handCenter, true, handCtx); // Change to false for straight lines
-        // handCtx.fillRect(10, 10, handCanvas.width - 20, handCanvas.height - 20);
-        // handCtx.fillRect(1, 1, handCanvas.width - 2, handCanvas.height - 2);
-        // handCtx.fillRect(1, 0, handCanvas.width - 2, handCanvas.height);
         handCtx.fillRect(0, 1, handCanvas.width, handCanvas.height - 2);
-        // handCtx.fillRect(0, 0, handCanvas.width, handCanvas.height);
-
-        // Draw white circle around hand
-        // handCtx.beginPath();
-        // handCtx.strokeStyle = "white";
-        // handCtx.lineWidth = 4;
-        // const radius =
-        //   Math.max(
-        //     ...points.map((p) =>
-        //       Math.hypot(p[0] - handCenter.x, p[1] - handCenter.y)
-        //     )
-        //   ) * 2.0; // 20% larger than furthest point
-        // handCtx.arc(handCenter.x, handCenter.y, radius, 0, Math.PI * 2);
-        // handCtx.fill();
-
         drawHand(handCtx, scaledLandmarks, "black");
       }
     }
@@ -512,12 +493,24 @@
       webpage of forgotten dreams
     </h1>
     <p class="text-4xl drop-shadow-lg">
-      Inspired by prehistoric cave paintings of Lascaux and Cueva de las Manos,
-      as well as Werner Herzog's
+      Inspired by prehistoric cave paintings of <a
+        href="https://en.wikipedia.org/wiki/Lascaux"
+        class="hover:underline drop-shadow-lg"
+        target="_blank"
+        on:click|stopPropagation>Lascaux</a
+      >
+      and
+      <a
+        href="https://en.wikipedia.org/wiki/Cueva_de_las_Manos"
+        class="hover:underline drop-shadow-lg"
+        target="_blank"
+        on:click|stopPropagation>Cueva de las Manos</a
+      >, as well as Werner Herzog's
       <a
         class="hover:underline drop-shadow-lg"
         target="_blank"
         href="https://en.wikipedia.org/wiki/Cave_of_Forgotten_Dreams"
+        on:click|stopPropagation
       >
         documentary</a
       >
@@ -526,13 +519,6 @@
     <p class="text-4xl mt-8">Click to begin</p>
   </div>
 {/if}
-<!-- Add hidden video element -->
-<!-- <video
-  bind:this={videoElement}
-  class="absolute left-0 top-0 z-[100]"
-  width="768"
-  height="768"
-/> -->
 
 {#if DEV}
   <div class="fixed right-2 top-2 font-mono text-sm text-white/80">

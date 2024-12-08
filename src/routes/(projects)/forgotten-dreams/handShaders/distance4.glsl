@@ -1,7 +1,7 @@
 precision mediump float;
 
 varying vec2 uv;
-uniform float time, width, height;
+uniform float time, width, height, distanceScale;
 uniform sampler2D distanceTexture;
 
 // Generate a random number based on input p
@@ -43,7 +43,27 @@ vec3 smoothColorTransition(vec3 colorA, vec3 colorB, float t) {
 void main() {
 
     // Sample the distance transform texture
-    float distanceValue = texture2D(distanceTexture, uv).r;
+        vec2 renamedUVy = uv;
+    renamedUVy.y = .1 +  (uv.y * 0.8);
+    float distanceValue = clamp(1.0 - texture2D(distanceTexture, renamedUVy).r * distanceScale, 0.0, 1.0);
+
+    float DISTANCE_THRESHOLD = 0.04;
+    float DISTANCE_START =1.0 - DISTANCE_THRESHOLD;
+    if (distanceValue >= DISTANCE_START) {
+        distanceValue = mix(DISTANCE_START, 0.0, (distanceValue - DISTANCE_START) / DISTANCE_THRESHOLD);
+    }
+    // Apply easing function to make distance transition more gradual
+    // First 33% is 1.0, then cubic ease-in for the rest
+    // if (distanceValue > 0.7) {
+    //     distanceValue = 1.0;
+    // } else {
+    //     // Remap remaining range
+    //     float t = distanceValue / 0.7;
+    //     // distanceValue = t * t * t;
+    //     // distanceValue = sqrt(t);
+    //     distanceValue = t;
+    // }
+
     
     // Normalize the UV coordinates for square aspect ratio
     vec2 fragCoord = vec2(
@@ -96,8 +116,8 @@ void main() {
     
     // gl_FragColor = vec4(color, invertedDistance);
 
-    float opacity = smoothstep(0.0, 0.1, distanceValue) * (1.0 - smoothstep(0.6, 0.75, distanceValue));
-    gl_FragColor = vec4(color, opacity);
+    // float opacity = smoothstep(0.0, 0.1, distanceValue) * (1.0 - smoothstep(0.6, 0.75, distanceValue));
+    gl_FragColor = vec4(color, distanceValue);
     //  float invertedDistance = clamp(1.0 - distanceValue, 0.0, 1.0);
     //  if (invertedDistance == 1.0) {
     //     invertedDistance = 0.0;

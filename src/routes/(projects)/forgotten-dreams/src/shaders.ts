@@ -78,7 +78,7 @@ export function makeDrawShaderViewer(regl: Regl) {
       time: ({ time }) => {
         // console.log(time);
         // return time * 0.2;
-        return time * 4.0;
+        return time * 2.0;
       },
       width: regl.context("viewportWidth"),
       height: regl.context("viewportHeight"),

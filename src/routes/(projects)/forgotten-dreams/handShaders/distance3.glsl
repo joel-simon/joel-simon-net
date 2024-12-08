@@ -37,27 +37,25 @@ vec3 reflectiveSurface(vec2 p, float time, float distanceValue) {
 }
 
 void main() {
-    // Sample the distance transform texture
-     // Sample the distance transform texture
-    // float distanceValue = (
-    //     texture2D(distanceTexture, uv).r +
-    //     texture2D(distanceTexture, uv + vec2(0.0, 1.0/256.)).r +
-    //     texture2D(distanceTexture, uv + vec2(0.0, -1.0/256.)).r + 
-    //     texture2D(distanceTexture, uv + vec2(1.0/256., 0.0)).r +
-    //     texture2D(distanceTexture, uv + vec2(-1.0/256., 0.0)).r
-    // ) / 5.0;
-    vec2 derp = uv;
-    derp.y = .1 +  (uv.y * 0.8);
-    float distanceValue = 1.0 - texture2D(distanceTexture, derp).r * distanceScale;
+    vec2 renamedUVy = uv;
+    renamedUVy.y = .1 +  (uv.y * 0.8);
+    float distanceValue = clamp(1.0 - texture2D(distanceTexture, renamedUVy).r * distanceScale, 0.0, 1.0);
 
+    float DISTANCE_THRESHOLD = 0.04;
+    float DISTANCE_START =1.0 - DISTANCE_THRESHOLD;
+    if (distanceValue >= DISTANCE_START) {
+        distanceValue = mix(DISTANCE_START, 0.0, (distanceValue - DISTANCE_START) / DISTANCE_THRESHOLD);
+    }
     // Apply easing function to make distance transition more gradual
-    // First 33% is 0, then cubic ease-in for the rest
-    // if (distanceValue < 0.33) {
+    // First 33% is 1.0, then cubic ease-in for the rest
+    // if (distanceValue > 0.7) {
     //     distanceValue = 1.0;
     // } else {
-    //     // Remap remaining range (0.33-1.0) to (0-1) before applying curve
-    //     float remapped = (distanceValue - 0.33) / 0.67;
-    //     distanceValue = remapped * remapped * remapped;
+    //     // Remap remaining range
+    //     float t = distanceValue / 0.7;
+    //     // distanceValue = t * t * t;
+    //     // distanceValue = sqrt(t);
+    //     distanceValue = t;
     // }
 
 
@@ -121,14 +119,13 @@ void main() {
     // Blend all elements together
     vec3 baseColor = mix(color1, color2, fractalShape);
     vec3 finalColor = baseColor + 
-                     glow * (1.0 + distanceValue * 0.3) +
+                     glow * .2 +
                      pulseColor * (0.3 + distanceValue * 0.2) +
                      neonOutline * (0.5 + distanceValue * 0.3) +
                      depthColor * (0.5 + distanceValue * 0.2) +
                      reflectColor * (0.3 + distanceValue * 0.2);
 
 
-    gl_FragColor = vec4(finalColor, distanceValue > .9999 ? 0.0 : distanceValue);
-    // gl_FragColor = vec4(distanceValue);
+    gl_FragColor = vec4(finalColor, distanceValue);
 
 }
