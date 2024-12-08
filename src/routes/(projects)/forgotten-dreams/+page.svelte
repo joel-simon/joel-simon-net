@@ -112,7 +112,7 @@
     });
 
     hands.setOptions({
-      maxNumHands: 1,
+      maxNumHands: 2,
       modelComplexity: 1,
       minDetectionConfidence: 0.5,
       minTrackingConfidence: 0.5,
@@ -249,7 +249,7 @@
             drawShaderViewer({
               fragmentShader: handShaders[shaderIndex],
               distanceTexture: currentFbo, // Use the final FBO
-              distanceScale: 10.0,
+              distanceScale: 12.0,
               handX,
               handY,
             });
@@ -336,6 +336,7 @@
   }) {
     if (!handCtx) return;
     handVisible = results.multiHandLandmarks.length > 0;
+    console.log(results);
     handCtx.save();
     handCtx.scale(-1, -1);
     handCtx.translate(-handCanvas.width, -handCanvas.height);
@@ -343,7 +344,8 @@
     // Clear canvas
     handCtx.fillStyle = "black";
     handCtx.fillRect(0, 0, handCanvas.width, handCanvas.height);
-
+    handCtx.fillStyle = "white";
+    handCtx.fillRect(0, 1, handCanvas.width, handCanvas.height - 2);
     if (results.multiHandLandmarks) {
       for (const landmarks of results.multiHandLandmarks) {
         const handScale = 0.25;
@@ -385,8 +387,6 @@
             palmIndices.length;
         // console.log(handX, handY);
 
-        handCtx.fillStyle = "white";
-        handCtx.fillRect(0, 1, handCanvas.width, handCanvas.height - 2);
         drawHand(handCtx, scaledLandmarks, "black");
       }
     }
@@ -468,12 +468,13 @@
     <div class="flex w-fit gap-4">
       <button
         on:click={() =>
-          (shaderIndex = (shaderIndex - 1 + shaders.length) % shaders.length)}
+          (shaderIndex =
+            (shaderIndex - 1 + handShaders.length) % handShaders.length)}
       >
         <ArrowLeftOutline />
       </button>
       <button
-        on:click={() => (shaderIndex = (shaderIndex + 1) % shaders.length)}
+        zon:click={() => (shaderIndex = (shaderIndex + 1) % handShaders.length)}
         ><ArrowRightOutline /></button
       >
       <button disabled={!handVisible} on:click={() => (needsFrame = true)}
