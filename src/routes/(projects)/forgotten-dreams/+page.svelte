@@ -31,8 +31,8 @@
     DownloadSolid,
   } from "flowbite-svelte-icons";
 
-  const { Hands } = handsModule;
-  const { Camera } = cameraModule;
+  //   const { Hands } = handsModule;
+  //   const { Camera } = cameraModule;
 
   let mainCanvas: HTMLCanvasElement;
   let videoElement: HTMLVideoElement;
@@ -104,6 +104,13 @@
     let clickIndex = 0;
     // width = mainCanvas.width = 1280;
     // height = mainCanvas.height = 1280;
+    // const [handsModule, cameraModule] = await Promise.all([
+    //   import("@mediapipe/hands"),
+    //   import("@mediapipe/camera_utils"),
+    // ]);
+
+    // const { Hands } = handsModule;
+    // const { Camera } = cameraModule;
 
     const regl = REGL({
       canvas: mainCanvas,
@@ -139,8 +146,14 @@
     });
 
     // Initialize MediaPipe Hands
-    hands = new Hands({
-      locateFile: (file) => {
+    // hands = new Hands({
+    //   locateFile: (file) => {
+    //     return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+    //   },
+    // });
+    // @ts-ignore
+    hands = new window.Hands({
+      locateFile: (file: string) => {
         return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
       },
     });
@@ -157,7 +170,8 @@
     // Setup camera
     videoElement = document.createElement("video");
 
-    camera = new Camera(videoElement, {
+    // @ts-ignore
+    camera = new window.Camera(videoElement, {
       onFrame: async () => {
         await hands.send({ image: videoElement });
       },
@@ -222,7 +236,7 @@
             // });
             // drawDebugJFAShader({
             //   texture: currentFbo, // Use the final FBO
-            //   distanceScale: 3.0,
+            //   distanceScale: 50,
             // });
             drawShaderViewer({
               fragmentShader: shaders[1], //[shaderIndex],
@@ -249,19 +263,6 @@
           clickIndex += 1;
           captureCanvas();
         }
-
-        // When dimensions change, resize background canvas
-        // if (backgroundCanvas.width !== width || backgroundCanvas.height !== height) {
-        // 	const imageData = bgCtx.getImageData(
-        // 		0,
-        // 		0,
-        // 		backgroundCanvas.width,
-        // 		backgroundCanvas.height
-        // 	);
-        // 	backgroundCanvas.width = width;
-        // 	backgroundCanvas.height = height;
-        // 	bgCtx.putImageData(imageData, 0, 0);
-        // }
       } catch (error) {
         console.error(error);
       }
@@ -399,6 +400,14 @@
     href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300..700;1,300..700&display=swap"
     rel="stylesheet"
   />
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"
+  ></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+    crossorigin="anonymous"
+  ></script>
 </svelte:head>
 
 <div
@@ -406,10 +415,6 @@
   bind:clientHeight={height}
   class="h-[100vh] w-[100vw]"
 >
-  <!-- <img
-    src="/imgs/cave-wall.jpg"
-    class="absolute left-0 top-0 h-full w-full object-cover opacity-50"
-  /> -->
   <canvas
     bind:this={backgroundCanvas}
     {width}
@@ -423,12 +428,11 @@
     class="relative h-full w-full"
   />
 </div>
-
-<!-- <div class="absolute left-0 top-0 w-[850px]">
-</div> -->
-
 <!-- Debug view to see hand drawing -->
-<div class="fixed bottom-4 right-4 border border-white bg-black/50">
+<div
+  class="fixed bottom-4 right-4 border border-white bg-black/50"
+  class:hidden={!DEV}
+>
   <canvas bind:this={handCanvas} class="w-32"></canvas>
 </div>
 
