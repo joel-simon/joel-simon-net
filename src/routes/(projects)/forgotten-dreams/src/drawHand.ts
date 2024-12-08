@@ -2,6 +2,40 @@ import type { NormalizedLandmarkList } from "@mediapipe/hands";
 import handsModule from "@mediapipe/hands";
 const palmIndices = [0, 1, 2, 5, 9, 13, 17];
 
+type Connection = [number, number];
+
+export function drawConnectors(
+  ctx: CanvasRenderingContext2D,
+  landmarks: { x: number; y: number; z?: number }[],
+  connections: Connection[],
+  options: {
+    color: string;
+    lineWidth?: number;
+  }
+) {
+  const { color, lineWidth = 1 } = options;
+  const canvas = ctx.canvas;
+
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lineWidth;
+  ctx.lineCap = "round";
+
+  connections.forEach(([startIdx, endIdx]) => {
+    const start = landmarks[startIdx];
+    const end = landmarks[endIdx];
+
+    if (!start || !end) return;
+
+    ctx.beginPath();
+    ctx.moveTo(start.x * canvas.width, start.y * canvas.height);
+    ctx.lineTo(end.x * canvas.width, end.y * canvas.height);
+    ctx.stroke();
+  });
+
+  ctx.restore();
+}
+
 export function drawHand(
   handCtx: CanvasRenderingContext2D,
   landmarks: NormalizedLandmarkList,
@@ -22,7 +56,7 @@ export function drawHand(
   const landmarkSize = handWidth * 0.04; // Landmarks about 5% of palm width
 
   // @ts-ignore
-  const { drawConnectors, drawLandmarks } = window;
+  const { drawLandmarks } = window;
   drawConnectors(handCtx, landmarks, handsModule.HAND_CONNECTIONS, {
     color,
     lineWidth: fingerWidth,

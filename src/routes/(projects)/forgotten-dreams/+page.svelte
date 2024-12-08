@@ -52,6 +52,7 @@
   let backgroundCanvas: HTMLCanvasElement;
   let bgCtx: CanvasRenderingContext2D;
   let caveWall: HTMLImageElement;
+  let handsLoaded = false;
   let handVisible = false;
   let lastHandVisible = false;
 
@@ -100,18 +101,41 @@
       regl.destroy();
     }
   });
+
+  async function startTrackingHands() {
+    // @ts-ignore
+    hands = new window.Hands({
+      locateFile: (file: string) => {
+        return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+      },
+    });
+
+    hands.setOptions({
+      maxNumHands: 1,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5,
+    });
+
+    hands.onResults(handleResults);
+    await hands.initialize();
+    handsLoaded = true;
+    // Setup camera
+    videoElement = document.createElement("video");
+
+    // @ts-ignore
+    camera = new window.Camera(videoElement, {
+      onFrame: async () => {
+        await hands.send({ image: videoElement });
+      },
+      width: 768,
+      height: 768,
+    });
+    camera.start();
+  }
+
   onMount(() => {
     let clickIndex = 0;
-    // width = mainCanvas.width = 1280;
-    // height = mainCanvas.height = 1280;
-    // const [handsModule, cameraModule] = await Promise.all([
-    //   import("@mediapipe/hands"),
-    //   import("@mediapipe/camera_utils"),
-    // ]);
-
-    // const { Hands } = handsModule;
-    // const { Camera } = cameraModule;
-
     const regl = REGL({
       canvas: mainCanvas,
       extensions: ["OES_texture_float"],
@@ -145,46 +169,13 @@
       colorType: "float",
     });
 
-    // Initialize MediaPipe Hands
-    // hands = new Hands({
-    //   locateFile: (file) => {
-    //     return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
-    //   },
-    // });
-    // @ts-ignore
-    hands = new window.Hands({
-      locateFile: (file: string) => {
-        return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
-      },
-    });
-
-    hands.setOptions({
-      maxNumHands: 1,
-      modelComplexity: 1,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5,
-    });
-
-    hands.onResults(handleResults);
-
-    // Setup camera
-    videoElement = document.createElement("video");
-
-    // @ts-ignore
-    camera = new window.Camera(videoElement, {
-      onFrame: async () => {
-        await hands.send({ image: videoElement });
-      },
-      width: 768,
-      height: 768,
-    });
-    camera.start();
-
     handCanvas.width = 768;
     handCanvas.height = 768;
     handCtx = handCanvas.getContext("2d")!;
 
     handTexture = regl.texture(handCanvas);
+
+    startTrackingHands();
 
     // Initialize background canvas
     backgroundCanvas.width = width;
@@ -419,8 +410,12 @@
   <script
     src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"
   ></script>
-  <script
+  <!-- <script
     src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+    crossorigin="anonymous"
+  ></script> -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js"
     crossorigin="anonymous"
   ></script>
 </svelte:head>
@@ -456,7 +451,8 @@
     class="text-2xl text-white/80 transition-all drop-shadow-[0_2px_2px_rgba(0,0,0,1)]"
     class:opacity-0={handVisible}
   >
-    Hand not visible
+    {!handsLoaded ? "Loading hands..." : "Hand not visible"}
+    <!-- Hand not visible -->
   </p>
   <div class="flex w-fit gap-4">
     <button
