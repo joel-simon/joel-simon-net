@@ -133,14 +133,14 @@
 
     // Create two framebuffers for ping-pong
     const fbo1 = regl.framebuffer({
-      width: 512,
-      height: 512,
+      width: 768,
+      height: 768,
       depthStencil: false,
-      colorType: "float", // Important for precision
+      colorType: "float",
     });
     const fbo2 = regl.framebuffer({
-      width: 512,
-      height: 512,
+      width: 768,
+      height: 768,
       depthStencil: false,
       colorType: "float",
     });
@@ -175,13 +175,13 @@
       onFrame: async () => {
         await hands.send({ image: videoElement });
       },
-      width: 512,
-      height: 512,
+      width: 768,
+      height: 768,
     });
     camera.start();
 
-    handCanvas.width = 512;
-    handCanvas.height = 512;
+    handCanvas.width = 768;
+    handCanvas.height = 768;
     handCtx = handCanvas.getContext("2d")!;
 
     handTexture = regl.texture(handCanvas);
@@ -219,7 +219,7 @@
 
             let currentFbo = fbo1;
             let targetFbo = fbo2;
-            let stepSize = Math.floor(512 / 2); // Using width of texture
+            let stepSize = Math.floor(768 / 2); // Using width of texture
 
             while (stepSize >= 1) {
               jumpFlood({
@@ -236,8 +236,19 @@
             // });
             // drawDebugJFAShader({
             //   texture: currentFbo, // Use the final FBO
-            //   distanceScale: 50,
+            //   distanceScale: 10,
             // });
+            //     const cropPercent = 0.2; // Crop top 20%
+            // const croppedHeight = Math.floor(768 * (1 - cropPercent));
+            // const croppedTexture = regl.texture({
+            //   width: 768,
+            //   height: croppedHeight,
+            //   type: 'float'
+            // });
+
+            // // Copy the bottom portion using subimage
+            // croppedTexture.subimage(currentFbo, 0, 0, 0, Math.floor(768 * cropPercent), 768, croppedHeight);
+
             drawShaderViewer({
               fragmentShader: shaders[1], //[shaderIndex],
               distanceTexture: currentFbo, // Use the final FBO
@@ -368,19 +379,23 @@
         // Draw the points with bezier curves or straight lines
         // drawPoints(hullPoints, handCenter, true, handCtx); // Change to false for straight lines
         // handCtx.fillRect(10, 10, handCanvas.width - 20, handCanvas.height - 20);
+        // handCtx.fillRect(1, 1, handCanvas.width - 2, handCanvas.height - 2);
+        // handCtx.fillRect(1, 0, handCanvas.width - 2, handCanvas.height);
+        handCtx.fillRect(0, 1, handCanvas.width, handCanvas.height - 2);
+        // handCtx.fillRect(0, 0, handCanvas.width, handCanvas.height);
+
         // Draw white circle around hand
-        handCtx.beginPath();
-        handCtx.strokeStyle = "white";
-        handCtx.lineWidth = 4;
-        const radius =
-          Math.max(
-            ...points.map((p) =>
-              Math.hypot(p[0] - handCenter.x, p[1] - handCenter.y)
-            )
-          ) * 2.0; // 20% larger than furthest point
-        handCtx.arc(handCenter.x, handCenter.y, radius, 0, Math.PI * 2);
-        // handCtx.stroke();
-        handCtx.fill();
+        // handCtx.beginPath();
+        // handCtx.strokeStyle = "white";
+        // handCtx.lineWidth = 4;
+        // const radius =
+        //   Math.max(
+        //     ...points.map((p) =>
+        //       Math.hypot(p[0] - handCenter.x, p[1] - handCenter.y)
+        //     )
+        //   ) * 2.0; // 20% larger than furthest point
+        // handCtx.arc(handCenter.x, handCenter.y, radius, 0, Math.PI * 2);
+        // handCtx.fill();
 
         drawHand(handCtx, scaledLandmarks, "black");
       }

@@ -13,18 +13,11 @@ export const makeInitJumpFlooding = (regl: Regl) =>
       
         // Add a small epsilon to avoid edge cases at 0 and 1
         vec2 seedPos = clamp(pos, 0.001, 0.999);
+
+      gl_FragColor = mask.r < 0.5
+          ? vec4(0.0, pos.x, pos.y, 1.0)
+          : vec4(1e10, 0.0, 0.0, 1.0);
         
-        // gl_FragColor = mask.r < 0.5 
-        //     ? vec4(0.0, seedPos.x, seedPos.y, 1.0)
-        //     : vec4(1e10, 0.0, 0.0, 1.0);
-        
-            
-    //   If this is a mask pixel (r < 0.5), store its position as a seed point
-    //   Output format: (distance, seedPoint.x, seedPoint.y, 1)
-      gl_FragColor = mask.r < 0.5 
-        ? vec4(0.0, pos.x, pos.y, 1.0)
-        : vec4(1000000.0, 0.0, 0.0, 1.0);
-     
     }
     `,
     vert: `

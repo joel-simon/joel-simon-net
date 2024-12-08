@@ -46,7 +46,9 @@ void main() {
     //     texture2D(distanceTexture, uv + vec2(1.0/256., 0.0)).r +
     //     texture2D(distanceTexture, uv + vec2(-1.0/256., 0.0)).r
     // ) / 5.0;
-    float distanceValue = 1.0 - clamp(texture2D(distanceTexture, uv).r * distanceScale, 0.0, 5.0);
+    vec2 derp = uv;
+    derp.y = .1 +  (uv.y * 0.8);
+    float distanceValue = 1.0 - clamp(texture2D(distanceTexture,derp ).r * distanceScale, 0.0, 5.0);
     
     // Normalize the UV coordinates for square aspect ratio
     vec2 fragCoord = vec2(
