@@ -22,6 +22,7 @@
     DownloadSolid,
   } from "flowbite-svelte-icons";
   import { handShaders } from "./handShaders/handShaders";
+  import { browser } from "$app/environment";
 
   let mainCanvas: HTMLCanvasElement;
   let videoElement: HTMLVideoElement;
@@ -52,7 +53,13 @@
   let lastTime = performance.now();
   const DEV = import.meta.env.DEV;
 
-  let isMobile: boolean;
+  let isMobile: boolean = false;
+  $: if (browser) {
+    isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      );
+  }
 
   let handWidth = 0;
 
@@ -135,6 +142,24 @@
         navigator.userAgent
       );
 
+    // Initialize background canvas
+    backgroundCanvas.width = width;
+    backgroundCanvas.height = height;
+    bgCtx = backgroundCanvas.getContext("2d")!;
+    // bgCtx.fillStyle = "black";
+    // bgCtx.fillRect(0, 0, width, height);
+
+    caveWall = new Image();
+    caveWall.src = "/imgs/cave-wall-2x.jpg";
+
+    caveWall.onload = () => {
+      onResize();
+    };
+
+    if (isMobile) {
+      return;
+    }
+
     let clickIndex = 0;
     const regl = REGL({
       canvas: mainCanvas,
@@ -148,12 +173,6 @@
     const jumpFlood = jumpFloodingPass(regl);
     const initJFA = makeInitJumpFlooding(regl);
     const drawDebugJFAShader = makeDrawDebugJFAShader(regl);
-    caveWall = new Image();
-    caveWall.src = "/imgs/cave-wall-2x.jpg";
-
-    caveWall.onload = () => {
-      onResize();
-    };
 
     // Create two framebuffers for ping-pong
     const fbo1 = regl.framebuffer({
@@ -176,13 +195,6 @@
     handTexture = regl.texture(handCanvas);
 
     startTrackingHands();
-
-    // Initialize background canvas
-    backgroundCanvas.width = width;
-    backgroundCanvas.height = height;
-    bgCtx = backgroundCanvas.getContext("2d")!;
-    bgCtx.fillStyle = "black";
-    bgCtx.fillRect(0, 0, width, height);
 
     const useJFA = true;
     regl.frame(({ time }: { time: number }) => {
@@ -391,10 +403,10 @@
 
 {#if isMobile}
   <div
-    class="fixed top-0 left-0 w-full h-full p-8 text-white/80 bg-black/90 flex flex-col justify-center items-center gap-8"
+    class="fixed top-0 left-0 w-full h-full p-8 text-white/80 bg-black/50 flex flex-col justify-center items-center gap-8"
   >
     <h1 class="text-4xl text-center uppercase drop-shadow-lg">
-      This experience requires a desktop browser with a webcam
+      This requires a desktop with a webcam
     </h1>
     <p class="text-xl text-center drop-shadow-lg">
       Please visit on desktop to create your own cave paintings
@@ -485,7 +497,7 @@
 
 <style lang="postcss">
   :global(body) {
-    background-color: black;
+    /* background-color: black; */
   }
   button {
     @apply rounded-xl border border-dashed border-white bg-white/10 px-6 py-3 text-lg text-white backdrop-blur-md transition-all hover:bg-white/20;
