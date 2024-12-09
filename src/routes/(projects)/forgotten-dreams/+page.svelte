@@ -415,7 +415,7 @@
 {:else if hasBegun}
   <div class="absolute bottom-4 left-0 flex w-full flex-col items-center gap-2">
     <p
-      class="text-2xl text-white/80 transition-all drop-shadow-[0_2px_2px_rgba(0,0,0,1)]"
+      class="text-3xl text-white/80 transition-all drop-shadow-[0_2px_2px_rgba(0,0,0,1)]"
       class:opacity-0={handVisible}
     >
       {!handsLoaded ? "Loading hands..." : "Hand not visible"}
@@ -500,7 +500,7 @@
     /* background-color: black; */
   }
   button {
-    @apply rounded-xl border border-dashed border-white bg-white/10 px-6 py-3 text-lg text-white backdrop-blur-md transition-all hover:bg-white/20;
+    @apply rounded-xl border border border-dashed border-white/20 bg-white/10 px-6 py-3 text-lg text-white backdrop-blur-md transition-all hover:bg-white/20;
     /* mix-blend-difference  */
   }
   button:disabled {
