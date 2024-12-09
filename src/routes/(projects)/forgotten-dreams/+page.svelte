@@ -117,8 +117,8 @@
     hands.setOptions({
       maxNumHands: 2,
       modelComplexity: 1,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5,
+      //   minDetectionConfidence: 0.7,
+      //   minTrackingConfidence: 0.7,
     });
 
     hands.onResults(handleResults);
@@ -329,12 +329,9 @@
         });
 
         // Calculate hand width (distance between thumb and pinky base)
-        const thumbBase = scaledLandmarks[2];
-        const pinkyBase = scaledLandmarks[17];
-        handWidth = Math.sqrt(
-          Math.pow(thumbBase.x - pinkyBase.x, 2) +
-            Math.pow(thumbBase.y - pinkyBase.y, 2)
-        );
+        const point0 = scaledLandmarks[0];
+        const point5 = scaledLandmarks[5];
+        handWidth = Math.hypot(point0.x - point5.x, point0.y - point5.y);
 
         const palmIndices = [0, 1, 2, 5, 9, 13, 17];
         handX =
@@ -495,7 +492,7 @@
       >
         documentary</a
       >
-      , this app allows simple browser-based hand drawing.
+      , this app allows simple browser-based hand drawings.
     </p>
     <p class="text-4xl mt-8">Click to begin</p>
   </div>
