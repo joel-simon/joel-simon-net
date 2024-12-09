@@ -25,6 +25,16 @@
   } from "flowbite-svelte-icons";
   import { handShaders } from "./handShaders/handShaders";
   import { browser } from "$app/environment";
+  //   import { Tooltip } from "flowbite-svelte";
+  //   import { tippy } from "tippy";
+  //   import "tippy.js/dist/tippy.css"; // optional
+  //   import { createTippy } from "svelte-tippy";
+  import tippy from "svelte-tippy";
+
+  //   export const tippy = createTippy({
+  //     animation: "perspective-subtle",
+  //     arrow: false,
+  //   });
 
   let mainCanvas: HTMLCanvasElement;
   let videoElement: HTMLVideoElement;
@@ -117,7 +127,7 @@
     hands.setOptions({
       maxNumHands: 2,
       modelComplexity: 1,
-      //   minDetectionConfidence: 0.7,
+      //   minDetectionConfidence: 1.0,
       //   minTrackingConfidence: 0.7,
     });
 
@@ -439,9 +449,26 @@
         on:click={() => (shaderIndex = (shaderIndex + 1) % handShaders.length)}
         ><ArrowRightOutline /></button
       >
-      <button disabled={!handVisible} on:click={() => (needsFrame = true)}
-        >Stamp</button
+      <!-- <button
+        disabled={!handVisible}
+        on:click={() => (needsFrame = true)}>Stamp</button
+      > -->
+      <!-- <div id="derp" class="relative">
+    </div> -->
+      <button
+        disabled={!handVisible}
+        on:click={() => (needsFrame = true)}
+        use:tippy={{
+          content: "(spacebar)",
+          placement: "top",
+          arrow: true,
+          theme: "test",
+          animation: "perspective-subtle",
+        }}
       >
+        Stamp
+      </button>
+
       <button
         on:click={() => {
           onResize();
@@ -529,5 +556,9 @@
     font-optical-sizing: auto;
     font-weight: 500;
     font-style: normal;
+  }
+  :global(.tippy-box[data-theme="test"]) {
+    @apply inline-block py-1 px-2.5 text-sm font-medium rounded-lg shadow-sm;
+    @apply text-white bg-gray-900;
   }
 </style>
