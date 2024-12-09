@@ -24,6 +24,15 @@ export const projects: Project[] = [
     path: "/about",
   },
   {
+    name: "Webpage of Forgotten Dreams",
+    year: 2024,
+    labels: ["web", "tool"],
+
+    img: "imgs/thumbnails/hands-preview.jpg",
+    path: "forgotten-dreams",
+    description: "Create cave paintings.",
+  },
+  {
     name: "ClickSynth",
     year: 2024,
     labels: ["web", "tool", "AI"],
