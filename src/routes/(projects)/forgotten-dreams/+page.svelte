@@ -20,6 +20,8 @@
     ArrowRightOutline,
     CameraPhotoOutline,
     DownloadSolid,
+    HomeOutline,
+    HomeSolid,
   } from "flowbite-svelte-icons";
   import { handShaders } from "./handShaders/handShaders";
   import { browser } from "$app/environment";
@@ -413,6 +415,11 @@
     </p>
   </div>
 {:else if hasBegun}
+  <div class="absolute top-4 left-4">
+    <a href="/">
+      <HomeSolid color="white" />
+    </a>
+  </div>
   <div class="absolute bottom-4 left-0 flex w-full flex-col items-center gap-2">
     <p
       class="text-3xl text-white/80 transition-all drop-shadow-[0_2px_2px_rgba(0,0,0,1)]"
@@ -458,6 +465,11 @@
     class="fixed top-0 left-0 w-full h-full p-16 text-white/80 bg-black/50 flex flex-col justify-center items-center gap-8 cursor-pointer"
     on:click={() => (hasBegun = true)}
   >
+    <div class="absolute top-4 left-4">
+      <a href="/">
+        <HomeSolid />
+      </a>
+    </div>
     <h1 class="text-8xl uppercase drop-shadow-lg">
       webpage of forgotten dreams
     </h1>
