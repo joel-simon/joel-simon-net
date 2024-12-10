@@ -25,6 +25,8 @@
   } from "flowbite-svelte-icons";
   import { handShaders } from "./handShaders/handShaders";
   import { browser } from "$app/environment";
+  import { fade } from "svelte/transition"; // Add this import at the top
+
   //   import { Tooltip } from "flowbite-svelte";
   //   import { tippy } from "tippy";
   //   import "tippy.js/dist/tippy.css"; // optional
@@ -418,7 +420,7 @@
       This requires a desktop with a webcam
     </h1>
     <p class="text-xl text-center drop-shadow-lg">
-      Please visit on desktop to create your own cave paintings
+      Please visit on a desktop to create your own cave paintings
     </p>
   </div>
 {:else if hasBegun}
@@ -427,7 +429,10 @@
       <HomeSolid color="white" />
     </a>
   </div>
-  <div class="absolute bottom-4 left-0 flex w-full flex-col items-center gap-2">
+  <div
+    class="absolute bottom-4 left-0 flex w-full flex-col items-center gap-2"
+    transition:fade={{ duration: 500 }}
+  >
     <p
       class="text-3xl text-white/80 transition-all drop-shadow-[0_2px_2px_rgba(0,0,0,1)]"
       class:opacity-0={handVisible}
@@ -488,6 +493,7 @@
   <div
     class="fixed top-0 left-0 w-full h-full p-16 text-white/80 bg-black/50 flex flex-col justify-center items-center gap-8 cursor-pointer"
     on:click={() => (hasBegun = true)}
+    transition:fade={{ duration: 500 }}
   >
     <div class="absolute top-4 left-4">
       <a href="/">
