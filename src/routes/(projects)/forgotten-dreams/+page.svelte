@@ -127,10 +127,10 @@
     });
 
     hands.setOptions({
-      maxNumHands: 2,
+      maxNumHands: 1,
       modelComplexity: 1,
-      //   minDetectionConfidence: 1.0,
-      //   minTrackingConfidence: 0.7,
+      minDetectionConfidence: 0.7,
+      minTrackingConfidence: 0.7,
     });
 
     hands.onResults(handleResults);
