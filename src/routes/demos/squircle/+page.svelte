@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import createREGL, { Regl, DrawCommand } from "regl";
+  import { browser } from "$app/environment";
 
   // --- SquircleMaskGenerator Class using regl ---
   class SquircleMaskGenerator {
@@ -213,12 +214,16 @@
   }
 
   onMount(() => {
-    generator = new SquircleMaskGenerator();
-    updateImage();
+    if (browser) {
+      generator = new SquircleMaskGenerator();
+      updateImage();
+    }
   });
 
   onDestroy(() => {
-    generator.destroyContext();
+    if (browser) {
+      generator.destroyContext();
+    }
   });
 </script>
 
