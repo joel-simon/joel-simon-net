@@ -138,8 +138,8 @@
     position: relative;
     /* display: flex; */
     /* background-color: white; */
-    -webkit-mask-image: url(/imgs/squircle-white.png);
-    mask-image: url(/imgs/squircle-white.png);
+    -webkit-mask-image: url(/imgs/squircles/squircle_6.2.png);
+    mask-image: url(/imgs/squircles/squircle_6.2.png);
     mask-size: cover;
     mask-size: 100%, 100%;
     -webkit-mask-size: cover;

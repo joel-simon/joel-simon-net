@@ -42,9 +42,9 @@
   #project-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(325px, max-content));
-    padding-left: 16px;
-    padding-right: 16px;
-    gap: 16px;
+    padding-left: 24px;
+    padding-right: 24px;
+    gap: 24px;
     justify-items: center;
     justify-content: center;
   }
