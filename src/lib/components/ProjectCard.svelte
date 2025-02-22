@@ -68,18 +68,27 @@
     style="display: {state.visible ? 'block' : 'none'}"
   >
     <!-- use data-sveltekit-reload to let the browser handle these links. -->
-    <a href={state.path} data-sveltekit-reload target={state.target}>
-      <div class="preview-container">
+    <a
+      href={state.path}
+      data-sveltekit-reload
+      target={state.target}
+      class="hover:drop-shadow-lg transition-all"
+    >
+      <div class="preview-container hover:drop-shadow-2xl">
         <img
           class="main-image"
           src={project.img}
           alt={project.name}
           title={project.name}
         />
-        <div class="description-container">
-          {#if project.description}
-            <p class="description text-lg">{project.description}</p>
-          {/if}
+        <div
+          class="description-container flex flex-col justify-center items-center"
+        >
+          <!-- {#if project.description} -->
+          <p class="description text-lg">
+            {project.description ?? project.name}
+          </p>
+          <!-- {/if} -->
         </div>
       </div>
       <div class="project-content mt-1">
@@ -131,7 +140,7 @@
     /* margin: 16px;
     margin-bottom: 0px; */
     /* position: relative; */
-    overflow: hidden;
+    /* overflow: hidden; */
     /* padding-bottom: 4px; */
   }
   .project .preview-container {
@@ -149,7 +158,7 @@
   }
 
   .project:hover .description-container {
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.7);
     opacity: 1;
   }
 
@@ -161,9 +170,11 @@
     opacity: 0;
     bottom: 0px;
 
-    -webkit-transition: background-color 300ms ease;
-    -ms-transition: background-color 300ms ease;
-    transition: background-color 300ms ease;
+    -webkit-transition: background-color 150ms ease;
+    -ms-transition: background-color 150ms ease;
+    transition: background-color 150ms ease;
+
+    backdrop-filter: blur(4px);
   }
   .project .description {
     color: white;

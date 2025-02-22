@@ -256,13 +256,21 @@
       on:input={updateImage}
     />
   </div>
-  <div
-    class="masked"
-    style="mask-image: url('{base64Image}'); -webkit-mask-image: url('{base64Image}');"
-  >
-    <img class="w-full" src="/imgs/thumbnails/hands-preview.jpg" />
+  <div class="flex flex-row gap-2 flex-wrap">
+    <div
+      class="masked"
+      style="mask-image: url('{base64Image}'); -webkit-mask-image: url('{base64Image}');"
+    >
+      <img class="w-full" src="/imgs/thumbnails/hands-preview.jpg" />
+    </div>
+    <div
+      class="masked"
+      style="mask-image: url('{base64Image}'); -webkit-mask-image: url('{base64Image}');"
+    >
+      <img class="w-full" src="/imgs/thumbnails/gan-portrait.jpg" />
+    </div>
+    <canvas bind:this={debugCanvas} width="512" height="512"></canvas>
   </div>
-  <canvas bind:this={debugCanvas} width="512" height="512"></canvas>
 </main>
 
 <style>
