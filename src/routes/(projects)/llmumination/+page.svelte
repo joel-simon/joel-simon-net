@@ -55,8 +55,8 @@
         />
 
         <p class=" mb-1 w-full !text-center mt-8">Evolved</p>
-        <p class="mb-1 w-full !text-center !text-small">Hover to view</p>
         <ShaderGrid {shaderData} bind:singleViewId />
+        <p class="my-2 w-full !text-center !text-sm">(Hover to view)</p>
         <p>
           The baseline represents what you would get by asking a chatbot such as
           ChatGPT directly. The results for "make an interesting shader" are
@@ -66,8 +66,15 @@
           more diverse set of results including varied shapes, structures and
           colors.
         </p>
-        <p class="w-full !text-center">Novelty analysis</p>
-        <div class="flex flex-row gap-2 w-full justify-center h-fit">
+        <h2 class="w-full !text-center">Novelty analysis</h2>
+        <p>
+          The system explicitly searches for a set of novel solutions and works
+          for any type of artifact that is generated in text and can have its
+          embedding in the latent space encoded by a foundation model such as
+          clip. We can analyze the increase in novelty for the run that produced
+          the above shaders.
+        </p>
+        <div class="flex flex-row gap-2 w-full justify-center h-fit my-2">
           <div class="max-h-[300px]">
             <img
               src="/lluminate/long-run/novelty_plot.png"
@@ -84,21 +91,19 @@
           </div>
         </div>
         <p class="!text-sm">
-          This figure illustrates the evolutionary progression of our system
-          across 60 generations, viewed through complementary perspectives. The
-          novelty metric (blue), measuring average cosine distance to k-nearest
-          neighbors, shows three distinct phases: rapid initial exploration
-          (generations 0-10), steady incremental growth (10-20), and a mature
-          phase of oscillation with continued innovation (20-60). Genome length
-          (red) follows a similar trajectory but with a notable delay in early
-          generations and step-like increases around generations 25 and 50,
-          suggesting complexity thresholds that enable new capabilities. The
-          UMAP visualization confirms this progression spatially, showing early
-          generations (purple) concentrated in the lower left, with a gradual
-          expansion toward upper and rightward regions in later generations
-          (yellow). Together, these patterns demonstrate sustained, non-random
-          exploration of latent space with intriguing dynamics between novelty
-          discovery and genomic complexity.
+          This figure (left) illustrates the evolutionary progression of our
+          system across 60 generations, viewed through complementary
+          perspectives. The novelty metric (blue), measuring average cosine
+          distance to k=3 nearest neighbors, shows two distinct phases: rapid
+          initial exploration (generations 0-15), steady incremental growth
+          (15-60). Genome length (red) follows a similar trajectory but with a
+          delay in early generations. The UMAP visualization (right) confirms
+          this progression spatially, showing early generations (purple)
+          concentrated in the lower left, with a gradual expansion toward upper
+          and rightward regions in later generations (yellow). Together, these
+          patterns demonstrate sustained, non-random exploration of latent space
+          with intriguing dynamics between novelty discovery and genomic
+          complexity.
         </p>
       {:catch error}
         <p>Error loading shaders: {error.message}</p>
