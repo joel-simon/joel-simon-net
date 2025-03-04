@@ -1,0 +1,14 @@
+flowchart LR
+    A[User Prompt] --> B[Initialize Population]
+    B --> C[Evolution Loop]
+    
+    subgraph C[Evolution Loop]
+        D[Apply Operators] --> E[Generate via LLM]
+        E --> F[Select by Novelty]
+        F --> G[Generate Summary]
+        G --> D
+    end
+    
+    H[Creative Strategies] --> D
+    
+    C --> I[Final Diverse Population]
