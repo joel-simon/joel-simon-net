@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Ouroboros</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #ouroborosContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Instructions overlay, hidden by default. Display on hover. */
+    #instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.85);
+      color: #222;
+      font-family: sans-serif;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    #ouroborosContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="ouroborosContainer">
+  <div id="instructions">
+    <h3>Time Ouroboros</h3>
+    <p>
+      • The serpent length changes with the hour (1-12).<br/>
+      • Its color shifts based on the minute.<br/>
+      • The entire serpent rotates in sync with the seconds.<br/>
+      • Observe the star at the center, pulsing with each hour.
+    </p>
+  </div>
+</div>
+
+<script>
+  let canvasSize = 512;
+
+  function setup() {
+    let c = createCanvas(canvasSize, canvasSize);
+    c.parent("ouroborosContainer");
+    angleMode(DEGREES);
+  }
+
+  function draw() {
+    background(220);
+
+    // Current local time
+    let hr = hour() % 12;  // 0-11
+    let mn = minute();     // 0-59
+    let sc = second();     // 0-59
+
+    // Serpent parameters
+    let segments = hr === 0 ? 12 : hr;  // if hr is 0, show it as 12
+    let hueValue = map(mn, 0, 59, 0, 360);
+    let rotationAngle = map(sc, 0, 59, 0, 360);
+
+    // Draw rotating Ouroboros around the center
+    push();
+    translate(width / 2, height / 2);
+    rotate(rotationAngle);
+
+    // Draw circle path for the snake
+    noFill();
+    stroke(100);
+    circle(0, 0, 280);
+
+    // Draw the snake as multiple arcs
+    let angleStep = 360 / segments;
+    let radius = 140;
+    for (let i = 0; i < segments; i++) {
+      let startAngle = i * angleStep;
+      let endAngle = startAngle + angleStep - 5; // small gap
+      strokeWeight(12);
+      stroke(color(`hsb(${hueValue}, 80%, 60%)`));
+      arc(0, 0, radius * 2, radius * 2, startAngle, endAngle, OPEN);
+    }
+    pop();
+
+    // Star at center pulses with hour
+    push();
+    translate(width / 2, height / 2);
+    let starSize = map(hr, 0, 11, 10, 80);
+    drawStar(0, 0, starSize, starSize / 2, 5);
+    pop();
+
+    // Show the digital time in the lower center
+    noStroke();
+    fill(80);
+    textSize(20);
+    textAlign(CENTER, CENTER);
+    text(nf(hour(),2) + ':' + nf(minute(),2) + ':' + nf(second(),2), width / 2, height - 30);
+  }
+
+  // Draw a star with n points
+  function drawStar(x, y, radius1, radius2, npoints) {
+    fill(255, 200, 0);
+    stroke(0);
+    strokeWeight(2);
+    let angle = 360 / npoints;
+    let halfAngle = angle / 2;
+    beginShape();
+    for (let a = 0; a < 360; a += angle) {
+      let sx = x + cos(a) * radius1;
+      let sy = y + sin(a) * radius1;
+      vertex(sx, sy);
+      sx = x + cos(a + halfAngle) * radius2;
+      sy = y + sin(a + halfAngle) * radius2;
+      vertex(sx, sy);
+    }
+    endShape(CLOSE);
+  }
+</script>
+</body>
+</html>

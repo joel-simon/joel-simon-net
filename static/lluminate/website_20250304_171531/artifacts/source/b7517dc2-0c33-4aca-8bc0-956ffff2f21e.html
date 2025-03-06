@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Vortex Portal</title>
+  <style>
+    /* Reset and layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      font-family: Arial, sans-serif;
+      color: #fff;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Container for a fixed 512x512 sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0,0,0,0.8);
+      cursor: pointer;
+    }
+
+    /* Instructions overlay (appears on hover) */
+    #infoOverlay {
+      position: absolute;
+      top: 0; 
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    #canvasContainer:hover #infoOverlay {
+      display: flex;
+    }
+
+    /* Style the p5 canvas exactly 512x512 */
+    #defaultCanvas0 {
+      width: 512px !important;
+      height: 512px !important;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="infoOverlay">
+      <p>
+        Time Vortex Portal<br><br>
+        • Central Vortex grows with the current hour.<br>
+        • Its colors shift every minute.<br>
+        • Comets orbit around with passing seconds.<br>
+        • Press SPACE to toggle swirling motion on/off.<br>
+        Hover away to see the animation!
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time Vortex Portal
+      - The Vortex arcs expand based on the hour.
+      - The Vortex color changes shift every minute.
+      - Comets revolve around the center, representing seconds.
+      - Press SPACE to toggle the swirl animation on/off.
+    */
+
+    let isSwirling = true;
+    let comets = [];
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      // Initialize a set of comets
+      for (let i = 0; i < 12; i++) {
+        comets.push({
+          angle: random(360),
+          dist: random(80, 200),
+          size: random(4, 8),
+          speed: random(2, 4)
+        });
+      }
+    }
+
+    function draw() {
+      background(10);
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Translate to center
+      translate(width/2, height/2);
+
+      // Draw swirling Vortex
+      drawVortex(h, m);
+
+      // Draw comets orbiting
+      drawComets(s);
+    }
+
+    // Function to draw swirling arcs, scale & color shift from hour/minute
+    function drawVortex(h, m) {
+      // The vortex radius depends on hour (24-hour format: range ~0..23)
+      let vortexSize = map(h % 12, 0, 11, 100, 220);
+      // The color changes every minute (m).
+      let hueVal = map(m, 0, 59, 0, 360);
+
+      // If swirling is toggled off, reduce swirling effect
+      let swirlAngle = 0;
+      if (isSwirling) {
+        swirlAngle = frameCount * 0.5;
+      }
+
+      colorMode(HSB, 360, 100, 100, 100);
+      noFill();
+      let layerCount = 8;  // number of arcs
+      for (let i = 0; i < layerCount; i++) {
+        let fraction = i / layerCount;
+        let radius = vortexSize * fraction + 40;
+        stroke(
+          (hueVal + i * 15) % 360,
+          80,
+          90,
+          80
+        );
+        strokeWeight(2);
+        push();
+        rotate(swirlAngle - i * 4);
+        arc(0, 0, radius, radius, 0, 270 + i * 10);
+        pop();
+      }
+      colorMode(RGB);
+    }
+
+    // Draw comets rotating around the center, responding to seconds
+    function drawComets(sec) {
+      fill(255);
+      noStroke();
+
+      // Comets revolve faster as seconds increase
+      // We'll offset each comet's angle by current second
+      comets.forEach((c, idx) => {
+        let speedBoost = map(sec, 0, 59, 0, 3);
+        if (isSwirling) {
+          c.angle += (c.speed + speedBoost) * 0.3;
+        }
+        let x = cos(c.angle) * c.dist;
+        let y = sin(c.angle) * c.dist;
+        ellipse(x, y, c.size, c.size);
+      });
+    }
+
+    // Press SPACE to toggle swirling
+    function keyPressed() {
+      if (key === ' ') {
+        isSwirling = !isSwirling;
+      }
+    }
+  </script>
+</body>
+</html>

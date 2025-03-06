@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creative Time Fusion</title>
+  <style>
+    /* Basic page setup: center everything, dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Wrapper for canvas and tooltip */
+    .sketch-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Stylized tooltip for hover instructions */
+    .tooltip {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      pointer-events: none; /* Let mouse events pass to canvas */
+    }
+
+    .tooltip-text {
+      background: rgba(0, 0, 0, 0.8);
+      padding: 8px 12px;
+      border-radius: 4px;
+      visibility: hidden;
+      text-align: center;
+      line-height: 1.4em;
+      width: 250px;
+      font-size: 0.9em;
+      pointer-events: auto; /* Make tooltip clickable if needed */
+    }
+
+    /* Show tooltip text on container hover */
+    .sketch-container:hover .tooltip-text {
+      visibility: visible;
+    }
+
+    /* Ensure the canvas is exactly 512x512 with no extra scrollbars */
+    #defaultCanvas0 {
+      width: 512px !important;
+      height: 512px !important;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sketch-container">
+    <!-- Canvas will go here -->
+    <div class="tooltip">
+      <div class="tooltip-text">
+        This time display combines wave patterns, swirling rings, and color changes. 
+        Hour affects the star swirl, minute changes the swirl color, and second modulates wave intensity. 
+        The digital clock in the center shows the exact time.
+      </div>
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let angleOffset = 0;  // used for rotating star pattern
+    let waveOffset = 0;   // used for wave background
+    let swirlingParticles = [];
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent(document.querySelector('.sketch-container'));
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      // Draw wave background
+      drawWaveBackground();
+
+      // Create swirling ring orbits
+      updateSwirlingParticles();
+      drawSwirlingParticles();
+
+      // Draw star swirl at center
+      drawRotatingStar();
+
+      // Draw a digital clock at the center
+      drawDigitalClock();
+    }
+
+    function drawWaveBackground() {
+      // second() controls wave intensity
+      const s = second();
+      waveOffset += 0.02;
+      fill(255, 255, 255, 20);
+      for (let x = 0; x <= width; x += 12) {
+        let wave = map(
+          sin(waveOffset + x * 0.02),
+          -1, 1,
+          -s * 0.3,
+          s * 0.3
+        );
+        rect(x, height * 0.5 + wave, 12, height);
+      }
+    }
+
+    function drawRotatingStar() {
+      // hour() controls star swirl points, minute() controls rotation speed
+      const h = hour() % 12;
+      const m = minute();
+      
+      push();
+      translate(width / 2, height / 2);
+      rotate(frameCount * 0.5 * (m / 30 + 1)); // minute-based rotation
+      fill(255, 180, 0, 130);
+      star(0, 0, 70, 140, max(5, h));  // star with points = at least 5
+      pop();
+    }
+
+    function star(x, y, radius1, radius2, npoints) {
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+
+    function drawDigitalClock() {
+      // Simple text overlay of current time
+      const h = hour();
+      const m = minute();
+      const s = second();
+      let timeString = nf(h, 2) + ':' + nf(m, 2) + ':' + nf(s, 2);
+
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(32);
+      text(timeString, width / 2, height / 2);
+    }
+
+    function updateSwirlingParticles() {
+      // minute affects color, second affects swirl speed
+      const s = second();
+      const swirlSpeed = map(s, 0, 59, 0.01, 0.1);
+
+      // Generate new particles sporadically
+      if (frameCount % 5 === 0) {
+        swirlingParticles.push({
+          angle: random(0, 360),
+          radius: random(80, 240),
+          hue: minute() * 6,
+        });
+      }
+
+      // Update each particle
+      for (let p of swirlingParticles) {
+        p.angle += swirlSpeed;
+      }
+
+      // Remove old particles beyond some threshold
+      if (swirlingParticles.length > 500) {
+        swirlingParticles.splice(0, 1);
+      }
+    }
+
+    function drawSwirlingParticles() {
+      colorMode(HSB, 360, 100, 100);
+      push();
+      translate(width / 2, height / 2);
+      for (let p of swirlingParticles) {
+        fill(p.hue, 70, 90);
+        let x = cos(p.angle) * p.radius;
+        let y = sin(p.angle) * p.radius;
+        ellipse(x, y, 8, 8);
+      }
+      pop();
+      colorMode(RGB, 255);
+    }
+  </script>
+</body>
+</html>

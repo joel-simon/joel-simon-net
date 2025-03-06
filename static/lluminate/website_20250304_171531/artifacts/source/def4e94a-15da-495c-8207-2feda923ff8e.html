@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time SpiroGarden</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f7f7f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #444;
+      padding: 8px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 220px;
+      z-index: 1;
+    }
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      Time SpiroGarden: 
+      • Shapes adapt to hour, minute, second. 
+      • Larger loops bloom with hours. 
+      • Middle loops change with minutes. 
+      • Outer swirl pulses with seconds.
+    </div>
+  </div>
+
+  <script>
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      angleMode(RADIANS);
+      noFill();
+    }
+
+    function draw() {
+      background(240);
+
+      let hr = hour() % 12; // 0-11
+      let mn = minute();    // 0-59
+      let sc = second();    // 0-59
+
+      // Convert time to fractional values
+      let hourFraction   = (hr + mn/60 + sc/3600) / 12;
+      let minuteFraction = (mn + sc/60) / 60;
+      let secondFraction = sc / 60;
+
+      translate(width / 2, height / 2);
+
+      // -----------------------------
+      // "Largest Blooms" - Hour-based spirograph
+      // -----------------------------
+      push();
+      let maxRotation = TWO_PI * hourFraction;
+      let radius1 = map(hourFraction, 0, 1, 60, 180);
+      let radius2 = map(hourFraction, 0, 1, 20, 80);
+      strokeWeight(2);
+      stroke(70, 130, 180, 150);
+      beginShape();
+      for (let a = 0; a < maxRotation * 8; a += 0.02) {
+        let x = (radius1 - radius2) * cos(a) + 70 * cos(((radius1 - radius2) / radius2) * a);
+        let y = (radius1 - radius2) * sin(a) - 70 * sin(((radius1 - radius2) / radius2) * a);
+        vertex(x, y);
+      }
+      endShape();
+      pop();
+
+      // -----------------------------
+      // "Middle Blooms" - Minute-based spirograph
+      // -----------------------------
+      push();
+      let midRotation = TWO_PI * minuteFraction;
+      let radius3 = map(minuteFraction, 0, 1, 30, 100);
+      let radius4 = map(minuteFraction, 0, 1, 5, 40);
+      strokeWeight(2);
+      stroke(255, 128, 0, 150);
+      beginShape();
+      for (let a = 0; a < midRotation * 12; a += 0.03) {
+        let x = (radius3 - radius4) * cos(a) + 30 * cos(((radius3 - radius4) / radius4) * a);
+        let y = (radius3 - radius4) * sin(a) - 30 * sin(((radius3 - radius4) / radius4) * a);
+        vertex(x, y);
+      }
+      endShape();
+      pop();
+
+      // -----------------------------
+      // "Outer Swirl" - Second-based arcs
+      // -----------------------------
+      push();
+      rotate(frameCount * 0.01); // rotate for continuous motion
+      let swirlColor = lerpColor(color(200, 255, 200), color(255, 0, 150), secondFraction);
+      stroke(swirlColor);
+      strokeWeight(3);
+      for (let i = 0; i < 6; i++) {
+        let swirlRadius = map(secondFraction, 0, 1, 80, 120);
+        rotate(PI / 3); 
+        arc(0, 0, swirlRadius, swirlRadius, 0, map(sc, 0, 60, 0, TWO_PI / 3));
+      }
+      pop();
+
+      // -----------------------------
+      // Display digital time at bottom
+      // -----------------------------
+      push();
+      translate(-width / 2, -height / 2);
+      fill(60);
+      noStroke();
+      textSize(24);
+      textAlign(CENTER, CENTER);
+      text(nf(hour(), 2) + ':' + nf(minute(), 2) + ':' + nf(second(), 2), width / 2, height - 30);
+      pop();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Orchard</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #orchardContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Instructions overlay, hidden by default. Display on hover. */
+    #instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.85);
+      color: #222;
+      font-family: sans-serif;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    #orchardContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="orchardContainer">
+  <div id="instructions">
+    <h3>Time Orchard</h3>
+    <p>
+      • The orchard changes throughout the day based on the current hour.<br/>
+      • The fruits ripen in color as minutes pass.<br/>
+      • The fruit size pulses with each second.<br/>
+      • Observe the clock at the top to see how time shapes this lively orchard!
+    </p>
+  </div>
+</div>
+
+<script>
+  let canvasSize = 512;
+  let treeCount = 5;    // How many trees in the orchard
+  let treePositions = []; // Store random x positions for trees
+
+  function setup() {
+    let cnv = createCanvas(canvasSize, canvasSize);
+    cnv.parent("orchardContainer");
+    // Generate random tree positions once
+    for (let i = 0; i < treeCount; i++) {
+      let xPos = random(width * 0.1, width * 0.9);
+      treePositions.push(xPos);
+    }
+  }
+
+  function draw() {
+    let hr = hour() % 12;  // 0-11
+    let mn = minute();     // 0-59
+    let sc = second();     // 0-59
+
+    // Create a smoothly transitioning background from day to night using hour fraction
+    let hourFraction = (hr + mn / 60 + sc / 3600) / 12;
+    let dayColor = color(135, 206, 235); // sky blue
+    let nightColor = color(5, 15, 80);   // dark blue
+    let skyColor = lerpColor(dayColor, nightColor, hourFraction);
+    background(skyColor);
+
+    // Draw a simple rolling grass field
+    noStroke();
+    fill(60, 180, 75);
+    rect(0, height * 0.65, width, height * 0.35);
+
+    // Draw orchard trees
+    for (let i = 0; i < treeCount; i++) {
+      drawTree(treePositions[i], height * 0.65, hr, mn, sc);
+    }
+
+    // Overlay a digital clock near the top
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textSize(22);
+    text(nf(hour(),2) + ':' + nf(mn,2) + ':' + nf(sc,2), width / 2, 30);
+  }
+
+  // Draw a tree with fruits whose color and size depend on current time
+  function drawTree(posX, grassLevel, hr, mn, sc) {
+    push();
+    translate(posX, grassLevel);
+
+    // Draw trunk
+    stroke(60, 40, 20);
+    strokeWeight(8);
+    line(0, 0, 0, -80);
+
+    // Draw canopy
+    noStroke();
+    fill(40, 160, 55);
+    ellipse(0, -110, 90, 90);
+
+    // Fruits: color changes with minute, size changes with second, number of fruits changes with hour
+    let fruitCount = map(hr, 0, 11, 3, 8);
+    fruitCount = floor(fruitCount);
+    for (let i = 0; i < fruitCount; i++) {
+      // Randomly place fruits around the canopy
+      let angle = map(i, 0, fruitCount, 0, TWO_PI);
+      let radius = random(30, 40);
+      let fx = radius * cos(angle);
+      let fy = -110 + radius * sin(angle);
+
+      push();
+      translate(fx, fy);
+
+      // Fruit color transitions from green to red as minutes go from 0->59
+      let fruitGreen = lerpColor(color(0, 200, 0), color(200, 0, 0), mn / 60);
+      fill(fruitGreen);
+
+      // Fruit size pulses with seconds
+      let baseSize = 12;
+      let pulsing = map(sin((sc / 60) * TWO_PI), -1, 1, 0.8, 1.2);
+      let size = baseSize * pulsing;
+      ellipse(0, 0, size, size);
+      pop();
+    }
+    pop();
+  }
+</script>
+</body>
+</html>

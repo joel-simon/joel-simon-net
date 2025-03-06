@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Morphing Polygon</title>
+  <style>
+    /* Make the body fill the screen and center contents */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      height: 100vh;
+      width: 100vw;
+      display: grid;
+      place-items: center;
+    }
+
+    /* Container for tooltip instructions on hover */
+    .info-tip {
+      position: relative;
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      margin-bottom: 0.5em;
+      user-select: none;
+      cursor: pointer;
+    }
+
+    .info-content {
+      visibility: hidden;
+      width: 250px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      bottom: 130%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1;
+      font-size: 0.9em;
+      line-height: 1.4em;
+    }
+
+    .info-tip:hover .info-content {
+      visibility: visible;
+    }
+
+    /* Ensure the canvas is exactly 512x512 and no extra scrollbars appear */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="info-tip">
+    Hover for instructions
+    <div class="info-content">
+      This polygon morphs its number of sides based on the hour, changes color with the minute, 
+      and rotates at a speed tied to the seconds. Enjoy the time-based transformations!
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    function setup() {
+      createCanvas(512, 512);
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(20);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Number of sides dictated by the hour (cycle through 3 to 14 sides).
+      let sides = (h % 12) + 3;
+
+      // Color determined by minute (varying hue).
+      let hueVal = map(m, 0, 60, 0, 360);
+
+      // Rotation speed based on seconds.
+      let rotationSpeed = map(s, 0, 60, 0, 360);
+
+      // Translate to center and apply rotation
+      push();
+      translate(width / 2, height / 2);
+      rotate(frameCount * (rotationSpeed / 480.0)); // scaled for smooth rendering
+
+      // Fill with HSB-like rotation using minute
+      colorMode(HSB);
+      let polyColor = color(hueVal, 200, 200);
+      fill(polyColor);
+
+      // Draw the polygon
+      beginShape();
+      for (let i = 0; i < sides; i++) {
+        let angle = map(i, 0, sides, 0, 360);
+        // Polygon radius (radius modulated slightly with second)
+        let r = 100 + 40 * sin((s + frameCount) * 2);
+        let x = r * cos(angle);
+        let y = r * sin(angle);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+
+      pop();
+
+      // Reset color mode
+      colorMode(RGB);
+    }
+  </script>
+</body>
+</html>

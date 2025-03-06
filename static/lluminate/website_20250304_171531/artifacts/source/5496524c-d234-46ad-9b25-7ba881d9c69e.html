@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Spirograph Display</title>
+  <style>
+    /* Basic reset and dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Canvas container */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Hover instructions overlay */
+    #instructions {
+      pointer-events: none;
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #canvas-container:hover #instructions {
+      display: block;
+    }
+
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.5em;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="instructions">
+      <div class="instructions-text">
+        Time Spirograph Display:
+        <br><br>
+        • This pattern evolves based on current hour, minute, and second.  
+        <br>
+        • Observe shifting loops and color transitions.  
+        <br>
+        • The digital time is shown at the center.  
+        <br><br>
+        See how the spirograph morphs as each second passes.
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let myCanvas = createCanvas(w, h);
+      myCanvas.parent('canvas-container');
+      angleMode(DEGREES);
+      noFill();
+    }
+
+    function draw() {
+      background(0);
+
+      // Get current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Map time to spirograph parameters
+      // Changing radius based on hour and minute
+      let r1 = map(hr % 12, 0, 12, 50, 150);
+      let r2 = map(mn, 0, 60, 50, 180);
+      // The difference in radii relates to second for fine variation
+      let dRadius = map(sc, 0, 60, 10, 50);
+
+      // Color shift influenced by time
+      let hueVal = map(hr * 60 + mn, 0, 1440, 0, 360);
+      strokeWeight(1.5);
+      stroke(color(`hsba(${hueVal}, 100%, 100%, 0.8)`));
+
+      // Spirograph-like pattern
+      // We'll draw multiple revolutions for a fuller pattern.
+      push();
+      translate(width / 2, height / 2);
+      beginShape();
+      for (let a = 0; a < 361; a += 1) {
+        // K constant for param equations
+        let k = r2 / r1;
+        let x = (r1 - r2) * cos(a) + dRadius * cos(((r1 - r2) / r2) * a);
+        let y = (r1 - r2) * sin(a) - dRadius * sin(((r1 - r2) / r2) * a);
+        vertex(x, y);
+      }
+      endShape();
+
+      // Digital time in the center
+      noStroke();
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(24);
+      let timeStr = nf(hr, 2) + ':' + nf(mn, 2) + ':' + nf(sc, 2);
+      text(timeStr, 0, 0);
+      pop();
+    }
+  </script>
+</body>
+</html>

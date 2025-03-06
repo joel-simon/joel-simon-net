@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Lighthouse</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the “Time Lighthouse”!<br><br>
+        • Sky color transitions with the current hour.<br>
+        • The rotating light beam’s sweep depends on minutes.<br>
+        • Lighthouse beam color pulses with seconds.<br><br>
+        Hover away to return to the animation.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let lightRotation = 0;
+    let waveOffset = 0;
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // 1) Sky color transitions based on hour
+      //    We'll create a gradient from a morning hue to a midnight hue
+      drawSkyGradient(h);
+
+      // 2) Ocean waves: shift in height with minute changes
+      drawWaves(m);
+
+      // 3) Lighthouse base
+      drawLighthouseBase();
+
+      // 4) Rotating Light Beam in the center
+      //    The rotation speed depends on minutes, color pulses with seconds
+      push();
+      translate(width / 2, height / 2);
+      let beamSpeed = 0.1 + (m * 0.02); 
+      lightRotation += beamSpeed;
+      rotate(lightRotation);
+
+      let beamColor = color(200 + s*2, 100 + s*2, 255 - s*2, 120); // color pulsing with seconds
+      fill(beamColor);
+      // Draw three wide beams for a sweeping effect
+      for(let i = 0; i < 3; i++){
+        rotate(120);
+        beginShape();
+        vertex(0, 0);
+        vertex(100, -25);
+        vertex(200, -5);
+        vertex(200, 5);
+        vertex(100, 25);
+        endShape(CLOSE);
+      }
+      pop();
+
+      // 5) Small digital time display at the base of the lighthouse
+      drawDigitalClock(h, m, s);
+    }
+
+    // Utility: draws a vertical sky gradient
+    function drawSkyGradient(h) {
+      // Map hour to color
+      // Let's fade between two main colors in a 24hr cycle 
+      let dayColor = color(135, 206, 250);  // light blue
+      let nightColor = color(10, 15, 50);   // dark night blue
+      let t = map(h, 0, 23, 0, 1);
+
+      // Interpolate the two colors
+      for (let y = 0; y < height; y++) {
+        let lerpAmt = map(y, 0, height, 0, 1);
+        let c = lerpColor(nightColor, dayColor, t);
+        // fade to black at the bottom
+        c = lerpColor(c, color(0), lerpAmt*0.4);
+        stroke(c);
+        line(0, y, width, y);
+      }
+    }
+
+    // Utility: draws animated waves in the lower portion
+    function drawWaves(minuteVal) {
+      fill(20, 30, 80, 230);
+      noStroke();
+      beginShape();
+      vertex(0, height);
+      let waveCount = 2 + floor(minuteVal / 10); 
+      let waveHeight = map(minuteVal, 0, 59, 10, 80);
+      let freq = 0.02;
+      for (let x = 0; x <= width; x += 10) {
+        let totalWave = 0;
+        for (let i = 1; i <= waveCount; i++) {
+          // sum of multiple sine waves
+          totalWave += sin((x + waveOffset * i) * freq * i) * waveHeight / i;
+        }
+        let yPos = height - 50 + totalWave;
+        vertex(x, yPos);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+      waveOffset += 0.4;
+    }
+
+    // Utility: draws the lighthouse structure
+    function drawLighthouseBase() {
+      push();
+      translate(width / 2, height / 2 + 60);
+      fill(100);
+      // Base tower
+      rectMode(CENTER);
+      rect(0, 0, 50, 100);
+      // Lighthouse top
+      fill(180);
+      ellipse(0, -50, 60, 30);
+      fill(120);
+      rect(0, -70, 40, 20);
+      pop();
+    }
+
+    // Utility: draws a digital clock near the bottom of the lighthouse
+    function drawDigitalClock(h, m, s) {
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      text(`${hDisp}:${mDisp}:${sDisp}`, width / 2, height - 30);
+    }
+  </script>
+</body>
+</html>

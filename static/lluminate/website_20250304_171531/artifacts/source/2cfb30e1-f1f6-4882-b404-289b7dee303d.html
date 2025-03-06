@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time's Orchard</title>
+  <style>
+    /* Overall page styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark backdrop */
+      height: 100vh;
+      width: 100vw;
+      display: grid;
+      place-items: center;
+    }
+
+    /* Tooltip container */
+    .info-tip {
+      position: relative;
+      font-family: sans-serif;
+      user-select: none;
+      cursor: pointer;
+      color: #fff;
+      margin-bottom: 0.5em;
+    }
+    /* Tooltip content (hidden by default) */
+    .info-content {
+      visibility: hidden;
+      width: 250px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.9em;
+      line-height: 1.4em;
+      z-index: 1;
+    }
+    /* Show the text when hovering over the container */
+    .info-tip:hover .info-content {
+      visibility: visible;
+    }
+
+    /* Ensure the canvas is exactly 512x512 with no extra scrollbars */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="info-tip">
+    Hover for instructions
+    <div class="info-content">
+      Welcome to Time's Orchard! Three fruits on the tree depict hour, minute, and second. The largest one shows hours, the medium fruit shows minutes, and the smallest shows seconds. They gently sway in the breeze and change color as time grows.
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <script>
+    let hourFruit, minuteFruit, secondFruit;
+
+    function setup() {
+      createCanvas(512, 512);
+      // Create fruit objects with a position and scale (for size)
+      hourFruit   = new Fruit(createVector(width*0.6, height*0.3), 30); // largest
+      minuteFruit = new Fruit(createVector(width*0.5, height*0.4), 20); // medium
+      secondFruit = new Fruit(createVector(width*0.65, height*0.48), 10); // smallest
+    }
+
+    function draw() {
+      background(70, 130, 90); // lush orchard green
+
+      // Draw a simple tree trunk and branches
+      drawTree();
+
+      // Update each fruit's color and slightly sway
+      hourFruit.update('hour');
+      minuteFruit.update('minute');
+      secondFruit.update('second');
+
+      hourFruit.display();
+      minuteFruit.display();
+      secondFruit.display();
+    }
+
+    function drawTree() {
+      push();
+      stroke(60, 40, 20);
+      strokeWeight(20);
+      // Trunk
+      line(width*0.5, height, width*0.5, height*0.4);
+      // Branches
+      strokeWeight(10);
+      line(width*0.5, height*0.5, width*0.6, height*0.3);
+      line(width*0.5, height*0.45, width*0.65, height*0.48);
+      pop();
+    }
+
+    class Fruit {
+      constructor(pos, baseSize) {
+        this.pos = pos.copy();
+        this.baseSize = baseSize;
+        this.currentColor = color(255);
+        this.offsetAngle = random(TWO_PI); // for swaying each fruit differently
+      }
+
+      update(mode) {
+        let h = hour();
+        let m = minute();
+        let s = second();
+
+        // Adjust color based on time
+        if (mode === 'hour') {
+          // Variation by hour
+          this.currentColor = color((h % 12) * 20, 100, 180);
+        } else if (mode === 'minute') {
+          this.currentColor = color(100, m * 4, 200);
+        } else if (mode === 'second') {
+          this.currentColor = color(80, 160, s * 4);
+        }
+
+        // Sway effect using sine wave
+        let sway = sin(frameCount * 0.02 + this.offsetAngle) * 2;
+        this.pos.y += sway * 0.1; // gentle vertical sway
+      }
+
+      display() {
+        push();
+        fill(this.currentColor);
+        noStroke();
+        ellipse(this.pos.x, this.pos.y, this.baseSize, this.baseSize);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

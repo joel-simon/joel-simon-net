@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Origami Bloom</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for contrast */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+      max-width: 400px;
+    }    
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Origami Bloom</strong><br><br>
+        • Watch as the folding shape expands and rotates based on the hour, minute, and second.<br>
+        • The outer rings shift in color to reflect time.<br>
+        • A changing polygon in the center “blooms” with each minute.<br><br>
+        Hover to see instructions. Enjoy the dynamic origami display!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      const cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(0);
+
+      // Get current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Draw background rings that shift color with time
+      drawBackgroundRings(hr, mn, sc);
+
+      // Draw an origami-like polygon in the center
+      push();
+      translate(width / 2, height / 2);
+
+      // The polygon's number of sides is hr % 12 plus 3, so it goes from 3 to 14
+      let sides = (hr % 12) + 3;
+
+      // The radius changes with minute and second, to create a pulsing effect
+      let baseRadius = map(mn, 0, 59, 50, 200);
+      let pulse = map(sin(frameCount + sc * 6), -1, 1, -10, 10);
+      let radius = baseRadius + pulse;
+
+      // Rotate with seconds
+      rotate(sc * 6);
+
+      // Draw the polygon
+      noStroke();
+      let col = color(map(sc, 0, 59, 0, 255), 100, 200);
+      fill(col);
+      beginShape();
+      for (let i = 0; i < sides; i++) {
+        let angle = map(i, 0, sides, 0, 360);
+        let x = radius * cos(angle);
+        let y = radius * sin(angle);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+
+      // Display digital time at center
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(`${displayHour}:${minStr}:${secStr} ${ampm}`, 0, 0);
+      pop();
+    }
+
+    // Draw concentric rings that shift color with the current time
+    function drawBackgroundRings(hr, mn, sc) {
+      noFill();
+      strokeWeight(2);
+      let totalRings = 5;
+      // Base hue depends on hours, minute changes brightness, seconds add tiny flicker
+      let hueBase = map(hr, 0, 23, 0, 255);
+      let brightness = map(mn, 0, 59, 50, 255);
+
+      for (let i = 0; i < totalRings; i++) {
+        let ringRadius = map(i, 0, totalRings-1, 50, width/2);
+        let hueVariation = map(sc, 0, 59, -30, 30);
+        stroke(
+          hueBase + hueVariation,
+          150,
+          brightness - i * 20
+        );
+        ellipse(width / 2, height / 2, ringRadius*2, ringRadius*2);
+      }
+    }
+  </script>
+</body>
+</html>

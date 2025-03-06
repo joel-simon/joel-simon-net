@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Jellyfish</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Jellyfish<br><br>
+        • Hour → Number of main tentacles<br>
+        • Minute → Color tint<br>
+        • Second → Pulsation speed<br><br>
+        Let each second pass to see the jellyfish pulse!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let pulseAngle = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      colorMode(HSB);
+      noStroke();
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Map time to dynamic background
+      let bgHue = map(m, 0, 59, 160, 260);
+      let bgSat = 50;
+      let bgBri = 30 + 20 * sin(frameCount * 0.1);
+      background(bgHue, bgSat, bgBri);
+
+      translate(width/2, height/2);
+
+      // Draw the jellyfish center body
+      let bodyHue = map(m, 0, 59, 200, 360) % 360;
+      let pulsation = map(sin(pulseAngle), -1, 1, 0.9, 1.1);
+      let bodySize = 70 * pulsation;
+      drawJellyfishBody(bodyHue, bodySize);
+
+      // Tentacles (hour-based count)
+      let maxTentacles = (h % 12) || 12; // ensure at least 1
+      drawTentacles(maxTentacles, bodySize, bodyHue);
+
+      // Control how fast the body pulses (seconds-based)
+      let pulseSpeed = map(s, 0, 59, 0.05, 0.3);
+      pulseAngle += pulseSpeed;
+
+      // Optional text clock in small text near bottom
+      drawDigitalClock(h, m, s);
+    }
+
+    function drawJellyfishBody(hueVal, sizeVal) {
+      fill(hueVal, 80, 80);
+      ellipse(0, 0, sizeVal * 1.4, sizeVal); // body
+      fill(hueVal, 50, 100);
+      ellipse(0, -sizeVal * 0.3, sizeVal * 0.8, sizeVal * 0.4); // top highlight
+    }
+
+    function drawTentacles(tCount, bodySize, hueVal) {
+      push();
+      // Move reference to bottom of body
+      translate(0, bodySize * 0.4);
+
+      let angleStep = 360 / tCount;
+      for (let i = 0; i < tCount; i++) {
+        push();
+        rotate(i * angleStep);
+        // Each tentacle is a curve that pulses slightly
+        let lengthFactor = 1.5 + 0.5 * sin(frameCount * 0.02 + i);
+        let tentacleLength = bodySize * lengthFactor;
+        fill(hueVal, 80, 50, 0.5);
+        beginShape();
+        vertex(0, 0);
+        bezierVertex(-10, tentacleLength * 0.3,
+                     10, tentacleLength * 0.6,
+                     0, tentacleLength);
+        endShape();
+        pop();
+      }
+      pop();
+    }
+
+    function drawDigitalClock(h, m, s) {
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      text(
+        nf(h,2) + ':' + nf(m,2) + ':' + nf(s,2),
+        0, height/2 - 30
+      );
+      pop();
+    }
+  </script>
+</body>
+</html>

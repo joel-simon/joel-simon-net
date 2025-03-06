@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Jellyfish</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Jellyfish<br><br>
+        • The hour sets how many jellyfish appear.<br>
+        • The minute changes each jellyfish's tentacle length.<br>
+        • The second controls how the jellyfish glow.<br>
+        • Observe the digital time readout at the bottom.<br><br>
+        Hover away to return to the animation.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const jellyfishes = []; // array to store jellyfish objects
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      // Create a subtle gradient background (deep ocean look)
+      for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        let c1 = color(10, 40, 70);
+        let c2 = color(0, 10, 30);
+        let cBg = lerpColor(c1, c2, inter);
+        stroke(cBg);
+        line(0, y, width, y);
+      }
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Update the number of jellyfish each hour on the hour
+      // If new hour, repopulate jellyfishes
+      if (jellyfishes.length !== h) {
+        jellyfishes.length = 0;
+        for (let i = 0; i < h; i++) {
+          let xPos = random(width);
+          let yPos = random(height * 0.2, height * 0.8);
+          jellyfishes.push(new Jellyfish(xPos, yPos));
+        }
+      }
+
+      // Draw jellyfish
+      for (let jf of jellyfishes) {
+        jf.move();
+        jf.display(m, s);
+      }
+
+      // Display a time readout
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, width / 2, height - 20);
+    }
+
+    class Jellyfish {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.size = random(40, 60);
+        this.xSpeed = random(-0.5, 0.5);
+        this.ySpeed = random(-0.3, 0.3);
+        this.baseColor = color(random(100, 255), random(80, 200), random(150, 255));
+      }
+
+      move() {
+        // Slight drifting movement
+        this.x += this.xSpeed;
+        this.y += this.ySpeed;
+
+        // Keep jellyfish within canvas
+        if (this.x < 0) this.x = width;
+        if (this.x > width) this.x = 0;
+        if (this.y < 0) this.y = height;
+        if (this.y > height) this.y = 0;
+      }
+
+      display(m, s) {
+        // The minute sets tentacle length
+        let tentacleLength = map(m, 0, 59, 20, 80);
+
+        // The second controls glow intensity
+        let glow = map(sin(frameCount + s * 6), -1, 1, 50, 255);
+
+        // Draw the jellyfish's bell
+        push();
+        translate(this.x, this.y);
+        fill(red(this.baseColor), green(this.baseColor), blue(this.baseColor), glow);
+        ellipse(0, 0, this.size * 1.5, this.size);
+
+        // Draw tentacles
+        stroke(red(this.baseColor), green(this.baseColor), blue(this.baseColor), glow * 0.8);
+        strokeWeight(1.5);
+        for (let t = -this.size / 2; t <= this.size / 2; t += this.size / 4) {
+          line(t, this.size / 2, t, this.size / 2 + tentacleLength);
+        }
+        pop();
+        noStroke();
+      }
+    }
+  </script>
+</body>
+</html>

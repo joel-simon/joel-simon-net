@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Kaleidoscope</title>
+  <style>
+    /* Center and reset */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      background: #000;
+    }
+
+    /* Hover instructions overlay */
+    #hoverInstructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.6);
+      box-sizing: border-box;
+      padding: 20px;
+      pointer-events: none;
+      text-align: center;
+    }
+    #canvasContainer:hover #hoverInstructions {
+      display: block;
+    }
+    .instructionsText {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverInstructions">
+      <div class="instructionsText">
+        <strong>Time Kaleidoscope</strong><br><br>
+        • Hour determines the number of mirrored slices<br>
+        • Minutes shift the color palette<br>
+        • Seconds control rotation speeds<br>
+        • See the current time at the top-left
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100, 100);
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Display current time at top-left
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let displayHour = (hr % 12) || 12;
+      let ampm = hr >= 12 ? 'PM' : 'AM';
+      text(nf(displayHour,2) + ':' + nf(mn,2) + ':' + nf(sc,2) + ' ' + ampm, 10, 10);
+
+      // Number of kaleidoscopic slices determined by hour
+      let slices = int(map(hr, 0, 23, 4, 24));
+      let sliceAngle = 360 / slices;
+
+      // Rotation influenced by seconds
+      let rotationSpeed = map(sc, 0, 59, 0, 2);
+
+      // Move origin to center
+      translate(width/2, height/2);
+      rotate(frameCount * rotationSpeed);
+
+      // First mirrored set of shapes
+      for (let i = 0; i < slices; i++) {
+        push();
+        rotate(i * sliceAngle);
+        let hueVal = (map(mn, 0, 59, 0, 360) + i * 10) % 360; 
+        fill(hueVal, 100, 100);
+        noStroke();
+        let radius = 100 + 50 * sin(frameCount * 0.02 + i * 10);
+        ellipse(radius, 0, 40, 40);
+        pop();
+      }
+
+      // Second mirrored set of shapes (reflection)
+      push();
+      scale(-1, 1);
+      rotate(frameCount * rotationSpeed * 0.5);
+      for (let i = 0; i < slices; i++) {
+        push();
+        rotate(i * sliceAngle);
+        let hueVal = (map(mn, 0, 59, 0, 360) + i * 5) % 360;
+        fill(hueVal, 100, 100);
+        noStroke();
+        let radius = 100 + 50 * cos(frameCount * 0.02 + i * 5);
+        rectMode(CENTER);
+        rect(radius, 0, 20, 20);
+        pop();
+      }
+      pop();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Time Aurora</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset body margin/padding and use a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container fixed at 512x512, centered */
+    #clock-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+    }
+
+    /* Instructions overlay, hidden by default */
+    #instructions {
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      display: none;
+      background-color: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      line-height: 1.4;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #clock-container:hover #instructions {
+      display: block;
+    }
+
+    /* Title and text style in instructions */
+    #instructions h2 {
+      margin-top: 0;
+      font-size: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+<div id="clock-container">
+  <div id="instructions">
+    <h2>Time Aurora</h2>
+    <p>Observe the shifting auroras overhead and scattered stars. Colors continuously change with the real time:
+      <br>- Hour adjusts the hue.
+      <br>- Minute alters the saturation.
+      <br>- Second shifts brightness and star distribution.
+      <br>Hover to show these instructions.</p>
+  </div>
+</div>
+
+<script>
+  let canvasSize = 512;
+
+  function setup() {
+    let myCanvas = createCanvas(canvasSize, canvasSize);
+    myCanvas.parent("clock-container");
+    colorMode(HSB);
+    noStroke();
+  }
+
+  function draw() {
+    background(0);
+    let hr = hour();
+    let mn = minute();
+    let sc = second();
+
+    // Draw the starry background
+    drawStarField(sc);
+
+    // Draw aurora at the top portion of the canvas
+    drawAurora(hr, mn, sc);
+
+    // Display time readout near the bottom
+    fill(255);
+    textSize(24);
+    textAlign(CENTER, CENTER);
+    text(`${hr}:${nf(mn, 2)}:${nf(sc, 2)}`, width / 2, height - 30);
+  }
+
+  // Create a vertical gradient representing aurora
+  function drawAurora(hr, mn, sc) {
+    // Map hour, minute, second to color ranges
+    let auroraHue = map(hr, 0, 23, 0, 360);
+    let auroraSat = map(mn, 0, 59, 40, 100);
+    let auroraBriStart = map(sc, 0, 59, 60, 100);
+    let auroraBriEnd   = map(sc, 0, 59, 40, 80);
+
+    // Draw from top (y=0) to mid-height
+    for (let y = 0; y < height/2; y++) {
+      // Interpolate brightness for a smooth vertical gradient
+      let lerpFactor = map(y, 0, height/2, 0, 1);
+      let currentBri = lerp(auroraBriStart, auroraBriEnd, lerpFactor);
+
+      fill(auroraHue, auroraSat, currentBri);
+      rect(0, y, width, 1);
+    }
+  }
+
+  // Star field that changes number and brightness with each second
+  function drawStarField(sec) {
+    let starCount = map(sec, 0, 59, 50, 200);
+
+    for (let i = 0; i < starCount; i++) {
+      let x = random(width);
+      let y = random(height);
+      let starSize = random(1, 3);
+      let starBri = random(70, 100);
+      fill(0, 0, starBri);
+      ellipse(x, y, starSize, starSize);
+    }
+  }
+</script>
+</body>
+</html>

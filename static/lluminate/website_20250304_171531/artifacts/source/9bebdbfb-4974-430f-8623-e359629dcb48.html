@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Dream Koi Pond</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic reset and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the “Time Dream Koi Pond”!<br><br>
+        • The hour shifts the color of the water.<br>
+        • The minute determines the koi fish size.<br>
+        • Each second, fish revolve around the pond’s center.<br>
+        • Move your mouse to create water ripples.<br><br>
+        Hover away to explore freely.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let rippleShader; // We'll use a simple noisy ripple effect
+    let fishArray = [];
+    let lastSecond;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+
+      // Initialize a collection of koi fish
+      for (let i = 0; i < 8; i++) {
+        fishArray.push(new KoiFish(i * 45));
+      }
+      lastSecond = second();
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      background(getWaterColor(h));
+
+      // Draw some gentle ripples under the fish
+      drawRipples();
+
+      // If the second changed, revolve each fish around the center
+      if (s !== lastSecond) {
+        revolveFish(); 
+        lastSecond = s;
+      }
+
+      // Draw koi fish
+      for (let fish of fishArray) {
+        fish.updateSize(m);
+        fish.display();
+      }
+
+      // Time text in bottom-right
+      fill(255);
+      textSize(14);
+      textAlign(RIGHT, BOTTOM);
+      text(`${nf(h, 2)}:${nf(m, 2)}:${nf(s, 2)}`, width - 10, height - 10);
+    }
+
+    class KoiFish {
+      constructor(angleOffset) {
+        this.angle = angleOffset;
+        this.distFromCenter = random(40, 150);
+        this.size = 20;  // default
+      }
+
+      // Koi fish size depends on the minute
+      updateSize(m) {
+        this.size = map(m, 0, 59, 10, 40);
+      }
+
+      // Draw the fish at its angle & distance from center
+      display() {
+        push();
+        translate(width/2, height/2);
+        rotate(this.angle);
+        translate(this.distFromCenter, 0);
+
+        // Body
+        fill(250, random(100,255), random(100,255), 180);
+        ellipse(0, 0, this.size * 2, this.size);
+
+        // Tail
+        fill(250, random(80,200), random(80,200), 180);
+        triangle(-this.size, 0, -this.size * 2, -this.size / 2, -this.size * 2, this.size / 2);
+
+        // Eye
+        fill(0);
+        ellipse(this.size/2, -this.size/6, this.size/6, this.size/6);
+        pop();
+      }
+    }
+
+    // Revolve fish each time the second changes
+    function revolveFish() {
+      for (let fish of fishArray) {
+        fish.angle += random(20, 60);
+      }
+    }
+
+    // Water color shifts with hour (daylight or night vibe).
+    function getWaterColor(h) {
+      // Map hour to a warm/cool palette
+      // dawn (6) to midday (12) to dusk (18) to midnight (24)
+      if (h >= 6 && h < 12) {
+        // morning, pale blue
+        return color(30, 80, 180);
+      } else if (h >= 12 && h < 18) {
+        // midday, bright aqua
+        return color(20, 130, 200);
+      } else if (h >= 18 && h < 22) {
+        // sunset, warm purple
+        return color(60, 30, 100);
+      } else {
+        // after dark, deep navy
+        return color(10, 10, 40);
+      }
+    }
+
+    // Draw interactive ripples based on mouse
+    function drawRipples() {
+      push();
+      noFill();
+      stroke(255, 60);
+      strokeWeight(1);
+      let rippleCount = 5;
+      for (let i = 0; i < rippleCount; i++) {
+        let radius = i * 20 + ((frameCount + mouseX) % 30);
+        circle(mouseX, mouseY, radius);
+      }
+      pop();
+    }
+  </script>
+</body>
+</html>

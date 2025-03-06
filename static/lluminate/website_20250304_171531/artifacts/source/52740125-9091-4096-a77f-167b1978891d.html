@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Kaleidoscope</title>
+  <style>
+    /* Center and reset */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      background: #000;
+    }
+
+    /* Hover instructions overlay */
+    #hoverInstructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.6);
+      box-sizing: border-box;
+      padding: 20px;
+      pointer-events: none;
+      text-align: center;
+    }
+    #canvasContainer:hover #hoverInstructions {
+      display: block;
+    }
+    .instructionsText {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverInstructions">
+      <div class="instructionsText">
+        <strong>Time Kaleidoscope</strong><br><br>
+        • Color palette shifts each hour<br>
+        • Patterns rotate faster as minutes increase<br>
+        • Reflection lines morph with seconds<br>
+        • Current time displayed at top-left
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let wedgeCount = 12; 
+    let anglePerWedge;
+    let timeRotation = 0; 
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      anglePerWedge = 360 / wedgeCount;
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Create a color base that shifts every hour
+      // Range for hr: 0-23 -> use for hue, saturate, or any color variation
+      let colorFactor = map(hr, 0, 23, 0, 360);
+
+      // Reflect the second in the kaleidoscope boundary shape
+      let boundaryShift = map(sc, 0, 59, 0.5, 2.0);
+
+      // Speed up or slow down rotation with the minute
+      // Range for mn: 0-59 -> smaller range for rotation increment
+      let rotSpeed = map(mn, 0, 59, 0.2, 2.0);
+      timeRotation += rotSpeed;
+
+      push();
+      translate(width / 2, height / 2);
+
+      // Draw each wedge
+      for (let i = 0; i < wedgeCount; i++) {
+        push();
+        rotate(i * anglePerWedge + timeRotation);
+
+        // Draw boundary for wedge (optional swirl shape).
+        // "boundaryShift" influences the shape's scale or dimension
+        drawKaleidoShape(colorFactor, boundaryShift);
+
+        pop();
+      }
+      pop();
+
+      // Display time
+      displayTime(hr, mn, sc);
+    }
+
+    function drawKaleidoShape(cFactor, shiftVal) {
+      // Use the hour-derived factor to define hue or color
+      let hueVariation = cFactor % 360;
+      fill((hueVariation + random(-15,15)) % 360, random(50, 100), random(150,255), 180);
+
+      // We draw shapes in a wedge. For variety, let's draw a few random ellipses or arcs
+      // Each shape's position or size can incorporate shiftVal
+      let shapesCount = 3;
+      for (let s = 0; s < shapesCount; s++) {
+        let r = random(20, 100) * shiftVal;
+        let x = random(-20, 20) * shiftVal;
+        let y = random(-20, -80) * shiftVal;
+        ellipse(x, y, r, r);
+      }
+    }
+
+    function displayTime(hr, mn, sc) {
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let displayHour = (hr % 12) || 12;
+      let ampm = hr >= 12 ? 'PM' : 'AM';
+      text(nf(displayHour,2) + ':' + nf(mn,2) + ':' + nf(sc,2) + ' ' + ampm, 10, 10);
+    }
+  </script>
+</body>
+</html>

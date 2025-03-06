@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pirate's Time Cove</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for better contrast */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Pirate's Time Cove</strong><br><br>
+        • The ship’s sway height depends on the hour.<br>
+        • The parrot flaps its wings based on the minute.<br>
+        • The treasure chest sparkles with the seconds.<br>
+        • Current time is displayed in the top-left corner.<br><br>
+        Hover to read instructions and watch this cove change with time.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    // For the wave
+    let waveT = 0;
+
+    // For the parrot flapping
+    let wingAngle = 0;
+
+    // For chest sparkle toggling
+    let sparkleToggle = false;
+
+    function setup() {
+      const cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      textFont('sans-serif');
+    }
+
+    function draw() {
+      background(20, 30, 60);
+
+      // Time variables
+      let hr = hour();   // 0-23
+      let mn = minute(); // 0-59
+      let sc = second(); // 0-59
+
+      // Draw background wave
+      drawWave(hr);
+
+      // Draw pirate ship
+      drawPirateShip(hr);
+
+      // Draw parrot (wing angle depends on minute)
+      drawParrot(mn);
+
+      // Draw chest (sparkles with seconds)
+      drawTreasureChest(sc);
+
+      // Display time top-left
+      displayTime(hr, mn, sc);
+    }
+
+    function drawWave(hr) {
+      noStroke();
+      fill(35, 50, 100);
+      
+      // Wave amplitude changes with hour
+      let waveAmp = map(hr % 12, 0, 12, 10, 50);
+      // Increase waveT for wave movement
+      waveT += 0.02;
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 10) {
+        let y = height - 50 + sin(x * 0.02 + waveT) * waveAmp;
+        vertex(x, y);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+    }
+
+    function drawPirateShip(hr) {
+      push();
+      translate(width / 2, height / 2);
+      
+      // Ship sway amplitude depends on hour
+      let swayAmp = map(hr % 12, 0, 12, 0, 20);
+      // Sway motion
+      let sway = sin(frameCount * 2) * swayAmp;
+      translate(0, sway);
+
+      // Hull
+      fill(139,69,19);
+      noStroke();
+      beginShape();
+      vertex(-50, 10);
+      vertex(50, 10);
+      vertex(30, 40);
+      vertex(-30, 40);
+      endShape(CLOSE);
+
+      // Mast
+      fill(80, 50, 20);
+      rect(-5, -30, 10, 40);
+
+      // Sail
+      fill(200);
+      beginShape();
+      vertex(5, -28);
+      vertex(5, -5);
+      vertex(40, -10);
+      vertex(40, -25);
+      endShape(CLOSE);
+
+      pop();
+    }
+
+    function drawParrot(mn) {
+      push();
+      // Position parrot on top-left portion of canvas
+      translate(width * 0.2, height * 0.3);
+      noStroke();
+
+      // The parrot flaps with minute changes
+      // Higher minutes -> faster flap
+      wingAngle += map(mn, 0, 59, 0.5, 2);
+      
+      // Body
+      fill(255, 100, 20);
+      ellipse(0, 0, 30, 40);
+      
+      // Head
+      fill(255, 200, 50);
+      ellipse(0, -25, 20, 20);
+
+      // Wing
+      push();
+      fill(255, 50, 50);
+      rotate(sin(wingAngle) * 30);
+      ellipse(15, 0, 40, 20);
+      pop();
+
+      // Eye
+      fill(0);
+      ellipse(5, -27, 3, 3);
+
+      // Beak
+      fill(255, 220, 50);
+      triangle(10, -25, 15, -23, 10, -20);
+
+      pop();
+    }
+
+    function drawTreasureChest(sc) {
+      push();
+      // Place chest near bottom-right
+      translate(width * 0.7, height * 0.75);
+
+      // Chest base
+      fill(139,69,19);
+      stroke(100, 60, 20);
+      strokeWeight(2);
+      rectMode(CENTER);
+      rect(0, 0, 60, 40);
+
+      // Chest lid
+      let lidAngle = map(sin(frameCount * 2), -1, 1, -15, 15);
+      push();
+      translate(0, -20);
+      rotate(lidAngle);
+      rect(0, 0, 60, 10);
+      pop();
+
+      // Sparkle with seconds
+      // Toggle on and off every second
+      if (frameCount % 60 === 0) {
+        sparkleToggle = !sparkleToggle;
+      }
+
+      if (sparkleToggle) {
+        fill(255, 215, 0, 150);
+        noStroke();
+        for (let i = 0; i < 6; i++) {
+          let angle = i * 60;
+          let x = 20 * cos(angle);
+          let y = 20 * sin(angle);
+          ellipse(x, y, 8, 8);
+        }
+      }
+      pop();
+    }
+
+    function displayTime(hr, mn, sc) {
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 10, 10);
+    }
+  </script>
+</body>
+</html>

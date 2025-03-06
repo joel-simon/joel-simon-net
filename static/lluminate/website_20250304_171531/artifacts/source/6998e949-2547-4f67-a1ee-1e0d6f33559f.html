@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Time Bouncing Candy</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset body margin/padding and use a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container fixed at 512x512, centered */
+    #clock-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+    }
+
+    /* Instructions overlay, hidden by default */
+    #instructions {
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      display: none;
+      background-color: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      line-height: 1.5;
+      padding: 2rem;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #clock-container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="clock-container">
+  <div id="instructions">
+    <h2>Time Bouncing Candy</h2>
+    <p>Watch these candies bounce around!<br>
+       The hour shifts their color, the minute changes how many candies appear, and the second controls their speed.<br>
+       Hover here to see the instructions, then enjoy the show!</p>
+  </div>
+</div>
+
+<script>
+  let canvasSize = 512;
+  let candies = [];
+  let prevMinute;
+
+  function setup() {
+    let myCanvas = createCanvas(canvasSize, canvasSize);
+    myCanvas.parent("clock-container");
+    colorMode(HSB, 360, 100, 100);
+    noStroke();
+    prevMinute = minute();
+    generateCandies();
+  }
+
+  function draw() {
+    background(0);
+
+    let hr = hour();
+    let mn = minute();
+    let sc = second();
+
+    // Check if minute changed, then regenerate candies
+    if (mn !== prevMinute) {
+      generateCandies();
+      prevMinute = mn;
+    }
+
+    // Determine color hue from hour and speed factor from second
+    let hueVal = map(hr, 0, 23, 0, 360);
+    let speedFactor = map(sc, 0, 59, 0.5, 5);
+
+    // Update and display candies
+    for (let c of candies) {
+      c.update(speedFactor);
+      c.display(hueVal);
+    }
+
+    // Display time
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textSize(24);
+    text(`${hr}:${nf(mn, 2)}:${nf(sc, 2)}`, width / 2, height - 20);
+  }
+
+  function generateCandies() {
+    candies = [];
+    // Number of candies depends on current minute
+    let numCandies = floor(map(minute(), 0, 59, 5, 60));
+    for (let i = 0; i < numCandies; i++) {
+      candies.push(new Candy());
+    }
+  }
+
+  class Candy {
+    constructor() {
+      this.x = random(width);
+      this.y = random(height);
+      this.size = random(10, 40);
+      this.vx = random(-2, 2);
+      this.vy = random(-2, 2);
+    }
+
+    update(speedFactor) {
+      this.x += this.vx * speedFactor;
+      this.y += this.vy * speedFactor;
+
+      // Bounce off walls
+      if (this.x < 0) { this.x = 0; this.vx *= -1; }
+      if (this.x > width) { this.x = width; this.vx *= -1; }
+      if (this.y < 0) { this.y = 0; this.vy *= -1; }
+      if (this.y > height) { this.y = height; this.vy *= -1; }
+    }
+
+    display(hueVal) {
+      fill(hueVal, 80, 100);
+      circle(this.x, this.y, this.size);
+    }
+  }
+</script>
+</body>
+</html>

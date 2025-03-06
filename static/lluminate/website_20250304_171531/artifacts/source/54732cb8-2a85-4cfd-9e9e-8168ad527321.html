@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Maze Temple</title>
+  <style>
+    /* Overall page styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100vh;
+      width: 100vw;
+      display: grid;
+      place-items: center;
+    }
+    /* Tooltip container */
+    .info-tip {
+      position: relative;
+      font-family: sans-serif;
+      user-select: none;
+      cursor: pointer;
+      color: #fff;
+      margin-bottom: 0.5em;
+    }
+    /* Tooltip content (hidden by default) */
+    .info-content {
+      visibility: hidden;
+      width: 300px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.9em;
+      line-height: 1.4em;
+      z-index: 1;
+    }
+    /* Show the text when hovering over the container */
+    .info-tip:hover .info-content {
+      visibility: visible;
+    }
+    /* Ensure the canvas is exactly 512x512 with no extra scrollbars */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="info-tip">
+    Hover for instructions
+    <div class="info-content">
+      Time Maze Temple:
+      • The maze changes each minute, seeded by the current time. 
+      • A pyramid at the center slowly rotates to reflect the hour. 
+      • The dunes flow with each second. 
+      • Use arrow keys (↑ ↓ ← →) to navigate your explorer square.
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <script>
+  /*
+    TIME MAZE TEMPLE
+    ======================
+    This sketch combines two conceptual spaces: 
+    - Maze-based exploration that changes over time
+    - An Egyptian-themed temple with rotating pyramid and shifting dunes
+
+    BLENDING:
+    - Maze regenerates each minute, seeded by current clock time
+    - A pyramid at the center rotates according to the hour
+    - Dunes in the background animate with the seconds
+    - Player can move around the maze with arrow keys
+  */
+
+  const CELL_SIZE = 16;  // Maze cell size
+  let mazeCols, mazeRows;
+  let maze = [];         // 2D array to hold maze cells
+  let player;            // Player's position
+  let lastMinute = -1;   // Track changes in minute for re-generating the maze
+  let dunesOffset = 0;   // For the dune animation
+
+  // A cell in the maze
+  class Cell {
+    constructor(i, j) {
+      // i, j: the cell coordinates in the grid
+      this.i = i;
+      this.j = j;
+      this.walls = [true, true, true, true]; // top, right, bottom, left
+      this.visited = false;
+    }
+  }
+
+  function setup() {
+    createCanvas(512, 512);
+    // Calculate how many cells fit horizontally & vertically
+    mazeCols = floor(width / CELL_SIZE);
+    mazeRows = floor(height / CELL_SIZE);
+
+    // Initialize player in top-left cell
+    player = { col: 0, row: 0 };
+
+    // First generation of the maze
+    generateMazeIfNeeded();
+  }
+
+  function draw() {
+    background(0);
+
+    let h = hour();
+    let m = minute();
+    let s = second();
+
+    // If minute changed, re-generate the maze
+    generateMazeIfNeeded();
+
+    // Draw the shifting dunes based on the current second
+    drawDunes(s);
+
+    // Draw the maze
+    drawMaze();
+
+    // Draw the rotating pyramid in the center (reflecting hour)
+    drawPyramid(h);
+
+    // Draw the player as a small square
+    fill(30, 200, 255);
+    noStroke();
+    rect(player.col * CELL_SIZE + 4, player.row * CELL_SIZE + 4, CELL_SIZE - 8, CELL_SIZE - 8);
+
+    // Keyboard-based movement handled in keyPressed()
+  }
+
+  /*
+    Maze generation: 
+    Uses a randomized depth-first search (DFS). 
+    Seeds the random function using the current minute + hour so the maze updates each minute.
+  */
+  function generateMazeIfNeeded() {
+    let currentMinute = minute();
+    if (currentMinute !== lastMinute) {
+      lastMinute = currentMinute;
+      randomSeed(hour() * 100 + currentMinute); // Re-seed
+      buildEmptyMaze();
+      runDFS();
+      // Reset player to top-left
+      player.col = 0;
+      player.row = 0;
+    }
+  }
+
+  function buildEmptyMaze() {
+    maze = [];
+    for (let r = 0; r < mazeRows; r++) {
+      let row = [];
+      for (let c = 0; c < mazeCols; c++) {
+        row.push(new Cell(c, r));
+      }
+      maze.push(row);
+    }
+  }
+
+  function runDFS() {
+    let stack = [];
+    let startCell = maze[0][0];
+    startCell.visited = true;
+    stack.push(startCell);
+
+    while (stack.length > 0) {
+      let currentCell = stack[stack.length - 1];
+      let nextCell = getUnvisitedNeighbor(currentCell);
+
+      if (nextCell) {
+        // Mark neighbor as visited and remove walls
+        nextCell.visited = true;
+        removeWalls(currentCell, nextCell);
+        stack.push(nextCell);
+      } else {
+        stack.pop();
+      }
+    }
+  }
+
+  // Return an unvisited neighbor or null
+  function getUnvisitedNeighbor(cell) {
+    let unvisited = [];
+    let r = cell.j;
+    let c = cell.i;
+
+    // top
+    if (r > 0 && !maze[r - 1][c].visited) { 
+      unvisited.push(maze[r - 1][c]);
+    }
+    // right
+    if (c < mazeCols - 1 && !maze[r][c + 1].visited) {
+      unvisited.push(maze[r][c + 1]);
+    }
+    // bottom
+    if (r < mazeRows - 1 && !maze[r + 1][c].visited) {
+      unvisited.push(maze[r + 1][c]);
+    }
+    // left
+    if (c > 0 && !maze[r][c - 1].visited) {
+      unvisited.push(maze[r][c - 1]);
+    }
+
+    if (unvisited.length > 0) {
+      return random(unvisited);
+    } else {
+      return null;
+    }
+  }
+
+  // Remove walls between two adjacent cells
+  function removeWalls(a, b) {
+    let x = a.i - b.i;
+    if (x === 1) {
+      // b is to the left of a
+      a.walls[3] = false;
+      b.walls[1] = false;
+    } else if (x === -1) {
+      // b is to the right of a
+      a.walls[1] = false;
+      b.walls[3] = false;
+    }
+
+    let y = a.j - b.j;
+    if (y === 1) {
+      // b is above a
+      a.walls[0] = false;
+      b.walls[2] = false;
+    } else if (y === -1) {
+      // b is below a
+      a.walls[2] = false;
+      b.walls[0] = false;
+    }
+  }
+
+  function drawMaze() {
+    stroke(200);
+    strokeWeight(2);
+    noFill();
+    for (let r = 0; r < mazeRows; r++) {
+      for (let c = 0; c < mazeCols; c++) {
+        let x = c * CELL_SIZE;
+        let y = r * CELL_SIZE;
+        let cell = maze[r][c];
+        // Draw walls
+        if (cell.walls[0]) { line(x, y, x + CELL_SIZE, y); }
+        if (cell.walls[1]) { line(x + CELL_SIZE, y, x + CELL_SIZE, y + CELL_SIZE); }
+        if (cell.walls[2]) { line(x, y + CELL_SIZE, x + CELL_SIZE, y + CELL_SIZE); }
+        if (cell.walls[3]) { line(x, y, x, y + CELL_SIZE); }
+      }
+    }
+  }
+
+  /*
+    drawDunes:
+      - Draw a gentle wave pattern that moves horizontally
+      - Waves shift with seconds to simulate passing time in the desert
+  */
+  function drawDunes(s) {
+    push();
+    noStroke();
+    // Use seconds to animate offset
+    dunesOffset = (frameCount * 0.4 + s * 20) % width;
+    for (let i = 0; i < 4; i++) {
+      // Each dune layer further in the background
+      let yPos = map(i, 0, 3, height * 0.5, height * 0.85);
+      fill(160 - i * 20, 120 - i * 10, 60);
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 10) {
+        let angle = (x * 0.02) + (i * 2) + dunesOffset * 0.01;
+        let waveAmt = sin(angle) * 10;
+        vertex(x, yPos + waveAmt);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+    }
+    pop();
+  }
+
+  /*
+    drawPyramid:
+      - A simple triangular shape in the center that slowly rotates with hour
+  */
+  function drawPyramid(h) {
+    push();
+    translate(width / 2, height / 2);
+    noStroke();
+    fill(255, 210, 80);
+    rotate(radians((h % 12) * 30 + frameCount * 0.05)); 
+    // Draw a simple pyramid from top view as a triangle
+    beginShape();
+    vertex(0, -40);
+    vertex(40, 40);
+    vertex(-40, 40);
+    endShape(CLOSE);
+    pop();
+  }
+
+  // Move the player with arrow keys, respecting walls
+  function keyPressed() {
+    if (keyCode === UP_ARROW) {
+      movePlayer(0, -1);
+    } else if (keyCode === DOWN_ARROW) {
+      movePlayer(0, 1);
+    } else if (keyCode === LEFT_ARROW) {
+      movePlayer(-1, 0);
+    } else if (keyCode === RIGHT_ARROW) {
+      movePlayer(1, 0);
+    }
+  }
+
+  function movePlayer(dx, dy) {
+    let currentCell = maze[player.row][player.col];
+    let nextRow = player.row + dy;
+    let nextCol = player.col + dx;
+
+    // Check boundaries
+    if (nextRow < 0 || nextRow >= mazeRows || nextCol < 0 || nextCol >= mazeCols) return;
+    let nextCell = maze[nextRow][nextCol];
+
+    // If there's no wall in the direction, allow movement
+    if (dy === -1 && !currentCell.walls[0]) {
+      // Up
+      player.row = nextRow;
+    } else if (dy === 1 && !currentCell.walls[2]) {
+      // Down
+      player.row = nextRow;
+    } else if (dx === -1 && !currentCell.walls[3]) {
+      // Left
+      player.col = nextCol;
+    } else if (dx === 1 && !currentCell.walls[1]) {
+      // Right
+      player.col = nextCol;
+    }
+  }
+  </script>
+</body>
+</html>

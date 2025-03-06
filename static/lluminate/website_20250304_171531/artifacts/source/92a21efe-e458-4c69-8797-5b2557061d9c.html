@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Fusion Time Display</title>
+  <style>
+    /* Reset and background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #111;
+      height: 100%;
+      font-family: sans-serif;
+      color: #ddd;
+    }
+
+    /* Container for the 512 x 512 canvas */
+    #container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      box-sizing: border-box;
+    }
+
+    /* Instructions overlay (hidden by default) */
+    #instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      display: none;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    /* Show instructions on hover */
+    #container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="instructions">
+      <h3>Fusion Time Display</h3>
+      <p>
+        This design merges arcs, cosmic orbits, and a rotating star to show the current time in a creative way.<br><br>
+        • Red Arc = Hour<br>
+        • Green Arc = Minute<br>
+        • Blue Arc = Second<br><br>
+        • The colored orbits around the center also reflect hours, minutes, and seconds.<br>
+        • The star in the center continuously rotates over time.<br><br>
+        Hover away to watch it in motion.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <script>
+    let canvasSize = 512;
+
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent('container');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(17);
+      let hr = hour() % 12;
+      let mn = minute();
+      let sc = second();
+
+      // ----- Draw arcs -----
+      push();
+      translate(width / 2, height / 2);
+      rotate(-90); // rotate so arc starts from the top
+      noFill();
+      strokeWeight(8);
+
+      // Seconds arc (blue)
+      stroke(0, 0, 255);
+      let secondAngle = map(sc, 0, 60, 0, 360);
+      arc(0, 0, 200, 200, 0, secondAngle);
+
+      // Minutes arc (green)
+      stroke(0, 255, 0);
+      let minuteAngle = map(mn, 0, 60, 0, 360);
+      arc(0, 0, 180, 180, 0, minuteAngle);
+
+      // Hours arc (red)
+      stroke(255, 0, 0);
+      let hourAngle = map(hr + mn / 60 + sc / 3600, 0, 12, 0, 360);
+      arc(0, 0, 160, 160, 0, hourAngle);
+      pop();
+
+      // ----- Draw orbits -----
+      push();
+      translate(width / 2, height / 2);
+
+      // Hour orbit
+      let hourOrbitAngle = map(hr + mn/60 + sc/3600, 0, 12, 0, 360);
+      stroke(255, 0, 0, 150);
+      noFill();
+      ellipse(0, 0, 260, 260);
+      push();
+        rotate(hourOrbitAngle);
+        fill(255, 0, 0);
+        noStroke();
+        ellipse(130, 0, 10, 10);
+      pop();
+
+      // Minute orbit
+      let minuteOrbitAngle = map(mn + sc/60, 0, 60, 0, 360);
+      stroke(0, 255, 0, 150);
+      ellipse(0, 0, 320, 320);
+      push();
+        rotate(minuteOrbitAngle);
+        fill(0, 255, 0);
+        noStroke();
+        ellipse(160, 0, 8, 8);
+      pop();
+
+      // Second orbit
+      let secondOrbitAngle = map(sc, 0, 60, 0, 360);
+      stroke(0, 0, 255, 150);
+      ellipse(0, 0, 380, 380);
+      push();
+        rotate(secondOrbitAngle);
+        fill(0, 0, 255);
+        noStroke();
+        ellipse(190, 0, 6, 6);
+      pop();
+
+      // ----- Draw rotating star in the center -----
+      push();
+      let starRotation = frameCount / 2; // continuous rotation
+      rotate(starRotation);
+      drawStar(0, 0, 20, 40, 5, color(255, 255, 0));
+      pop();
+
+      // ----- Display digital time -----
+      push();
+      rotate(90); // rotate back for upright text
+      fill(255);
+      noStroke();
+      textAlign(CENTER, CENTER);
+      textSize(24);
+      text(nf(hour(),2) + ":" + nf(mn,2) + ":" + nf(sc,2), 0, -180);
+      pop();
+
+      pop(); // restore
+    }
+
+    // Draw a star (helper function)
+    // (x, y) = center, radius1 = inner radius, radius2 = outer radius, npoints = #points
+    function drawStar(x, y, radius1, radius2, npoints, c) {
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2;
+      fill(c);
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Time Kaleidoscope</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #131313;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #ffffff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* A fixed 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Overlay for hover instructions (hidden by default) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+
+    p {
+      margin: 0;
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Kaleidoscope<br><br>
+        • Hours shift the color palette.<br>
+        • Minutes affect rotation speed.<br>
+        • Seconds change the slice count.<br>
+        Move your mouse to distort patterns.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Kaleidoscope:
+      - Explores a kaleidoscopic visual where time influences color, rotation, and slicing.
+      - Hours: Color palette transition
+      - Minutes: Rotation speed
+      - Seconds: Number of slices
+      - Mouse movement adds extra distortion
+    */
+
+    const SIZE = 512;
+
+    // Parameters for the kaleidoscope
+    let sliceCount = 6;      // Will be affected by the second()
+    let rotationSpeed = 0.1; // Will be influenced by the minute()
+    let baseColor = 0;       // Shifted by the hour()
+
+    function setup() {
+      let cnv = createCanvas(SIZE, SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(20);
+
+      // Gather current time data
+      let h = hour() % 24;
+      let m = minute();
+      let s = second();
+
+      // Slices influenced by seconds
+      sliceCount = max(3, floor(map(s, 0, 59, 3, 12)));
+
+      // Rotation speed influenced by minutes
+      rotationSpeed = map(m, 0, 59, 0.05, 0.4);
+
+      // Base color influenced by hours
+      baseColor = map(h, 0, 23, 0, 360);
+
+      push();
+      translate(width/2, height/2);
+
+      // We'll revolve a shape around the canvas sliceCount times
+      let angleBetweenSlices = 360 / sliceCount;
+      for (let i = 0; i < sliceCount; i++) {
+        push();
+        // Rotation due to the passage of time + user interaction
+        rotate(frameCount * rotationSpeed + i * angleBetweenSlices);
+
+        // Color: shift hue slightly with frameCount and hours
+        let cHue = (baseColor + i * 15 + frameCount * 0.2) % 360;
+        fill(cHue, 100, 70, 0.7);
+
+        // We'll use a custom shape to highlight the effect.
+        // Use mouseX, mouseY for distortion
+        let rad = map(mouseX, 0, width, 20, 80, true);
+        let lengthFactor = map(mouseY, 0, height, 0.5, 1.5, true);
+
+        beginShape();
+        let detail = 8; // more or fewer points
+        for (let t = 0; t < 360; t += 360 / detail) {
+          let r = rad + 40 * sin(t * 3 + frameCount * 2);
+          let x = r * cos(t) * lengthFactor;
+          let y = r * sin(t) * lengthFactor;
+          vertex(x, y);
+        }
+        endShape(CLOSE);
+
+        pop();
+      }
+      pop();
+
+      // Draw a digital clock near the bottom-left corner
+      showClock(h, m, s);
+    }
+
+    // Simple color-mode conversion for fill
+    function fill(h, s, b, a = 1) {
+      colorMode(HSB, 360, 100, 100, 1);
+      superFill(color(h, s, b, a));
+      colorMode(RGB, 255, 255, 255, 1); 
+    }
+
+    // Overriding the default fill to restore standard usage
+    const superFill = p5.prototype.fill; 
+
+    // Display the current time
+    function showClock(h, m, s) {
+      push();
+      resetMatrix();
+      textSize(16);
+      fill(255);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h, 2)}:${nf(m, 2)}:${nf(s, 2)}`, 10, height - 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

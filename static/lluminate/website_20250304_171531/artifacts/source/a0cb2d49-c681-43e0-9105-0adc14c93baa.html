@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Kaleidoscope</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for better contrast */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+      max-width: 90%;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Kaleidoscope</strong><br><br>
+        • The number of symmetrical slices is determined by the current hour.<br>
+        • The color palette shifts with the minutes.<br>
+        • Shapes scale and move with seconds.<br>
+        • Click anywhere to create additional bursts.<br><br>
+        Hover to see instructions. Enjoy the shifting patterns!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    // Data structure to store visual bursts
+    let bursts = [];
+
+    // Canvas size
+    let w = 512;
+    let h = 512;
+
+    // Called once at the beginning
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    // Called once every frame (default 60fps)
+    function draw() {
+      let hr = hour();    // 0-23
+      let mn = minute();  // 0-59
+      let sc = second();  // 0-59
+
+      // Map the hour to a range for slices (minimum 4, max 24)
+      let slices = floor(map(hr, 0, 23, 4, 24));
+
+      // Use the minute to shift the hue (0-360)
+      let baseHue = map(mn, 0, 59, 0, 360);
+
+      // Clear background with a subtle tinted color
+      background(0);
+
+      // Draw time in the top-left corner
+      drawTimeDisplay(hr, mn, sc);
+
+      // Draw kaleidoscopic bursts
+      push();
+      translate(width / 2, height / 2);
+      for (let b of bursts) {
+        // Each burst updates based on the second, giving movement and scale variation
+        b.radius += 0.05 * sin(frameCount + b.offset + sc * 3);
+        b.angle += 0.5 * cos(frameCount + b.offset + sc);
+
+        // Draw symmetrical segments
+        for (let i = 0; i < slices; i++) {
+          push();
+          rotate(i * (360 / slices));
+          // Shift color using baseHue + burst's own shift
+          let hueVal = (baseHue + b.hueShift + frameCount * 0.1) % 360;
+          colorMode(HSB);
+          fill(hueVal, 80, 90);
+          noStroke();
+          ellipse(b.radius * cos(b.angle), b.radius * sin(b.angle), b.size, b.size);
+          pop();
+        }
+      }
+      pop();
+
+      // Remove bursts that shrank too small
+      bursts = bursts.filter(b => b.size > 0.5);
+    }
+
+    // Draw current time in top-left corner
+    function drawTimeDisplay(hr, mn, sc) {
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let displayHour = hr % 12 || 12;
+      let ampm = hr >= 12 ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 10, 10);
+    }
+
+    // Click to add bursts at random angles around the center
+    function mousePressed() {
+      let sc = second();
+      let burst = {
+        radius: random(10, 40),
+        angle: random(360),
+        size: random(15, 30),
+        hueShift: random(0, 360),
+        offset: random(1000),
+      };
+      bursts.push(burst);
+    }
+  </script>
+</body>
+</html>

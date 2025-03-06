@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Combined Time Display</title>
+  <style>
+    /* Page reset and background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to center our canvas + instructions overlay */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      background: #111;
+    }
+
+    /* Instructions overlay, visible on hover */
+    #hoverInstructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.6);
+      pointer-events: none;
+      box-sizing: border-box;
+      text-align: center;
+      padding: 20px;
+    }
+    #canvasContainer:hover #hoverInstructions {
+      display: block;
+    }
+    .instructionsText {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverInstructions">
+      <div class="instructionsText">
+        <strong>Combined Time Display</strong><br><br>
+        • Fractal tree angle changes with hour<br>
+        • Fish color changes with hour, speed with minute<br>
+        • Wave background sways with second<br>
+        • Current time shown top-left
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    // Fish class
+    class Fish {
+      constructor() {
+        this.reset();
+      }
+
+      reset() {
+        this.x = random(width);
+        this.y = random(height * 0.4, height * 0.9);
+        this.size = 20;
+      }
+
+      update(hr, mn) {
+        // Speed depends on minute
+        let sp = map(mn, 0, 59, 0.5, 3);
+        this.x += sp;
+        // Wrap around
+        if (this.x > width + this.size) {
+          this.x = -this.size;
+          this.y = random(height * 0.4, height * 0.9);
+        }
+        // Color depends on hour
+        let r = map(hr, 0, 23, 50, 255);
+        this.col = color(r, 150, 200);
+      }
+
+      display() {
+        push();
+        fill(this.col);
+        noStroke();
+        ellipse(this.x, this.y, this.size * 1.7, this.size); // body
+        // Tail
+        triangle(
+          this.x - this.size / 2, this.y,
+          this.x - this.size, this.y - this.size / 2,
+          this.x - this.size, this.y + this.size / 2
+        );
+        pop();
+      }
+    }
+
+    let fishArr = [];
+    let waveOffset = 0;
+    
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      // Add multiple fish
+      for (let i = 0; i < 5; i++) {
+        fishArr.push(new Fish());
+      }
+    }
+
+    function draw() {
+      background(20);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Draw background waves (depends on seconds)
+      drawWaves(sc);
+
+      // Draw fractal tree in top-left corner (angle depends on hour)
+      push();
+      translate(80, height);
+      let angle = map(hr, 0, 23, 15, 75);
+      drawFractalTree(70, angle, 7);
+      pop();
+
+      // Update and display fish
+      for (let f of fishArr) {
+        f.update(hr, mn);
+        f.display();
+      }
+
+      // Display current time
+      push();
+      fill(255);
+      noStroke();
+      textSize(18);
+      textAlign(LEFT, TOP);
+      let displayHour = (hr % 12) || 12;
+      let ampm = hr >= 12 ? 'PM' : 'AM';
+      text(
+        nf(displayHour,2) + ":" + nf(mn,2) + ":" + nf(sc,2) + " " + ampm,
+        10, 10
+      );
+      pop();
+    }
+
+    // Simple wave background
+    function drawWaves(sc) {
+      noFill();
+      stroke(100, 170, 255, 60);
+      let amp = map(sc, 0, 59, 20, 80);
+      let freq = map(sc, 0, 59, 0.01, 0.05);
+      waveOffset += 0.02;
+      for (let y = 0; y < height; y += 20) {
+        beginShape();
+        for (let x = 0; x <= width; x += 10) {
+          let waveVal = sin((x * freq) + waveOffset) * amp;
+          vertex(x, y + waveVal);
+        }
+        endShape();
+      }
+    }
+
+    // Recursive fractal tree
+    function drawFractalTree(branchLen, angle, level) {
+      stroke(0, 200, 0);
+      strokeWeight(map(level, 1, 7, 3, 1));
+      line(0, 0, 0, -branchLen);
+      translate(0, -branchLen);
+
+      if (level > 0) {
+        push();
+        rotate(angle);
+        drawFractalTree(branchLen * 0.7, angle, level - 1);
+        pop();
+
+        push();
+        rotate(-angle);
+        drawFractalTree(branchLen * 0.7, angle, level - 1);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

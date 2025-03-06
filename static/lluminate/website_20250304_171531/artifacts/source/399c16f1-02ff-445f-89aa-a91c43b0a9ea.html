@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Kaleidoscope</title>
+  <style>
+    /* Basic resets and layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas */
+    #p5sketch-container {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Instructions overlay, hidden by default */
+    .instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      font-size: 14px;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 1em;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #p5sketch-container:hover .instructions {
+      display: flex;
+    }
+
+    /* Cursor hint for interactivity */
+    #p5sketch-container:hover {
+      cursor: help;
+    }
+  </style>
+</head>
+<body>
+  <div id="p5sketch-container">
+    <div class="instructions">
+      <strong>HOW THIS DISPLAYS TIME:</strong><br><br>
+      • The number of kaleidoscopic segments is tied to the hour.<br>
+      • The size of each shape depends on the minute.<br>
+      • The color cycle shifts each second.<br><br>
+      Hover away to hide instructions.
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let segments;
+    let lastSec;
+    let shapes = [];
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('p5sketch-container');
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100);
+      noStroke();
+
+      // Start with an empty array of shapes
+      segments = (hour() % 12) || 12; 
+      lastSec = second();
+    }
+
+    function draw() {
+      background(0, 0.08); // Slightly transparent fill for a trailing effect
+
+      let hr = hour() % 12 || 12; // 1-12
+      let mn = minute();
+      let sc = second();
+
+      // If the hour changes, update the number of segments
+      if (hr != segments) {
+        segments = hr;
+      }
+
+      // If a new second, reset shapes array to trigger a color shift
+      if (sc !== lastSec) {
+        lastSec = sc;
+        shapes = [];
+      }
+
+      // Generate kaleidoscopic shapes
+      push();
+      translate(width / 2, height / 2);
+      let angleStep = 360 / segments;
+
+      // If fewer shapes than needed, create a new shape
+      if (shapes.length < segments) {
+        let shapeSize = map(mn, 0, 59, 10, 100);
+        // Each shape has a random offset and color based on the second
+        let shape = {
+          r: shapeSize,
+          c: color(map(sc, 0, 59, 0, 359), 90, 90),
+          xOff: random(-60, 60),
+          yOff: random(-60, 60)
+        };
+        shapes.push(shape);
+      }
+
+      // Draw each shape in all kaleidoscope segments
+      shapes.forEach(shp => {
+        fill(shp.c);
+        for (let i = 0; i < segments; i++) {
+          push();
+          rotate(i * angleStep);
+          ellipse(shp.xOff, shp.yOff, shp.r, shp.r);
+          pop();
+        }
+      });
+      pop();
+
+      // Optional digital clock readout for reference
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(nf(hour(),2) + ":" + nf(mn,2) + ":" + nf(sc,2), 10, 10);
+      pop();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time-Sand & Seas Oracle</title>
+  <style>
+    /* Basic page reset and layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: Arial, sans-serif;
+      color: #fff;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Container for fixed 512x512 sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0,0,0,0.8);
+    }
+
+    /* Instructions overlay (appears on hover) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+
+    /* Exactly 512x512 canvas */
+    #defaultCanvas0 {
+      width: 512px !important;
+      height: 512px !important;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time-Sand & Seas Oracle<br><br>
+        • The sky color transitions over the hour.<br>
+        • Desert dunes move with speed based on the minute.<br>
+        • An Eye of Horus pulses with seconds.<br>
+        • Luminous jellyfish swirl overhead; their color shifts with time.<br>
+        • Control the scarab with arrow keys.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time-Sand & Seas Oracle:
+      - Blends shifting desert dunes (hour + minute) with pulsing Eye of Horus (second).
+      - Adds swirling jellyfish whose colors and movement also reflect clock values.
+      - User can move a scarab (arrow keys).
+    */
+
+    let duneLines = [];
+    let duneOffset = 0;
+    let scarab = { x: 256, y: 400, size: 20 };
+    const moveSpeed = 2;
+
+    // Jellyfish:
+    let jellyfishArray = [];
+    let numJellies = 5;
+    let angleOffset = 0;
+
+    function setup() {
+      createCanvas(512, 512).parent('canvasContainer');
+      noStroke();
+
+      // Generate desert dune lines
+      for (let i = 0; i < 3; i++) {
+        duneLines.push(generateDuneLine(i));
+      }
+
+      // Initialize jellyfish
+      angleMode(DEGREES);
+      for (let i = 0; i < numJellies; i++) {
+        jellyfishArray.push({
+          angle: random(0, 360),
+          dist: random(70, 180),
+          baseSize: random(30, 60)
+        });
+      }
+    }
+
+    function draw() {
+      let h = hour() % 24;
+      let m = minute();
+      let s = second();
+
+      // Sky background
+      drawSky(h);
+
+      // Update and draw dunes
+      duneOffset += (m + 1) * 0.05;  
+      drawDunes(h);
+
+      // Swirling, glowing jellyfish in the sky
+      angleOffset += map(s, 0, 59, 0.3, 2);
+      drawJellyfish(h, m, s);
+
+      // Eye of Horus
+      push();
+      translate(width / 2, height / 2 - 50); 
+      let pulse = 0.5 + 0.3 * sin(s * 6 * (PI / 180));
+      scale(pulse);
+      drawEyeOfHorus();
+      pop();
+
+      // Scarab
+      fill(0, 150, 0);
+      ellipse(scarab.x, scarab.y, scarab.size, scarab.size);
+      handleScarabMovement();
+
+      // Optional digital clock near bottom (for reference)
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+      pop();
+    }
+
+    /* --- Desert Dunes --- */
+    function generateDuneLine(index) {
+      let points = [];
+      let amplitude = 30 + index * 20;
+      let baseHeight = 320 + index * 40;
+      for (let x = 0; x <= width; x += 10) {
+        let y = baseHeight + amplitude * noise(x * 0.01, index);
+        points.push({ x, y });
+      }
+      return points;
+    }
+
+    function drawDunes(h) {
+      for (let i = 0; i < duneLines.length; i++) {
+        let colorFactor = map(i, 0, duneLines.length - 1, 150, 60); 
+        fill(colorFactor - h * 2, 100 + i * 15, 0);
+        beginShape();
+        vertex(-9999, height);
+        for (let pt of duneLines[i]) {
+          let shiftedX = pt.x - duneOffset * (0.2 + i * 0.1);
+          vertex(shiftedX, pt.y);
+        }
+        vertex(9999, height);
+        endShape(CLOSE);
+      }
+    }
+
+    /* --- Sky Gradient --- */
+    function drawSky(h) {
+      // Map hour to colors
+      let topColor = color(20 + h * 5, 40, 60);
+      let bottomColor = color(5 + h * 5, 10, 30);
+      for (let y = 0; y < height; y++) {
+        let lerpAmt = map(y, 0, height, 0, 1);
+        let c = lerpColor(topColor, bottomColor, lerpAmt);
+        stroke(c);
+        line(0, y, width, y);
+      }
+      noStroke();
+    }
+
+    /* --- Eye of Horus --- */
+    function drawEyeOfHorus() {
+      fill(220);
+      ellipse(0, 0, 120, 60); // Outer arc
+      fill(0);
+      ellipse(0, 0, 30, 30); // Inner pupil
+      stroke(220);
+      strokeWeight(4);
+      noFill();
+      arc(0, 0, 160, 80, 0, 180); // Lash
+      arc(20, 20, 40, 20, 180, 360); // Lower flourish
+      noStroke();
+    }
+
+    /* --- Scarab Controls --- */
+    function keyPressed() {
+      if (keyCode === LEFT_ARROW) {
+        scarab.x -= moveSpeed;
+      } else if (keyCode === RIGHT_ARROW) {
+        scarab.x += moveSpeed;
+      } else if (keyCode === UP_ARROW) {
+        scarab.y -= moveSpeed;
+      } else if (keyCode === DOWN_ARROW) {
+        scarab.y += moveSpeed;
+      }
+    }
+
+    function handleScarabMovement() {
+      scarab.x = constrain(scarab.x, scarab.size/2, width - scarab.size/2);
+      scarab.y = constrain(scarab.y, scarab.size/2, height - scarab.size/2);
+    }
+
+    /* --- Jellyfish --- */
+    function drawJellyfish(h, m, s) {
+      for (let i = 0; i < jellyfishArray.length; i++) {
+        let j = jellyfishArray[i];
+        j.angle += 0.3 + map(s, 0, 59, 0.05, 0.3);
+
+        push();
+        translate(width / 2, height / 2 - 150);
+        rotate(j.angle + angleOffset);
+        translate(j.dist, 0);
+
+        // Size influences from the hour
+        let jellySize = j.baseSize + map(h, 0, 23, -10, 30);
+        // Color influences from minute
+        let jellyHue = map(m, 0, 59, 100, 300);
+
+        noStroke();
+        fill(jellyHue, 100, 200);
+        ellipse(0, 0, jellySize, jellySize * 0.8);
+
+        // Draw tentacles
+        stroke(jellyHue, 200, 255, 150);
+        strokeWeight(2);
+        noFill();
+        for (let t = -2; t < 3; t++) {
+          beginShape();
+          for (let seg = 0; seg <= 10; seg++) {
+            let wave = sin((frameCount + seg * 10 + t * 20) * 2) * 4;
+            vertex(t * 5 + wave, jellySize * 0.4 + seg * 5);
+          }
+          endShape();
+        }
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

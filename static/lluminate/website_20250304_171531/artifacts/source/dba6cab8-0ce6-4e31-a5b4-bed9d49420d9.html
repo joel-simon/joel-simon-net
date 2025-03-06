@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Spiral Vortex</title>
+  <style>
+    /* Ensure no scrollbars & no page margin */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #ddd;
+    }
+    /* Container for the canvas: exactly 512x512 */
+    #container {
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden; /* hide any stray elements */
+    }
+    /* Overlay for hover instructions */
+    #hover-info {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #container:hover #hover-info {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="hover-info">
+      <p>Welcome to the Time Spiral Vortex! The spiral's color changes with the hour, its speed depends on the minute, and the thickness pulses with the seconds. Hover away to explore the vortex.</p>
+    </div>
+  </div>
+  
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let canvasSize = 512;
+    
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent('container');
+      angleMode(RADIANS);
+    }
+
+    function draw() {
+      background(0);
+      
+      // Time parameters:
+      let h = hour();     // For color tint
+      let m = minute();   // For spiral rotation speed
+      let s = second();   // For thickness
+
+      // Calculate dynamic spiral properties
+      // Speed grows with minutes, from near 0 for 0 min to more for 59 min
+      let swirlSpeed = map(m, 0, 59, 0.01, 0.08);
+      let swirlOffset = frameCount * swirlSpeed;
+      // Spiral color changes based on hour (0-23)
+      // We'll mod by 24 and create a hue-like effect
+      let hueVal = map(h % 24, 0, 23, 0, 255);
+      // Thickness changes with seconds
+      let wt = 1 + s * 0.15; 
+      
+      // Move to center
+      translate(width / 2, height / 2);
+      strokeWeight(wt);
+      stroke(hueVal, 180, 255);
+
+      // Draw a spiral by incrementing angle. We'll keep a moderate range for a nice visual.
+      let maxAngle = 20 * TWO_PI;  // enough rotations
+      let spiralA = 0.0;
+      let aInc = 0.02;  // small increments for smooth spiral
+      
+      beginShape();
+      for (spiralA = 0; spiralA < maxAngle; spiralA += aInc) {
+        // Simple spiral equation: r = a + b*angle
+        let radius = 2 + 0.5 * spiralA; 
+        let x = radius * cos(spiralA + swirlOffset);
+        let y = radius * sin(spiralA + swirlOffset);
+        vertex(x, y);
+      }
+      endShape();
+
+      // OPTIONAL: Show the time at bottom center
+      noStroke();
+      fill(200);
+      textAlign(CENTER, CENTER);
+      textSize(18);
+      text(nf(h,2) + ":" + nf(m,2) + ":" + nf(s,2), 0, height/2 - 15);
+    }
+  </script>
+</body>
+</html>

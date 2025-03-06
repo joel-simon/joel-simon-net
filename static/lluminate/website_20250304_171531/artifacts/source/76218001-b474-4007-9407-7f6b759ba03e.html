@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Tornado Maze</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset default margins */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container exactly 512x512 */
+    #timeTornadoMazeContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    /* Instruction overlay on hover */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 30px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #timeTornadoMazeContainer:hover #instructionsOverlay {
+      display: block;
+    }
+
+    h1, p {
+      margin: 1em 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="timeTornadoMazeContainer">
+    <div id="instructionsOverlay">
+      <h1>Time Tornado Maze</h1>
+      <p>• Tornado swirl color changes with the hour.<br>
+         • Swirl speed is tied to the current second.<br>
+         • The maze layout regenerates each minute.<br>
+         • Hover again to see these instructions.</p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      TIME TORNADO MAZE:
+      - A swirling vortex whose color depends on the hour.
+      - The vortex rotation speed influenced by seconds.
+      - A random maze is generated anew every minute.
+      - Displays current time in the corner.
+    */
+
+    const mazeRows = 20;
+    const mazeCols = 20;
+    let cellSize = 25;  // visually fits 500x500 area
+    let mazeGrid = [];
+    let prevMinute; 
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('timeTornadoMazeContainer');
+      generateMaze();   // initial maze
+      prevMinute = minute();
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // If minute changed, regenerate the maze
+      if (m !== prevMinute) {
+        generateMaze();
+        prevMinute = m;
+      }
+
+      // Draw swirling vortex in the background
+      // The swirl hue is mapped to hour (0..23 -> 0..360)
+      // The swirl rotation is influenced by the second
+      colorMode(HSL);
+      let swirlHue = map(h, 0, 23, 0, 360);
+      let swirlSpeed = map(s, 0, 59, 0.01, 0.3);
+      noStroke();
+      push();
+      translate(width / 2, height / 2); 
+      for (let i = 0; i < 360; i += 10) {
+        fill(swirlHue, 100, 50, 0.2);
+        rotate(radians(i + frameCount * swirlSpeed));
+        ellipse(0, 100, 80, 30);
+      }
+      pop();
+      colorMode(RGB);
+
+      // Draw the random maze
+      // We'll position it in the center so it partially overlaps swirl
+      push();
+      translate((width - mazeCols*cellSize)/2, (height - mazeRows*cellSize)/2);
+      stroke(255);
+      for (let r = 0; r < mazeRows; r++) {
+        for (let c = 0; c < mazeCols; c++) {
+          if (mazeGrid[r][c] === 1) {
+            fill(80);
+          } else {
+            noFill();
+          }
+          rect(c*cellSize, r*cellSize, cellSize, cellSize);
+        }
+      }
+      pop();
+
+      // Display digital time top-left
+      fill(255);
+      noStroke();
+      textSize(24);
+      textAlign(LEFT, TOP);
+      let displayHour = h % 12;
+      displayHour = (displayHour === 0) ? 12 : displayHour;
+      let ampm = (h >= 12) ? "PM" : "AM";
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 10, 10);
+    }
+
+    // Generate a fresh random maze array each time it's called
+    // Here we simply mark cells with 1 or 0 in a random manner
+    function generateMaze() {
+      mazeGrid = [];
+      for (let r = 0; r < mazeRows; r++) {
+        mazeGrid[r] = [];
+        for (let c = 0; c < mazeCols; c++) {
+          // 60% chance to create a filled cell 
+          // (not a "true" maze, just random blocks for demonstration)
+          mazeGrid[r][c] = (random(1) < 0.6) ? 1 : 0;
+        }
+      }
+    }
+  </script>
+</body>
+</html>

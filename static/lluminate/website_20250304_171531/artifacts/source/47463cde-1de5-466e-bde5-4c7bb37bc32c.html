@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Kaleidoscope</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* Reveal the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        TIME KALEIDOSCOPE<br><br>
+        • Kaleidoscopic segments increase with each passing minute.<br>
+        • Colors shift based on the current hour.<br>
+        • The entire shape rotates as seconds tick by.<br>
+        • Watch and enjoy the perpetual, time-driven art.<br><br>
+        Hover away to see the animation in action.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let angleOffset = 0; // for rotation based on seconds
+    let segments = 6;    // number of kaleidoscope slices, governed by minute
+    let baseHue = 0;     // color hue, changes with hour
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      colorMode(HSB, 360, 100, 100);
+      noStroke();
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(0);
+
+      // Update time-based parameters
+      segments = minute() + 1;        // never zero; from 1 to 60
+      baseHue = map(hour(), 0, 23, 0, 360);
+      angleOffset = map(second(), 0, 59, 0, 360);
+
+      // Draw the kaleidoscope
+      translate(width / 2, height / 2);
+      rotate(angleOffset);  // rotate with each new second
+
+      // We'll mirror small shapes around the center
+      for (let i = 0; i < segments; i++) {
+        push();
+        rotate((360 / segments) * i);
+        drawSegment();
+        pop();
+      }
+
+      // Display current time at the bottom center
+      displayTime();
+    }
+
+    // Draw a single kaleidoscope "wedge"
+    function drawSegment() {
+      fill(baseHue, 80, 80);
+      let shapeSize = map(second(), 0, 59, 50, 200);
+
+      beginShape();
+      vertex(0, 0);
+      for (let a = 0; a <= 60; a += 10) {
+        let x = shapeSize * cos(a);
+        let y = shapeSize * sin(a);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+
+      // We'll add an overlay shape for variety
+      fill((baseHue + 180) % 360, 80, 80, 40);
+      ellipse(0, 0, shapeSize * 1.2, shapeSize * 1.2);
+    }
+
+    // Display the current time
+    function displayTime() {
+      resetMatrix();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, width / 2, height - 20);
+    }
+  </script>
+</body>
+</html>

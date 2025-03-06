@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Time Fractal Pyramids</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Ensure no scrollbars, dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container fixed at 512x512, centered */
+    #clock-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay, hidden by default */
+    #instructions {
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      display: none;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      line-height: 1.4;
+      padding: 2rem;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #clock-container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="clock-container">
+  <div id="instructions">
+    <h2>Time Fractal Pyramids</h2>
+    <p>
+      This display merges the concept of time with an ancient Egyptian flair.<br><br>
+      • Hour controls the fractal depth.<br>
+      • Minute alters the pyramid’s color.<br>
+      • Second applies a rotation to the entire fractal.<br><br>
+      Gaze upon these shifting “pyramids” inspired by both geometry and myth!
+    </p>
+  </div>
+</div>
+
+<script>
+  let canvasSize = 512;
+
+  function setup() {
+    let myCanvas = createCanvas(canvasSize, canvasSize);
+    myCanvas.parent("clock-container");
+    angleMode(RADIANS);
+    noStroke();
+  }
+
+  function draw() {
+    background(0);
+
+    // Current time
+    let hr = hour();   // [0..23]
+    let mn = minute(); // [0..59]
+    let sc = second(); // [0..59]
+
+    // Map time to fractal parameters
+    // Depth: from 0 to 6
+    let depth = floor(map(hr, 0, 23, 0, 6));
+    // Use minute to pick a fill color (sandy to golden)
+    let pyramidColor = color(map(mn, 0, 59, 180, 255), map(mn, 0, 59, 140, 200), 70);
+    // Rotate entire fractal by something dependent on seconds
+    let rotationAngle = map(sc, 0, 59, 0, TWO_PI);
+
+    // Draw a starry background
+    drawStarField(sc);
+
+    // Translate to center
+    push();
+    translate(width / 2, height / 2);
+    rotate(rotationAngle);
+
+    // Slightly shift downward so fractal is centered
+    translate(-canvasSize / 2, canvasSize / 4);
+
+    // Draw the fractal pyramids (Sierpinski-like)
+    fill(pyramidColor);
+    drawPyramidFractal(0, 0, canvasSize * 0.8, depth);
+    pop();
+
+    // Display the digital time near bottom
+    textAlign(CENTER, CENTER);
+    textSize(18);
+    fill(255);
+    text(hr + ":" + nf(mn, 2) + ":" + nf(sc, 2), width / 2, height - 20);
+  }
+
+  // Draw star dots in the background
+  function drawStarField(sc) {
+    let starCount = map(sc, 0, 59, 50, 200);
+    for (let i = 0; i < starCount; i++) {
+      fill(255, random(50, 255));
+      let x = random(width);
+      let y = random(height);
+      circle(x, y, random(1, 3));
+    }
+  }
+
+  // Recursive Sierpinski-like pyramid fractal
+  // x, y = top corner
+  // size = base width of the triangle
+  // depth = recursion depth
+  function drawPyramidFractal(x, y, size, depth) {
+    // Draw the main triangle (centered at x,y is apex)
+    drawTriangle(x, y, size);
+
+    if (depth > 0) {
+      // Recursive calls for each smaller triangle
+      // 1) Top
+      drawPyramidFractal(x, y, size / 2, depth - 1);
+      // 2) Bottom left
+      drawPyramidFractal(x - size / 4, y + (size / 2) * sin(radians(60)), size / 2, depth - 1);
+      // 3) Bottom right
+      drawPyramidFractal(x + size / 4, y + (size / 2) * sin(radians(60)), size / 2, depth - 1);
+    }
+  }
+
+  // Helper to draw a single upright equilateral triangle
+  function drawTriangle(x, y, size) {
+    let h = (size * sin(radians(60)));
+    triangle(
+      x, y,               // apex
+      x - size/2, y + h,  // bottom left
+      x + size/2, y + h   // bottom right
+    );
+  }
+</script>
+</body>
+</html>

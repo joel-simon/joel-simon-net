@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cosmic Fractal Time Playground</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Ensure page has no external scroll and a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      overflow: hidden;
+    }
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+    }
+    /* Overlay for hover instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Cosmic Fractal Time Playground<br><br>
+        • Fractal tree grows with hour.<br>
+        • Mosaic color tones shift with minute.<br>
+        • Central star swirls with seconds.<br>
+        • Observe the clock in the corner.<br><br>
+        Hover away to explore the cosmic display.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      This sketch combines multiple thematic elements:
+       • A fractal tree that grows based on the hour
+       • A mosaic background that changes color with each minute
+       • A swirling star in the center that rotates with time (seconds)
+       • A digital clock overlay
+    */
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(0);
+
+      // Get current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Draw mosaic in the background (depends on minute)
+      drawMosaic(m);
+
+      // Draw fractal tree (depends on hour)
+      push();
+      translate(width * 0.5, height); 
+      stroke(200);
+      branch(80 + (h % 12) * 5); // slight variation with hour
+      pop();
+
+      // Draw swirling star (depends on seconds)
+      drawSwirlingStar(s);
+
+      // Draw digital clock
+      drawClock(h, m, s);
+    }
+
+    /* 
+      drawMosaic:
+        - Fill the canvas with squares
+        - Hue changes with minute
+    */
+    function drawMosaic(minuteValue) {
+      push();
+      colorMode(HSB, 360, 100, 100);
+      let hueBase = map(minuteValue, 0, 59, 0, 360);
+      noStroke();
+      let tileSize = 32;
+      for (let y = 0; y < height; y += tileSize) {
+        for (let x = 0; x < width; x += tileSize) {
+          let localHue = (hueBase + (x + y) * 0.05) % 360;
+          fill(localHue, 60, 40, 30); // alpha = 30 (on 0-100 scale) to keep it subtle
+          rect(x, y, tileSize, tileSize);
+        }
+      }
+      pop();
+    }
+
+    /*
+      branch:
+        - Recursive fractal tree
+        - Length influenced by hour
+    */
+    function branch(len) {
+      // Draw current branch
+      line(0, 0, 0, -len);
+      // Move to the end of it
+      translate(0, -len);
+
+      // Base condition to stop recursion
+      if (len > 10) {
+        push();
+        rotate(25);
+        branch(len * 0.7);
+        pop();
+
+        push();
+        rotate(-25);
+        branch(len * 0.7);
+        pop();
+      }
+    }
+
+    /*
+      drawSwirlingStar:
+        - Rotates in the center based on seconds
+    */
+    function drawSwirlingStar(secValue) {
+      push();
+      translate(width * 0.5, height * 0.4);
+      noStroke();
+      fill(255, 255, 0);
+      rotate(frameCount * 0.5 + secValue * 6);
+
+      // Draw a star shape
+      beginShape();
+      for (let i = 0; i < 10; i++) {
+        let r = i % 2 === 0 ? 40 : 12;
+        let angle = i * 36;
+        vertex(r * cos(angle), r * sin(angle));
+      }
+      endShape(CLOSE);
+
+      pop();
+    }
+
+    /*
+      drawClock:
+        - Simple 2D overlay with text
+    */
+    function drawClock(h, m, s) {
+      push();
+      resetMatrix();
+      translate(10, height - 20);
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, 0, 0);
+      pop();
+    }
+  </script>
+</body>
+</html>

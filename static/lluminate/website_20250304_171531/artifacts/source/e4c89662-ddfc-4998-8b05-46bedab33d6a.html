@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Overgrowth Gears</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to “Time Overgrowth Gears”!<br><br>
+        • Mechanical gears rotate with the passing seconds.<br>
+        • Fractal vines in the corners deepen with each hour.<br>
+        • Branch angles follow the minutes.<br><br>
+        Hover away to return to the animation.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();     // 0 - 23
+      let m = minute();   // 0 - 59
+      let s = second();   // 0 - 59
+
+      // Draw fractal vines in each corner
+      // Depth depends on hour (2 to 7).
+      let maxDepth = floor(map(h, 0, 23, 2, 7));
+      let branchLen = 50; // base length
+      let angleOff = map(m, 0, 59, 15, 45); // how wide branches spread
+
+      push(); // top-left
+      translate(0, 0);
+      stroke(0, 200, 0);
+      strokeWeight(2);
+      drawFractal(0, 0, branchLen, 90, maxDepth, angleOff);
+      pop();
+
+      push(); // top-right
+      translate(width, 0);
+      stroke(0, 200, 0);
+      strokeWeight(2);
+      drawFractal(0, 0, branchLen, 180, maxDepth, angleOff);
+      pop();
+
+      push(); // bottom-left
+      translate(0, height);
+      stroke(0, 200, 0);
+      strokeWeight(2);
+      drawFractal(0, 0, branchLen, 0, maxDepth, angleOff);
+      pop();
+
+      push(); // bottom-right
+      translate(width, height);
+      stroke(0, 200, 0);
+      strokeWeight(2);
+      drawFractal(0, 0, branchLen, -90, maxDepth, angleOff);
+      pop();
+
+      // Draw a rotating gear in the center
+      push();
+      translate(width / 2, height / 2);
+      rotate(map(s, 0, 59, 0, 360)); // gear rotates with seconds
+      drawGear(0, 0, 70, 12);
+      pop();
+
+      // Display digital time near bottom
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+    }
+
+    // Recursive fractal function
+    function drawFractal(x, y, length, angle, depth, angleOff) {
+      if (depth === 0) return;
+
+      let x2 = x + length * cos(angle);
+      let y2 = y + length * sin(angle);
+
+      line(x, y, x2, y2);
+      drawFractal(x2, y2, length * 0.7, angle - angleOff, depth - 1, angleOff);
+      drawFractal(x2, y2, length * 0.7, angle + angleOff, depth - 1, angleOff);
+    }
+
+    // Draw a simple gear with teeth
+    function drawGear(x, y, r, teethCount) {
+      fill(150);
+      stroke(80);
+      strokeWeight(2);
+
+      let angleStep = 360 / teethCount;
+      beginShape();
+      for (let i = 0; i < 360; i += angleStep) {
+        let outerX = x + (r + 10) * cos(i);
+        let outerY = y + (r + 10) * sin(i);
+        vertex(outerX, outerY);
+        let innerX = x + r * cos(i + angleStep / 2);
+        let innerY = y + r * sin(i + angleStep / 2);
+        vertex(innerX, innerY);
+      }
+      endShape(CLOSE);
+
+      // Inner circle
+      fill(100);
+      circle(x, y, r * 0.6);
+    }
+  </script>
+</body>
+</html>

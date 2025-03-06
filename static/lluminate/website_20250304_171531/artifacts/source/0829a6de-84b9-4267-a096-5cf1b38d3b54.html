@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Time Nebula</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic reset and page styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Overlay shown on hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(0,0,0,0.8);
+      box-sizing: border-box;
+      padding: 20px;
+    }
+    /* Show the overlay text when hovering over the container */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    p {
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        TIME NEBULA<br><br>
+        • Animated star field re-randomized each minute<br>
+        • Hour sets nebula's color hue and swirl scale<br>
+        • Second controls swirl rotation<br>
+        • Watch the minute fade shift<br>
+        Hover away to explore!
+      </p>
+    </div>
+  </div>
+  <script>
+    /*
+      TIME NEBULA
+      1) A star field is generated and updated each minute.
+      2) The nebula swirl is colored based on the hour.
+      3) The swirl rotates with the current seconds.
+      4) Gradual color shifts occur with each passing minute.
+    */
+
+    const CANVAS_SIZE = 512;
+    let stars = [];
+    let lastMinute = -1;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      colorMode(HSB, 360, 100, 100);
+      angleMode(DEGREES);
+
+      generateStars(); // initial star field
+    }
+
+    function draw() {
+      background(0);
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // If minute changed, create a new star field
+      if (m !== lastMinute) {
+        generateStars();
+        lastMinute = m;
+      }
+
+      // Draw star field
+      drawStars(m);
+
+      // Draw swirling nebula
+      drawNebula(h, s, m);
+
+      // Optional digital clock
+      showClock(h, m, s);
+    }
+
+    // Generate random star positions and brightness
+    function generateStars() {
+      stars = [];
+      let starCount = 100; // fixed number of stars
+      for (let i = 0; i < starCount; i++) {
+        stars.push({
+          x: random(width),
+          y: random(height),
+          size: random(1, 3),
+          brightness: random(50, 100)
+        });
+      }
+    }
+
+    // Draw the star field
+    function drawStars(minuteVal) {
+      noStroke();
+      let baseSat = map(minuteVal, 0, 59, 40, 100);
+      for (let star of stars) {
+        fill(200, baseSat, star.brightness);
+        circle(star.x, star.y, star.size);
+      }
+    }
+
+    // Draw a swirling nebula
+    function drawNebula(hVal, sVal, mVal) {
+      push();
+      translate(width/2, height/2);
+
+      // Use hour to set swirl hue and scale
+      let swirlHue = map(hVal % 12, 0, 11, 0, 360);
+      let swirlScale = map(hVal % 12, 0, 11, 0.5, 1.5);
+      scale(swirlScale);
+
+      // Use seconds to rotate swirl
+      rotate(sVal * 6);
+
+      noFill();
+      strokeWeight(2);
+
+      // Nebula arms
+      let layers = 20;
+      for (let i = 0; i < layers; i++) {
+        let angle = map(i, 0, layers, 0, 360);
+        stroke((swirlHue + angle + frameCount*0.2) % 360, 80, 80);
+        beginShape();
+        for (let r = 0; r < 360; r += 20) {
+          let rad = map(noise(i, r * 0.01, frameCount * 0.001), 0, 1, 50, 200);
+          let x = rad * cos(r + angle);
+          let y = rad * sin(r + angle);
+          vertex(x, y);
+        }
+        endShape(CLOSE);
+      }
+      pop();
+    }
+
+    // Show a small digital clock in the corner
+    function showClock(h, m, s) {
+      push();
+      resetMatrix();
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 10, height - 15);
+      pop();
+    }
+  </script>
+</body>
+</html>

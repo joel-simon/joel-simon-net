@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Creative Time Display</title>
+  <!-- Required p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Ensure page has no extra scrollbars or spacing */
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+
+    /* Container to hold the 512x512 canvas and the hover instructions */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto; /* center horizontally if browser is wider */
+    }
+
+    /* Instructions only appear on hover */
+    #instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      background-color: rgba(255, 255, 255, 0.8);
+      color: #333;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    #canvasContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="instructions">
+      This clock uses arcs to show the current hour, minute, and second. 
+      Hover away to see only the clock. 
+    </div>
+  </div>
+  
+  <script>
+    let canvasSize = 512;
+
+    function setup() {
+      // Create a 512x512 canvas and place it in our container
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent("canvasContainer");
+      angleMode(RADIANS);
+    }
+
+    function draw() {
+      background(240);
+      translate(width / 2, height / 2);
+
+      let hr = hour() % 12;   // 12-hour format
+      let mn = minute();
+      let sc = second();
+
+      // Map each time component to an arc from -90 degrees (top) around the circle
+      let secArc = map(sc, 0, 60, -PI / 2, TWO_PI - PI / 2);
+      let minArc = map(mn, 0, 60, -PI / 2, TWO_PI - PI / 2);
+      let hrArc  = map(hr + mn / 60, 0, 12, -PI / 2, TWO_PI - PI / 2);
+
+      noFill();
+      strokeWeight(8);
+
+      // Seconds arc
+      stroke(255, 0, 0);
+      arc(0, 0, 300, 300, -PI / 2, secArc);
+
+      // Minutes arc
+      stroke(0, 255, 0);
+      arc(0, 0, 250, 250, -PI / 2, minArc);
+
+      // Hours arc
+      stroke(0, 0, 255);
+      arc(0, 0, 200, 200, -PI / 2, hrArc);
+    }
+  </script>
+</body>
+</html>

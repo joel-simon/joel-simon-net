@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Kaleidoscope</title>
+  <style>
+    /* Page Layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100vh;
+      width: 100vw;
+      display: grid;
+      place-items: center;
+    }
+
+    /* Tooltip styling */
+    .info-tip {
+      position: relative;
+      font-family: sans-serif;
+      user-select: none;
+      cursor: pointer;
+      color: #fff;
+      margin-bottom: 0.5em;
+    }
+    .info-content {
+      visibility: hidden;
+      width: 280px;
+      background-color: rgba(0,0,0,0.75);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.85em;
+      line-height: 1.4em;
+      z-index: 1;
+    }
+    .info-tip:hover .info-content {
+      visibility: visible;
+    }
+
+    /* Ensure the canvas is exactly 512x512 */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="info-tip">
+    Hover for instructions
+    <div class="info-content">
+      Time Kaleidoscope<br/>
+      • Hour sets the number of kaleidoscope slices.<br/>
+      • Minute changes the color hues.<br/>
+      • Second shifts rotation speed.<br/>
+      • Press SPACE to invert colors.
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      TIME KALEIDOSCOPE
+      =================
+      A dazzling kaleidoscope that changes based on the current time:
+      - The hour sets how many radial slices appear.
+      - The minute affects the base hue of the shapes.
+      - The second influences how fast the kaleidoscope rotates.
+      - Press SPACE to invert the colors (background vs. shapes).
+    */
+
+    let angle = 0;           // overall rotation angle
+    let rotationSpeed = 0.01; // how quickly the pattern rotates
+    let lastSecond = -1;     // tracking when second changes
+    let invertColors = false;
+
+    function setup() {
+      createCanvas(512, 512);
+      colorMode(HSB, 360, 100, 100);
+      noStroke();
+    }
+
+    function draw() {
+      background(invertColors ? 100 : 0);
+
+      // Hour controls slice count
+      let h = hour();
+      let sliceCount = max(h + 3, 3); // ensure at least 3 slices
+
+      // Minute controls color hue
+      let m = minute();
+      let baseHue = map(m, 0, 59, 0, 360);
+
+      // Each new second, compute a new rotation speed
+      let s = second();
+      if (s !== lastSecond) {
+        lastSecond = s;
+        // second from 0..59 -> speed from 0.005..0.03 (example range)
+        rotationSpeed = map(s, 0, 59, 0.005, 0.03);
+      }
+      angle += rotationSpeed;
+
+      // Draw a radial kaleidoscope
+      push();
+      translate(width/2, height/2);
+      rotate(angle);
+      for (let i = 0; i < sliceCount; i++) {
+        push();
+        rotate((TWO_PI / sliceCount) * i);
+
+        // Adjust color for each slice
+        let hueVal = baseHue + i * 5; 
+        if (invertColors) {
+          // Inversion: flip hue and brightness to stand out
+          hueVal = (hueVal + 180) % 360;
+          fill(hueVal, 100, 20);
+        } else {
+          fill((hueVal) % 360, 80, 80);
+        }
+
+        // Example shape in each slice: small cluster of circles
+        ellipse(0, 70, 30, 30);
+        ellipse(0, 100, 25, 25);
+        ellipse(0, 130, 20, 20);
+        pop();
+      }
+      pop();
+    }
+
+    function keyPressed() {
+      // Toggle color inversion with SPACE
+      if (key === ' ') {
+        invertColors = !invertColors;
+      }
+    }
+  </script>
+</body>
+</html>

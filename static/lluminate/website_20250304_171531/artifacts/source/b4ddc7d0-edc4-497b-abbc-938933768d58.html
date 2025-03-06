@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Combined Time Explorations</title>
+  <style>
+    /* Ensure no scrollbars & no page margin */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #ddd;
+      overflow: hidden;
+    }
+    /* Container is sized to hold a 512x512 canvas */
+    #container {
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      position: relative;
+    }
+    /* Overlay for hover instructions */
+    #hover-info {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #container:hover #hover-info {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="hover-info">
+      <p>
+        Enjoy a combined display of swirling arcs, wave patterns, and a rotating star, each responding to the current time. Hover away to observe the changes.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let canvasSize = 512;
+
+    // Variables for wave
+    let waveOffset = 0;
+
+    // Variables for swirl
+    let angleOffset = 0;
+
+    // Star
+    function drawStar(x, y, radius1, radius2, npoints) {
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius1;
+        let sy = y + sin(a) * radius1;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius2;
+        sy = y + sin(a + halfAngle) * radius2;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent('container');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      // Retrieve time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Draw wave background
+      push();
+      fill(0);
+      noStroke();
+      waveOffset += 0.02;
+      for (let y = 0; y < height; y += 2) {
+        let waveHeight = map(h, 0, 23, 0.5, 2.0);
+        let xOffset = sin((y * 0.02) + waveOffset * m * 0.1) * 20 * waveHeight;
+        fill(
+          map(h, 0, 23, 0, 255), 
+          map(m, 0, 59, 0, 255), 
+          map(s, 0, 59, 0, 255),
+          50
+        );
+        rect(width / 2 + xOffset, y, width, 2);
+      }
+      pop();
+
+      // Swirling arcs (in reverse direction)
+      angleOffset -= 0.2; 
+      strokeWeight(2);
+      stroke(
+        map(h, 0, 23, 0, 255), 
+        map(m, 0, 59, 0, 255), 
+        map(s, 0, 59, 0, 255)
+      );
+      noFill();
+      push();
+      translate(width / 2, height / 2);
+      let maxRings = 6; 
+      for (let i = 0; i < maxRings; i++) {
+        push();
+        let ringAngle = angleOffset + i * 20;
+        rotate(ringAngle);
+        let ringSize = (i + 1) * 30 + (s * 2);
+        arc(0, 0, ringSize, ringSize, 160, 320);
+        pop();
+      }
+      pop();
+
+      // Rotating star in center
+      let starRotationSpeed = s * 0.5 + 0.1;
+      push();
+      translate(width / 2, height / 2);
+      rotate(frameCount * starRotationSpeed * 0.05);
+      fill(map(h, 0, 23, 100, 255));
+      noStroke();
+      drawStar(0, 0, 20, 40, 5);
+      pop();
+
+      // Time readout
+      fill(255);
+      noStroke();
+      textSize(14);
+      textAlign(CENTER, CENTER);
+      text(
+        nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2),
+        width / 2,
+        height - 16
+      );
+    }
+  </script>
+</body>
+</html>

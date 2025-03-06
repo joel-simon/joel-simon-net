@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Dream Bloom</title>
+  <!-- Include p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset and center body content */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0e0e0e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* 512x512 container with relative positioning to hold canvas + hover instructions */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      background: #111;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Instructions panel appears on hover */
+    #hoverInstructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.75);
+      box-sizing: border-box;
+      pointer-events: none; /* so the mouse can still interact with the canvas */
+      text-align: center;
+      padding: 20px;
+    }
+    #canvasContainer:hover #hoverInstructions {
+      display: block;
+    }
+
+    /* Center the instructions text inside the overlay */
+    .instructionsText {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverInstructions">
+      <div class="instructionsText">
+        <strong>Time Dream Bloom</strong><br><br>
+        • Petals open with the hour<br>
+        • Petal color evolves with the minute<br>
+        • A swirling center rotates with the second<br>
+        • Hover here any time for details
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Dream Bloom
+      - A single flower whose shape and color are driven by the current time:
+        * Hour => controls petal opening
+        * Minute => petal hue
+        * Second => rotation of the swirling center
+    */
+
+    let SIZE = 512;
+    function setup() {
+      let canvas = createCanvas(SIZE, SIZE);
+      canvas.parent("canvasContainer");
+      angleMode(RADIANS);
+      rectMode(CENTER);
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Map hour [0..23] to a changing background color
+      // Add subtle transitions over day
+      let bgR = map(hr, 0, 23, 20, 80);
+      let bgG = map(hr, 0, 23, 20, 50);
+      let bgB = map(hr, 0, 23, 30, 60);
+      background(bgR, bgG, bgB);
+
+      // Translate to center
+      translate(width / 2, height / 2);
+
+      // Draw a text-based clock in a corner
+      push();
+      fill(255);
+      noStroke();
+      textAlign(CENTER, TOP);
+      textSize(14);
+      text(nf(hr,2) + ":" + nf(mn,2) + ":" + nf(sc,2), 0, -height/2 + 10);
+      pop();
+
+      // Draw the "Time Dream Bloom" flower
+      drawTimeFlower(hr, mn, sc);
+    }
+
+    function drawTimeFlower(hr, mn, sc) {
+      // Petals open proportionally to the hour (0..23)
+      // For a gentler effect, only use hour%12 to cycle day/night
+      let hourRange = (hr % 12);
+      let openAngle = map(hourRange, 0, 11, 0.2, 1.0);
+
+      // Petal color changes with minute; minutes range from 0..59
+      let petalHue = map(mn, 0, 59, 0, 255);
+
+      // The center swirl rotates with the second
+      // seconds range from 0..59, we can do a mild rotation
+      let swirlRotation = map(sc, 0, 59, 0, TWO_PI);
+
+      // Flower properties
+      let petalsCount = 12;
+      let petalLength = 100;
+      let petalWidth = 20;
+
+      // Draw each petal
+      push();
+      colorMode(HSB);
+      fill(petalHue, 200, 230);
+      stroke(255, 40);
+      for (let i = 0; i < petalsCount; i++) {
+        let angle = map(i, 0, petalsCount, 0, TWO_PI);
+        push();
+        rotate(angle);
+        // The 'openAngle' influences how the petals spread
+        rotate(-openAngle);
+        beginShape();
+        vertex(0, 0);
+        bezierVertex(petalWidth, petalLength * openAngle, 
+                     petalWidth * 2, petalLength * openAngle, 
+                     0, petalLength);
+        bezierVertex(-petalWidth * 2, petalLength * openAngle, 
+                     -petalWidth, petalLength * openAngle, 
+                     0, 0);
+        endShape(CLOSE);
+        pop();
+      }
+      pop();
+
+      // Draw swirl in the center
+      push();
+      rotate(swirlRotation);
+      noStroke();
+      for (let r = 60; r > 0; r -= 5) {
+        let swirlColor = map(r, 0, 60, 0, 255);
+        fill(swirlColor, swirlColor, 255);
+        ellipse(0, 0, r*1.5, r*1.5);
+        rotate(0.1);
+      }
+      pop();
+    }
+  </script>
+</body>
+</html>

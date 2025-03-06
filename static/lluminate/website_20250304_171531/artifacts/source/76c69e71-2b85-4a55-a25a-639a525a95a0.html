@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Ferris Wheel</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center the page content and give a neutral background */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f3f0ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.85);
+      border: 1px solid #444;
+      padding: 8px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 240px;
+      z-index: 1;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      Time Ferris Wheel:
+      • The hour (0-23) controls the number of seats. 
+      • The minute (0-59) determines seat colors. 
+      • The second (0-59) sets the rotation speed. 
+      Hover over to see this info.
+    </div>
+  </div>
+
+  <script>
+    const CANVAS_SIZE = 512;
+    let revolveAngle = 0; // Accumulates rotation
+    let lastSec;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(RADIANS);
+      colorMode(HSB, 360, 100, 100);
+      noStroke();
+    }
+
+    function draw() {
+      background(232, 20, 98); // Soft purple background in HSB if we prefer
+
+      let hr = hour();   // 0-23
+      let mn = minute(); // 0-59
+      let sc = second(); // 0-59
+
+      // Determine how many seats (minimum 1 seat)
+      let seatCount = max(1, hr);
+      // Determine seat color by minute
+      let seatHue = map(mn, 0, 59, 0, 360);
+      // Determine rotation speed by second
+      let revolveSpeed = map(sc, 0, 59, 0.001, 0.06);
+
+      // Update revolveAngle
+      revolveAngle += revolveSpeed;
+
+      // Ferris wheel radius
+      let wheelRadius = 150;
+      // Center the wheel
+      translate(width / 2, height / 2);
+
+      // Draw the wheel's outer ring
+      fill(210, 20, 60); // A dull color for the ring
+      circle(0, 0, wheelRadius * 2 + 30);
+
+      // Draw seats around the circle
+      for (let i = 0; i < seatCount; i++) {
+        let angleStep = TWO_PI / seatCount;
+        let seatAngle = angleStep * i + revolveAngle;
+
+        // Position of each seat
+        let x = (wheelRadius + 10) * cos(seatAngle);
+        let y = (wheelRadius + 10) * sin(seatAngle);
+
+        // Seat color
+        fill(seatHue, 90, 90);
+        circle(x, y, 30);
+
+        // Small line from center to seat
+        stroke(0, 0, 20);
+        strokeWeight(2);
+        line(0, 0, x, y);
+        noStroke();
+      }
+
+      // Show current time at the bottom center
+      push();
+      resetMatrix();
+      textSize(20);
+      textAlign(CENTER, CENTER);
+      fill(0);
+      text(
+        nf(hr, 2) + ":" + nf(mn, 2) + ":" + nf(sc, 2),
+        width / 2,
+        height - 20
+      );
+      pop();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Blended Time Display</title>
+  <style>
+    /* Basic reset and background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #111;
+      font-family: sans-serif;
+      color: #ddd;
+    }
+
+    /* Center the container */
+    #container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+    }
+
+    /* Instructions overlay (hidden by default) */
+    #instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      box-sizing: border-box;
+      padding: 30px;
+    }
+
+    /* Display instructions on hover */
+    #container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="container">
+    <div id="instructions">
+      <p>
+        This design blends two concepts: Arcs indicating hours/minutes/seconds and a spiral representing the flow of time. 
+        Hover away to experience the visual display in motion.
+      </p>
+      <p>
+        • Red Arc = Hours<br>
+        • Green Arc = Minutes<br>
+        • Blue Arc = Seconds<br>
+        • Spiral circles change color over time, orbiting the center. 
+      </p>
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let canvasSize = 512;
+
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent('container');
+      angleMode(DEGREES);
+      textAlign(CENTER, CENTER);
+      textSize(16);
+    }
+
+    function draw() {
+      background(17);
+
+      // Retrieve current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Draw arcs for hours, minutes, seconds
+      push();
+      // Move origin to center
+      translate(width/2, height/2);
+      // Rotate so that 0 degrees is at the top
+      rotate(-90);
+
+      strokeWeight(8);
+      noFill();
+
+      // Seconds arc
+      stroke(0, 0, 255);
+      let secondAngle = map(sc, 0, 60, 0, 360);
+      arc(0, 0, 300, 300, 0, secondAngle);
+
+      // Minutes arc
+      stroke(0, 255, 0);
+      let minuteAngle = map(mn, 0, 60, 0, 360);
+      arc(0, 0, 280, 280, 0, minuteAngle);
+
+      // Hours arc
+      stroke(255, 0, 0);
+      let hourAngle = map(hr % 12, 0, 12, 0, 360);
+      arc(0, 0, 260, 260, 0, hourAngle);
+
+      // Draw hands
+      // Second hand
+      push();
+      rotate(secondAngle);
+      stroke(0,0,255);
+      line(0, 0, 100, 0);
+      pop();
+
+      // Minute hand
+      push();
+      rotate(minuteAngle);
+      stroke(0,255,0);
+      line(0, 0, 75, 0);
+      pop();
+
+      // Hour hand
+      push();
+      rotate(hourAngle);
+      stroke(255,0,0);
+      line(0, 0, 50, 0);
+      pop();
+      pop(); // restore state after arcs
+
+      // Now draw the spiral in the center
+      push();
+      translate(width/2, height/2);
+      rotate(90); // rotate back so text displays upright
+
+      // Spiral parameters
+      let totalCircles = 60;
+      let angleStep = 360 / totalCircles;
+      let spiralRadiusStep = 4;
+
+      for (let i = 0; i < totalCircles; i++) {
+        push();
+        let r = i * spiralRadiusStep + mn * 0.3 + hr * 0.8;
+        let a = i * angleStep + sc * 2;
+        rotate(a);
+        translate(r, 0);
+
+        noStroke();
+        fill(
+          (hr * 10 + i * 3) % 256,
+          (mn * 4 + i * 5) % 256,
+          (sc * 4 + i * 7) % 256
+        );
+        circle(0, 0, 8);
+        pop();
+      }
+
+      // Show digital time in center
+      fill(220);
+      noStroke();
+      text(nf(hr, 2) + ":" + nf(mn, 2) + ":" + nf(sc, 2), 0, 0);
+
+      pop(); // restore
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Combined Creative Time Display (Wave + 3D Rotation)</title>
+  <style>
+    /* Basic reset */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas and instructions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto; /* centered on the page */
+    }
+
+    /* Instructions overlay, hidden by default */
+    #instructions {
+      display: none;
+      position: absolute;
+      top: 0; 
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #ffffff;
+      text-align: center;
+      padding-top: 30%;
+      box-sizing: border-box;
+      pointer-events: none; /* allow interactions with the canvas below */
+    }
+
+    /* Show instructions when hovering over the container */
+    #canvas-container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="instructions">
+      This combined time display merges a dynamic 3D wave with a rotating torus.<br/>
+      • Wave amplitude tracks the current minute.<br/>
+      • Torus rotation tracks the hour and its color changes with seconds.<br/>
+      Hover to see these instructions again.
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let myCanvas = createCanvas(w, h, WEBGL);
+      myCanvas.parent('canvas-container');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(20);
+
+      let hr = hour();   // 0..23
+      let mn = minute(); // 0..59
+      let sc = second(); // 0..59
+
+      // -- Draw the wave on the plane --
+      // We'll lay out small boxes along the x-axis, their y-positions forming a wave.
+      push();
+      rotateX(80);            // Tilt plane so we can see the wave
+      translate(-width / 2, 0, 0); // Move start of wave left
+      let waveAmplitude = map(mn, 0, 59, 20, 100); 
+      for (let x = 0; x <= width; x += 20) {
+        let wave = sin(frameCount + x * 0.5) * waveAmplitude;
+        push();
+        translate(x, wave, 0);
+        box(10, 10, 10);
+        pop();
+      }
+      pop();
+
+      // -- Draw a rotating torus that depends on hour and second --
+      push();
+      // Rotate around X-axis according to the hour, around Y-axis slightly so it's angled
+      let hourRotation = map(hr % 12, 0, 12, 0, 360);
+      rotateX(hourRotation);
+      rotateY(frameCount * 0.1); // slight continuous turn for aesthetics
+
+      // Color changes with seconds
+      let torusR = map(sc, 0, 59, 100, 255);
+      let torusG = map(sc, 0, 59, 50, 200);
+      let torusB = map(sc, 0, 59, 150, 255);
+
+      fill(torusR, torusG, torusB);
+      stroke(255);
+      torus(70, 20, 64, 32);
+      pop();
+
+      // -- Optional digital time text in the corner for reference --
+      push();
+      resetMatrix(); // return to default orientation
+      translate(-width/2 + 10, -height/2 + 20);
+      noStroke();
+      fill(255);
+      textSize(16);
+      text(nf(hr,2) + ":" + nf(mn,2) + ":" + nf(sc,2), 0, 0);
+      pop();
+    }
+  </script>
+</body>
+</html>

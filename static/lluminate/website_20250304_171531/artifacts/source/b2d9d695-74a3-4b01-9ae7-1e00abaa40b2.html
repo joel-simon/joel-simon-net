@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reversed Arc Time Display</title>
+  <style>
+    /* Remove default padding and margin, set a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+    }
+
+    /* Center the clock container and fix its size to 512x512 */
+    #clock-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 40px auto; /* slight top margin to center visually */
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      box-sizing: border-box;
+      padding: 2rem;
+      line-height: 1.5;
+      pointer-events: none; /* so the mouse events pass through to canvas */
+    }
+
+    /* Show instructions on hover */
+    #clock-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Make sure the p5 canvas is exactly 512x512 with no scrollbars or scaling */
+    canvas {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="clock-container">
+    <div id="hover-instructions">
+      <h2>Reversed Time Arcs</h2>
+      <p>
+        This clock displays hours (red), minutes (green), and seconds (blue) as arcs running in reverse. 
+        The arcs decrease from the full circle to zero over time. The background color also changes 
+        inversely with each time component.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let canvasSize = 512;
+
+    function setup() {
+      let c = createCanvas(canvasSize, canvasSize);
+      c.parent('clock-container');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      // Get current time components
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Invert background color based on time
+      background(
+        255 - (s * 4),         // seconds -> blue component
+        255 - (m * 4),         // minutes -> green component
+        255 - ((h % 12) * 20)  // hours -> red component
+      );
+
+      // Convert hours, minutes, seconds to angles
+      let hourAngle = map(h % 12, 0, 12, 0, 360);
+      let minuteAngle = map(m, 0, 60, 0, 360);
+      let secondAngle = map(s, 0, 60, 0, 360);
+
+      push();
+      translate(width / 2, height / 2);
+      rotate(-90);
+      
+      // Reversed arcs: draw from (360 - angle) to 360
+
+      // HOURS arc
+      strokeWeight(8);
+      stroke(255, 0, 0);
+      noFill();
+      arc(0, 0, 200, 200, 360 - hourAngle, 360);
+
+      // MINUTES arc
+      stroke(0, 255, 0);
+      let startM = 360 - minuteAngle;
+      arc(0, 0, 280, 280, startM, 360);
+
+      // SECONDS arc
+      stroke(0, 0, 255);
+      let startS = 360 - secondAngle;
+      arc(0, 0, 360, 360, startS, 360);
+
+      pop();
+    }
+  </script>
+
+</body>
+</html>

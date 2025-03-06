@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Lizard Spiral Maze</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #timeLizardContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Instructions overlay, hidden by default. Display on hover. */
+    #instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.8);
+      color: #222;
+      font-family: sans-serif;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    #timeLizardContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="timeLizardContainer">
+  <div id="instructions">
+    <h3>Time Lizard Spiral Maze</h3>
+    <p>
+      • Observe the lizard's iris shifting color with the hours, and the pupil changing size by the minutes.<br/>
+      • The spiral paths rearrange each minute, forming a shifting maze pattern.<br/>
+      • Seconds cause small ripples inside the pupil, as if the lizard eye is alive and always watchful.<br/>
+      • Hover to see these instructions again. Enjoy exploring the ever-changing labyrinth!
+    </p>
+  </div>
+</div>
+
+<script>
+  let canvasSize = 512;
+
+  function setup() {
+    let c = createCanvas(canvasSize, canvasSize);
+    c.parent("timeLizardContainer");
+    angleMode(DEGREES);
+    noStroke();
+  }
+
+  function draw() {
+    // Get the current time
+    let h = hour();
+    let m = minute();
+    let s = second();
+
+    // Draw a background with a subtle color shift based on hour
+    // Mapping the hour [0..23] to color range
+    let bgVal = map(h, 0, 23, 70, 220);
+    background(bgVal, 200, 255 - bgVal);
+
+    // Draw the "lizard eye" at center
+    // The color of the iris changes with hour, pupil size with minute.
+    // The iris:
+    push();
+    translate(width / 2, height / 2);
+    let irisR = map(h, 0, 23, 70, 180);
+    let irisG = map(h, 0, 23, 180, 70);
+    let irisB = map(h, 0, 23, 130, 200);
+    fill(irisR, irisG, irisB);
+    ellipse(0, 0, 220, 220);
+
+    // Pupil size determined by minute
+    let pupilSize = map(m, 0, 59, 20, 80);
+    fill(20, 20, 20);
+    ellipse(0, 0, pupilSize, pupilSize);
+
+    // Small ripples in pupil based on second
+    // We'll quickly draw some arcs or circles that expand/contract with seconds
+    let ripple = map(s, 0, 59, 0, 1);
+    noFill();
+    stroke(255);
+    strokeWeight(2);
+    for (let i = 0; i < 3; i++) {
+      let rad = pupilSize/2 + (i * 6) + (ripple * 8);
+      arc(0, 0, rad * 2, rad * 2, 0 + (i*50), 180 + (i*50));
+    }
+    pop();
+
+    // Spiral Maze
+    // The minute changes the spiral's "turn" factor for shape variety
+    push();
+    translate(width / 2, height / 2);
+    rotate(frameCount * 0.05); 
+    let turnFactor = map(m, 0, 59, 0.1, 2.0);
+    stroke(0, 80);
+    strokeWeight(2);
+    noFill();
+    beginShape();
+    // We'll create a series of arcs that spiral outward
+    let steps = 200;
+    let distanceFactor = 1 + (m * 0.03); // Maze expands with minutes
+    for (let i = 0; i < steps; i++) {
+      let angle = i * turnFactor;
+      let r = distanceFactor * i;
+      let x = r * cos(angle);
+      let y = r * sin(angle);
+      vertex(x, y);
+    }
+    endShape();
+    pop();
+
+    // Overlay text with current time in standard format
+    fill(255);
+    noStroke();
+    textSize(20);
+    textAlign(CENTER, CENTER);
+    text(
+      nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2),
+      width / 2,
+      height - 30
+    );
+  }
+</script>
+</body>
+</html>

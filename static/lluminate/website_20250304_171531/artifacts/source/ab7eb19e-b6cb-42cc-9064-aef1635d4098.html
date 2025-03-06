@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Ion Vortex</title>
+  <style>
+    /* Page setup for a 512x512 display */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas and overlay */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: auto;
+      overflow: hidden;
+      background-color: #111;
+    }
+
+    /* Instructions overlay hidden by default, appears on hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: none;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.8);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Ion Vortex</strong><br><br>
+        • The vortex rotation speed depends on the seconds.<br>
+        • Color transitions reflect the current hour.<br>
+        • The minute affects the vortex "radius" of spin.<br><br>
+        Hover away to see the animation.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+    let angleOffset = 0;
+    let numArcs = 20; // number of arcs in the vortex
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      // Current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Calculate speed based on second
+      // Speed modulated so it doesn't get too large
+      let speed = map(sc, 0, 59, 0.2, 3);
+      angleOffset += speed;
+
+      // Use minute to determine "radius" or spread of arcs
+      let radiusFactor = map(mn, 0, 59, 100, 250);
+
+      // Use hour to determine color range in HSB
+      colorMode(HSB);
+      for (let i = 0; i < numArcs; i++) {
+        // Each arc is rotated from center by step
+        let stepAngle = 360 / numArcs;
+        let rotAngle = (i * stepAngle) + angleOffset;
+
+        push();
+        translate(width/2, height/2);
+        rotate(rotAngle);
+
+        // Fill color based on hour
+        let hueVal = map(hr, 0, 23, 0, 360);
+        fill(hueVal, 100, 100, 0.6);
+
+        // Draw arc as part of the vortex
+        arc(0, 0, radiusFactor, radiusFactor, 0, 180);
+        pop();
+      }
+
+      // Display current time in the center
+      displayTime(hr, mn, sc);
+    }
+
+    function displayTime(hr, mn, sc) {
+      push();
+      textAlign(CENTER, CENTER);
+      textSize(24);
+      fill(255);
+      let dh = (hr % 12) || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      text(dh + ":" + nf(mn, 2) + ":" + nf(sc, 2) + " " + ampm, width/2, height/2);
+      pop();
+    }
+  </script>
+</body>
+</html>

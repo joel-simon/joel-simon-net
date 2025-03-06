@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Mural Aquarium</title>
+  <!-- Include p5.js -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* A fixed 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for hover instructions (hidden by default) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.75);
+      box-sizing: border-box;
+      padding: 24px;
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Combined Magical Time Mural Aquarium<br><br>
+        • Dynamic wave background reflects hour, minute, second<br>
+        • Mosaic squares around the edges shift color with time<br>
+        • Rotating star in the center (seconds-based)<br>
+        • Large fish grows with the hour<br>
+        • Small fish colors vary with the minute<br>
+        • Bubbles appear each second<br>
+        Hover away to watch it all unfold!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      A combined "Time Mural Aquarium" sketch:
+        - Wave background (time-influenced)
+        - Mosaic squares (hour & minute color)
+        - Rotating star in the center (seconds-based)
+        - Big fish (hour-based size)
+        - Small fish (minute-based color)
+        - Bubbles (spawning each second)
+    */
+
+    // Constants for mosaic
+    const MOSAIC_COLS = 8;
+    const MOSAIC_ROWS = 8;
+    const SQUARE_SIZE = 64; // 512 / 8 = 64
+
+    // Wave parameters
+    let waveOffset = 0;
+    let waveSpeed = 0.02;
+
+    // Star rotation
+    let starRotation = 0;
+
+    // Fish and bubbles
+    let bigFish;
+    let smallFishArray = [];
+    let bubbles = [];
+    let lastSecondDrawn = -1;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      rectMode(CENTER);
+
+      // Set up big fish
+      bigFish = new BigFish();
+
+      // Set up small fish
+      for (let i = 0; i < 8; i++) {
+        smallFishArray.push(new SmallFish());
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      // Current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // 1) Wave background
+      drawWaveBackground(h, m, s);
+
+      // 2) Mosaic squares on border
+      drawMosaicSquares(h, m);
+
+      // 3) Rotating star in the center
+      starRotation += 0.2 + (m * 0.01);
+      drawCenterStar(h, s);
+
+      // 4) Big fish (grows with hour)
+      bigFish.update(h);
+      bigFish.display();
+
+      // 5) Small fish (colors vary with minute)
+      for (let fish of smallFishArray) {
+        fish.update(m);
+        fish.display();
+      }
+
+      // 6) Bubbles each second
+      if (s !== lastSecondDrawn) {
+        bubbles.push(new Bubble());
+        lastSecondDrawn = s;
+      }
+      // Update and display bubbles
+      for (let b of bubbles) {
+        b.update();
+        b.display();
+      }
+      // Remove bubbles that have drifted off the top
+      bubbles = bubbles.filter(b => !b.popped);
+
+      // Optional: A small time display at the bottom
+      fill(255);
+      textSize(14);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 16);
+    }
+
+    // Wave background function (inspired by the Time Mural)
+    function drawWaveBackground(h, m, s) {
+      let amplitude = map(h, 0, 23, 20, 100);
+      let freq = map(m, 0, 59, 0.01, 0.2);
+      let phaseShift = map(s, 0, 59, 0, TWO_PI);
+
+      noStroke();
+      fill(30, 100, 160);
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 5) {
+        let waveY = height / 2 + amplitude * sin(freq * (x + waveOffset) + phaseShift);
+        vertex(x, waveY);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+      waveOffset += waveSpeed;
+    }
+
+    // Mosaic squares around the border (from Time Mural example)
+    function drawMosaicSquares(h, m) {
+      push();
+      for (let col = 0; col < MOSAIC_COLS; col++) {
+        for (let row = 0; row < MOSAIC_ROWS; row++) {
+          if (col === 0 || col === MOSAIC_COLS - 1 || row === 0 || row === MOSAIC_ROWS - 1) {
+            let xPos = col * SQUARE_SIZE + SQUARE_SIZE / 2;
+            let yPos = row * SQUARE_SIZE + SQUARE_SIZE / 2;
+            
+            let hueVal = (h * 15 + m * 2) % 360;
+            colorMode(HSB);
+            fill(hueVal, 90, 90);
+            rect(xPos, yPos, SQUARE_SIZE - 2, SQUARE_SIZE - 2);
+            colorMode(RGB);
+          }
+        }
+      }
+      pop();
+    }
+
+    // Draw rotating star at the center (from Time Mural example)
+    function drawCenterStar(h, s) {
+      let starPoints = max(5, h); // at least 5 points
+      let starRadius = map(s, 0, 59, 40, 120);
+
+      push();
+      noStroke();
+      fill(255, 180, 0);
+      translate(width / 2, height / 2);
+      rotate(starRotation);
+      drawStar(0, 0, starRadius * 0.4, starRadius, starPoints);
+      pop();
+    }
+
+    // Utility star-drawing function
+    function drawStar(x, y, radius1, radius2, npoints) {
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2;
+
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+
+    // Big fish class (hour-based size) from Magical Time Aquarium
+    class BigFish {
+      constructor() {
+        this.x = width * 0.2;
+        this.y = height * 0.5;
+        this.baseSize = 40;
+        this.xSpeed = 1;
+      }
+      update(h) {
+        let adjustedHour = h % 12 || 12; 
+        this.currentSize = this.baseSize + adjustedHour * 4;
+        this.x += this.xSpeed;
+        if (this.x > width + this.currentSize * 2) {
+          this.x = -this.currentSize * 2;
+        }
+      }
+      display() {
+        push();
+        translate(this.x, this.y);
+        noStroke();
+
+        fill(200, 100, 100);
+        ellipse(0, 0, this.currentSize * 2, this.currentSize);
+
+        triangle(
+          -this.currentSize, 0,
+          -this.currentSize - this.currentSize * 0.6, -this.currentSize * 0.3,
+          -this.currentSize - this.currentSize * 0.6, this.currentSize * 0.3
+        );
+
+        fill(255);
+        ellipse(this.currentSize * 0.4, -this.currentSize * 0.15, this.currentSize * 0.3, this.currentSize * 0.3);
+        fill(0);
+        ellipse(this.currentSize * 0.4, -this.currentSize * 0.15, this.currentSize * 0.15, this.currentSize * 0.15);
+
+        pop();
+      }
+    }
+
+    // Small fish (minute-based color) from Magical Time Aquarium
+    class SmallFish {
+      constructor() {
+        this.x = random(width);
+        this.y = random(height);
+        this.size = random(15, 25);
+        this.xSpeed = random(0.5, 1.5);
+        this.mColor = 0;
+      }
+      update(m) {
+        this.mColor = map(m, 0, 59, 0, 255);
+        this.x += this.xSpeed;
+        if (this.x > width + this.size) {
+          this.x = -this.size;
+          this.y = random(height);
+        }
+      }
+      display() {
+        push();
+        translate(this.x, this.y);
+        noStroke();
+        colorMode(HSB, 255);
+        fill(this.mColor, 200, 200);
+        colorMode(RGB, 255);
+
+        ellipse(0, 0, this.size * 2, this.size);
+
+        let tailOffset = this.size * 0.7;
+        triangle(
+          -this.size, 0,
+          -this.size - tailOffset, -this.size * 0.3,
+          -this.size - tailOffset, this.size * 0.3
+        );
+
+        fill(255);
+        ellipse(this.size * 0.3, -this.size * 0.1, this.size * 0.4, this.size * 0.4);
+        fill(0);
+        ellipse(this.size * 0.3, -this.size * 0.1, this.size * 0.2, this.size * 0.2);
+
+        pop();
+      }
+    }
+
+    // Bubbles (appear each second) from Magical Time Aquarium
+    class Bubble {
+      constructor() {
+        this.x = random(width);
+        this.y = height + 10;
+        this.size = random(5, 10);
+        this.speed = random(1, 2);
+        this.popped = false;
+      }
+      update() {
+        this.y -= this.speed;
+        if (this.y < -this.size) {
+          this.popped = true;
+        }
+      }
+      display() {
+        push();
+        translate(this.x, this.y);
+        stroke(255);
+        strokeWeight(1);
+        noFill();
+        ellipse(0, 0, this.size, this.size);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

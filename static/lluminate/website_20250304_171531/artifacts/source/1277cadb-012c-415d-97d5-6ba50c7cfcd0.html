@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Wave + Rotating Star Time Fusion</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Ensure page occupies full viewport dimensions and set neutral background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Container for the 512x512 canvas */
+    #combinedDisplayContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      overflow: hidden;
+      padding: 20px;
+      box-sizing: border-box;
+      font-family: sans-serif;
+    }
+
+    /* Show instructions on hover */
+    #combinedDisplayContainer:hover #instructionsOverlay {
+      display: block;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 1.5em;
+    }
+    p {
+      margin: 0.75em 0;
+      font-size: 1em;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="combinedDisplayContainer">
+    <div id="instructionsOverlay">
+      <h1>Wave + Rotating Star Time Fusion</h1>
+      <p>This interactive display merges a dynamic wave and a rotating star based on the current time.</p>
+      <ul>
+        <li>Wave amplitude scales with the hour.</li>
+        <li>Wave frequency reflects the minute.</li>
+        <li>Color changes with the second.</li>
+        <li>The star rotates with the minute, has points based on the hour, and size linked to the second.</li>
+      </ul>
+      <p>Hover again to revisit these instructions.</p>
+    </div>
+  </div>
+
+  <script>
+    let centerY;
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('combinedDisplayContainer');
+      centerY = height / 2;
+      angleMode(RADIANS);
+      noStroke();
+    }
+
+    function draw() {
+      // Retrieve current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Convert 24h format to 12h for star points
+      let hour12 = h % 12;
+      if (hour12 === 0) hour12 = 12;
+
+      // Wave parameters
+      let amplitude = map(hour12, 1, 12, 20, 200);
+      let frequency = map(m, 0, 59, 0.05, 0.3);
+
+      // Use second to determine wave color hue
+      let hueVal = map(s, 0, 59, 0, 360);
+
+      // Background adjusts slowly over time
+      background(h * 8, m * 4, s * 4);
+
+      // Draw wave
+      fill(`hsla(${hueVal}, 100%, 50%, 0.8)`);
+      beginShape();
+      for (let x = 0; x <= width; x++) {
+        let angle = x * frequency + (s * 0.1);
+        let y = centerY + sin(angle) * amplitude;
+        vertex(x, y);
+      }
+      vertex(width, height);
+      vertex(0, height);
+      endShape(CLOSE);
+
+      // Rotating star parameters
+      let starPoints = hour12 + 2; // Add an offset so star always has at least a few points
+      let rotationAngle = map(m, 0, 60, 0, TWO_PI);
+      let outerRadius = map(s, 0, 60, 30, 120);
+      
+      // Draw rotating star in the center
+      push();
+      translate(width / 2, height / 2);
+      rotate(rotationAngle);
+      drawStar(0, 0, outerRadius, outerRadius * 0.5, starPoints);
+      pop();
+
+      // Digital time
+      textSize(24);
+      fill(255);
+      textAlign(LEFT, TOP);
+      let displayHour = h % 12;
+      if (displayHour === 0) displayHour = 12;
+      let ampm = h >= 12 ? "PM" : "AM";
+      let timeString = nf(displayHour, 1) + ":" + nf(m, 2) + ":" + nf(s, 2) + " " + ampm;
+      text(timeString, 10, 10);
+    }
+
+    // Star-drawing helper
+    function drawStar(x, y, radius1, radius2, npoints) {
+      let angle = TWO_PI / npoints;
+      let halfAngle = angle / 2.0;
+      stroke(255, 200);
+      strokeWeight(2);
+      fill(255, 150);
+      beginShape();
+      for (let a = 0; a < TWO_PI; a += angle) {
+        let sx = x + cos(a) * radius1;
+        let sy = y + sin(a) * radius1;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius2;
+        sy = y + sin(a + halfAngle) * radius2;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

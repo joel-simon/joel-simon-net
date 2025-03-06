@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Combined Creative Time Display</title>
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset margins and overflow for a clean layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+      background-color: #fafafa;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto; /* Center the container horizontally */
+    }
+
+    /* Instructions float on hover */
+    #instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: auto;
+      background-color: rgba(255, 255, 255, 0.8);
+      color: #333;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    /* Reveal instructions on hover */
+    #canvasContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="instructions">
+      This display merges a star and orbiting circles to represent time. 
+      • Star points represent the hour (12-hour format).<br>
+      • The star’s color shifts with the minute.<br>
+      • The star’s size scales with the second.<br>
+      • Three orbiting circles revolve at speeds tied to hour, minute, and second.<br>
+      Hover away to hide these instructions.
+    </div>
+  </div>
+
+  <script>
+    let canvasSize = 512;
+
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100);
+    }
+
+    function draw() {
+      background(0, 0, 95); // light background (HSB hue 0, saturation 0, brightness 95)
+      translate(width / 2, height / 2);
+
+      let hr = hour() % 12;  // 12-hour format
+      let mn = minute();
+      let sc = second();
+
+      // The star's shape transformations:
+      //  - Points: hr + 5 (to always have at least 5 points)
+      //  - Color hue: map minute 0..59 -> hue around 0..354
+      //  - Size: map second 0..59 -> star radius 50..150
+      let starPoints = hr + 5;
+      let starHue = map(mn, 0, 60, 0, 360);
+      let starSize = map(sc, 0, 60, 50, 150);
+
+      // Draw central rotating star
+      push();
+      rotate(frameCount * 0.5); // slow rotation for the star
+      fill(starHue, 70, 90);
+      noStroke();
+      drawStar(0, 0, starSize, starSize * 0.5, starPoints);
+      pop();
+
+      // Draw the orbiting circles
+      // Using revolve speeds tied to hour, minute, and second
+      // Hour revolve: slow
+      orbitCircle(70, (frameCount * (hr + 1)) * 0.1, color(200, 100, 90));
+      // Minute revolve: medium
+      orbitCircle(110, (frameCount * (mn + 1)) * 0.15, color(120, 80, 90));
+      // Second revolve: faster
+      orbitCircle(150, (frameCount * (sc + 1)) * 0.5, color(30, 80, 90));
+    }
+
+    // Draw a star at x, y with npoints, using 2 radius values
+    function drawStar(x, y, radius1, radius2, npoints) {
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius1;
+        let sy = y + sin(a) * radius1;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius2;
+        sy = y + sin(a + halfAngle) * radius2;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+
+    // Draw and revolve a small circle along an orbit
+    function orbitCircle(radius, speed, col) {
+      push();
+      rotate(speed);
+      translate(radius, 0);
+      noStroke();
+      fill(col);
+      ellipse(0, 0, 20, 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

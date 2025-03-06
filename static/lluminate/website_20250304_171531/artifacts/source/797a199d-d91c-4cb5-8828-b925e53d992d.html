@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Glitch Waves</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Glitch Waves<br><br>
+        • Colorful lines sway with time, reflecting the current hour and minute.<br>
+        • Every second triggers a mild "glitch" movement in the canvas.<br>
+        • Watch for momentary color shifts at each second and subtle waves changing over time.<br><br>
+        Hover away to return to the animation.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      colorMode(HSB, 360, 100, 100);
+      strokeWeight(2);
+    }
+
+    function draw() {
+      background(0);
+
+      const h = hour();
+      const m = minute();
+      const s = second();
+
+      // Slight "glitch" effect on even seconds
+      if (s % 2 === 0) {
+        push();
+        // Random small translational + rotational glitch
+        translate(random(-2, 2), random(-2, 2));
+        rotate(random(-0.01, 0.01));
+      }
+
+      // Draw waves from top to bottom
+      for (let y = 0; y < height; y += 5) {
+        // Shift with time using frameCount and y
+        let waveOffset = sin((frameCount * 0.03) + (y * 0.08)) * 80;
+
+        // Color influenced by hour/minute
+        stroke(
+          (h * 15 + m + y) % 360,  // Hue
+          60,                      // Saturation
+          80                       // Brightness
+        );
+
+        line(width / 2 + waveOffset, y, width / 2 - waveOffset, y);
+      }
+
+      if (s % 2 === 0) {
+        pop(); // End glitch effect
+      }
+
+      // Simple textual time display in the bottom center
+      noStroke();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, width / 2, height - 20);
+    }
+  </script>
+</body>
+</html>

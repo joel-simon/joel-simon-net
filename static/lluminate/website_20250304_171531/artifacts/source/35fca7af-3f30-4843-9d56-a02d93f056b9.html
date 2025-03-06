@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Bloom</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #222;
+    }
+
+    /* Container for exactly 512x512 canvas */
+    #bloomContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    /* Instruction overlay on hover */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 30px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #bloomContainer:hover #instructionsOverlay {
+      display: block;
+    }
+
+    h1, p {
+      margin: 1em 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="bloomContainer">
+    <div id="instructionsOverlay">
+      <h1>Time Bloom</h1>
+      <p>This floral composition shows the current time through a dynamic bloom.</p>
+      <ul style="text-align:left; display:inline-block;">
+        <li>Hour (1-12) determines the number of petals.</li>
+        <li>Minute changes the color hue of the petals.</li>
+        <li>Seconds rotate the entire bloom.</li>
+      </ul>
+      <p>Hover over the canvas again to see these instructions.</p>
+    </div>
+  </div>
+
+  <script>
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent("bloomContainer");
+      angleMode(DEGREES);
+      colorMode(HSB);
+      noStroke();
+    }
+
+    function draw() {
+      background(0, 0, 15);
+
+      // Current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Convert 24h to 12h format for petal count
+      let displayHour = h % 12;
+      if (displayHour === 0) displayHour = 12;
+
+      let petalCount = displayHour; // 1..12
+      let hueVal = map(m, 0, 59, 0, 360); // minute -> hue [0..360]
+      let rotationOffset = map(s, 0, 59, 0, 360); // second -> offset rotation
+
+      // Draw the bloom
+      push();
+      translate(width / 2, height / 2);
+      rotate(rotationOffset);
+      for (let i = 0; i < petalCount; i++) {
+        push();
+        rotate((360 / petalCount) * i);
+        fill((hueVal + i * 10) % 360, 70, 80);
+        ellipse(0, -80, 60, 130);
+        pop();
+      }
+      pop();
+
+      // Prepare digital time display
+      let ampm = (h >= 12) ? "PM" : "AM";
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      let timeString = displayHour + ":" + minStr + ":" + secStr + " " + ampm;
+
+      // Draw digital time in the center
+      fill(255);
+      textSize(24);
+      textAlign(CENTER, CENTER);
+      text(timeString, width / 2, height / 2);
+    }
+  </script>
+</body>
+</html>

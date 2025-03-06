@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Desert Time</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+<div id="canvasContainer">
+  <div id="hoverOverlay">
+    <p>
+      Welcome to Desert Time!<br><br>
+      • The color of the sky transitions with the current hour.<br>
+      • A sun or moon travels across the horizon as time progresses.<br>
+      • A camel crosses the desert based on current minutes and seconds.<br><br>
+      Hover away to return to the animation.
+    </p>
+  </div>
+</div>
+
+<script>
+let camelX = 0;
+let camelY = 0;
+
+function setup() {
+  let cnv = createCanvas(512, 512);
+  cnv.parent("canvasContainer");
+  angleMode(DEGREES);
+}
+
+function draw() {
+  // Fetch current time
+  let h = hour();
+  let m = minute();
+  let s = second();
+
+  // 1) Sky color based on hour (sunrise to sunset range)
+  // We'll create a gradient background from dark to bright, cycling roughly every 24 hours
+  // Night (0 to 5) -> Morning (6 to 11) -> Afternoon (12 to 17) -> Evening (18 to 23)
+  let topSky;
+  let bottomSky;
+  if (h < 6) {
+    // Late night (cool shades of purple/blue)
+    topSky = color(10, 10, 40);
+    bottomSky = color(20, 20, 70);
+  } else if (h < 12) {
+    // Morning (warmer to bright)
+    topSky = color(80, 120, 200);
+    bottomSky = color(160, 220, 255);
+  } else if (h < 18) {
+    // Afternoon
+    topSky = color(135, 206, 235);
+    bottomSky = color(255, 240, 200);
+  } else {
+    // Evening
+    topSky = color(40, 20, 60);
+    bottomSky = color(80, 30, 100);
+  }
+  setGradient(0, 0, width, height, topSky, bottomSky);
+
+  // 2) Draw desert dunes
+  drawDesert();
+
+  // 3) Sun or moon traveling across the sky
+  // Map hour to an arc across the width
+  let sunMoonX = map(h + m/60 + s/3600, 0, 24, 0, width);
+  let sunMoonY = map(sin((h + m/60 + s/3600) * 15), -1, 1, 50, height*0.25);
+  
+  push();
+  noStroke();
+  if (h >= 6 && h < 18) {
+    // Daytime sun
+    fill(255, 230, 0);
+    ellipse(sunMoonX, sunMoonY, 50, 50);
+  } else {
+    // Nighttime moon
+    fill(200);
+    ellipse(sunMoonX, sunMoonY, 40, 40);
+  }
+  pop();
+
+  // 4) Camel crossing the desert
+  // Position is based on minutes (dominant) and seconds (fine movement)
+  camelX = map(m, 0, 59, 0, width);
+  camelX += map(s, 0, 59, 0, width / 60.0); // a subtle shift from seconds
+  camelY = height * 0.75; // keep it on horizon level
+
+  drawCamel(camelX, camelY, s);
+
+  // 5) Display time at bottom
+  push();
+  fill(255);
+  textSize(16);
+  textAlign(CENTER, CENTER);
+  let hDisp = nf(h, 2);
+  let mDisp = nf(m, 2);
+  let sDisp = nf(s, 2);
+  text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+  pop();
+}
+
+/**
+ * Draw a smooth vertical gradient on the background
+ * from c1 (top) to c2 (bottom).
+ */
+function setGradient(x, y, w, h, c1, c2) {
+  noFill();
+  for (let i = y; i <= y + h; i++) {
+    let inter = map(i, y, y + h, 0, 1);
+    let c = lerpColor(c1, c2, inter);
+    stroke(c);
+    line(x, i, x + w, i);
+  }
+}
+
+/**
+ * Draw desert dunes as layered shapes.
+ */
+function drawDesert() {
+  noStroke();
+  // A few random dune layers
+  fill(194, 178, 128);
+  beginShape();
+  vertex(0, height*0.65);
+  vertex(width*0.4, height*0.6);
+  vertex(width, height*0.7);
+  vertex(width, height);
+  vertex(0, height);
+  endShape(CLOSE);
+
+  fill(210, 189, 130);
+  beginShape();
+  vertex(0, height*0.75);
+  vertex(width*0.3, height*0.7);
+  vertex(width, height*0.8);
+  vertex(width, height);
+  vertex(0, height);
+  endShape(CLOSE);
+
+  fill(220, 200, 140);
+  beginShape();
+  vertex(0, height*0.85);
+  vertex(width*0.2, height*0.8);
+  vertex(width, height*0.9);
+  vertex(width, height);
+  vertex(0, height);
+  endShape(CLOSE);
+}
+
+/**
+ * Draw a simplistic camel shape at (x, y).
+ * A little bounce or leg sway can be based on the seconds.
+ */
+function drawCamel(x, y, s) {
+  push();
+  translate(x, y);
+
+  // Subtle bobbing motion with seconds
+  let bob = sin(s * 6) * 2;
+  translate(0, bob);
+
+  // Body
+  stroke(0);
+  strokeWeight(1);
+  fill(160, 130, 80);
+  ellipse(0, 0, 60, 30);
+
+  // Hump
+  ellipse(-10, -15, 30, 20);
+
+  // Head/neck
+  rect(20, -10, 10, 30, 2);
+  ellipse(25, -25, 15, 15);
+
+  // Legs
+  push();
+  strokeWeight(3);
+  // front leg
+  line(15, 15, 15, 30);
+  // middle leg(s)
+  line(0, 15, 0, 30 + sin(s * 6) * 5); 
+  // back leg
+  line(-15, 15, -15, 30);
+  pop();
+
+  pop();
+}
+</script>
+</body>
+</html>

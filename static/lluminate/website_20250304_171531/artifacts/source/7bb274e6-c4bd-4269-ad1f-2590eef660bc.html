@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Kaleidoscope Tapestry</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset default margins and background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container exactly 512x512 */
+    #kaleidoscopeContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    /* Instruction overlay on hover */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #kaleidoscopeContainer:hover #instructionsOverlay {
+      display: block;
+    }
+    h1, p {
+      margin: 1em 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="kaleidoscopeContainer">
+    <div id="instructionsOverlay">
+      <h1>Time Kaleidoscope Tapestry</h1>
+      <p>• The palette changes every hour.<br>
+         • The pattern complexity adjusts with the minute.<br>
+         • The rotation speed follows the second.<br>
+         • A clock in the corner shows the current time.<br>
+         • Hover again to view instructions.</p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      TIME KALEIDOSCOPE TAPESTRY
+      1. Overall color palette changes each hour.
+      2. The number of pattern elements depends on the current minute.
+      3. The rotation speed of the kaleidoscope is driven by the second.
+      4. A digital clock is displayed in the top-left corner.
+    */
+
+    let angleSpeed = 0;
+    let sliceCount = 6; // Number of kaleidoscope slices
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('kaleidoscopeContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Map hour to color hue (HSL mode)
+      colorMode(HSL);
+      let hueVal = map(h, 0, 23, 0, 360);
+
+      // Number of shape repetitions depends on minute
+      let shapeReps = map(m, 0, 59, 4, 20);
+
+      // Rotation speed changes with the second
+      angleSpeed = map(s, 0, 59, 0.2, 3);
+
+      // Draw kaleidoscope shapes
+      push();
+      translate(width / 2, height / 2);
+      // For each slice, draw symmetrical shapes
+      for (let i = 0; i < sliceCount; i++) {
+        push();
+        rotate(i * (360 / sliceCount) + frameCount * angleSpeed);
+        drawPatternSlice(hueVal, shapeReps);
+        pop();
+      }
+      pop();
+
+      // Draw small digital clock in the corner
+      drawDigitalClock(h, m, s);
+    }
+
+    // Draw a single wedge of the kaleidoscope pattern
+    function drawPatternSlice(hueVal, shapeReps) {
+      for (let i = 0; i < shapeReps; i++) {
+        // Gradually change hue for variation
+        let localHue = (hueVal + i * 10) % 360;
+        fill(localHue, 80, 60);
+        let radius = map(i, 0, shapeReps, 20, width / 2);
+        ellipse(radius, 0, 20, 20);
+      }
+    }
+
+    // Draw a digital clock in the top-left
+    function drawDigitalClock(h, m, s) {
+      push();
+      colorMode(RGB);
+      fill(255);
+      noStroke();
+      textSize(24);
+      textAlign(LEFT, TOP);
+
+      let displayHour = h % 12;
+      displayHour = displayHour === 0 ? 12 : displayHour;
+      let ampm = h >= 12 ? "PM" : "AM";
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      let timeString = displayHour + ":" + minStr + ":" + secStr + " " + ampm;
+      text(timeString, 10, 10);
+      pop();
+    }
+  </script>
+</body>
+</html>

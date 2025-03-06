@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Jungle Maze Spiral</title>
+  <!-- p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Ensure the body fills the window and centers the sketch */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: sans-serif;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      background: #000;
+    }
+
+    /* Instructions overlay (hidden by default) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.85);
+      color: #111;
+      box-sizing: border-box;
+      padding: 1rem;
+    }
+
+    /* Show instructions on hover */
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Centrally align text in the instructions overlay */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Jungle Maze Spiral</strong><br><br>
+        • Sky color transitions with the current hour.<br>
+        • A fractal tree grows with the hour, swaying angle with seconds.<br>
+        • A swirling curve evolves based on the current minute.<br>
+        • The maze layout randomizes each new minute.<br>
+        • Enjoy the digital time displayed in the corner.<br>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let w = 512;
+    let h = 512;
+
+    // Maze parameters
+    let mazeCols = 12;
+    let mazeRows = 12;
+    let cellSize;
+    let mazeGrid = [];
+
+    // Keep track of the last known minute to regenerate the maze each new minute
+    let lastMinute = -1;
+
+    function setup() {
+      createCanvas(w, h).parent("canvas-container");
+      angleMode(DEGREES);
+      noStroke();
+      cellSize = width / mazeCols;
+      generateMazeGrid();
+      frameRate(30);
+    }
+
+    function draw() {
+      backgroundWithHourColor();
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // If minute changed, regenerate the maze
+      if (mn !== lastMinute) {
+        generateMazeGrid();
+        lastMinute = mn;
+      }
+
+      // Draw the swirling curve using the current minute
+      drawSwirl(mn);
+
+      // Draw the fractal tree based on hour and seconds
+      push();
+      translate(width * 0.25, height * 0.7);
+      let baseAngle = map(sc, 0, 59, 15, 45);
+      let branchLength = map(hr, 0, 23, 50, 140);
+      drawFractalTree(branchLength, baseAngle, 6); 
+      pop();
+
+      // Draw the maze
+      drawMaze();
+
+      // Display digital time in top-left corner
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(nf(hr,2) + ":" + nf(mn,2) + ":" + nf(sc,2), 10, 10);
+    }
+
+    // Smooth background color transition based on current hour (0-23)
+    function backgroundWithHourColor() {
+      let hr = hour() % 24;
+      // We create a gradient from early morning to night
+      // For demonstration, two main colors:
+      // morning/dawn color:
+      let colMorning = color(100, 180, 100);
+      // late night color:
+      let colNight   = color(30, 30, 60);
+      let t = map(hr, 0, 23, 0, 1);
+      let bg = lerpColor(colMorning, colNight, t);
+      background(bg);
+    }
+
+    // Recursive fractal tree
+    // branchLength: length of current branch
+    // angle: angle by which the branch splits
+    // level: recursion level
+    function drawFractalTree(branchLength, angle, level) {
+      if (level === 0 || branchLength < 2) return;
+
+      stroke(70, 40, 20);
+      strokeWeight(map(level, 0, 6, 1, 4));
+      line(0, 0, 0, -branchLength);
+
+      // Move to end of this branch
+      translate(0, -branchLength);
+      push();
+      rotate(angle);
+      drawFractalTree(branchLength * 0.7, angle, level - 1);
+      pop();
+
+      push();
+      rotate(-angle);
+      drawFractalTree(branchLength * 0.7, angle, level - 1);
+      pop();
+    }
+
+    // Draw a swirl/spiral shape whose size or rotation depends on mn
+    function drawSwirl(mn) {
+      push();
+      noStroke();
+      translate(width * 0.75, height * 0.5);
+      let swirlAngle = map(mn, 0, 59, 0, 360);
+      rotate(swirlAngle);
+      fill(200, 100, 220, 100);
+
+      // We'll draw multiple arcs in a spiral:
+      for (let r = 20; r < 220; r += 15) {
+        arc(0, 0, r, r, 0, 180);
+      }
+      pop();
+    }
+
+    // Generate a random maze grid storing walls in each cell
+    function generateMazeGrid() {
+      mazeGrid = [];
+      for (let r = 0; r < mazeRows; r++) {
+        let row = [];
+        for (let c = 0; c < mazeCols; c++) {
+          // Each cell can have four walls: top,right,bottom,left
+          // We'll randomly remove some walls to make paths
+          row.push({
+            top: random() < 0.7,
+            right: random() < 0.7,
+            bottom: random() < 0.7,
+            left: random() < 0.7
+          });
+        }
+        mazeGrid.push(row);
+      }
+    }
+
+    // Draw the maze
+    function drawMaze() {
+      stroke(0);
+      strokeWeight(4);
+      for (let r = 0; r < mazeRows; r++) {
+        for (let c = 0; c < mazeCols; c++) {
+          let x = c * cellSize;
+          let y = r * cellSize;
+          // Random color tints to differentiate cells
+          fill(130, 200, map(r, 0, mazeRows-1, 100, 255), 70);
+          rect(x, y, cellSize, cellSize);
+
+          // Draw walls if present
+          stroke(0);
+          strokeWeight(2);
+
+          if (mazeGrid[r][c].top) {
+            line(x, y, x + cellSize, y);
+          }
+          if (mazeGrid[r][c].right) {
+            line(x + cellSize, y, x + cellSize, y + cellSize);
+          }
+          if (mazeGrid[r][c].bottom) {
+            line(x, y + cellSize, x + cellSize, y + cellSize);
+          }
+          if (mazeGrid[r][c].left) {
+            line(x, y, x, y + cellSize);
+          }
+        }
+      }
+    }
+  </script>
+</body>
+</html>

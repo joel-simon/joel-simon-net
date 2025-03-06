@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Reversal Portal</title>
+  <style>
+    /* Page styling to center 512x512 canvas */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #0f0f0f;
+      height: 100vh;
+      width: 100vw;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    /* Tooltip container */
+    .info-tip {
+      position: relative;
+      font-family: sans-serif;
+      user-select: none;
+      cursor: pointer;
+      color: #ccc;
+      margin-bottom: 0.75em;
+    }
+
+    /* Tooltip text (hidden by default) */
+    .info-content {
+      visibility: hidden;
+      width: 300px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 10px;
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.85em;
+      line-height: 1.4em;
+      z-index: 1;
+    }
+
+    /* Show the tooltip text when hovering over the tooltip container */
+    .info-tip:hover .info-content {
+      visibility: visible;
+    }
+
+    /* Ensure the canvas is exactly 512x512 with no extra scrollbars */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
+    }
+  </style>
+</head>
+<body>
+  <div class="info-tip">
+    Hover for instructions
+    <div class="info-content">
+      Time Reversal Portal Instructions:<br>
+      • Hour reversed (23 - hour) sets portal color.<br>
+      • Minute reversed (59 - minute) becomes the number of orbiting orbs.<br>
+      • Second reversed (59 - second) determines orb rotation speed.<br>
+      • Observe these reversed values shifting in real time.
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <script>
+    /*
+      TIME REVERSAL PORTAL
+      =====================
+      - Hour is reversed (23 - hour) for the color hue.
+      - Minute is reversed (59 - minute) to set the number of orbiting orbs.
+      - Second is reversed (59 - second) to determine the rotation speed.
+
+      Inspiration:
+      We take the usual assumption that "time flows forward" and reverse it:
+      The visuals correspond to "remaining time" in the current day.
+    */
+
+    let angleOffset = 0; // Tracks rotation of orbs
+
+    function setup() {
+      createCanvas(512, 512);
+      colorMode(HSB);
+      noStroke();
+      rectMode(CENTER);
+    }
+
+    function draw() {
+      background(0);
+
+      // Reverse current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      let revHour = 23 - hr;
+      let revMin  = 59 - mn;
+      let revSec  = 59 - sc;
+
+      // Map reversed hour [0..23] to [0..360] for HSB hue
+      let portalHue = map(revHour, 0, 23, 0, 360);
+      // We'll use reversed second as a rotation increment
+      let speed = revSec * 0.01;
+      angleOffset += speed;
+
+      // Number of orbs, ensuring at least 1 even if reversed minute is 0
+      let orbCount = revMin + 1; // from [1..60]
+
+      // Draw a large swirling portal in the center
+      push();
+      translate(width/2, height/2);
+      fill(portalHue, 80, 60); 
+      // A pulsating ellipse that grows/shrinks with reversed second
+      let pulsingR = map(sin(frameCount * 0.05 * speed), -1, 1, 150, 180);
+      ellipse(0, 0, pulsingR * 2, pulsingR * 2);
+
+      // Orbs revolve around the center
+      for (let i = 0; i < orbCount; i++) {
+        let theta = (TWO_PI / orbCount) * i + angleOffset; 
+        let radius = 120; // Distance from center
+        let x = cos(theta) * radius;
+        let y = sin(theta) * radius;
+        let orbHue = (portalHue + (i * 7)) % 360; 
+        fill(orbHue, 90, 90);
+        ellipse(x, y, 15, 15);
+      }
+      pop();
+    }
+  </script>
+</body>
+</html>

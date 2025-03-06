@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Randomized Time Universe</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #randomTimeContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Instructions overlay, hidden by default. Display on hover. */
+    #instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.8);
+      color: #222;
+      font-family: sans-serif;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    #randomTimeContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="randomTimeContainer">
+  <div id="instructions">
+    <h3>Randomized Time Universe</h3>
+    <p>
+      • Every real-world second, this universe jumps to a random hour, minute, and second.<br/>
+      • Rather than moving forward in time, we explore the idea that time could appear in any order.<br/>
+      • Observe ever-changing colors and rotations driven by these random values.<br/>
+      • Hover to see these instructions, and watch time become unpredictably scrambled.
+    </p>
+  </div>
+</div>
+
+<script>
+  let canvasSize = 512;
+  // Random "time" variables
+  let rHr, rMn, rSc;
+  // Keep track of frames to trigger a new random time once per real second
+  let lastSecondFrame = 0;
+
+  function setup() {
+    let c = createCanvas(canvasSize, canvasSize);
+    c.parent("randomTimeContainer");
+    angleMode(DEGREES);
+    textAlign(CENTER, CENTER);
+    textSize(20);
+    // Initialize random time
+    pickNewRandomTime();
+  }
+
+  function draw() {
+    // Every 60 frames (~1 second at 60 fps), pick new random time
+    if (frameCount - lastSecondFrame >= 60) {
+      pickNewRandomTime();
+      lastSecondFrame = frameCount;
+    }
+
+    // Background color depends on random hour
+    // Map hour range [0..23] to brightness [0..255]
+    let bgVal = map(rHr, 0, 23, 0, 255);
+    background(bgVal, 100, 255 - bgVal);
+
+    // Draw an ellipse whose size depends on the random minute
+    // and color depends on the random second
+    let ellipseSize = map(rMn, 0, 59, 50, 300);
+    let eColor = map(rSc, 0, 59, 0, 255);
+    fill(eColor, 200, 255 - eColor);
+    noStroke();
+    ellipse(width/2, height/2, ellipseSize, ellipseSize);
+
+    // Rotate a small rectangle in the center based on random second
+    push();
+    translate(width/2, height/2);
+    let rotationAngle = map(rSc, 0, 59, 0, 360);
+    rotate(rotationAngle);
+    fill(255 - eColor, 150, eColor);
+    rectMode(CENTER);
+    rect(0, 0, 100, 20);
+    pop();
+
+    // Display the random time
+    fill(255);
+    text("Random Time: " + nf(rHr,2) + ":" + nf(rMn,2) + ":" + nf(rSc,2), width/2, height - 30);
+  }
+
+  function pickNewRandomTime() {
+    rHr = floor(random(24));
+    rMn = floor(random(60));
+    rSc = floor(random(60));
+  }
+</script>
+</body>
+</html>

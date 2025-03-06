@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Synergy Time Display</title>
+  <style>
+    /* Basic reset and layout to center content */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Tooltip container */
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+
+    /* Tooltip text hidden by default */
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 280px;
+      background-color: rgba(0,0,0,0.75);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      z-index: 1;
+      left: 50%;
+      bottom: 110%;
+      transform: translateX(-50%);
+      box-shadow: 0 0 10px rgba(0,0,0,0.6);
+      font-size: 0.9em;
+      line-height: 1.4em;
+    }
+
+    /* Show tooltip text on hover */
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+    }
+
+    /* Fixed 512x512 region for the p5.js canvas */
+    #p5sketch {
+      width: 512px;
+      height: 512px;
+      background: #000; /* fallback if needed */
+    }
+  </style>
+</head>
+<body>
+  <div class="tooltip">
+    <div id="p5sketch"></div>
+    <div class="tooltiptext">
+      • The undulating wave in the background changes amplitude with the hour.<br>
+      • A fractal swirl grows as minutes pass.<br>
+      • Everything rotates subtly with the seconds.<br>
+    </div>
+  </div>
+  
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let canvasSize = 512;
+
+    function setup() {
+      createCanvas(canvasSize, canvasSize).parent('p5sketch');
+      angleMode(DEGREES);
+      noFill();
+      stroke(255);
+      strokeWeight(2);
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour() % 12; // 0-11
+      let m = minute();    // 0-59
+      let s = second();    // 0-59
+
+      // Draw background wave
+      push();
+      stroke(180, 100, 255);
+      beginShape();
+      // Map hour to wave amplitude
+      let waveAmplitude = map(h, 0, 12, 20, 100);
+      // Map minute to wave frequency
+      let waveFrequency = map(m, 0, 59, 0.01, 0.15);
+      // Map second to wave phase shift
+      let phaseShift = map(s, 0, 59, 0, TWO_PI);
+      for (let x = 0; x < width; x++) {
+        let y = height * 0.5 + waveAmplitude * sin(waveFrequency * x + phaseShift);
+        vertex(x, y);
+      }
+      endShape();
+      pop();
+
+      // Translate to center for fractal swirl
+      push();
+      translate(width/2, height/2);
+
+      // Add a slow rotation based on seconds
+      let rotationFactor = map(s, 0, 60, 0, 360);
+      rotate(rotationFactor * 0.1);
+
+      // Draw fractal swirl
+      // Depth is set by the minute
+      let swirlDepth = floor(map(m, 0, 60, 1, 6));
+      stroke(255);
+      fractalSwirl(60, swirlDepth);
+
+      pop();
+    }
+
+    // Recursive fractal swirl function
+    // r: initial radius, depth: how many recursive levels
+    function fractalSwirl(r, depth) {
+      if (depth <= 0 || r < 1) return;
+      
+      // Draw a circle
+      ellipse(0, 0, r*2, r*2);
+      
+      // Move outwards and rotate a bit
+      push();
+      rotate(frameCount * 0.5);
+      translate(r, 0);
+      fractalSwirl(r * 0.6, depth - 1);
+      pop();
+    }
+  </script>
+</body>
+</html>

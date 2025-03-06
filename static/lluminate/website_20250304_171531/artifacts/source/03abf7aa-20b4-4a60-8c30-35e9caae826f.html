@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Flower Bee Swarm</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Full page setup, dark background, center the content */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip: hidden by default, shown on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0,0,0,0.7);
+      padding: 20px;
+      box-sizing: border-box;
+      font-size: 14px;
+      line-height: 1.4;
+      z-index: 1;
+    }
+
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      HOW IT WORKS:<br>
+      • The central flower's color changes gradually with the hour.<br>
+      • The number of bees (small, orbiting ovals) corresponds to the current minute.<br>
+      • The speed of their rotation is amplified by the current second.<br>
+      • The time (HH:MM:SS) appears at the center of the flower.<br>
+    </div>
+  </div>
+
+  <script>
+    let numBees = 0;       // Tracks how many bees to draw (based on minute)
+    let hrColorValue = 0;  // For hour-based flower color
+    let lastMinute = -1;   // Track minute changes
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      textAlign(CENTER, CENTER);
+      textSize(16);
+      noStroke();
+    }
+
+    function draw() {
+      background(30);
+
+      // Get time components
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Update bee count if minute changes
+      if (mn !== lastMinute) {
+        numBees = mn;
+        lastMinute = mn;
+      }
+
+      // Map hour [0..23] -> color range for the flower
+      // We'll create a background that subtly changes color with hour
+      hrColorValue = map(hr, 0, 23, 0, 255);
+
+      // Draw a faint radial gradient background
+      drawGradientBackground(hr);
+
+      // Draw the flower in the center
+      push();
+      translate(width / 2, height / 2);
+      drawFlower(hr);
+      // Draw time text at the center of flower
+      fill(255);
+      text(nf(hr,2) + ':' + nf(mn,2) + ':' + nf(sc,2), 0, 0);
+      pop();
+
+      // Draw bees orbiting center
+      drawBees(mn, sc);
+    }
+
+    // A subtle background gradient that shifts with the hour
+    function drawGradientBackground(hr) {
+      for (let r = 0; r < width / 2; r++) {
+        let inter = map(r, 0, width / 2, 0, 1);
+        let c = lerpColor(color(hrColorValue, 50, 80), color(0, 0, 60), inter);
+        stroke(c);
+        strokeWeight(2);
+        noFill();
+        ellipse(width / 2, height / 2, r * 2, r * 2);
+      }
+    }
+
+    // Draw a stylized flower in the center
+    // Petals change color with hour
+    function drawFlower(hr) {
+      let petals = 8;
+      let radius = 60;
+      let petalColor = color(hrColorValue, 200, 180);
+
+      for (let i = 0; i < petals; i++) {
+        push();
+        rotate((360 / petals) * i);
+        fill(petalColor);
+        ellipse(0, -radius, 40, 70);
+        pop();
+      }
+      // Flower center
+      fill(255, 220, 0);
+      ellipse(0, 0, 50, 50);
+    }
+
+    // Orbiting bees around the center
+    // Number of bees = minute, rotation speed influenced by seconds
+    function drawBees(mn, sc) {
+      let centerX = width / 2;
+      let centerY = height / 2;
+      let angleOffset = frameCount * (0.2 + sc * 0.03); // base rotation speed + second-based
+
+      for (let i = 0; i < numBees; i++) {
+        let angle = (360 / max(numBees,1)) * i + angleOffset;
+        let x = centerX + cos(angle) * 120;
+        let y = centerY + sin(angle) * 120;
+
+        // Draw each bee
+        push();
+        translate(x, y);
+        rotate(angle + 90);
+        fill(255, 220, 0);
+        ellipse(0, 0, 20, 10);  // Bee body
+        fill(30);
+        rectMode(CENTER);
+        rect(0, 0, 2, 10);      // Simple "stripe"
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

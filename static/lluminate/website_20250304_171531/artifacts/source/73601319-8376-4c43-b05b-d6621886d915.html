@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Galaxy</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic page and canvasContainer setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (hidden by default, appears on hover) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.65);
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      box-sizing: border-box;
+      padding: 20px;
+      pointer-events: none;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Galaxy</strong><br><br>
+        • Distant stars twinkle in the background, revealing daily transitions.<br>
+        • Arms of the galaxy rotate based on hours & minutes.<br>
+        • New comets appear each second, drifting outward and vanishing.<br>
+        • A small digital clock floats at the bottom.<br>
+        Hover away to explore!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Galaxy
+      -----------
+      1) Starfield background populated once at the start.
+      2) Swirling galaxy arms that rotate according to time:
+         - Hour sets the number of arms.
+         - Minute affects rotation speed.
+      3) A comet appears every second, traveling outward and fading away.
+      4) A simple digital clock is displayed at the bottom-left corner.
+    */
+
+    const SIZE = 512;
+    let stars = [];
+    const NUM_STARS = 150;
+    let comets = [];
+    let lastSecond = -1;
+
+    function setup() {
+      let cnv = createCanvas(SIZE, SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+
+      // Populate starfield
+      for (let i = 0; i < NUM_STARS; i++) {
+        stars.push({
+          x: random(width),
+          y: random(height),
+          brightness: random(150, 255),
+          size: random(1, 3)
+        });
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      // Draw starfield
+      drawStars();
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Draw swirling galaxy arms
+      drawGalaxyArms(h, m);
+
+      // Handle comets
+      if (s !== lastSecond) {
+        comets.push(new Comet());
+        lastSecond = s;
+      }
+      updateAndDrawComets();
+
+      // Draw clock
+      drawClock(h, m, s);
+    }
+
+    // Draw starfield
+    function drawStars() {
+      noStroke();
+      for (let star of stars) {
+        fill(255, star.brightness);
+        ellipse(star.x, star.y, star.size);
+      }
+    }
+
+    // Draw galaxy arms
+    function drawGalaxyArms(h, m) {
+      let armCount = (h % 12) + 3; // number of arms, at least 3
+      let rotationSpeed = map(m, 0, 59, 0.2, 4); // minute-based speed
+      let radius = 170;
+
+      push();
+      translate(width / 2, height / 2);
+      rotate(frameCount * rotationSpeed);
+
+      for (let i = 0; i < armCount; i++) {
+        push();
+        rotate((360 / armCount) * i);
+        drawSpiralArm(radius);
+        pop();
+      }
+      pop();
+    }
+
+    // Helper to draw one arm with small rotating circles
+    function drawSpiralArm(radius) {
+      stroke(200);
+      noFill();
+      beginShape();
+      for (let r = 0; r < radius; r += 4) {
+        let factor = r * 0.03;
+        let x = r * cos(factor);
+        let y = r * sin(factor);
+        vertex(x, y);
+      }
+      endShape();
+    }
+
+    // Comet class
+    class Comet {
+      constructor() {
+        this.angle = random(360);
+        this.distance = 0;
+        this.speed = random(2, 4);
+        this.alpha = 255;
+      }
+      update() {
+        this.distance += this.speed;
+        this.alpha -= 2; // fade out
+      }
+      display() {
+        push();
+        translate(width / 2, height / 2);
+        rotate(this.angle);
+        noStroke();
+        fill(150, 200, 255, this.alpha);
+        ellipse(this.distance, 0, 6, 6);
+        pop();
+      }
+      isDone() {
+        return this.alpha <= 0 || this.distance > width * 0.9;
+      }
+    }
+
+    // Update and draw comets
+    function updateAndDrawComets() {
+      for (let comet of comets) {
+        comet.update();
+        comet.display();
+      }
+      comets = comets.filter(c => !c.isDone());
+    }
+
+    // Digital clock
+    function drawClock(h, m, s) {
+      push();
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 10, height - 16);
+      pop();
+    }
+  </script>
+</body>
+</html>

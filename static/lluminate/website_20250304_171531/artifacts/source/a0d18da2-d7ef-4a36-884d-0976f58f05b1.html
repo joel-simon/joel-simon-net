@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time-Scrambled Tile Puzzle</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Fixed 512x512 container */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on container hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time-Scrambled Tile Puzzle • 3×3 Tiles<br><br>
+        • Each tile is a unique color.<br>
+        • Every minute, the tiles scramble again.<br>
+        • Click two tiles to swap them. Try to return them to the original order before the minute is up!<br>
+        • Time-based challenge: watch the clock at the bottom.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+     This puzzle displays a 3x3 grid of randomly colored tiles.
+     Each minute, they scramble again. Click two tiles to swap them.
+     The goal is to reorder them as they started before the next scramble!
+    */
+
+    let tiles = [];          // Array of tile colors
+    let arrangement = [];    // Current arrangement indexes [0..8]
+    let originalOrder = [];  // The solved arrangement for reference
+    let firstSelection = -1; // Track the first tile clicked
+    let tileSize = 512 / 3;  // Each tile is 512/3 px in width/height
+    let lastMinute = -1;     // For detecting minute changes
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      noStroke();
+      textAlign(CENTER, CENTER);
+      textSize(18);
+
+      // Create 9 unique random colors
+      for (let i = 0; i < 9; i++) {
+        tiles.push(color(random(255), random(255), random(255)));
+        arrangement.push(i);
+      }
+      // Save the original arrangement
+      originalOrder = [...arrangement];
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // If the minute changed, scramble again
+      if (m !== lastMinute) {
+        scramble();
+        lastMinute = m;
+      }
+
+      // Draw the puzzle in the current arrangement
+      for (let i = 0; i < 9; i++) {
+        let tileIndex = arrangement[i];
+        fill(tiles[tileIndex]);
+        // Row/Col from i
+        let col = i % 3;
+        let row = floor(i / 3);
+        rect(col * tileSize, row * tileSize, tileSize, tileSize);
+      }
+
+      // Draw board lines
+      stroke(255);
+      strokeWeight(1);
+      for (let i = 1; i < 3; i++) {
+        line(i * tileSize, 0, i * tileSize, height);
+        line(0, i * tileSize, width, i * tileSize);
+      }
+      noStroke();
+
+      // Show text clock near bottom
+      fill(255);
+      textSize(16);
+      text(("0"+h).slice(-2)+":"+("0"+m).slice(-2)+":"+("0"+s).slice(-2), width / 2, height - 20);
+
+      // If solved, display a message
+      if (isSolved()) {
+        fill(0, 200);
+        rect(0, 0, width, height);
+        fill(255);
+        textSize(32);
+        text("Puzzle Solved!", width/2, height/2);
+      }
+    }
+
+    // Click to select two tiles and swap them
+    function mousePressed() {
+      // Figure out which tile was clicked
+      let c = floor(mouseX / tileSize);
+      let r = floor(mouseY / tileSize);
+      if (c < 0 || c > 2 || r < 0 || r > 2) {
+        return; // Outside puzzle
+      }
+      let clickedIndex = r * 3 + c;
+
+      // If no prior selection, store this
+      if (firstSelection < 0) {
+        firstSelection = clickedIndex;
+      } else {
+        // Swap tiles
+        swapTiles(firstSelection, clickedIndex);
+        firstSelection = -1;
+      }
+    }
+
+    // Swap two entries in arrangement
+    function swapTiles(idxA, idxB) {
+      let temp = arrangement[idxA];
+      arrangement[idxA] = arrangement[idxB];
+      arrangement[idxB] = temp;
+    }
+
+    // Scramble the arrangement
+    function scramble() {
+      for (let i = arrangement.length - 1; i > 0; i--) {
+        let j = floor(random(i + 1));
+        let temp = arrangement[i];
+        arrangement[i] = arrangement[j];
+        arrangement[j] = temp;
+      }
+    }
+
+    // Check if arrangement is the same as original
+    function isSolved() {
+      for (let i = 0; i < arrangement.length; i++) {
+        if (arrangement[i] !== originalOrder[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
+  </script>
+</body>
+</html>

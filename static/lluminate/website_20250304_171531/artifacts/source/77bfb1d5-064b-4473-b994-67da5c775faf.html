@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Interactive Fractal Time Display</title>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+    /* 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      box-sizing: border-box;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: block;
+    }
+    .overlay-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <div class="overlay-text">
+        <strong>Interactive Fractal Time Display</strong><br><br>
+        • The background color transforms based on the hour.<br>
+        • The fractal tree adjusts its branch length with the current minute.<br>
+        • A swirling star pulses with the passing seconds.<br>
+        • The current time is displayed in the top corner.<br><br>
+        Hover away to enjoy the full experience!
+      </div>
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <script>
+    function setup() {
+      const canvas = createCanvas(512, 512);
+      canvas.parent('canvasContainer');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Background color changes with hour
+      colorMode(HSB);
+      background(map(h, 0, 23, 0, 360), 100, 40);
+      colorMode(RGB);
+
+      // Display time in corner
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let ampm = h >= 12 ? "PM" : "AM";
+      let hh = (h % 12) === 0 ? 12 : (h % 12);
+      text(nf(hh, 2) + ":" + nf(m, 2) + ":" + nf(s, 2) + " " + ampm, 10, 10);
+
+      // Draw fractal tree (branch length depends on minute)
+      push();
+      translate(width / 2, height);
+      stroke(255);
+      drawBranch(map(m, 0, 59, 60, 180));
+      pop();
+
+      // Draw swirling star at center (rotation speed depends on seconds)
+      push();
+      translate(width / 2, height / 3);
+      rotate(frameCount + s * 2);
+      noStroke();
+      fill(255, 200, 50, 180);
+      for (let i = 0; i < 8; i++) {
+        rotate(45);
+        ellipse(0, 20, 10, 50);
+      }
+      pop();
+    }
+
+    // Recursive fractal tree
+    function drawBranch(len) {
+      line(0, 0, 0, -len);
+      translate(0, -len);
+      if (len > 10) {
+        push();
+        rotate(map(second(), 0, 59, 5, 35));
+        drawBranch(len * 0.67);
+        pop();
+        push();
+        rotate(-map(second(), 0, 59, 5, 35));
+        drawBranch(len * 0.67);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

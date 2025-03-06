@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Planetary Reversal</title>
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset and center everything */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    /* Container for our 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative; /* for tooltip positioning */
+    }
+    /* Hover tooltip for instructions */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      font-family: sans-serif;
+      font-size: 14px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #666;
+      padding: 12px;
+      width: 280px;
+      z-index: 10;
+    }
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <!-- Tooltip instructions appear on hover -->
+    <div class="tooltip">
+      Time Planetary Reversal: 
+      • The swirling backdrop reverses direction each hour. 
+      • Three orbital bodies revolve around the center: hour, minute, and second. 
+      • The Hour Orb orbits backward to challenge the normal time flow. 
+      • The Minute Orb changes its distance from center each minute. 
+      • The Second Orb flashes vibrant hues with each tick. 
+      • Watch time unfold in a reversed dance.
+    </div>
+  </div>
+
+  <script>
+    const CANVAS_SIZE = 512;
+    let centerX, centerY;
+    
+    // Variables for background swirl
+    let swirlAngle = 0;
+    let swirlSpeed = 0.01;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      centerX = width / 2;
+      centerY = height / 2;
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      // Current local time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Swirl direction controls (alternate each hour)
+      let reversed = (hr % 2 === 0) ? 1 : -1;
+      
+      // Draw swirl background
+      push();
+      translate(centerX, centerY);
+      // Rotate the swirl
+      swirlAngle += swirlSpeed * reversed;
+      rotate(swirlAngle);
+      drawSwirl();
+      pop();
+
+      // Draw central planet
+      fill(200, 220, 255);
+      ellipse(centerX, centerY, 60, 60);
+
+      // Orbits
+      drawHourOrb(hr, mn, sc);
+      drawMinuteOrb(hr, mn, sc);
+      drawSecondOrb(hr, mn, sc);
+
+      // Display digital time in the top-left corner
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(nf(hr,2) + ":" + nf(mn,2) + ":" + nf(sc,2), 10, 10);
+      pop();
+    }
+
+    // Draw a swirl effect by stacking semi-transparent arcs
+    function drawSwirl() {
+      let swirlRings = 12; 
+      for (let i = 0; i < swirlRings; i++) {
+        fill((i*20) % 255, 100, 150, 60);
+        arc(0, 0, 2*(width - i*10), 2*(height - i*10), i*15, i*15 + 90);
+      }
+    }
+
+    // Hour Orb: 
+    // • Orbits in a backward direction based on hour (hr mod 12).
+    // • The radius is fixed. 
+    function drawHourOrb(hr, mn, sc) {
+      push();
+      translate(centerX, centerY);
+      let hourRadius = 120;
+      let hourSpeed = -((hr % 12) * 2); // negative for reverse
+      let hourAngle = frameCount * 0.1 + hourSpeed;
+      let x = hourRadius * cos(hourAngle);
+      let y = hourRadius * sin(hourAngle);
+      noStroke();
+      fill(255, 180, 120);
+      ellipse(x, y, 30, 30);
+      pop();
+    }
+
+    // Minute Orb:
+    // • The orbital radius changes dynamically based on the current minute (0 to 59).
+    // • Orbits in normal direction.
+    function drawMinuteOrb(hr, mn, sc) {
+      push();
+      translate(centerX, centerY);
+      let minRadius = map(mn, 0, 59, 50, 200);
+      let minAngle = frameCount * 0.5;
+      let x = minRadius * cos(minAngle);
+      let y = minRadius * sin(minAngle);
+      noStroke();
+      fill(100, 255, 180);
+      ellipse(x, y, 20, 20);
+      pop();
+    }
+
+    // Second Orb:
+    // • The orb color intensifies each second tick.
+    // • Always orbits quickly in normal direction.
+    function drawSecondOrb(hr, mn, sc) {
+      push();
+      translate(centerX, centerY);
+      let scRadius = 80;
+      let scAngle = frameCount * 3; 
+      let x = scRadius * cos(scAngle);
+      let y = scRadius * sin(scAngle);
+      let colorShift = map(sc, 0, 59, 0, 255);
+      fill(colorShift, 50, 255 - colorShift);
+      ellipse(x, y, 15, 15);
+      pop();
+    }
+  </script>
+</body>
+</html>

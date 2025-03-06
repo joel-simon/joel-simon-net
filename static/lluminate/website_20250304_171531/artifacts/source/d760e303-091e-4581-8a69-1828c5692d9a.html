@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Planetary System</title>
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page reset for consistent sizing and style */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111; /* A dark background outside the canvas */
+    }
+
+    /* Container for the 512x512 canvas and hover instructions */
+    #timeContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Overlay with instructions, hidden by default */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      text-align: center;
+      padding: 30px;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions upon hovering over the container */
+    #timeContainer:hover #instructionsOverlay {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="timeContainer">
+    <div id="instructionsOverlay">
+      <h2>Time Planetary System</h2>
+      <p>Watch three "planets" orbit around a central sun. Each orbit's radius and planet size reflects hours, minutes, and seconds in real time!</p>
+      <p>Red for hour, green for minute, and blue for second.</p>
+      <p>Hover here any time to see these instructions again.</p>
+    </div>
+  </div>
+
+  <script>
+    let angleHour = 0;
+    let angleMinute = 0;
+    let angleSecond = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('timeContainer');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(0);
+
+      // Get current time
+      let h = hour() % 12;
+      let m = minute();
+      let s = second();
+
+      // Calculate radii from time
+      let rHour = map(h, 0, 12, 50, 200);
+      let rMinute = map(m, 0, 60, 70, 200);
+      let rSecond = map(s, 0, 60, 90, 200);
+
+      // Calculate planet sizes from time
+      let sizeHour = map(h, 0, 12, 10, 30);
+      let sizeMinute = map(m, 0, 60, 8, 20);
+      let sizeSecond = map(s, 0, 60, 5, 15);
+
+      // Update orbital angles
+      angleHour += 0.07;   // Slower orbit for hour
+      angleMinute += 0.3;  // Medium orbit for minute
+      angleSecond += 1;    // Fast orbit for second
+
+      // Translate to center of canvas
+      translate(width / 2, height / 2);
+
+      // Draw the central sun
+      noStroke();
+      fill(255, 204, 0);
+      circle(0, 0, 40);
+
+      // Hour planet orbit (red)
+      push();
+      rotate(angleHour);
+      noStroke();
+      fill(255, 80, 80);
+      circle(rHour, 0, sizeHour);
+      pop();
+
+      // Minute planet orbit (green)
+      push();
+      rotate(angleMinute);
+      noStroke();
+      fill(80, 255, 80);
+      circle(rMinute, 0, sizeMinute);
+      pop();
+
+      // Second planet orbit (blue)
+      push();
+      rotate(angleSecond);
+      noStroke();
+      fill(80, 80, 255);
+      circle(rSecond, 0, sizeSecond);
+      pop();
+
+      // Digital time readout in the corner
+      resetMatrix();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      fill(255);
+      let displayHour = hour() % 12;
+      displayHour = displayHour === 0 ? 12 : displayHour;
+      let ampm = hour() >= 12 ? "PM" : "AM";
+      let minStr = nf(minute(), 2);
+      let secStr = nf(second(), 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 10, 10);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Maze Tree Gear</title>
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic setup to center content and remove scrollbars */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #0e0e0e;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* Container to hold a 512x512 canvas + hover instructions */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      background-color: #000;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Hover overlay for instructions */
+    #hoverInstructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      pointer-events: none; /* let mouse interact with canvas behind */
+      text-align: center;
+      padding: 20px;
+    }
+    #canvasContainer:hover #hoverInstructions {
+      display: block;
+    }
+    
+    .instructionText {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="canvasContainer">
+    <div id="hoverInstructions">
+      <div class="instructionText">
+        <strong>Time Maze Tree Gear</strong><br><br>
+        • Maze changes every minute<br>
+        • Fractal tree grows with the hour<br>
+        • Gear rotates with the second<br>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Maze Tree Gear
+      This sketch combines several time-dependent elements:
+       - A "maze" of random lines that regenerates each minute
+       - A fractal tree that grows with the current hour
+       - A gear rotating in the center, driven by the current second
+    */
+
+    const SIZE = 512;
+    // Track the current minute so we know when to regenerate
+    let currentMinute = -1;
+    let mazeLines = [];
+
+    function setup() {
+      const cnv = createCanvas(SIZE, SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      strokeWeight(1);
+      noSmooth();
+      generateMaze(); // Generate initial
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // If the minute changed, regenerate the maze
+      if (mn !== currentMinute) {
+        currentMinute = mn;
+        generateMaze();
+      }
+
+      // Background color transitions based on hour
+      background(map(hr, 0, 23, 20, 60));
+
+      // Draw the "maze"
+      drawMaze();
+
+      // Translate to center for fractal tree & gear
+      push();
+      translate(width / 2, height / 2);
+
+      // Draw fractal tree upward
+      push();
+      // Tree height is a function of hour (0..23) but we cycle 12 hours
+      let hourFrac = (hr % 12) + map(mn, 0, 59, 0, 1); 
+      stroke(200);
+      drawFractalTree(0, 0, -80 - hourFrac*5, 270, 6);
+      pop();
+
+      // Draw rotating gear in the center based on seconds
+      push();
+      rotate(map(sc, 0, 59, 0, 360));
+      drawGear(40, 12);
+      pop();
+
+      // Display time readout
+      translate(0, -SIZE/2 + 10);
+      fill(255);
+      noStroke();
+      textAlign(CENTER, TOP);
+      textSize(14);
+      text(nf(hr,2) + ":" + nf(mn,2) + ":" + nf(sc,2), 0, 0);
+
+      pop();
+    }
+
+    // Generate random lines to mimic a "maze"
+    function generateMaze() {
+      mazeLines = [];
+      // Use randomSeed based on current minute + hour for consistent "pattern" during that minute
+      randomSeed((hour() * 60) + minute());
+      let linesCount = 30; 
+      for (let i = 0; i < linesCount; i++) {
+        let x1 = random(width);
+        let y1 = random(height);
+        let x2 = x1 + random(-60, 60);
+        let y2 = y1 + random(-60, 60);
+        mazeLines.push({ x1, y1, x2, y2 });
+      }
+    }
+
+    // Draw the lines that represent the "maze"
+    function drawMaze() {
+      stroke(200, 100);
+      for (let ln of mazeLines) {
+        line(ln.x1, ln.y1, ln.x2, ln.y2);
+      }
+    }
+
+    // Recursive fractal tree
+    function drawFractalTree(x, y, length, angle, depth) {
+      if (depth <= 0) return;
+      let x2 = x + length*cos(angle);
+      let y2 = y + length*sin(angle);
+      line(x, y, x2, y2);
+      let newLen = length * 0.7;
+      let branchAngle = 25; 
+      
+      drawFractalTree(x2, y2, newLen, angle - branchAngle, depth - 1);
+      drawFractalTree(x2, y2, newLen, angle + branchAngle, depth - 1);
+    }
+
+    // Simple gear drawing
+    // gearSize: diameter, toothCount: number of teeth
+    function drawGear(gearSize, toothCount) {
+      let r = gearSize * 0.5;
+      fill(180);
+      stroke(255);
+      beginShape();
+      for (let i = 0; i < 360; i += 360/(toothCount*2)) {
+        let rad = (i % (360/toothCount) === 0) ? r*1.2 : r;
+        vertex(rad * cos(i), rad * sin(i));
+      }
+      endShape(CLOSE);
+      
+      // Center circle
+      fill(50);
+      ellipse(0, 0, r * 0.6, r * 0.6);
+    }
+  </script>
+</body>
+</html>

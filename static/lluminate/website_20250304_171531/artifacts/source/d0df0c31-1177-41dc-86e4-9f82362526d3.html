@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Infinity Mirror</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for better contrast */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Infinity Mirror</strong><br><br>
+        • This kaleidoscopic display evolves with the current time.<br>
+        • The number of mirrored segments corresponds to the hour.<br>
+        • Colors shift based on the minute.<br>
+        • Rotation dynamics reflect the seconds.<br>
+        • A digital clock in the corner shows real time.<br><br>
+        Hover to see these tips. Enjoy exploring!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    // Used to track time changes
+    let lastHr, lastMn, lastSc;
+
+    // Current number of segments (set by hour)
+    let segments = 12;
+
+    // Rotation angle (based on seconds)
+    let rotationAngle = 0;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      noStroke();
+
+      // Force an update right at the start
+      segments = max(3, hour());
+      lastHr = hour();
+      lastMn = minute();
+      lastSc = second();
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // If the hour changes, recalculate segments
+      if (hr !== lastHr) {
+        segments = max(3, hr);
+        lastHr = hr;
+      }
+
+      // Each minute, we'll subtly vary the color
+      // We'll create a color offset for minute and second
+      let colorOffset = map(mn, 0, 59, 0, 360);
+
+      // The mirror rotates with time (seconds)
+      if (sc !== lastSc) {
+        lastSc = sc;
+      }
+      rotationAngle = map(sc, 0, 59, 0, 360);
+
+      translate(width / 2, height / 2);
+
+      // Draw each mirrored segment
+      let segmentAngle = 360 / segments;
+      for (let i = 0; i < segments; i++) {
+        push();
+        rotate(i * segmentAngle + rotationAngle);
+
+        // Each petal - controlling radius by minute
+        let radius = map(mn, 0, 59, 50, 200);
+
+        // Color shifts with minute offset and also varies in brightness by second
+        let hueVal = (colorOffset + i * (360 / segments)) % 360;
+        fill(hueVal, 80, map(sc, 0, 59, 50, 100), 1);
+
+        // Draw a shape that forms part of the kaleidoscope
+        beginShape();
+        for (let angle = 0; angle < 180; angle += 10) {
+          let x = cos(angle) * radius;
+          let y = sin(angle) * radius * 0.5;
+          vertex(x, y);
+        }
+        endShape(CLOSE);
+        pop();
+      }
+
+      drawTime();
+    }
+
+    // Overlay real time in the top-left corner
+    function drawTime() {
+      resetMatrix();
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+      let displayHour = hr % 12 || 12;
+      let ampm = hr >= 12 ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 10, 10);
+    }
+  </script>
+</body>
+</html>

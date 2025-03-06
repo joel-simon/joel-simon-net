@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Reversed Time Swirl</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and container styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+    /* Tooltip styling - hidden by default, shown on hover */
+    .tooltip {
+      display: none; 
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      border-radius: 4px;
+      padding: 10px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 240px;
+      z-index: 2;
+      line-height: 1.4em;
+    }
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+    /* Enforce canvas size and add subtle shadow */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      • This swirl reverses the typical flow of time.<br>
+      • The swirl’s rotation speed depends on the hour, moving "backwards."<br>
+      • The swirl’s radius pulses with the minute.<br>
+      • The changing color highlights each passing second.<br>
+      Enjoy exploring reversed time!
+    </div>
+  </div>
+
+  <script>
+    let stars = [];       // Array to store star positions
+    let swirlAngle = 0;   // Rotational angle for the swirl
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent("canvasContainer");
+      noStroke();
+      // Create a star field
+      for (let i = 0; i < 200; i++) {
+        stars.push({
+          x: random(width),
+          y: random(height),
+          size: random(1, 3)
+        });
+      }
+    }
+
+    function draw() {
+      background(0);
+      drawStarField();
+      drawReversedTimeSwirl();
+    }
+
+    function drawStarField() {
+      fill(255);
+      for (let s of stars) {
+        circle(s.x, s.y, s.size);
+      }
+    }
+
+    function drawReversedTimeSwirl() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Reverse the typical direction by subtracting based on hour
+      swirlAngle -= map(h, 0, 23, 0.001, 0.02);
+
+      // The swirl radius factor grows with the minute
+      let swirlRadius = map(m, 0, 59, 40, 200);
+
+      // Color changes with seconds
+      let swirlColor = color(map(s, 0, 59, 0, 255), 180, 220);
+
+      push();
+      translate(width / 2, height / 2);
+      rotate(swirlAngle);
+
+      // Vary the number of lines in the swirl
+      let swirlLines = 60; 
+      stroke(swirlColor);
+      noFill();
+      strokeWeight(2);
+
+      // Create a spiral by connecting points in a circle
+      beginShape();
+      for (let i = 0; i < swirlLines; i++) {
+        let angle = map(i, 0, swirlLines, 0, TWO_PI * 2); 
+        let rad = map(i, 0, swirlLines, 0, swirlRadius);
+        let x = rad * cos(angle);
+        let y = rad * sin(angle);
+        curveVertex(x, y);
+      }
+      endShape();
+      pop();
+    }
+  </script>
+</body>
+</html>

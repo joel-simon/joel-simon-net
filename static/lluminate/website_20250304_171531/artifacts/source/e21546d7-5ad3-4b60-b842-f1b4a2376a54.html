@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Galactic Bloom Time</title>
+  <style>
+    /* Overall page styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100vh;
+      width: 100vw;
+      display: grid;
+      place-items: center;
+    }
+
+    /* Tooltip container */
+    .info-tip {
+      position: relative;
+      font-family: sans-serif;
+      user-select: none;
+      cursor: pointer;
+      color: #fff;
+      margin-bottom: 0.5em;
+    }
+    /* Tooltip content (hidden by default) */
+    .info-content {
+      visibility: hidden;
+      width: 260px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.9em;
+      line-height: 1.4em;
+      z-index: 1;
+    }
+    /* Show the text when hovering over the container */
+    .info-tip:hover .info-content {
+      visibility: visible;
+    }
+
+    /* Ensure the canvas is exactly 512x512 with no extra scrollbars */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="info-tip">
+    Hover for instructions
+    <div class="info-content">
+      Welcome to Galactic Bloom Time! The spiral arms expand with the hour, 
+      while the small constellation dots reflect the minutes. Watch for the 
+      flicker patterns to match the seconds in real time.
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <script>
+  /*
+    Galactic Bloom Time
+    This display merges fractal-inspired swirling arms with a constellation 
+    of stars. The arms grow according to the hour, the constellations reflect 
+    minute-based positions, and flickering effects respond to the seconds.
+  */
+
+  let starPositions = []; // will hold star coordinates for the "constellations"
+
+  function setup() {
+    createCanvas(512, 512);
+    // Pre-generate random star positions for a starfield
+    for(let i = 0; i < 100; i++){
+      starPositions.push({
+        x: random(width),
+        y: random(height),
+        baseAlpha: random(50, 255)
+      });
+    }
+  }
+
+  function draw() {
+    let h = hour();
+    let m = minute();
+    let s = second();
+
+    // Create a soft gradient background for a night-sky effect
+    setGradientBackground(h);
+
+    // Flickering starfield based on the second
+    drawStars(s);
+
+    // Translate to center for drawing fractal swirl arms
+    push();
+    translate(width/2, height/2);
+
+    /*
+      We will create a swirling shape:
+      - The number of arms is (h % 12) + 3 to ensure at least 3 arms
+      - The swirl angle changes incrementally with frameCount for animation
+      - Each arm draws fractal lines
+    */
+    let arms = (h % 12) + 3;
+    for(let i = 0; i < arms; i++){
+      push();
+      rotate((TWO_PI / arms) * i + frameCount * 0.002);
+      // Color changes with minute
+      let armColor = color((m*4 + i*10) % 255, (m*2 + i*20) % 255, 200);
+      stroke(armColor);
+      strokeWeight(1.5);
+      drawFractalArm(0, 0, (width * 0.15) + (h * 2), 0, 6);
+      pop();
+    }
+
+    pop(); // end center translate
+  }
+
+  /*
+    drawFractalArm: Recursively draws line segments, rotating slightly each step.
+    - x, y: current position
+    - length: current line length
+    - angle: current rotation angle
+    - depth: how many recursive generations to go
+  */
+  function drawFractalArm(x, y, length, angle, depth){
+    if(depth <= 0) return;
+    
+    // Draw a line from (0,0) to (length,0)
+    line(0, 0, length, 0);
+
+    // Move to the end of the line
+    translate(length, 0);
+    // Slight rotation per step
+    rotate(radians(10 + depth));
+    // Reduce length and depth
+    let newLength = length * 0.6;
+    drawFractalArm(0, 0, newLength, angle, depth - 1);
+  }
+
+  /*
+    drawStars: Renders a flickering constellation 
+    - Each star's alpha flickers around its baseAlpha, offset by second
+  */
+  function drawStars(s) {
+    noStroke();
+    for(let i = 0; i < starPositions.length; i++){
+      let st = starPositions[i];
+      let flicker = map(sin(frameCount * 0.05 + i), -1, 1, -50, 50);
+      let alphaVal = st.baseAlpha + flicker;
+      alphaVal = constrain(alphaVal, 0, 255);
+      fill(230, 240, 255, alphaVal);
+      circle(st.x, st.y, 2);
+    }
+  }
+
+  /*
+    setGradientBackground: Draws a vertical gradient from 
+    a main color (based on hour) to a darker shade
+  */
+  function setGradientBackground(h) {
+    // Hour-based color
+    let topColor = color((h * 20) % 255, 60, 100);
+    let bottomColor = color(10, 10, 30);
+
+    for(let y = 0; y < height; y++){
+      let inter = map(y, 0, height, 0, 1);
+      let c = lerpColor(topColor, bottomColor, inter);
+      stroke(c);
+      line(0, y, width, y);
+    }
+  }
+  </script>
+</body>
+</html>

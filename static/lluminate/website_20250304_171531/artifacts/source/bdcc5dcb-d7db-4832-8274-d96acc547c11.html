@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Clown Cavalcade</title>
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Clown Cavalcade<br><br>
+        • The ring's color changes with the hour.<br>
+        • The clown's outfit color shifts each minute.<br>
+        • The clown rides at a speed guided by the seconds.<br><br>
+        Hover away to see it in action!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let angle = 0;
+    let confetti = [];
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      ellipseMode(CENTER);
+      rectMode(CENTER);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+      drawRing();
+      drawClown();
+      drawConfetti();
+      displayClock();
+    }
+
+    // Ring color changes with hour
+    function drawRing() {
+      const h = hour();
+      const ringHue = map(h, 0, 23, 0, 360);
+      push();
+      translate(width / 2, height / 2);
+      for (let r = 200; r > 0; r -= 5) {
+        let inter = map(r, 0, 200, 1, 0);
+        fill(ringHue, 80 * inter, 255 * inter);
+        ellipse(0, 0, r * 2);
+      }
+      pop();
+    }
+
+    // Clown's speed = seconds, outfit color changes with minutes
+    function drawClown() {
+      const s = second();
+      const m = minute();
+      const clownSpeed = map(s, 0, 59, 0.5, 10);
+      angle += clownSpeed;
+
+      // Map minutes to color
+      let outfitColor = color(
+        map(m, 0, 59, 20, 255),
+        map(m, 0, 59, 80, 200),
+        map(m, 0, 59, 200, 50)
+      );
+
+      push();
+      translate(width / 2, height / 2);
+      rotate(angle);
+      translate(0, -130);
+
+      // Clown body
+      fill(outfitColor);
+      ellipse(0, 0, 40, 60);
+
+      // Clown head
+      fill(255, 220, 200);
+      ellipse(0, -40, 30, 30);
+
+      // Clown hat
+      fill(150, 0, 200);
+      triangle(-10, -55, 10, -55, 0, -75);
+
+      // Bicycle wheel
+      fill(200);
+      ellipse(0, 40, 40, 40);
+
+      // Bicycle spokes
+      stroke(0);
+      strokeWeight(2);
+      line(0, 40, 0, 20);
+      line(0, 40, 10, 30);
+      line(0, 40, -10, 30);
+      noStroke();
+
+      pop();
+    }
+
+    // Generate and display confetti
+    function drawConfetti() {
+      // Add some new confetti each frame based on second
+      if (frameCount % 10 === 0) {
+        let s = second();
+        for (let i = 0; i < s * 0.2; i++) {
+          confetti.push({
+            x: random(width),
+            y: 0,
+            c: color(random(255), random(255), random(255)),
+            speed: random(2, 5)
+          });
+        }
+      }
+
+      // Update and display confetti
+      for (let i = confetti.length - 1; i >= 0; i--) {
+        fill(confetti[i].c);
+        rect(confetti[i].x, confetti[i].y, 6, 6);
+        confetti[i].y += confetti[i].speed;
+
+        // Remove confetti that move off-screen
+        if (confetti[i].y > height) {
+          confetti.splice(i, 1);
+        }
+      }
+    }
+
+    // Display the clock at the bottom
+    function displayClock() {
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Bubbles</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Bubbles<br><br>
+        • Color of bubbles changes with hour (0–23)<br>
+        • Number of bubbles born each frame influenced by minute (0–59)<br>
+        • Rising speed linked to current second (0–59)<br><br>
+        Hover away to watch the bubbles float and check the live time
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let bubbles = [];
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      colorMode(HSB, 360, 100, 100);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Each frame, there's a random chance (up to m out of 60) to create a new bubble
+      // e.g. if m=30, ~50% chance each frame
+      if (random(60) < m) {
+        createBubble(h, s);
+      }
+
+      // Update and display bubbles
+      for (let i = bubbles.length - 1; i >= 0; i--) {
+        bubbles[i].update();
+        bubbles[i].display();
+        if (bubbles[i].offScreen()) {
+          bubbles.splice(i, 1);
+        }
+      }
+
+      // Draw the current time readout
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+    }
+
+    function createBubble(h, s) {
+      // Map the hour (0–23) to a hue value (0–360)
+      let hueVal = map(h, 0, 23, 0, 360);
+
+      // Bubble with random x, bottom y, random size, color, and speed influenced by seconds
+      let b = {
+        x: random(width),
+        y: height + 10,
+        size: random(10, 25),
+        col: color(hueVal, 80, 100),
+        speed: 0.5 + s / 30.0,
+        update: function() {
+          this.y -= this.speed;
+        },
+        display: function() {
+          fill(this.col);
+          circle(this.x, this.y, this.size);
+        },
+        offScreen: function() {
+          return this.y < -this.size;
+        }
+      };
+      bubbles.push(b);
+    }
+  </script>
+</body>
+</html>

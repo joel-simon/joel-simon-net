@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creative Time Diamond Pattern</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center page content; no margin/padding */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #e0e0e0;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 512px container; positions the tooltip + canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Tooltip, hidden by default */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 200px;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #444;
+      font-family: sans-serif;
+      font-size: 14px;
+      color: #333;
+      z-index: 10;
+    }
+
+    /* Show tooltip on hover */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+
+    /* Force canvas to be exactly 512x512, no other sizing */
+    canvas {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      background: #ffffff;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      Hover for instructions: 
+      <ul style="margin-top: 5px; padding-left: 18px;">
+        <li>The number of diamond layers depends on the hour.</li>
+        <li>The diamond rings rotate smoothly based on the minute.</li>
+        <li>Colors shift along the hue spectrum with each second.</li>
+        <li>A digital clock in the center shows the exact time.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100);
+      noStroke();
+    }
+
+    function draw() {
+      background(0, 0, 95);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Number of diamonds = hour + minimum base
+      let layers = max(h, 1);
+
+      // Diamonds rotate based on minute
+      let rotationAmount = map(m, 0, 59, 0, 360);
+
+      // Color hue driven by second
+      let hueBase = map(s, 0, 59, 0, 360);
+
+      push();
+      translate(width / 2, height / 2);
+      rotate(rotationAmount);
+
+      // Draw multiple diamond rings
+      for (let i = 0; i < layers; i++) {
+        let distFromCenter = map(i, 0, layers - 1, 40, 200);
+        let ringHue = (hueBase + i * 10) % 360;
+        let alphaValue = 0.4 + 0.4 * sin(frameCount * 0.5 + i * 10);
+
+        fill(ringHue, 80, 90, alphaValue);
+        drawDiamond(distFromCenter, distFromCenter, distFromCenter / 4);
+      }
+      pop();
+
+      // Digital time display at center
+      fill(20);
+      textSize(24);
+      textAlign(CENTER, CENTER);
+      text(
+        nf(h, 2) + ':' + nf(m, 2) + ':' + nf(s, 2),
+        width / 2, height / 2
+      );
+    }
+
+    // Draw a diamond shape centered at (0,0) with specified width & height
+    function drawDiamond(w, h, cornerRadius) {
+      // We'll create a diamond by rotating a rectangle 45 degrees
+      // halfW, halfH are half of the shape's width and height
+      let halfW = w / 2;
+      let halfH = h / 2;
+
+      // For a bit of variety, add slightly rounded corners
+      beginShape();
+      // top corner
+      vertex(0, -halfH + cornerRadius);
+      quadraticVertex(0, -halfH, cornerRadius, -halfH);
+      // right corner
+      vertex(halfW - cornerRadius, 0);
+      quadraticVertex(halfW, 0, halfW, cornerRadius);
+      // bottom corner
+      vertex(0, halfH - cornerRadius);
+      quadraticVertex(0, halfH, -cornerRadius, halfH);
+      // left corner
+      vertex(-halfW + cornerRadius, 0);
+      quadraticVertex(-halfW, 0, -halfW, -cornerRadius);
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

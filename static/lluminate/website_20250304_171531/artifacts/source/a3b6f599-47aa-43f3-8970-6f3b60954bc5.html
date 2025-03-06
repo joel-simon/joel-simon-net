@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mystic Maze Fractal Grove</title>
+  <!-- Include p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset and center body content */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0e0e0e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* 512x512 container with relative positioning to hold canvas + hover instructions */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      background: #111;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Instructions panel appears on hover */
+    #hoverInstructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.75);
+      box-sizing: border-box;
+      pointer-events: none; /* so the mouse can still interact with the canvas */
+      text-align: center;
+      padding: 20px;
+    }
+    #canvasContainer:hover #hoverInstructions {
+      display: block;
+    }
+
+    /* Center the instructions text inside the overlay */
+    .instructionsText {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverInstructions">
+      <div class="instructionsText">
+        <strong>Mystic Maze Fractal Grove</strong><br><br>
+        • Maze regenerates each minute<br>
+        • Fractal tree growth linked to current hour<br>
+        • Stars twinkle each second<br>
+        • Use arrow keys (WASD) to explore the maze<br>
+        • Hover here for instructions
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Mystic Maze Fractal Grove
+      - Minute-based Maze Regeneration
+      - Hour-based Fractal Tree Growth
+      - Second-based Twinkling Starfield
+      - Player movement using arrow keys/WASD
+    */
+
+    const SIZE = 512;
+    const COLS = 16;
+    const ROWS = 16;
+    const CELL_SIZE = SIZE / COLS;
+    let maze = [];
+    let visited = [];
+    let stack = [];
+    let currentCell;
+    let lastMinute = -1; // Track when we last regenerated the maze
+    let playerPos;
+
+    // Starfield
+    let stars = [];
+    const STAR_COUNT = 100;
+
+    function setup() {
+      let cnv = createCanvas(SIZE, SIZE);
+      cnv.parent("canvasContainer");
+      frameRate(30);
+
+      // Create maze initially
+      generateMaze();
+      playerPos = createVector(CELL_SIZE / 2, CELL_SIZE / 2);
+
+      // Create starfield
+      for (let i = 0; i < STAR_COUNT; i++) {
+        stars.push({
+          x: random(width),
+          y: random(height)
+        });
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      // Get time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Redo maze if minute changed
+      if (mn !== lastMinute) {
+        generateMaze();
+        lastMinute = mn;
+      }
+
+      // 1) Draw starfield (twinkles every frame, but second changes color range)
+      drawStarfield(sc);
+
+      // 2) Draw fractal tree in background
+      push();
+      translate(width / 2, height * 0.9); // Move to bottom center
+      stroke(150, 255, 150, 150);
+      drawFractalTree( - PI / 2, (hr % 12) + 5); 
+      pop();
+
+      // 3) Draw tinted rectangle behind maze
+      push();
+      fill(0, 180);
+      noStroke();
+      rect(0, 0, width, height);
+      pop();
+
+      // 4) Draw the maze
+      stroke(255);
+      for (let c of maze) {
+        c.show();
+      }
+
+      // 5) Handle and draw player
+      handlePlayerMovement();
+      fill(255, 80, 80);
+      noStroke();
+      ellipse(playerPos.x, playerPos.y, CELL_SIZE * 0.5);
+
+      // 6) Display clock for reference
+      fill(255);
+      noStroke();
+      textSize(14);
+      textAlign(LEFT, TOP);
+      text(nf(hr,2) + ":" + nf(mn,2) + ":" + nf(sc,2), 10, 10);
+    }
+
+    // Draw starfield
+    function drawStarfield(s) {
+      for (let i = 0; i < stars.length; i++) {
+        let star = stars[i];
+        // Twinkle based on second
+        let twinkle = map(sin(frameCount * 0.1 + i), -1, 1, 100, 255);
+        stroke(255, twinkle);
+        point(star.x, star.y);
+      }
+    }
+
+    // Recursive fractal tree
+    // angleShift depends on hour; depth is constant plus hour effect
+    function drawFractalTree(angle, depth) {
+      let branchLen = 60;
+      // Throttle how large based on hour (hr % 12)
+      fractalBranch(branchLen, angle, depth);
+    }
+
+    // fractalBranch function
+    function fractalBranch(length, theta, depth) {
+      if (depth <= 0) return;
+
+      strokeWeight(map(depth, 1, 16, 1, 5));
+      // Draw the branch
+      let x2 = 0;
+      let y2 = -length;
+      line(0, 0, x2, y2);
+
+      // Move to branch end
+      translate(x2, y2);
+
+      // Left sub-branch
+      push();
+      rotate(theta * 0.4);
+      fractalBranch(length * 0.7, theta, depth - 1);
+      pop();
+
+      // Right sub-branch
+      push();
+      rotate(-theta * 0.4);
+      fractalBranch(length * 0.7, theta, depth - 1);
+      pop();
+    }
+
+    // Maze generation
+    function generateMaze() {
+      maze = [];
+      visited = [];
+      stack = [];
+
+      for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+          maze.push(new Cell(col, row));
+        }
+      }
+
+      currentCell = maze[0];
+      currentCell.visited = true;
+      visited.push(currentCell);
+
+      while (true) {
+        let next = currentCell.checkNeighbors();
+        if (next) {
+          next.visited = true;
+          visited.push(next);
+          stack.push(currentCell);
+          removeWalls(currentCell, next);
+          currentCell = next;
+        } else if (stack.length > 0) {
+          currentCell = stack.pop();
+        } else {
+          break;
+        }
+      }
+    }
+
+    class Cell {
+      constructor(col, row) {
+        this.col = col;
+        this.row = row;
+        this.visited = false;
+        // top, right, bottom, left
+        this.walls = [true, true, true, true];
+      }
+
+      checkNeighbors() {
+        let neighbors = [];
+        let top    = getCell(this.col, this.row - 1);
+        let right  = getCell(this.col + 1, this.row);
+        let bottom = getCell(this.col, this.row + 1);
+        let left   = getCell(this.col - 1, this.row);
+
+        if (top && !top.visited)    neighbors.push(top);
+        if (right && !right.visited)  neighbors.push(right);
+        if (bottom && !bottom.visited) neighbors.push(bottom);
+        if (left && !left.visited)   neighbors.push(left);
+
+        if (neighbors.length > 0) {
+          let r = floor(random(neighbors.length));
+          return neighbors[r];
+        } else {
+          return undefined;
+        }
+      }
+
+      show() {
+        let x = this.col * CELL_SIZE;
+        let y = this.row * CELL_SIZE;
+
+        strokeWeight(2);
+        if (this.walls[0]) line(x, y, x + CELL_SIZE, y);
+        if (this.walls[1]) line(x + CELL_SIZE, y, x + CELL_SIZE, y + CELL_SIZE);
+        if (this.walls[2]) line(x + CELL_SIZE, y + CELL_SIZE, x, y + CELL_SIZE);
+        if (this.walls[3]) line(x, y + CELL_SIZE, x, y);
+      }
+    }
+
+    function getCell(c, r) {
+      if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return undefined;
+      return maze[r * COLS + c];
+    }
+
+    function removeWalls(a, b) {
+      let x = a.col - b.col;
+      if (x === 1) {
+        a.walls[3] = false;
+        b.walls[1] = false;
+      } else if (x === -1) {
+        a.walls[1] = false;
+        b.walls[3] = false;
+      }
+      let y = a.row - b.row;
+      if (y === 1) {
+        a.walls[0] = false;
+        b.walls[2] = false;
+      } else if (y === -1) {
+        a.walls[2] = false;
+        b.walls[0] = false;
+      }
+    }
+
+    // Player movement
+    function handlePlayerMovement() {
+      if (keyIsDown(LEFT_ARROW) || keyIsDown(65)) {
+        movePlayer(-2, 0);
+      }
+      if (keyIsDown(RIGHT_ARROW) || keyIsDown(68)) {
+        movePlayer(2, 0);
+      }
+      if (keyIsDown(UP_ARROW) || keyIsDown(87)) {
+        movePlayer(0, -2);
+      }
+      if (keyIsDown(DOWN_ARROW) || keyIsDown(83)) {
+        movePlayer(0, 2);
+      }
+    }
+
+    function movePlayer(dx, dy) {
+      let newX = playerPos.x + dx;
+      let newY = playerPos.y + dy;
+      if (newX > 0 && newX < width && newY > 0 && newY < height) {
+        playerPos.set(newX, newY);
+      }
+    }
+  </script>
+</body>
+</html>

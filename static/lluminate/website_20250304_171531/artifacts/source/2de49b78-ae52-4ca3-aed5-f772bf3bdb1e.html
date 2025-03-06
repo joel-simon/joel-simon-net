@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Spin the Time Wheel</title>
+  <style>
+    /* Page setup for a 512x512 display */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas and overlay */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: auto;
+      overflow: hidden;
+      background-color: #111;
+    }
+
+    /* Instructions overlay hidden by default, appears on hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: none;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.8);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Spin the Time Wheel</strong><br><br>
+        • Click and drag the ring to spin time forward or backward.<br>
+        • The ring's rotation determines the current time displayed in the center.<br>
+        • Release to hold the clock at a chosen time.<br><br>
+        Hover away to see the animation.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512, h = 512;
+
+    // Angle of the time wheel, in degrees
+    let ringAngle = 0;
+    let dragging = false;
+    let prevMouseAngle = 0;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(20);
+      renderTimeWheel();
+      renderTimeDisplay();
+    }
+
+    function mousePressed() {
+      // Check if user clicked near the wheel so it feels natural to drag
+      let dx = mouseX - width/2;
+      let dy = mouseY - height/2;
+      let distFromCenter = sqrt(dx*dx + dy*dy);
+      // We'll say within a 50px band from 90 to 140 radius triggers drag
+      if(distFromCenter > 90 && distFromCenter < 140){
+        dragging = true;
+        prevMouseAngle = atan2(dy, dx);
+      }
+    }
+
+    function mouseDragged() {
+      if(dragging){
+        let dx = mouseX - width/2;
+        let dy = mouseY - height/2;
+        let currentMouseAngle = atan2(dy, dx);
+        let angleChange = degrees(currentMouseAngle - prevMouseAngle);
+        ringAngle += angleChange;
+        prevMouseAngle = currentMouseAngle;
+      }
+    }
+
+    function mouseReleased() {
+      dragging = false;
+    }
+
+    function renderTimeWheel() {
+      push();
+      translate(width/2, height/2);
+      // Outer ring
+      fill(40);
+      circle(0, 0, 300);
+      // Thin ring
+      fill(80);
+      circle(0, 0, 280);
+
+      // Rotate to ringAngle
+      rotate(ringAngle);
+      fill(160);
+      // Draw an arc or a segment to represent the "handle"
+      arc(0, 0, 280, 280, -10, 10);
+
+      // Draw some radial lines as markers for better visual
+      stroke(200);
+      strokeWeight(2);
+      for(let i = 0; i < 12; i++){
+        let angle = map(i, 0, 12, 0, 360);
+        let x1 = cos(angle) * 130;
+        let y1 = sin(angle) * 130;
+        let x2 = cos(angle) * 140;
+        let y2 = sin(angle) * 140;
+        line(x1, y1, x2, y2);
+      }
+      pop();
+    }
+
+    function renderTimeDisplay() {
+      // Derive a 12-hour clock reading from ringAngle
+      // 360 degrees = 12 hours => 1 hour = 30 degrees
+      // ringAngle could be negative, so let's mod it properly:
+      let modAngle = (ringAngle % 360 + 360) % 360;
+
+      // Convert angle to hours, minutes, seconds
+      let hoursFloat = modAngle / 30; // 0..12
+      let hours = floor(hoursFloat);
+      let fractionHour = hoursFloat - hours;
+      let minutes = floor(fractionHour * 60);
+      let fractionMinute = fractionHour * 60 - minutes;
+      let seconds = floor(fractionMinute * 60);
+
+      push();
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(24);
+      text(
+        nf(((hours == 0) ? 12 : hours), 2) + ":" +
+        nf(minutes,2) + ":" +
+        nf(seconds,2),
+        width/2, height/2
+      );
+      pop();
+    }
+  </script>
+</body>
+</html>

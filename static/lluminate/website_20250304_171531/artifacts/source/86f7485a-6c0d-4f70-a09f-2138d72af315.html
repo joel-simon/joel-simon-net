@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Glitch Collage</title>
+  <style>
+    /* Overall page styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100vh;
+      width: 100vw;
+      display: grid;
+      place-items: center;
+    }
+
+    /* Tooltip container */
+    .info-tip {
+      position: relative;
+      font-family: sans-serif;
+      user-select: none;
+      cursor: pointer;
+      color: #fff;
+      margin-bottom: 0.5em;
+    }
+    /* Tooltip content (hidden by default) */
+    .info-content {
+      visibility: hidden;
+      width: 280px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.9em;
+      line-height: 1.4em;
+      z-index: 1;
+    }
+    /* Show the text when hovering over the container */
+    .info-tip:hover .info-content {
+      visibility: visible;
+    }
+
+    /* Ensure the canvas is exactly 512x512 with no extra scrollbars */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="info-tip">
+    Hover for instructions
+    <div class="info-content">
+      TIME GLITCH COLLAGE<br><br>
+      • Background color shifts with the hour.<br>
+      • Scanning lines shift every minute.<br>
+      • Random glitch bars flash with each second.<br>
+      Enjoy the evolving glitch aesthetic!
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+  /*
+    Time Glitch Collage
+    A new interpretation of time shown through a glitch-aesthetic collage:
+    - Background hue shifts throughout the hour.
+    - Scanning lines move based on the minute.
+    - Every second triggers random glitch bars.
+  */
+
+  let glitchBars = [];
+  const MAX_BARS = 15;
+
+  function setup() {
+    createCanvas(512, 512);
+    noSmooth();
+    // Pre-generate random glitch bars
+    for (let i = 0; i < MAX_BARS; i++) {
+      glitchBars.push(generateGlitchBar());
+    }
+  }
+
+  function draw() {
+    let h = hour();
+    let m = minute();
+    let s = second();
+
+    /*
+      1) Draw background based on hour (color shift).
+         We'll convert hour into a hue for an HSB color,
+         fill the entire canvas, and switch to RGB drawing next.
+    */
+    colorMode(HSB, 100);
+    let hourHue = map(h % 12, 0, 12, 0, 100);
+    background(hourHue, 80, 80);
+    colorMode(RGB, 255);
+
+    /*
+      2) Overlay scanning lines that move with the minute.
+         We'll draw semi-transparent horizontal lines.
+         Their vertical offset changes over time to create
+         a scrolling or scanning effect.
+    */
+    let scanOffset = map((millis() / 1000) + m * 60, 0, 60*60, 0, height*3) % height;
+    stroke(255, 50);
+    strokeWeight(1);
+    for (let y = 0; y < height; y += 10) {
+      let lineY = (y + scanOffset) % height;
+      line(0, lineY, width, lineY);
+    }
+
+    /*
+      3) Display glitch bars triggered by seconds.
+         Each second, we randomize positions and colors
+         within existing bars to create new glitch flickers.
+    */
+    if (frameCount % 60 === 0) {
+      for (let i = 0; i < glitchBars.length; i++) {
+        glitchBars[i] = generateGlitchBar();
+      }
+    }
+
+    // Draw glitch bars with some flicker factor
+    for (let i = 0; i < glitchBars.length; i++) {
+      let gb = glitchBars[i];
+      fill(gb.c);
+      noStroke();
+      rect(gb.x, gb.y, gb.w, gb.h);
+    }
+
+    // Subtle overlay to break uniform patterns
+    applyNoiseOverlay(s);
+  }
+
+  /*
+    generateGlitchBar: Creates a new glitch bar data object
+  */
+  function generateGlitchBar() {
+    let w = random(width / 6, width / 2);
+    let h = random(10, 40);
+    let x = random(width - w);
+    let y = random(height - h);
+    // Random color with some alpha for glitchy effect
+    let r = random(100, 255);
+    let g = random(100, 255);
+    let b = random(100, 255);
+    let c = color(r, g, b, random(100, 200));
+    return {x, y, w, h, c};
+  }
+
+  /*
+    applyNoiseOverlay: Draw a semi-transparent noise layer
+    that subtly shifts with each second, enhancing the glitch style.
+  */
+  function applyNoiseOverlay(sec) {
+    loadPixels();
+    for (let i = 0; i < pixels.length; i += 4) {
+      // Randomly adjust brightness
+      let glitchFactor = (sec + frameCount * 0.003) % 2;
+      let noiseVal = random(-glitchFactor, glitchFactor);
+      pixels[i]   = constrain(pixels[i]   + noiseVal, 0, 255);
+      pixels[i+1] = constrain(pixels[i+1] + noiseVal, 0, 255);
+      pixels[i+2] = constrain(pixels[i+2] + noiseVal, 0, 255);
+    }
+    updatePixels();
+  }
+  </script>
+</body>
+</html>

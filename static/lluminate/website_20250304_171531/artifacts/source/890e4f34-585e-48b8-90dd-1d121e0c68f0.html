@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Kaleidoscope</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (hidden by default) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.8);
+      box-sizing: border-box;
+      color: #111;
+      font-family: sans-serif;
+      padding: 1rem;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Kaleidoscope</strong><br><br>
+        • Hour changes main color scheme<br>
+        • Minute influences the rotation speed<br>
+        • Second controls the number of swirling shapes<br>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let w = 512;
+    let h = 512;
+    let colorBase;
+
+    function setup() {
+      let c = createCanvas(w, h);
+      c.parent("canvas-container");
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(20);
+
+      let hr = hour() % 12;  // 0-11
+      let mn = minute();     // 0-59
+      let sc = second();     // 0-59
+
+      // Hour influences overall color scheme
+      colorMode(HSB);
+      colorBase = (hr * 30) % 360;
+      colorMode(RGB);
+
+      // Minute influences rotation speed
+      let spin = map(mn, 0, 59, 0.2, 2.5);
+
+      // Second influences shape count
+      let shapeCount = map(sc, 0, 59, 3, 15);
+
+      // Draw kaleidoscope pattern
+      translate(width / 2, height / 2);
+      let radialStep = 360 / shapeCount;
+      for (let i = 0; i < shapeCount; i++) {
+        push();
+        rotate(i * radialStep + (frameCount * spin));
+        drawSymmetricalShape(colorBase, i);
+        pop();
+      }
+
+      // Display digital time at the bottom center
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      text(
+        nf(hour(),2) + ':' + nf(mn,2) + ':' + nf(sc,2),
+        0,
+        h/2 - 20
+      );
+    }
+
+    // Draw a shape that will form part of the kaleidoscope
+    function drawSymmetricalShape(baseHue, index) {
+      // Shift color slightly each shape
+      colorMode(HSB);
+      fill((baseHue + index * 15) % 360, 100, 100);
+      colorMode(RGB);
+
+      beginShape();
+      vertex(0, -40);
+      bezierVertex(20, -80, 40, -80, 60, -40);
+      bezierVertex(70, 0, 50, 20, 20, 30);
+      bezierVertex(10, 40, 0, 30, -10, 30);
+      bezierVertex(-30, 20, -30, 0, -20, -10);
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

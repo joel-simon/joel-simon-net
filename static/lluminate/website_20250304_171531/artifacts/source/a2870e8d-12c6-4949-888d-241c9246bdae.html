@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Hybrid Celestial Maze & Orbital Time</title>
+  <style>
+    /* Center the page and ensure only a 512x512 area is visible for the canvas */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas and instructions overlay on hover */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: auto;
+      overflow: hidden;
+      background-color: #000;
+    }
+
+    /* Instructions overlay is hidden by default, displayed on hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: none;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.8);
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      line-height: 1.4em;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Hybrid Celestial Maze & Orbital Time</strong><br><br>
+        • Starry background sets a cosmic stage.<br>
+        • A fractal tree (bottom) grows with the current hour.<br>
+        • Maze regenerates every new minute.<br>
+        • Planets orbit in real time (hours, minutes, seconds).<br>
+        • Lightning flashes every 10 seconds.<br>
+        • The central star pulses and a rotating clock is displayed in the center.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512, h = 512;
+
+    // Star field
+    let starPositions = [];
+
+    // Maze
+    let mazeCols = 16;
+    let mazeRows = 16;
+    let cellSize = w / mazeCols;
+    let mazeGrid;
+    let prevMinute = -1;
+
+    // Fractal tree parameters
+    let branchAngle = 25;
+    let branchLengthFactor = 0.67;
+
+    // Lightning
+    let lightningFlashActive = false;
+    let lightningStartFrame = 0;
+    let lightningDuration = 10;
+    let lightningBolts = [];
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      rectMode(CENTER);
+
+      // Create star field
+      for(let i = 0; i < 200; i++){
+        starPositions.push({
+          x: random(width),
+          y: random(height),
+          brightness: random(50, 255),
+          size: random(1, 3)
+        });
+      }
+
+      // Initial maze
+      mazeGrid = generateMaze(mazeCols, mazeRows);
+      prevMinute = minute();
+
+      // Pre-generate lightning shapes
+      generateLightningBolts();
+    }
+
+    function draw() {
+      background(0);
+
+      // Current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Star field first
+      drawStarField();
+
+      // Fractal tree in background (depends on hour)
+      push();
+      translate(w * 0.5, h);
+      let maxDepth = (hr % 12) + 4;
+      drawFractalTree(maxDepth, 80);
+      pop();
+
+      // Maze regenerates each time the minute changes
+      if (mn !== prevMinute) {
+        mazeGrid = generateMaze(mazeCols, mazeRows);
+        prevMinute = mn;
+      }
+      drawMaze(mazeGrid);
+
+      // Orbital Time (hour, minute, second orbits + pulsing star)
+      drawOrbits(hr, mn, sc);
+
+      // Lightning effect every 10 seconds
+      if (sc % 10 === 0 && !lightningFlashActive) {
+        lightningFlashActive = true;
+        lightningStartFrame = frameCount;
+        generateLightningBolts();
+      }
+      if (lightningFlashActive) {
+        let flashProgress = frameCount - lightningStartFrame;
+        let hueShift = map(hr, 0, 23, 0, 360);
+        drawLightningBolts(hueShift);
+        if (flashProgress >= lightningDuration) {
+          lightningFlashActive = false;
+        }
+      }
+
+      // Rotating clock in the center
+      drawRotatingClock(hr, mn, sc);
+    }
+
+    // Star field
+    function drawStarField() {
+      noStroke();
+      for (let star of starPositions) {
+        fill(star.brightness);
+        circle(star.x, star.y, star.size);
+      }
+    }
+
+    // Fractal Tree
+    function drawFractalTree(depth, length) {
+      if (depth === 0) return;
+
+      stroke(50 + depth * 15, 180, 50);
+      line(0, 0, 0, -length);
+      translate(0, -length);
+
+      push();
+      rotate(branchAngle);
+      drawFractalTree(depth - 1, length * branchLengthFactor);
+      pop();
+
+      push();
+      rotate(-branchAngle);
+      drawFractalTree(depth - 1, length * branchLengthFactor);
+      pop();
+    }
+
+    // Maze generation
+    function generateMaze(cols, rows) {
+      let grid = [];
+      for (let r = 0; r < rows; r++) {
+        let row = [];
+        for (let c = 0; c < cols; c++) {
+          row.push({
+            right: random() > 0.5,
+            bottom: random() > 0.5
+          });
+        }
+        grid.push(row);
+      }
+      return grid;
+    }
+
+    // Draw the Maze
+    function drawMaze(grid) {
+      stroke(200);
+      strokeWeight(2);
+
+      for (let r = 0; r < mazeRows; r++) {
+        for (let c = 0; c < mazeCols; c++) {
+          let x = c * cellSize;
+          let y = r * cellSize;
+
+          if (grid[r][c].right) {
+            line(x + cellSize, y, x + cellSize, y + cellSize);
+          }
+          if (grid[r][c].bottom) {
+            line(x, y + cellSize, x + cellSize, y + cellSize);
+          }
+        }
+      }
+
+      // Outer border
+      line(0, 0, w, 0);
+      line(0, 0, 0, h);
+      line(w, 0, w, h);
+      line(0, h, w, h);
+    }
+
+    // Prepare random lightning
+    function generateLightningBolts() {
+      lightningBolts = [];
+      for (let i = 0; i < 5; i++) {
+        let segments = [];
+        let startX = random(w);
+        let startY = 0;
+        segments.push([startX, startY]);
+        let segCount = floor(random(2, 5));
+        for (let s = 0; s < segCount; s++) {
+          let xOff = random(-50, 50);
+          let yOff = random(30, 60);
+          let prev = segments[segments.length - 1];
+          segments.push([prev[0] + xOff, prev[1] + yOff]);
+        }
+        lightningBolts.push(segments);
+      }
+    }
+
+    // Draw lightning
+    function drawLightningBolts(hueShift) {
+      push();
+      colorMode(HSB);
+      strokeWeight(2);
+      for (let segments of lightningBolts) {
+        stroke((200 + hueShift) % 360, 90, 100);
+        noFill();
+        beginShape();
+        for (let pt of segments) {
+          vertex(pt[0], pt[1]);
+        }
+        endShape();
+      }
+      pop();
+    }
+
+    // Orbital Time
+    function drawOrbits(hr, mn, sc) {
+      push();
+      translate(width/2, height/2);
+
+      // Center star pulses with seconds
+      let starSize = 20 + 10 * sin(frameCount * 0.1);
+      noStroke();
+      fill(255, 200, 0);
+      circle(0, 0, starSize);
+
+      // Orbital Lines
+      noFill();
+      stroke(100, 100, 150, 50);
+      strokeWeight(1);
+      circle(0, 0, 300); // hour orbit
+      circle(0, 0, 200); // minute orbit
+      circle(0, 0, 100); // second orbit
+      pop();
+
+      // Hour planet
+      push();
+      translate(width/2, height/2);
+      let hourAngle = ((hr % 12) + mn / 60) * (360 / 12);
+      rotate(hourAngle);
+      noStroke();
+      fill(80, 100, 200);
+      circle(150, 0, 20);
+      pop();
+
+      // Minute planet
+      push();
+      translate(width/2, height/2);
+      let minuteAngle = (mn + sc / 60) * (360 / 60);
+      rotate(minuteAngle);
+      fill(100, 220, 100);
+      circle(100, 0, 15);
+      pop();
+
+      // Second planet
+      push();
+      translate(width/2, height/2);
+      let secondAngle = sc * (360 / 60);
+      rotate(secondAngle);
+      fill(220, 80, 100);
+      circle(50, 0, 10);
+      pop();
+    }
+
+    // Rotating clock display
+    function drawRotatingClock(hr, mn, sc) {
+      push();
+      translate(w / 2, h / 2);
+      let angleSpeed = map(sc, 0, 60, 0, 360);
+      rotate(frameCount * 0.5 + angleSpeed);
+
+      let displayHour = hr % 12 || 12;
+      let ampm = hr >= 12 ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      fill(255);
+      noStroke();
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 0, 0);
+      pop();
+    }
+  </script>
+</body>
+</html>

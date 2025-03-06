@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Maze Fractal Swirl</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center page and remove default margin/padding */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* 512x512 container for the canvas */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      background: #000;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay: hidden by default, shown on hover */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.75);
+      box-sizing: border-box;
+      padding: 20px;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Maze Fractal Swirl</strong><br><br>
+        • The maze resets each minute.<br>
+        • The fractal tree grows with the hour.<br>
+        • The swirling orbit changes with the second.<br>
+        • Subtle waves in the background are also tied to time.<br>
+        • Hover here again for these instructions.
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    /*
+      Time Maze Fractal Swirl:
+      - Maze:
+         * Regenerates each minute (minute change triggers rebuild).
+      - Fractal Tree:
+         * Depth varies with the current hour.
+      - Swirling Orbit:
+         * Movement and color react to the current second.
+      - Background Waves:
+         * Subtle changes tied to the current second.
+      - A simple digital clock is shown at the bottom-left corner.
+    */
+
+    let w = 512;
+    let h = 512;
+
+    // Maze parameters
+    let cols = 8;
+    let rows = 8;
+    let cellSize;
+    let walls = [];
+    let lastMinute = -1;
+
+    function setup() {
+      let canvas = createCanvas(w, h);
+      canvas.parent('canvas-container');
+      angleMode(DEGREES);
+      cellSize = width / cols;
+      // First generation of Maze at load
+      generateMaze();
+    }
+
+    function draw() {
+      // Time variables
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // If minute has changed, regenerate the maze
+      if (mn !== lastMinute) {
+        generateMaze();
+        lastMinute = mn;
+      }
+
+      // Draw background wave effect
+      backgroundWave(sc);
+
+      // Render Maze
+      stroke(255);
+      strokeWeight(3);
+      for (let w of walls) {
+        line(w.x1, w.y1, w.x2, w.y2);
+      }
+
+      // Draw fractal tree in bottom-right
+      push();
+      translate(width * 0.8, height);
+      stroke(220);
+      let depth = floor(map(hr % 12, 0, 11, 5, 10));
+      let angle = 25; 
+      drawFractalTree(60, depth, angle); 
+      pop();
+
+      // Swirling orbits near center
+      push();
+      translate(width / 2, height / 2);
+      swirlingOrbit(sc);
+      pop();
+
+      // Simple clock text at bottom-left
+      drawClock(hr, mn, sc);
+    }
+
+    /* Maze Generation (Minimal Spanning Tree approach) */
+    function generateMaze() {
+      walls = [];
+      let mazeCells = [];
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          mazeCells.push({ r, c, set: r*cols + c });
+        }
+      }
+      // Potential edges
+      let edges = [];
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (r < rows - 1) {
+            edges.push({ c1: {r, c}, c2: {r: r+1, c} });
+          }
+          if (c < cols - 1) {
+            edges.push({ c1: {r, c}, c2: {r, c: c+1} });
+          }
+        }
+      }
+      // Shuffle edges
+      edges.sort(() => random() - 0.5);
+
+      // Union-Find helpers
+      function findSet(i) {
+        if (mazeCells[i].set !== i) {
+          mazeCells[i].set = findSet(mazeCells[i].set);
+        }
+        return mazeCells[i].set;
+      }
+      function unionSet(i, j) {
+        let si = findSet(i);
+        let sj = findSet(j);
+        mazeCells[sj].set = si;
+      }
+
+      // Build MST from edges
+      let mst = [];
+      for (let e of edges) {
+        let i1 = e.c1.r * cols + e.c1.c;
+        let i2 = e.c2.r * cols + e.c2.c;
+        if (findSet(i1) !== findSet(i2)) {
+          unionSet(i1, i2);
+          mst.push(e);
+        }
+      }
+
+      // Walls for edges not in MST
+      for (let e of edges) {
+        if (!mst.includes(e)) {
+          let x1 = e.c1.c * cellSize;
+          let y1 = e.c1.r * cellSize;
+          let x2 = e.c2.c * cellSize;
+          let y2 = e.c2.r * cellSize;
+          walls.push({x1, y1, x2, y2});
+        }
+      }
+
+      // Extra boundary walls
+      for (let r = 0; r <= rows; r++) {
+        walls.push({x1: 0, y1: r*cellSize, x2: 0, y2: r*cellSize});
+        walls.push({x1: cols*cellSize, y1: r*cellSize, x2: cols*cellSize, y2: r*cellSize});
+      }
+      for (let c = 0; c <= cols; c++) {
+        walls.push({x1: c*cellSize, y1: 0, x2: c*cellSize, y2: 0});
+        walls.push({x1: c*cellSize, y1: rows*cellSize, x2: c*cellSize, y2: rows*cellSize});
+      }
+    }
+
+    /* Background with a wave-like overlay that fades in/out by second */
+    function backgroundWave(sc) {
+      let baseColor = map(sc, 0, 59, 0, 255);
+      noStroke();
+      fill(baseColor, 30, 60, 40); // Semi-opaque overlay
+      rect(0, 0, width, height);
+    }
+
+    /* Recursive Fractal Tree Drawing */
+    function drawFractalTree(branchLen, depth, angle) {
+      if (depth === 0) return;
+
+      strokeWeight(map(depth, 1, 10, 1, 4));
+      line(0, 0, 0, -branchLen);
+      translate(0, -branchLen);
+
+      push();
+      rotate(angle);
+      drawFractalTree(branchLen * 0.7, depth - 1, angle);
+      pop();
+
+      push();
+      rotate(-angle);
+      drawFractalTree(branchLen * 0.7, depth - 1, angle);
+      pop();
+    }
+
+    /* Draw swirling orbit around the center, changing with seconds */
+    function swirlingOrbit(sc) {
+      let rings = 4;
+      let radiusStep = 25;
+      let rotSpeed = map(sc, 0, 59, 0, 3);
+
+      for (let r = 1; r <= rings; r++) {
+        push();
+        let angleOffset = (frameCount * rotSpeed + r * 20) % 360;
+        rotate(angleOffset);
+        let swirlRadius = r * radiusStep + 40;
+
+        // Switch temporarily to HSB color mode
+        colorMode(HSB);
+        noStroke();
+        let col = (sc + r * 10) % 360;
+        fill(col, 100, 100);
+        ellipse(swirlRadius, 0, 15, 15);
+        colorMode(RGB);
+
+        pop();
+      }
+    }
+
+    /* A small digital clock at bottom-left */
+    function drawClock(hr, mn, sc) {
+      push();
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, CENTER);
+      text(`${nf(hr,2)}:${nf(mn,2)}:${nf(sc,2)}`, 10, height - 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

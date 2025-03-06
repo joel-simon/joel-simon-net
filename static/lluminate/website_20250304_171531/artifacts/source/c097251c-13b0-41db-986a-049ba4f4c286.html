@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Combined Time Maze & Fractal Aquarium</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center a 512x512 container on a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    #combinedContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Instructions overlay hidden by default */
+    #hoverInstructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-family: sans-serif;
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+    }
+
+    /* Show instructions on hover */
+    #combinedContainer:hover #hoverInstructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="combinedContainer">
+  <div id="hoverInstructions">
+    <h2>Combined Time Maze & Fractal Aquarium</h2>
+    <p>
+      • Maze regenerates every minute. Use arrow keys to move through it.<br>
+      • The fractal tree changes shape each second.<br>
+      • A fish grows larger with the hour.<br>
+      • Background color shifts gradually over time.<br>
+      Hover away to explore!
+    </p>
+  </div>
+</div>
+
+<script>
+/*
+  This sketch merges several time-based elements:
+  1) A maze that regenerates every minute; arrow keys to move the player.
+  2) A fractal tree in the upper-left corner, changing with seconds.
+  3) A fish that grows in size according to the hour.
+  4) A background color transition throughout the day.
+*/
+
+let canvasSize = 512;
+
+// Maze variables
+let rows = 16;
+let cols = 16;
+let cellSize = canvasSize / cols;
+let mazeGrid = [];
+let visited = [];
+let stack = [];
+let currentCell;
+let mazeLastMinute = -1; // Track minute to regenerate maze
+
+// Player position
+let playerCol = 0;
+let playerRow = 0;
+
+// Fractal Tree variables
+let treeDepthBase = 5; // base depth for the tree
+
+// Fish variables
+let fishX;
+let fishY;
+let fishBaseSize = 40;
+let fishSpeed = 0.4;
+
+// Bubbles
+let bubbles = [];
+let lastSec = -1;
+
+function setup() {
+  let cnv = createCanvas(canvasSize, canvasSize);
+  cnv.parent("combinedContainer");
+  angleMode(RADIANS);
+
+  // Initialize the maze
+  generateMaze();
+
+  // Initialize fish position
+  fishX = width * 0.8;
+  fishY = height * 0.6;
+}
+
+function draw() {
+  let h = hour();
+  let m = minute();
+  let s = second();
+
+  // Check if we need to regenerate the maze (every new minute)
+  if (m !== mazeLastMinute) {
+    generateMaze();
+    mazeLastMinute = m;
+  }
+
+  // Background shift based on total seconds of the day
+  backgroundShift(h, m, s);
+
+  // Draw Maze
+  drawMaze();
+
+  // Draw Player
+  drawPlayer();
+
+  // Draw Fractal Tree in top-left
+  push();
+  translate(cellSize * 2, height - cellSize * 2);
+  stroke(255);
+  fractalTree(map(s, 0, 59, 40, 120), // branch length changes with second
+              map(s, 0, 59, 0, PI/2), // angle changes with second
+              treeDepthBase);
+  pop();
+
+  // Fish update & draw (size changes with hour)
+  updateFish(h);
+  drawFish();
+
+  // Generate a new bubble each second
+  if (s !== lastSec) {
+    bubbles.push(new Bubble(random(width), height + 10));
+    lastSec = s;
+  }
+
+  // Draw & update bubbles
+  for (let i = bubbles.length - 1; i >= 0; i--) {
+    bubbles[i].update();
+    bubbles[i].display();
+    if (bubbles[i].popped) {
+      bubbles.splice(i, 1);
+    }
+  }
+}
+
+// ------- Maze Generation -------
+
+// Cell object
+class Cell {
+  constructor(col, row) {
+    this.col = col;
+    this.row = row;
+    this.visited = false;
+    // Walls: top, right, bottom, left
+    this.walls = [true, true, true, true];
+  }
+}
+
+// Maze generation using DFS backtracking
+function generateMaze() {
+  // Initialize grid
+  mazeGrid = [];
+  visited = [];
+  stack = [];
+
+  for (let r = 0; r < rows; r++) {
+    let rowArr = [];
+    for (let c = 0; c < cols; c++) {
+      rowArr.push(new Cell(c, r));
+    }
+    mazeGrid.push(rowArr);
+  }
+
+  let startCell = mazeGrid[0][0];
+  startCell.visited = true;
+  stack.push(startCell);
+
+  while (stack.length > 0) {
+    let current = stack[stack.length - 1];
+    let next = checkNeighbors(current);
+
+    if (next) {
+      // Mark as visited
+      next.visited = true;
+      stack.push(next);
+      removeWalls(current, next);
+    } else {
+      stack.pop();
+    }
+  }
+
+  // Reset player position
+  playerCol = 0;
+  playerRow = 0;
+}
+
+// Check available neighbors
+function checkNeighbors(cell) {
+  let neighbors = [];
+
+  // up, right, down, left
+  let top    = cell.row - 1 >= 0 ? mazeGrid[cell.row - 1][cell.col] : undefined;
+  let right  = cell.col + 1 < cols ? mazeGrid[cell.row][cell.col + 1] : undefined;
+  let bottom = cell.row + 1 < rows ? mazeGrid[cell.row + 1][cell.col] : undefined;
+  let left   = cell.col - 1 >= 0 ? mazeGrid[cell.row][cell.col - 1] : undefined;
+
+  if (top && !top.visited) neighbors.push(top);
+  if (right && !right.visited) neighbors.push(right);
+  if (bottom && !bottom.visited) neighbors.push(bottom);
+  if (left && !left.visited) neighbors.push(left);
+
+  if (neighbors.length > 0) {
+    let idx = floor(random(neighbors.length));
+    return neighbors[idx];
+  } else {
+    return undefined;
+  }
+}
+
+// Remove walls between two adjacent cells
+function removeWalls(a, b) {
+  let x = a.col - b.col;
+  let y = a.row - b.row;
+
+  // If b is to the left
+  if (x === 1) {
+    a.walls[3] = false;
+    b.walls[1] = false;
+  }
+  // If b is to the right
+  else if (x === -1) {
+    a.walls[1] = false;
+    b.walls[3] = false;
+  }
+  // If b is above
+  if (y === 1) {
+    a.walls[0] = false;
+    b.walls[2] = false;
+  }
+  // If b is below
+  else if (y === -1) {
+    a.walls[2] = false;
+    b.walls[0] = false;
+  }
+}
+
+function drawMaze() {
+  stroke(255);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      let cell = mazeGrid[r][c];
+      let x = c * cellSize;
+      let y = r * cellSize;
+
+      // Draw walls if present
+      if (cell.walls[0]) line(x, y, x + cellSize, y);
+      if (cell.walls[1]) line(x + cellSize, y, x + cellSize, y + cellSize);
+      if (cell.walls[2]) line(x, y + cellSize, x + cellSize, y + cellSize);
+      if (cell.walls[3]) line(x, y, x, y + cellSize);
+    }
+  }
+}
+
+function drawPlayer() {
+  let x = playerCol * cellSize + cellSize / 2;
+  let y = playerRow * cellSize + cellSize / 2;
+
+  noStroke();
+  fill(255, 0, 0);
+  circle(x, y, cellSize * 0.5);
+}
+
+function keyPressed() {
+  let current = mazeGrid[playerRow][playerCol];
+
+  // Up
+  if (keyCode === UP_ARROW) { 
+    if (!current.walls[0]) playerRow--;
+  }
+  // Right
+  else if (keyCode === RIGHT_ARROW) {
+    if (!current.walls[1]) playerCol++;
+  }
+  // Down
+  else if (keyCode === DOWN_ARROW) {
+    if (!current.walls[2]) playerRow++;
+  }
+  // Left
+  else if (keyCode === LEFT_ARROW) {
+    if (!current.walls[3]) playerCol--;
+  }
+
+  // Constrain inside the maze
+  playerCol = constrain(playerCol, 0, cols - 1);
+  playerRow = constrain(playerRow, 0, rows - 1);
+}
+
+// ------- Fractal Tree -------
+
+function fractalTree(len, angle, depth) {
+  if (depth <= 0) return;
+
+  strokeWeight(map(depth, 0, 10, 1, 3));
+  line(0, 0, 0, -len);
+  translate(0, -len);
+
+  push();
+  rotate(angle);
+  fractalTree(len * 0.7, angle, depth - 1);
+  pop();
+
+  push();
+  rotate(-angle);
+  fractalTree(len * 0.7, angle, depth - 1);
+  pop();
+}
+
+// ------- Fish -------
+
+// Update fish position and size by hour
+function updateFish(h) {
+  // fish size changes with the hour: convert 1-24 => 1-12 => scale
+  let hourIn12 = (h % 12) || 12;
+  fishSize = fishBaseSize + hourIn12 * 3;
+
+  // Move fish left-to-right
+  fishX -= fishSpeed;
+  if (fishX < -fishSize * 2) {
+    fishX = width + fishSize * 2;
+    fishY = random(fishSize * 2, height - fishSize * 2);
+  }
+}
+
+function drawFish() {
+  push();
+  translate(fishX, fishY);
+  noStroke();
+  fill(0, 200, 255);
+  
+  // Body
+  ellipse(0, 0, fishSize * 2, fishSize);
+
+  // Tail
+  let tailW = fishSize * 0.8;
+  triangle(
+    fishSize, 0,
+    fishSize + tailW, -fishSize * 0.4,
+    fishSize + tailW, fishSize * 0.4
+  );
+
+  // Eye
+  fill(255);
+  let eyeSize = fishSize * 0.3;
+  ellipse(-fishSize * 0.2, -fishSize * 0.15, eyeSize, eyeSize);
+  fill(0);
+  ellipse(-fishSize * 0.2, -fishSize * 0.15, eyeSize * 0.5, eyeSize * 0.5);
+  pop();
+}
+
+// ------- Bubbles -------
+
+class Bubble {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.size = random(5, 12);
+    this.speed = random(1, 2);
+    this.popped = false;
+  }
+  update() {
+    this.y -= this.speed;
+    if (this.y < -this.size) {
+      this.popped = true;
+    }
+  }
+  display() {
+    push();
+    translate(this.x, this.y);
+    stroke(255);
+    noFill();
+    ellipse(0, 0, this.size, this.size);
+    pop();
+  }
+}
+
+// ------- Background Color Shift -------
+
+function backgroundShift(h, m, s) {
+  colorMode(HSB, 255);
+  let totalSec = h * 3600 + m * 60 + s;
+  let hueVal = map(totalSec % 86400, 0, 86400, 0, 255);
+  background(hueVal, 150, 150);
+  colorMode(RGB, 255);
+}
+</script>
+</body>
+</html>

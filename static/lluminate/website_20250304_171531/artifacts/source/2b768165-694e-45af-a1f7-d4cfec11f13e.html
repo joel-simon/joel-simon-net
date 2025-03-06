@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Time Double Helix</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset body margin/padding and use a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container fixed at 512x512, centered */
+    #clock-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+    }
+
+    /* Instructions overlay, hidden by default */
+    #instructions {
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      display: none;
+      background-color: rgba(0, 0, 0, 0.75);
+      color: #ffffff;
+      font-family: sans-serif;
+      text-align: center;
+      line-height: 1.5;
+      padding: 2rem;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #clock-container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="clock-container">
+  <div id="instructions">
+    <h2>Time Double Helix</h2>
+    <p>Observe the swirling DNA-like structure that rotates and changes color based on current time.<br>
+       • Hour determines the hue.<br>
+       • Minute sets the rotation angle.<br>
+       • Second adjusts the twist amplitude.</p>
+  </div>
+</div>
+
+<script>
+  let canvasSize = 512;
+
+  function setup() {
+    let myCanvas = createCanvas(canvasSize, canvasSize);
+    myCanvas.parent("clock-container");
+    angleMode(RADIANS);
+  }
+
+  function draw() {
+    background(0);
+
+    // Get current time
+    let hr = hour();
+    let mn = minute();
+    let sc = second();
+
+    // Map time to helix transformations
+    let rotationAngle = map(mn, 0, 59, 0, TWO_PI);
+    let hue = map(hr, 0, 23, 0, 360);
+    let twistAmp = map(sc, 0, 59, 0, 0.5);
+
+    // Translate & rotate canvas
+    push();
+    translate(width / 2, height / 2);
+    rotate(rotationAngle);
+
+    // Draw the double helix
+    colorMode(HSB);
+    for (let i = -8; i <= 8; i++) {
+      let y = i * 20;
+      let offset = sin(i * 0.4 + frameCount * 0.01) * 30 * twistAmp;
+
+      // Draw left backbone
+      drawBackbone(-offset, y, hue);
+      // Draw right backbone
+      drawBackbone(offset, y, (hue + 180) % 360);
+
+      // Connect "base pairs"
+      strokeWeight(2);
+      stroke((hue + 90) % 360, 100, 100);
+      line(-offset, y, offset, y);
+    }
+    pop();
+
+    // Display digital time at bottom
+    fill(255);
+    textSize(24);
+    textAlign(CENTER, CENTER);
+    text(`${hr}:${nf(mn, 2)}:${nf(sc, 2)}`, width / 2, height - 20);
+  }
+
+  // Helper function to draw a small circle for the helix backbone
+  function drawBackbone(x, y, hueVal) {
+    noStroke();
+    fill(hueVal, 100, 100);
+    circle(x, y, 8);
+  }
+</script>
+</body>
+</html>

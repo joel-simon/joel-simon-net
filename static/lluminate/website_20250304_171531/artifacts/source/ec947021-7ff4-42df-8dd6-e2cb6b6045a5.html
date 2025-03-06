@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Combined Time Maze Fractal Orbit</title>
+  <!-- p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets, no scroll bars */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container for the 512x512 canvas */
+    #timeDisplayContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay instructions on hover */
+    #hoverInstructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      box-sizing: border-box;
+      padding: 30px;
+      text-align: center;
+      align-items: center;
+      justify-content: center;
+    }
+    #timeDisplayContainer:hover #hoverInstructions {
+      display: flex;
+    }
+
+    p {
+      line-height: 1.5em;
+      margin: auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="timeDisplayContainer">
+    <div id="hoverInstructions">
+      <p>
+        Welcome to the Combined Time Maze Fractal Orbit!<br><br>
+        • A maze regenerates each minute.<br>
+        • A fractal tree changes size with the hour.<br>
+        • Orbits around the center react to the current seconds.<br>
+        • A clock in the corner shows real time.<br><br>
+        Hover away to resume the animation and hide these instructions.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      This sketch merges several time-based ideas:
+      - Maze regeneration each minute (using a classic recursive backtracking).
+      - Fractal tree whose length depends on hour.
+      - Orbital circles spinning at speeds tied to seconds.
+      - Digital clock in the upper-left corner.
+    */
+
+    // Maze parameters
+    const MAZE_COLS = 16;
+    const MAZE_ROWS = 16;
+    const CELL_SIZE = 32;  // 16 * 32 = 512
+    let cells = [];
+    let currentCell;
+    let stack = [];
+    let lastMinute = -1;
+
+    // Orbit parameters
+    let orbitAngle = 0;
+
+    function setup() {
+      let c = createCanvas(512, 512);
+      c.parent('timeDisplayContainer');
+      frameRate(30);
+
+      // Initialize the maze grid
+      for (let j = 0; j < MAZE_ROWS; j++) {
+        let row = [];
+        for (let i = 0; i < MAZE_COLS; i++) {
+          row.push(new Cell(i, j));
+        }
+        cells.push(row);
+      }
+      // Generate initial maze
+      resetMaze();
+    }
+
+    function draw() {
+      background(0);
+
+      // Update time variables
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // If minute changed, regenerate maze
+      if (m !== lastMinute) {
+        resetMaze();
+        lastMinute = m;
+      }
+      // Continue building maze if not complete
+      mazeStep();
+
+      // Draw the maze
+      for (let j = 0; j < MAZE_ROWS; j++) {
+        for (let i = 0; i < MAZE_COLS; i++) {
+          cells[j][i].show();
+        }
+      }
+
+      // Draw fractal tree in the background center
+      push();
+      translate(width * 0.25, height * 0.75);
+      stroke(200);
+      strokeWeight(1);
+      let treeLength = map(h, 0, 23, 50, 200);
+      drawFractalTree(treeLength, 5);
+      pop();
+
+      // Draw orbital swirl in the center (speed based on seconds)
+      push();
+      translate(width / 2, height / 2);
+      rotate(orbitAngle);
+      noFill();
+      stroke(255, 150, 0);
+      ellipse(0, 0, 80, 80);  // small orbit
+      stroke(0, 150, 255);
+      ellipse(0, 0, 150, 150); // bigger orbit
+      pop();
+
+      orbitAngle += 0.01 + 0.001 * s; // orbit speed tied to seconds
+
+      // Display digital clock in the upper-left corner
+      noStroke();
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let hh = nf(h, 2);
+      let mm = nf(m, 2);
+      let ss = nf(s, 2);
+      text(`${hh}:${mm}:${ss}`, 10, 10);
+    }
+
+    // --- Maze generation logic (recursive backtracking) ---
+    function resetMaze() {
+      // Reset all cells to have all walls
+      for (let j = 0; j < MAZE_ROWS; j++) {
+        for (let i = 0; i < MAZE_COLS; i++) {
+          cells[j][i].resetWalls();
+        }
+      }
+      stack = [];
+      // Start from top-left corner
+      currentCell = cells[0][0];
+      currentCell.visited = true;
+    }
+
+    function mazeStep() {
+      // Step for building the maze
+      let next = currentCell.checkNeighbors();
+      if (next) {
+        next.visited = true;
+        stack.push(currentCell);
+        removeWalls(currentCell, next);
+        currentCell = next;
+      } else if (stack.length > 0) {
+        currentCell = stack.pop();
+      }
+    }
+
+    function removeWalls(a, b) {
+      let x = a.i - b.i;
+      let y = a.j - b.j;
+      if (x === 1) {
+        a.walls.left = false;
+        b.walls.right = false;
+      } else if (x === -1) {
+        a.walls.right = false;
+        b.walls.left = false;
+      }
+      if (y === 1) {
+        a.walls.top = false;
+        b.walls.bottom = false;
+      } else if (y === -1) {
+        a.walls.bottom = false;
+        b.walls.top = false;
+      }
+    }
+
+    class Cell {
+      constructor(i, j) {
+        this.i = i;  // column index
+        this.j = j;  // row index
+        this.resetWalls();
+        this.visited = false;
+      }
+      resetWalls() {
+        this.walls = { top: true, right: true, bottom: true, left: true };
+        this.visited = false;
+      }
+      checkNeighbors() {
+        // Return a random unvisited neighbor
+        let neighbors = [];
+        let top    = (this.j > 0)                ? cells[this.j - 1][this.i] : undefined;
+        let right  = (this.i < MAZE_COLS - 1)    ? cells[this.j][this.i + 1] : undefined;
+        let bottom = (this.j < MAZE_ROWS - 1)    ? cells[this.j + 1][this.i] : undefined;
+        let left   = (this.i > 0)                ? cells[this.j][this.i - 1] : undefined;
+        if (top    && !top.visited)    neighbors.push(top);
+        if (right  && !right.visited)  neighbors.push(right);
+        if (bottom && !bottom.visited) neighbors.push(bottom);
+        if (left   && !left.visited)   neighbors.push(left);
+
+        if (neighbors.length > 0) {
+          let r = floor(random(neighbors.length));
+          return neighbors[r];
+        } else {
+          return undefined;
+        }
+      }
+      show() {
+        let x = this.i * CELL_SIZE;
+        let y = this.j * CELL_SIZE;
+        stroke(255);
+        if (this.walls.top)    line(x, y, x + CELL_SIZE, y);
+        if (this.walls.right)  line(x + CELL_SIZE, y, x + CELL_SIZE, y + CELL_SIZE);
+        if (this.walls.bottom) line(x + CELL_SIZE, y + CELL_SIZE, x, y + CELL_SIZE);
+        if (this.walls.left)   line(x, y + CELL_SIZE, x, y);
+      }
+    }
+
+    // --- Fractal Tree (simple version) ---
+    function drawFractalTree(len, depth) {
+      if (depth === 0) return;
+      line(0, 0, 0, -len);
+      translate(0, -len);
+      push();
+      rotate(radians(25));
+      drawFractalTree(len * 0.7, depth - 1);
+      pop();
+      push();
+      rotate(radians(-25));
+      drawFractalTree(len * 0.7, depth - 1);
+      pop();
+    }
+  </script>
+</body>
+</html>

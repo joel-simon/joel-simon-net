@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Creative Time Fusion</title>
+  <!-- Include p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic reset */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      overflow: hidden; /* Hide any scrollbars */
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    /* Container for the 512x512 canvas */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      border: 1px solid #333;
+    }
+    /* Hover instructions overlay */
+    #instructions {
+      display: none;
+      pointer-events: none; /* Let all mouse events pass through to the canvas */
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.75);
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #canvas-container:hover #instructions {
+      display: block;
+    }
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    /* Force the canvas to stay 512px x 512px */
+    canvas {
+      width: 512px !important;
+      height: 512px !important;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <!-- Overlayed instructions, visible on hover -->
+    <div id="instructions">
+      <div class="instructions-text">
+        This interactive display combines multiple time-based visuals:
+        <ul style="text-align: left;">
+          <li>A wavy background that changes with the hour.</li>
+          <li>A fractal swirl branching out, adjusted by hour and minute.</li>
+          <li>Swirling particles whose number is tied to the hour.</li>
+          <li>A central star shape rotating with the seconds.</li>
+          <li>Hover to view instructions. Enjoy!</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let particleArray = [];
+    let waveOffset = 0;
+    let swirlAngle = 0;  // for fractal swirl rotations
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100, 1);
+      noStroke();
+    }
+
+    function draw() {
+      background(15);
+      
+      let h = hour();     // 0..23
+      let m = minute();   // 0..59
+      let s = second();   // 0..59
+      let h12 = h % 12;   // 0..11
+
+      // 1) Wavy background that fluctuates with hour
+      drawWave(h);
+
+      // 2) Fractal swirl, grows with hour & minute
+      push();
+      translate(width * 0.5, height * 0.65);
+      swirlAngle = map(m, 0, 59, 0, 360); 
+      rotate(swirlAngle);
+      stroke(200, 60, 90, 0.6);
+      strokeWeight(1);
+      noFill();
+      fractalSwirl(h12 + 2, 40);
+      pop();
+
+      // 3) Particles based on hour
+      let swirlCount = max((h + 1) * 3, 6);
+      manageParticles(swirlCount, m, s);
+
+      // 4) Rotating star at the center
+      push();
+      translate(width / 2, height / 2);
+      let rotAngle = map(s, 0, 59, 0, 360);
+      rotate(rotAngle);
+      drawStar(0, 0, 50, 25, h12 + 5);
+      pop();
+
+      // 5) Minimal digital time
+      fill(0, 0, 100);
+      noStroke();
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      text(
+        nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2),
+        width / 2, 20
+      );
+    }
+
+    // ---------------------------------------------
+    // WAVE BACKGROUND
+    // ---------------------------------------------
+    function drawWave(h) {
+      push();
+      let waveAmp = map(h, 0, 23, 15, 60);
+      waveOffset += 0.01;
+      fill(200, 65, 45, 0.2);
+      noStroke();
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 8) {
+        let y = map(noise(x * 0.01, waveOffset), 0, 1, height / 2 - waveAmp, height / 2 + waveAmp);
+        vertex(x, y);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+      pop();
+    }
+
+    // ---------------------------------------------
+    // FRACTAL SWIRL
+    // ---------------------------------------------
+    function fractalSwirl(level, len) {
+      if (level < 1) return;
+      // Draw line
+      line(0, 0, 0, -len);
+      // Move to end of line
+      translate(0, -len);
+      // Create swirl effect
+      push();
+      rotate(20);
+      fractalSwirl(level - 1, len * 0.8);
+      pop();
+      push();
+      rotate(-20);
+      fractalSwirl(level - 1, len * 0.8);
+      pop();
+    }
+
+    // ---------------------------------------------
+    // SWIRLING PARTICLES
+    // ---------------------------------------------
+    function manageParticles(count, m, s) {
+      if (particleArray.length !== count) rebuildParticles(count);
+
+      let speed = map(m, 0, 59, 0.3, 3);
+      let baseHue = map(s, 0, 59, 0, 360);
+
+      push();
+      translate(width / 2, height / 2);
+      for (let i = 0; i < particleArray.length; i++) {
+        let p = particleArray[i];
+        let angle = frameCount * speed + p.angleOffset;
+        let x = p.radius * cos(angle);
+        let y = p.radius * sin(angle);
+
+        let hueVal = (baseHue + p.hueOffset) % 360;
+        fill(hueVal, 80, 100);
+        noStroke();
+        ellipse(x, y, p.size, p.size);
+      }
+      pop();
+    }
+
+    function rebuildParticles(count) {
+      particleArray = [];
+      for (let i = 0; i < count; i++) {
+        particleArray.push({
+          radius: random(30, 150),
+          angleOffset: random(360),
+          hueOffset: random(0, 80),
+          size: random(4, 10),
+        });
+      }
+    }
+
+    // ---------------------------------------------
+    // STAR SHAPE
+    // ---------------------------------------------
+    function drawStar(x, y, radius1, radius2, npoints) {
+      stroke(60, 80, 100);
+      strokeWeight(2);
+      fill(60, 80, 100, 0.5);
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2.0;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius1;
+        let sy = y + sin(a) * radius1;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius2;
+        sy = y + sin(a + halfAngle) * radius2;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

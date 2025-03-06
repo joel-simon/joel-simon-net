@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Orchard Reef</title>
+  <style>
+    /* Basic page and body reset */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      overflow: hidden; /* Prevent scroll bars */
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* A semi-transparent overlay that appears on hover with instructions */
+    #instructions {
+      pointer-events: none; /* Mouse events pass through to canvas */
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #canvas-container:hover #instructions {
+      display: block;
+    }
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      text-align: center;
+      transform: translate(-50%, -50%);
+      font-size: 16px;
+      line-height: 1.4em;
+    }
+
+    /* Ensure the p5 canvas stays 512x512 */
+    canvas {
+      width: 512px !important;
+      height: 512px !important;
+      outline: none;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <!-- Overlay instructions -->
+    <div id="instructions">
+      <div class="instructions-text">
+        Welcome to the Time Orchard Reef!<br/>
+        • The fruit sizes and colors reflect the hour, minute, and second.<br/>
+        • Three fish also swim across the reef, each indicating hour, minute, or second in their hues and speeds.<br/>
+        • Enjoy this unique blend of orchard growth and underwater life that changes with time.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /* Variables for fish */
+    let fishHour = { x: -50, y: 180, speed: 0.5, color: [0, 0, 0] };
+    let fishMin =  { x: -50, y: 260, speed: 1.0, color: [0, 0, 0] };
+    let fishSec =  { x: -50, y: 340, speed: 2.0, color: [0, 0, 0] };
+
+    function setup() {
+      let myCanvas = createCanvas(512, 512);
+      myCanvas.parent('canvas-container');
+      noStroke();
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(20);
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      drawOrchard(hr, mn, sc);
+      updateAndDrawFish(hr, mn, sc);
+      drawDigitalClock(hr, mn, sc);
+    }
+
+    /* Draw a simple 'orchard': trunk, branches, and three fruits for hour, minute, second */
+    function drawOrchard(hr, mn, sc) {
+      push();
+      translate(width * 0.5, height);
+      // Trunk
+      fill(60, 42, 20);
+      rectMode(CENTER);
+      rect(0, -100, 30, 200);
+
+      // Branches
+      stroke(60, 42, 20);
+      strokeWeight(6);
+      noFill();
+      line(0, -200, -80, -280);
+      line(0, -200,  80, -280);
+      line(0, -150, -120, -220);
+      line(0, -150,  120, -220);
+      noStroke();
+      pop();
+
+      // Fruits: hour, minute, second
+      // Position them at branch ends
+      let fruitHrPos  = { x: width*0.5 - 80, y: height - 280 };
+      let fruitMnPos  = { x: width*0.5 +   0, y: height - 280 };
+      let fruitScPos  = { x: width*0.5 +  80, y: height - 280 };
+
+      // Fruit sizes mapped to time
+      let sizeHr = map(hr % 12, 0, 12, 20, 60);
+      let sizeMn = map(mn, 0, 59, 20, 60);
+      let sizeSc = map(sc, 0, 59, 20, 60);
+
+      // Fruit colors
+      fill(200, map(hr, 0, 23, 100, 255), 100);
+      ellipse(fruitHrPos.x, fruitHrPos.y, sizeHr);
+
+      fill(map(mn, 0, 59, 100, 255), 200, 100);
+      ellipse(fruitMnPos.x, fruitMnPos.y, sizeMn);
+
+      fill(100, 200, map(sc, 0, 59, 100, 255));
+      ellipse(fruitScPos.x, fruitScPos.y, sizeSc);
+    }
+
+    /* Update fish positions, colors, and then draw them */
+    function updateAndDrawFish(hr, mn, sc) {
+      // Map hour/minute/second to fish color
+      fishHour.color = [map(hr, 0, 23, 50, 255), 100, 150];
+      fishMin.color  = [100, map(mn, 0, 59, 50, 255), 200];
+      fishSec.color  = [150, 150, map(sc, 0, 59, 50, 255)];
+
+      // Speeds are also scaled with hr, mn, sc
+      fishHour.speed = 0.3 + (hr % 12) * 0.05;
+      fishMin.speed  = 0.5 + mn * 0.03;
+      fishSec.speed  = 1.0 + sc * 0.05;
+
+      // Update positions and draw each fish
+      moveAndDrawFish(fishHour);
+      moveAndDrawFish(fishMin);
+      moveAndDrawFish(fishSec);
+    }
+
+    /* Move fish from left to right, loop around, then draw it */
+    function moveAndDrawFish(fishObj) {
+      fishObj.x += fishObj.speed;
+      if (fishObj.x > width + 50) {
+        fishObj.x = -50;
+      }
+      drawFish(fishObj.x, fishObj.y, fishObj.color);
+    }
+
+    /* Simple elliptical fish shape */
+    function drawFish(x, y, col) {
+      push();
+      fill(col[0], col[1], col[2]);
+      noStroke();
+      translate(x, y);
+      // Fish body
+      ellipse(0, 0, 50, 20);
+      // Tail
+      triangle(-25, 0, -40, -10, -40, 10);
+      // Eye
+      fill(255);
+      ellipse(10, -5, 5, 5);
+      pop();
+    }
+
+    /* Display time in the top-left corner */
+    function drawDigitalClock(hr, mn, sc) {
+      fill(255);
+      noStroke();
+      textSize(18);
+      textAlign(LEFT, TOP);
+      text(nf(hr, 2) + ":" + nf(mn, 2) + ":" + nf(sc, 2), 10, 10);
+    }
+  </script>
+</body>
+</html>

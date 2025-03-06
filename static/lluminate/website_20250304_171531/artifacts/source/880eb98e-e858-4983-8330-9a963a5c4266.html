@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Mirror Kaleidoscope</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.75);
+      box-sizing: border-box;
+    }
+
+    /* Show the overlay on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Mirror Kaleidoscope<br><br>
+        • Every second spawns new shapes that spread and mirror across quadrants.<br>
+        • Mouse movement stirs the shapes, adding swirling motions.<br>
+        • The bottom displays current time.<br><br>
+        Hover away to watch the display in action.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let shapes = [];
+    let lastSecond = -1;
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Check if a new second has started; if so, spawn shapes
+      if (s !== lastSecond) {
+        spawnShapes(h, m, s);
+        lastSecond = s;
+      }
+
+      // Update and display shapes
+      for (let i = shapes.length - 1; i >= 0; i--) {
+        const sp = shapes[i];
+        sp.update();
+        sp.display();
+        if (sp.lifespan <= 0) {
+          shapes.splice(i, 1);
+        }
+      }
+
+      // Display current time at bottom
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      text(nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2), width / 2, height - 20);
+    }
+
+    // Spawn some number of shapes each second
+    function spawnShapes(h, m, s) {
+      let count = floor(random(5, 10));
+      for (let i = 0; i < count; i++) {
+        shapes.push(new KaleidoShape(h, m, s));
+      }
+    }
+
+    class KaleidoShape {
+      constructor(h, m, s) {
+        // Position
+        this.x = random(width / 4);  // only in a portion so we can mirror
+        this.y = random(height / 4);
+        // Speed
+        this.dx = random(-2, 2);
+        this.dy = random(-2, 2);
+        // Color influenced by current time
+        this.col = color(
+          (h * 10 + random(40)) % 255,
+          (m * 4 + random(40)) % 255,
+          (s * 4 + random(40)) % 255,
+          200
+        );
+        // Size
+        this.size = random(10, 30);
+        // Lifetime
+        this.lifespan = 255;
+      }
+
+      update() {
+        // Move
+        this.x += this.dx + (mouseX - width/2) * 0.0005;
+        this.y += this.dy + (mouseY - height/2) * 0.0005;
+        // Fade out
+        this.lifespan -= 1.5;
+      }
+
+      display() {
+        fill(red(this.col), green(this.col), blue(this.col), this.lifespan);
+
+        // Draw original
+        ellipse(this.x, this.y, this.size);
+
+        // Draw mirrored across vertical
+        push();
+        translate(width/2, height/2);
+        ellipse(width/2 - this.x, this.y, this.size);
+        pop();
+
+        // Draw mirrored across horizontal
+        push();
+        translate(width/2, height/2);
+        ellipse(this.x, height/2 - this.y, this.size);
+        pop();
+
+        // Draw mirrored across both
+        push();
+        translate(width/2, height/2);
+        ellipse(width/2 - this.x, height/2 - this.y, this.size);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

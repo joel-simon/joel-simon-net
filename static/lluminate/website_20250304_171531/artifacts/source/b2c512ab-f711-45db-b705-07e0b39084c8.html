@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Shape-Shifting Clock</title>
+  <style>
+    /* Reset and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222; /* Dark background */
+      font-family: sans-serif;
+    }
+
+    /* Container for our 512x512 clock */
+    #container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      cursor: default;
+    }
+
+    /* Instructions overlay is hidden by default */
+    #instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: #eeeeee;
+      display: none;
+      text-align: center;
+      padding-top: 40%;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="instructions">
+      Hover over this clock to see instructions.<br><br>
+      This clock uses three rotating shapes to represent the current time:<br>
+      - Red square = Hours<br>
+      - Green pentagon = Minutes<br>
+      - Blue triangle = Seconds
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let myCanvas;
+
+    function setup() {
+      myCanvas = createCanvas(512, 512);
+      myCanvas.parent('container');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(30);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Map current time values into angles
+      let hourAngle = map(hr % 12, 0, 12, 0, 360);
+      let minuteAngle = map(mn, 0, 60, 0, 360);
+      let secondAngle = map(sc, 0, 60, 0, 360);
+
+      // Translate to the canvas center
+      translate(width / 2, height / 2);
+
+      // Draw the square for hours
+      push();
+      rotate(hourAngle);
+      fill(255, 0, 0);
+      rectMode(CENTER);
+      rect(0, 0, 120, 120);
+      pop();
+
+      // Draw the pentagon for minutes
+      push();
+      rotate(minuteAngle);
+      fill(0, 255, 0);
+      drawPolygon(0, 0, 80, 5);
+      pop();
+
+      // Draw the triangle for seconds
+      push();
+      rotate(secondAngle);
+      fill(0, 0, 255);
+      triangle(-60, 40, 60, 40, 0, -60);
+      pop();
+    }
+
+    // Helper function to draw a polygon with n sides
+    function drawPolygon(x, y, radius, npoints) {
+      let angle = 360 / npoints;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius;
+        let sy = y + sin(a) * radius;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Redwood Cross-Section</title>
+  <style>
+    /* Page styling to center 512x512 canvas */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #1a1a1a;
+      height: 100vh;
+      width: 100vw;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    /* Tooltip container */
+    .info-tip {
+      position: relative;
+      font-family: sans-serif;
+      user-select: none;
+      cursor: pointer;
+      color: #ccc;
+      margin-bottom: 0.75em;
+    }
+
+    /* Tooltip text (hidden by default) */
+    .info-content {
+      visibility: hidden;
+      width: 300px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 10px;
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.85em;
+      line-height: 1.4em;
+      z-index: 1;
+    }
+
+    /* Show the tooltip text when hovering over the tooltip container */
+    .info-tip:hover .info-content {
+      visibility: visible;
+    }
+
+    /* Ensure the canvas is exactly 512x512 with no extra scrollbars */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 8px rgba(0,0,0,0.7);
+    }
+  </style>
+</head>
+<body>
+  <div class="info-tip">
+    Hover for instructions
+    <div class="info-content">
+      Time Redwood Cross-Section Instructions:<br><br>
+      • The cross-section's rings reflect the current hour.<br>
+      • The number of koi fish equals the current minute.<br>
+      • Fish swirl around the trunk with a speed tied to seconds.<br>
+      • Colors and orbit refresh alongside real-world time.
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      TIME REDWOOD CROSS-SECTION
+      ===========================
+      - Creates concentric rings to mimic a Redwood trunk cross-section; ring count depends on the current hour.
+      - Koi fish (equal in number to the current minute) swirl around the trunk.
+      - The swirling speed of fish is tied to the current second.
+    */
+
+    let fishArray = [];
+    let lastMinute = -1;
+
+    function setup() {
+      createCanvas(512, 512);
+      noStroke();
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(20);
+
+      const h = hour(); 
+      const m = minute();
+      const s = second();
+
+      // If minute changed, rebuild fish array
+      if (m !== lastMinute) {
+        rebuildFish(m);
+        lastMinute = m;
+      }
+
+      // Draw Redwood cross-section
+      drawTrunk(h);
+
+      // Update & draw swirling fish
+      updateAndDisplayFish(s);
+    }
+
+    function drawTrunk(h) {
+      push();
+      translate(width/2, height/2);
+      // Redwood cross-section: # of rings = (h % 12) + 1
+      let ringCount = (h % 12) + 1;
+      let maxRadius = 150;
+      let ringStep = maxRadius / ringCount;
+
+      // Draw from largest ring to center
+      for (let i = 0; i < ringCount; i++) {
+        let ringRadius = maxRadius - i * ringStep;
+        // Color each ring using a hue variation
+        colorMode(HSB);
+        fill(map(i, 0, ringCount, 20, 45), 60, 60);
+        noStroke();
+        ellipse(0, 0, ringRadius*2, ringRadius*2);
+      }
+
+      // Some lines to mimic ring patterns
+      stroke(0, 50);
+      noFill();
+      let lineCount = ringCount*3;
+      for (let i = 0; i < lineCount; i++) {
+        let angleOffset = map(i, 0, lineCount, 0, 360);
+        let x1 = cos(angleOffset) * (maxRadius*0.2);
+        let y1 = sin(angleOffset) * (maxRadius*0.2);
+        let x2 = cos(angleOffset) * (maxRadius);
+        let y2 = sin(angleOffset) * (maxRadius);
+        line(x1, y1, x2, y2);
+      }
+      pop();
+    }
+
+    function rebuildFish(m) {
+      fishArray = [];
+      for (let i = 0; i < m; i++) {
+        // Each fish has random swirl offset and color
+        fishArray.push({
+          angle: random(360),
+          distance: random(130, 160),
+          colorH: random(0, 60),
+          size: random(6, 12)
+        });
+      }
+    }
+
+    function updateAndDisplayFish(s) {
+      push();
+      translate(width/2, height/2);
+      colorMode(HSB);
+
+      // Speed factor influenced by seconds
+      let speed = map(s, 0, 59, 0.5, 3);
+
+      for (let i = 0; i < fishArray.length; i++) {
+        fishArray[i].angle += speed;
+        // Keep angle in 0-360 range
+        if (fishArray[i].angle > 360) fishArray[i].angle -= 360;
+
+        // Position
+        let x = cos(fishArray[i].angle) * fishArray[i].distance;
+        let y = sin(fishArray[i].angle) * fishArray[i].distance;
+
+        // Draw koi fish as simple ellipse
+        fill(fishArray[i].colorH, 80, 90);
+        noStroke();
+        ellipse(x, y, fishArray[i].size*2, fishArray[i].size);
+      }
+      pop();
+    }
+  </script>
+</body>
+</html>

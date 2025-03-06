@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Galaxy</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for contrast */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none; /* So it doesn't interfere with canvas mouse interactions */
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.5em;
+    }
+
+    /* Optionally make the text a bit larger/clearer */
+    #hover-instructions .instructions-text strong {
+      font-size: 1.2em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Galaxy</strong><br><br>
+        • Background color shifts with the hour.<br>
+        • Three galactic arms swirl around the center, guided by the minutes.<br>
+        • A shimmering star at the core grows and shrinks with the seconds.<br>
+        • The current time is displayed in the corner.<br><br>
+        Hover to see instructions and watch the galaxy transform in real time.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    const w = 512, h = 512;
+    let stars = [];
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      // Generate a static star field
+      for (let i = 0; i < 200; i++) {
+        stars.push({
+          x: random(-width/2, width/2),
+          y: random(-height/2, height/2),
+          brightness: random(100, 255)
+        });
+      }
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Map hour to a background color (dark to lighter shades)
+      // 24-hour range, mapped to some hue
+      let bgHue = map(hr, 0, 23, 0, 360);
+      colorMode(HSB);
+      background(bgHue, 50, 20);
+
+      // Shift to the center for symmetrical drawing
+      translate(width / 2, height / 2);
+
+      // Draw the static star field
+      noStroke();
+      for (let s of stars) {
+        fill(0, 0, s.brightness); // HSB with zero hue, zero saturation, brightness
+        circle(s.x, s.y, 2);
+      }
+
+      // Swirl arms revolve with minutes
+      // Each arm is offset by 120 degrees
+      let swirlAngle = map(mn, 0, 60, 0, 360);
+      for (let i = 0; i < 3; i++) {
+        push();
+        rotate(swirlAngle + i * 120);
+        drawGalacticArm();
+        pop();
+      }
+
+      // Shimmering center star grows/shrinks with seconds
+      let starSize = map(sc, 0, 60, 20, 80);
+      push();
+      rotate(frameCount); // subtle rotation for star twinkle
+      drawStar(0, 0, starSize * 0.5, starSize, 5);
+      pop();
+
+      // Display digital time in corner (top-left)
+      resetMatrix();
+      fill(255);
+      textSize(18);
+      let displayHour = hr % 12 || 12; 
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(`${displayHour}:${minStr}:${secStr} ${ampm}`, 10, 25);
+    }
+
+    // Draw one galactic arm
+    function drawGalacticArm() {
+      // We'll place several "spots" going outward, each offset at a slight angle
+      for (let r = 0; r < 200; r += 20) {
+        let armHue = map(r, 0, 200, 200, 360);
+        fill(armHue, 80, 90);
+        circle(r, 0, map(r, 0, 200, 10, 2)); // shrink the circle size outward
+      }
+    }
+
+    // Draw a star shape
+    function drawStar(x, y, radius1, radius2, npoints) {
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2;
+      fill(60, 100, 100); // bright star color in HSB
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

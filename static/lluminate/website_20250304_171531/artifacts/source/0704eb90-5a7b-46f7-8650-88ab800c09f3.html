@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Pendulum Array</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #pendulumContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Instructions overlay, hidden by default. Display on hover. */
+    #instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.85);
+      color: #333;
+      font-family: sans-serif;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    #pendulumContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="pendulumContainer">
+  <div id="instructions">
+    <h3>Time Pendulum Array</h3>
+    <p>
+      • The number of pendulums corresponds to the current hour (1-12).<br/>
+      • Their lengths, colors, and swing behavior respond to minute and second.<br/>
+      • Notice how they shift as each moment passes!
+    </p>
+  </div>
+</div>
+
+<script>
+  const canvasSize = 512;
+  let pendulums = [];
+
+  function setup() {
+    let c = createCanvas(canvasSize, canvasSize);
+    c.parent("pendulumContainer");
+    angleMode(RADIANS);
+    resetPendulums();
+  }
+
+  function draw() {
+    background(220);
+
+    let hr = hour() % 12 || 12;   // range 1-12
+    let mn = minute();            // range 0-59
+    let sc = second();            // range 0-59
+
+    // If the hour changes, reset the pendulums
+    if (pendulums.length !== hr) {
+      resetPendulums();
+    }
+
+    // Update and draw each pendulum
+    for (let p of pendulums) {
+      p.update(mn, sc);
+      p.display();
+    }
+
+    // Optional digital time in corner
+    fill(50);
+    noStroke();
+    textAlign(RIGHT, TOP);
+    textSize(16);
+    text(nf(hour(),2) + ":" + nf(minute(),2) + ":" + nf(second(),2), width - 10, 10);
+  }
+
+  // Recreate pendulum array whenever hour changes
+  function resetPendulums() {
+    pendulums = [];
+    let hr = hour() % 12 || 12;
+    // Spread pendulums evenly across width
+    let spacing = width / (hr + 1);
+    for (let i = 1; i <= hr; i++) {
+      let x = i * spacing;
+      let origin = createVector(x, 50); // top anchor at y=50
+      pendulums.push(new Pendulum(origin));
+    }
+  }
+
+  // Pendulum class
+  class Pendulum {
+    constructor(origin) {
+      this.origin = origin;
+      this.angle = random(TWO_PI);
+      this.angleVel = 0;
+      this.angleAcc = 0;
+      this.r = random(80, 200); // length of the pendulum
+      this.size = random(15, 25); // bob size
+      this.bobColor = color(random(255), random(255), random(255));
+    }
+
+    update(mn, sc) {
+      // Adjust the strength of gravity or "pull" based on minute and second
+      let minuteFactor = map(mn, 0, 59, 0.005, 0.03);
+      let secondFactor = map(sc, 0, 59, 0.001, 0.02);
+      let gravity = minuteFactor + secondFactor;
+
+      // Simplistic pendulum physics
+      this.angleAcc = -gravity * sin(this.angle);
+      this.angleVel += this.angleAcc;
+      this.angleVel *= 0.99; // some damping
+      this.angle += this.angleVel;
+    }
+
+    display() {
+      // Calculate bob's position
+      let bobX = this.r * sin(this.angle);
+      let bobY = this.r * cos(this.angle);
+      
+      stroke(0);
+      fill(this.bobColor);
+      
+      // Draw the arm
+      line(this.origin.x, this.origin.y, this.origin.x + bobX, this.origin.y + bobY);
+      // Draw the bob
+      circle(this.origin.x + bobX, this.origin.y + bobY, this.size);
+    }
+  }
+</script>
+</body>
+</html>

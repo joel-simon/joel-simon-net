@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Fractal Orbit Time</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center page and remove defaults */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #333;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Container for 512x512 canvas and instructions overlay */
+    #fractalOrbitContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Keep p5 canvas at 512x512 exactly */
+    #defaultCanvas0 {
+      width: 512px !important;
+      height: 512px !important;
+      display: block;
+    }
+
+    /* Instructions overlay is hidden by default,
+       appears on hover */
+    #instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.85);
+      color: #222;
+      font-family: sans-serif;
+      box-sizing: border-box;
+      padding: 1rem;
+    }
+    #fractalOrbitContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="fractalOrbitContainer">
+    <div id="instructions">
+      <h3>Fractal Orbit Time</h3>
+      <p>
+        • The fractal tree's branching depends on hour and minute.<br/>
+        • Orbits represent hour, minute, and second as small planets revolving.<br/>
+        • Watch the animations change as time moves forward!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const CANVAS_SIZE = 512;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("fractalOrbitContainer");
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(30);
+
+      // Current time
+      let h = hour() % 12; // 0-11
+      let m = minute();    // 0-59
+      let s = second();    // 0-59
+
+      // Translate to center for fractal and orbits
+      translate(width / 2, height);
+
+      // Fractal tree:
+      // - Depth of the tree depends on the hour (fewer branches at 0, more at 11)
+      // - Branch angle depends on the minute
+      let maxDepth = map(h, 0, 11, 4, 10); 
+      let branchAngle = map(m, 0, 59, 15, 45);
+      stroke(200);
+      strokeWeight(2);
+      drawBranch(100, maxDepth, branchAngle);
+
+      // Orbits revolve near the top of the tree
+      // Reset translation near top
+      // We'll guess the fractal top is around 100 - (some factor * maxDepth). 
+      // For simplicity, place them near top
+      push();
+      translate(0, -220);
+      drawOrbits(h, m, s);
+      pop();
+    }
+
+    // Recursive fractal branch
+    function drawBranch(len, depth, angle) {
+      line(0, 0, 0, -len);
+      translate(0, -len);
+      if (depth > 0) {
+        push();
+        rotate(angle);
+        drawBranch(len * 0.7, depth - 1, angle);
+        pop();
+        push();
+        rotate(-angle);
+        drawBranch(len * 0.7, depth - 1, angle);
+        pop();
+      }
+    }
+
+    // Draw orbiting planets representing hour, minute, second
+    function drawOrbits(h, m, s) {
+      noFill();
+      stroke(150);
+      strokeWeight(1);
+
+      // Circle orbits
+      circle(0, 0, 120); // hour orbit
+      circle(0, 0, 80);  // minute orbit
+      circle(0, 0, 40);  // second orbit
+
+      // Hour planet: completes 1 revolution in 12 hours => speed ~ (h + m/60) * 30 deg
+      push();
+      let hourAngle = (h + m/60.0) * 30; 
+      rotate(hourAngle);
+      translate(60, 0);
+      noStroke();
+      fill(0, 100, 200);
+      circle(0, 0, 12);
+      pop();
+
+      // Minute planet: completes revolution in 60 minutes => speed ~ m * 6 deg + fraction from seconds
+      let minuteAngle = (m + s/60.0) * 6; 
+      push();
+      rotate(minuteAngle);
+      translate(40, 0);
+      fill(100, 255, 100);
+      circle(0, 0, 10);
+      pop();
+
+      // Second planet: completes revolution in 60 seconds => speed s * 6 deg
+      let secondAngle = s * 6;
+      push();
+      rotate(secondAngle);
+      translate(20, 0);
+      fill(255, 100, 100);
+      circle(0, 0, 8);
+      pop();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Combined Time Display: Maze, Fractal Tree & Gears</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic page styling to center the 512x512 canvas */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* Container that holds a fixed 512x512 area and hides overflow */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay: hidden by default, shown on hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none; /* hidden initially */
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <!-- Hover instructions overlay -->
+    <div id="hoverOverlay">
+      <p>
+        <strong>Combined Time Display</strong><br><br>
+        • A maze regenerates each minute.<br>
+        • The fractal tree grows with the hour.<br>
+        • Three gears rotate independently for hour, minute, and second.<br>
+        • Subtle swirling background reflects time as well.<br><br>
+        Hover away to explore!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Combined Time Display:
+      1) Swirling background color influenced by minute and frameCount.
+      2) A fractal tree in the bottom area grows with the hour.
+      3) Three gears rotate based on hour, minute, and second.
+      4) A simple maze that regenerates each minute.
+    */
+
+    const CANVAS_SIZE = 512;
+
+    // Maze Config
+    let mazeCols = 8;
+    let mazeRows = 8;
+    let mazeCellSize;
+    let mazeWalls = [];
+    let lastMinute = -1;
+
+    // Fractal Tree Config
+    let branchAngle = 25;         // Base branch angle
+    let branchMult = 0.67;        // Branch length factor
+
+    // Gear Config
+    // We'll define gear objects with radius, tooth count, and rotation speed
+    let gears = [];
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      mazeCellSize = width / mazeCols;
+
+      // Generate initial maze
+      generateMaze();
+
+      // Set up gears: hourGear, minuteGear, secondGear
+      // radius, toothCount, rotationFactor
+      gears.push({ x: 100, y: 100, r: 40, teeth: 12, factor: 0 }); // hour gear
+      gears.push({ x: 140, y: 140, r: 30, teeth: 10, factor: 0 }); // minute gear
+      gears.push({ x: 180, y: 180, r: 20, teeth: 8, factor: 0 });  // second gear
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Maze: regenerate if the minute changed since last frame
+      if (m !== lastMinute) {
+        generateMaze();
+        lastMinute = m;
+      }
+
+      // 1) Draw swirling background
+      drawSwirlingBackground();
+
+      // 2) Draw the fractal tree influenced by hour
+      push();
+      translate(width * 0.5, height); // bottom center
+      let depth = (h % 12) + 4;       // range roughly 4..15
+      drawFractalTree(depth, 60);
+      pop();
+
+      // 3) Draw maze on top
+      drawMaze();
+
+      // 4) Update and draw gears
+      updateGears(h, m, s);
+      for (let gear of gears) {
+        drawGear(gear.x, gear.y, gear.r, gear.teeth, gear.factor);
+      }
+
+      // Optional: digital clock in the bottom-left or so
+      showClock(h, m, s);
+    }
+
+    /* Swirling background that shifts color with minute and frameCount */
+    function drawSwirlingBackground() {
+      push();
+      colorMode(HSB, 360, 100, 100);
+      let baseHue = map(minute() + frameCount * 0.01, 0, 60, 0, 360);
+      let centerX = width * 0.5;
+      let centerY = height * 0.5;
+      noStroke();
+
+      // Draw multiple circles expanding outward for a swirl effect
+      for (let r = 0; r < max(width, height); r += 8) {
+        fill((baseHue + r * 0.5) % 360, 70, 30 + (r % 70));
+        circle(centerX, centerY, r * 2.0);
+      }
+      pop();
+    }
+
+    /* Recursive fractal tree function (influenced by hour) */
+    function drawFractalTree(depth, length) {
+      if (depth <= 0) return;
+
+      stroke(200, 150, 80);
+      strokeWeight(map(depth, 0, 15, 1, 4));
+      line(0, 0, 0, -length);
+      translate(0, -length);
+
+      push();
+        rotate(branchAngle);
+        drawFractalTree(depth - 1, length * branchMult);
+      pop();
+
+      push();
+        rotate(-branchAngle);
+        drawFractalTree(depth - 1, length * branchMult);
+      pop();
+    }
+
+    /* Maze generation using a union-find MST approach */
+    function generateMaze() {
+      mazeWalls = [];
+
+      // Prepare a set for each cell
+      let cells = [];
+      for (let r = 0; r < mazeRows; r++) {
+        for (let c = 0; c < mazeCols; c++) {
+          cells.push({ row: r, col: c, parent: r * mazeCols + c });
+        }
+      }
+
+      // Possible edges between adjacent cells
+      let edges = [];
+      for (let r = 0; r < mazeRows; r++) {
+        for (let c = 0; c < mazeCols; c++) {
+          if (r < mazeRows - 1)
+            edges.push({ c1: {r, c}, c2: {r: r+1, c} });
+          if (c < mazeCols - 1)
+            edges.push({ c1: {r, c}, c2: {r, c: c+1} });
+        }
+      }
+
+      // Shuffle edges randomly
+      edges.sort(() => random() - 0.5);
+
+      // Find function
+      function findParent(i) {
+        if (cells[i].parent !== i)
+          cells[i].parent = findParent(cells[i].parent);
+        return cells[i].parent;
+      }
+
+      // Union function
+      function unionCells(i, j) {
+        let rootA = findParent(i);
+        let rootB = findParent(j);
+        cells[rootB].parent = rootA;
+      }
+
+      let finalEdges = [];
+      for (let e of edges) {
+        let idx1 = e.c1.r * mazeCols + e.c1.c;
+        let idx2 = e.c2.r * mazeCols + e.c2.c;
+        if (findParent(idx1) !== findParent(idx2)) {
+          unionCells(idx1, idx2);
+          finalEdges.push(e);
+        }
+      }
+
+      // Edges not in final MST become walls
+      for (let e of edges) {
+        if (!finalEdges.includes(e)) {
+          let x1 = e.c1.c * mazeCellSize;
+          let y1 = e.c1.r * mazeCellSize;
+          let x2 = e.c2.c * mazeCellSize;
+          let y2 = e.c2.r * mazeCellSize;
+          mazeWalls.push({ x1, y1, x2, y2 });
+        }
+      }
+
+      // Add border walls
+      for (let r = 0; r <= mazeRows; r++) {
+        mazeWalls.push({ x1: 0, y1: r*mazeCellSize, x2: 0, y2: r*mazeCellSize });
+        mazeWalls.push({ x1: mazeCols*mazeCellSize, y1: r*mazeCellSize, x2: mazeCols*mazeCellSize, y2: r*mazeCellSize });
+      }
+      for (let c = 0; c <= mazeCols; c++) {
+        mazeWalls.push({ x1: c*mazeCellSize, y1: 0, x2: c*mazeCellSize, y2: 0 });
+        mazeWalls.push({ x1: c*mazeCellSize, y1: mazeRows*mazeCellSize, x2: c*mazeCellSize, y2: mazeRows*mazeCellSize });
+      }
+    }
+
+    /* Draw the maze walls */
+    function drawMaze() {
+      push();
+      stroke(255);
+      strokeWeight(2);
+      for (let w of mazeWalls) {
+        line(w.x1, w.y1, w.x2, w.y2);
+      }
+      pop();
+    }
+
+    /* Update gear rotation factors based on hour, minute, second */
+    function updateGears(h, m, s) {
+      // Hour gear: one revolution every 12 hours = 360 degrees every 12 hours
+      // We reduce it to degrees per hour = 30 deg/hour
+      // Each hour = 30 degrees, plus partial from (m/60), plus partial from (s/3600)
+      let hourRotation = (h % 12) * 30 + m * 0.5 + s * (0.5 / 60);
+
+      // Minute gear: 360 degrees every 60 minutes
+      let minuteRotation = m * 6 + s * 0.1;
+
+      // Second gear: 360 degrees every 60 seconds
+      let secondRotation = s * 6;
+
+      gears[0].factor = hourRotation; 
+      gears[1].factor = minuteRotation;
+      gears[2].factor = secondRotation;
+    }
+
+    /* Draw a gear with teeth in a simple visual style */
+    function drawGear(x, y, r, toothCount, rotationVal) {
+      push();
+      translate(x, y);
+      rotate(rotationVal);
+      stroke(255);
+      fill(100, 150, 200, 100);
+
+      // Outer circle
+      circle(0, 0, r * 2);
+
+      // Teeth
+      let angleStep = 360 / toothCount;
+      for (let i = 0; i < toothCount; i++) {
+        push();
+        rotate(i * angleStep);
+        rectMode(CENTER);
+        rect(r, 0, r * 0.3, 6);   // a small rectangle "tooth"
+        pop();
+      }
+
+      // Inner circle
+      fill(0);
+      circle(0, 0, r * 0.4);
+      pop();
+    }
+
+    /* Show a small digital clock for reference */
+    function showClock(h, m, s) {
+      push();
+      fill(255);
+      noStroke();
+      textSize(14);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 10, height - 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

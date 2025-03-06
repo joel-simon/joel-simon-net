@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creative Time Display - Time Flow Field</title>
+  <!-- Include p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset and center body content */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f2f2f2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+      background: #fff;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Tooltip that shows on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 240px;
+      padding: 10px;
+      font-family: sans-serif;
+      font-size: 14px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #555;
+      z-index: 10;
+    }
+
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      Time Flow Field • The hour changes noise scale • The minute adjusts color shifts • The second tweaks particle speed 
+    </div>
+  </div>
+
+  <script>
+    const PARTICLE_COUNT = 500;
+    let particles = [];
+    let flowFieldScale = 0.02;
+    let noiseOffset = 0;
+    let hourVal, minuteVal, secondVal;
+
+    class Particle {
+      constructor() {
+        this.x = random(width);
+        this.y = random(height);
+        this.speed = 1;
+        this.colorOffset = random(360);
+      }
+
+      update() {
+        // Map time-based variables
+        noiseDetail(1, 0.5);
+        let n = noise(this.x * flowFieldScale + noiseOffset, this.y * flowFieldScale + noiseOffset);
+        let angle = map(n, 0, 1, 0, TWO_PI);
+
+        // Particle speed is influenced by the current second
+        this.speed = map(secondVal, 0, 59, 0.5, 4);
+        this.x += cos(angle) * this.speed;
+        this.y += sin(angle) * this.speed;
+
+        // Wrap around edges
+        if (this.x < 0) this.x = width;
+        if (this.x > width) this.x = 0;
+        if (this.y < 0) this.y = height;
+        if (this.y > height) this.y = 0;
+      }
+
+      display() {
+        // Color gradually shifts with minutes + individual offset
+        let hueVal = (this.colorOffset + frameCount * 0.1 + minuteVal * 5) % 360;
+        stroke(hueVal, 80, 100, 0.7);
+        point(this.x, this.y);
+      }
+    }
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      colorMode(HSB, 360, 100, 100, 1);
+      strokeWeight(2);
+      
+      // Create particles
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        particles.push(new Particle());
+      }
+    }
+
+    function draw() {
+      // Grab current time each frame
+      hourVal = hour() % 12;  // 0-11
+      minuteVal = minute();   // 0-59
+      secondVal = second();   // 0-59
+
+      // Fade the background slightly for trails
+      background(0, 0, 10, 0.1);
+
+      // Hour modifies the scale of the noise field
+      flowFieldScale = map(hourVal, 0, 11, 0.005, 0.03);
+
+      // Second modifies an offset in the noise for subtle drifting
+      noiseOffset = map(secondVal, 0, 59, 0, 5);
+
+      // Update and display all particles
+      for (let p of particles) {
+        p.update();
+        p.display();
+      }
+
+      // Display current time in top-left
+      noStroke();
+      fill(0, 0, 100);
+      textSize(14);
+      textAlign(LEFT, TOP);
+      text(nf(hour(), 2) + ":" + nf(minute(), 2) + ":" + nf(second(), 2), 10, 10);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Combined Creative Time Display</title>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* A fixed 512x512 container (for iframe) */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      border: none;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Combined Creative Time Display</strong><br><br>
+        • Background tiles shift with the minute.<br>
+        • Waves flow with hour & minute.<br>
+        • Maze regenerates each minute.<br>
+        • Swirling particles reflect hour.<br>
+        • Star rotates with seconds.<br>
+        • Chef’s hat scales with hour, rolling pin spins with seconds.<br><br>
+        Hover here for instructions. Enjoy!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Combined Creative Time Display
+      This sketch merges features:
+       1) Tile-based background changing with minute.
+       2) Wave patterns mapped to hour & minute.
+       3) A maze regenerating each minute.
+       4) Particles swirling based on the hour.
+       5) A star in the center rotating with seconds.
+       6) A chef's hat scaled by hour.
+       7) A rolling pin rotating with seconds.
+
+      All drawn within a 512 x 512 canvas.
+    */
+
+    // Canvas constants
+    const CANVAS_SIZE = 512;
+    const TILE_ROWS = 8;
+    const TILE_COLS = 8;
+    let tileCellSize;
+
+    // Maze data
+    let kitchenWalls = [];
+    let lastMinute = -1;
+
+    // Particle data
+    let particles = [];
+    let numParticles = 40;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+
+      tileCellSize = width / TILE_COLS;
+
+      // Generate initial maze
+      generateKitchenMaze();
+
+      // Initialize swirling particles
+      for (let i = 0; i < numParticles; i++) {
+        particles.push({
+          angle: random(360),
+          speed: random(0.5, 2) * (random() < 0.5 ? 1 : -1)
+        });
+      }
+    }
+
+    function draw() {
+      // Time variables
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // If minute changed, regenerate the maze
+      if (mn !== lastMinute) {
+        generateKitchenMaze();
+        lastMinute = mn;
+      }
+
+      // 1) Background tiles (depends on minute)
+      drawKitchenTiles(mn);
+
+      // 2) Wave pattern (depends on hour & minute)
+      drawWaves(hr, mn);
+
+      // 3) Maze lines
+      stroke(255);
+      strokeWeight(3);
+      for (let w of kitchenWalls) {
+        line(w.x1, w.y1, w.x2, w.y2);
+      }
+
+      // 4) Swirling particles (hour-based radius)
+      drawSwirlingParticles(hr);
+
+      // 5) Center star rotating with seconds
+      drawCenterStar(sc);
+
+      // 6) Chef's hat scaled by hour
+      drawChefsHat(hr);
+
+      // 7) Rolling pin rotating with seconds
+      drawRollingPin(sc);
+
+      // Optional text clock (bottom-left)
+      drawClock(hr, mn, sc);
+    }
+
+    /* (1) Kitchen tile pattern that changes hue with minute */
+    function drawKitchenTiles(m) {
+      push();
+      noStroke();
+      colorMode(HSB, 360, 100, 100);
+      let baseHue = map(m, 0, 59, 0, 360);
+      let tileSize = 32;
+
+      for (let y = 0; y < height; y += tileSize) {
+        for (let x = 0; x < width; x += tileSize) {
+          let offset = (x + y) * 0.05;
+          fill((baseHue + offset) % 360, 40, 35);
+          rect(x, y, tileSize, tileSize);
+        }
+      }
+      pop();
+    }
+
+    /* (2) Wave pattern in background (depends on hour & minute) */
+    function drawWaves(hr, mn) {
+      push();
+      noFill();
+      stroke(255, 150);
+      strokeWeight(1);
+
+      let amplitude = map(hr, 0, 23, 10, 100);
+      let frequency = map(mn, 0, 59, 0.01, 0.1);
+
+      for (let y = 0; y < height; y += 20) {
+        beginShape();
+        for (let x = 0; x < width; x += 10) {
+          let wave = sin((x + frameCount) * frequency) * amplitude;
+          vertex(x, y + wave);
+        }
+        endShape();
+      }
+      pop();
+    }
+
+    /* (3) Generate a labyrinth-like maze each minute */
+    function generateKitchenMaze() {
+      kitchenWalls = [];
+
+      // Prepare a disjoint set for each cell
+      let mazeCells = [];
+      for (let r = 0; r < TILE_ROWS; r++) {
+        for (let c = 0; c < TILE_COLS; c++) {
+          mazeCells.push({ row: r, col: c, parent: r * TILE_COLS + c });
+        }
+      }
+
+      // Potential edges between adjacent cells
+      let edges = [];
+      for (let r = 0; r < TILE_ROWS; r++) {
+        for (let c = 0; c < TILE_COLS; c++) {
+          // Down
+          if (r < TILE_ROWS - 1) {
+            edges.push({ c1: {r, c}, c2: {r: r+1, c} });
+          }
+          // Right
+          if (c < TILE_COLS - 1) {
+            edges.push({ c1: {r, c}, c2: {r, c: c+1} });
+          }
+        }
+      }
+      // Shuffle edges
+      edges.sort(() => random() - 0.5);
+
+      // Find parent
+      function findSet(i) {
+        if (mazeCells[i].parent !== i) {
+          mazeCells[i].parent = findSet(mazeCells[i].parent);
+        }
+        return mazeCells[i].parent;
+      }
+
+      // Union
+      function unionSet(i, j) {
+        let rootA = findSet(i);
+        let rootB = findSet(j);
+        mazeCells[rootB].parent = rootA;
+      }
+
+      // Minimum spanning tree creation
+      let finalEdges = [];
+      for (let e of edges) {
+        let idx1 = e.c1.r * TILE_COLS + e.c1.c;
+        let idx2 = e.c2.r * TILE_COLS + e.c2.c;
+        if (findSet(idx1) !== findSet(idx2)) {
+          unionSet(idx1, idx2);
+          finalEdges.push(e);
+        }
+      }
+
+      // Edges not in MST become walls
+      for (let e of edges) {
+        if (!finalEdges.includes(e)) {
+          let x1 = e.c1.c * tileCellSize;
+          let y1 = e.c1.r * tileCellSize;
+          let x2 = e.c2.c * tileCellSize;
+          let y2 = e.c2.r * tileCellSize;
+          kitchenWalls.push({ x1, y1, x2, y2 });
+        }
+      }
+
+      // Add border walls
+      for (let r = 0; r <= TILE_ROWS; r++) {
+        kitchenWalls.push({ x1: 0, y1: r*tileCellSize, x2: 0, y2: r*tileCellSize });
+        kitchenWalls.push({ x1: TILE_COLS*tileCellSize, y1: r*tileCellSize, x2: TILE_COLS*tileCellSize, y2: r*tileCellSize });
+      }
+      for (let c = 0; c <= TILE_COLS; c++) {
+        kitchenWalls.push({ x1: c*tileCellSize, y1: 0, x2: c*tileCellSize, y2: 0 });
+        kitchenWalls.push({ x1: c*tileCellSize, y1: TILE_ROWS*tileCellSize, x2: c*tileCellSize, y2: TILE_ROWS*tileCellSize });
+      }
+    }
+
+    /* (4) Swirling particles around center, radius depends on hour */
+    function drawSwirlingParticles(hr) {
+      push();
+      translate(width / 2, height / 2);
+      stroke(255);
+      strokeWeight(2);
+      noFill();
+
+      let swirlRadius = map(hr % 12, 0, 12, 50, 200);
+
+      for (let p of particles) {
+        p.angle += p.speed;
+        let x = swirlRadius * cos(p.angle);
+        let y = swirlRadius * sin(p.angle);
+        point(x, y);
+      }
+      pop();
+    }
+
+    /* (5) A star at the center, rotating according to seconds */
+    function drawCenterStar(sc) {
+      push();
+      translate(width / 2, height / 2);
+      let rotationSpeed = map(sc, 0, 60, 0, 360);
+      rotate(rotationSpeed);
+      stroke(255);
+      strokeWeight(2);
+      fill(255, 100);
+
+      beginShape();
+      for (let i = 0; i < 10; i++) {
+        let angle = i * 36;
+        let r = (i % 2 === 0) ? 30 : 10;
+        let x = r * cos(angle);
+        let y = r * sin(angle);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+
+      pop();
+    }
+
+    /* (6) Chef's hat that grows with hour (drawn near bottom-right) */
+    function drawChefsHat(hr) {
+      push();
+      translate(width * 0.8, height * 0.8);
+      let scaleFactor = map(hr % 12, 0, 11, 0.5, 2);
+      scale(scaleFactor);
+      noStroke();
+      fill(230);
+      // Hat base
+      rect(-15, 0, 30, 20, 5);
+      // Hat top
+      arc(0, 0, 60, 50, 180, 360);
+      pop();
+    }
+
+    /* (7) Rolling pin that rotates with seconds (center-based, offset) */
+    function drawRollingPin(sc) {
+      push();
+      translate(width/2, height/2 + 80); // Slightly below the center star
+      rotate(sc * 6 + frameCount * 0.3);
+      noStroke();
+      fill(200, 150, 100);
+      rectMode(CENTER);
+      rect(0, 0, 100, 15, 4); // Pin body
+
+      fill(160, 100, 60);
+      rect(-60, 0, 20, 15, 3); // Left handle
+      rect(60, 0, 20, 15, 3);  // Right handle
+      pop();
+    }
+
+    /* Optional digital clock in bottom-left corner */
+    function drawClock(h, m, s) {
+      push();
+      translate(10, height - 20);
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 0, 0);
+      pop();
+    }
+  </script>
+</body>
+</html>

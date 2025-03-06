@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Lattice Dream</title>
+  <style>
+    /* Basic setup for a black background and no margins */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* Keep everything to 512x512 for the iframe */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (visible on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+      max-width: 450px;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Lattice Dream</strong><br><br>
+        • Observe the grid of shifting lattice tiles that change color by hour.<br>
+        • The tile shapes morph each minute.<br>
+        • Tiles rotate according to the seconds.<br>
+        • The current digital time is displayed at the top center.<br><br>
+        Hover to see instructions. Enjoy!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+    let tileSize = 60; 
+    let tiles = [];
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      // Create a grid of tiles
+      for (let y = 0; y < h; y += tileSize) {
+        for (let x = 0; x < w; x += tileSize) {
+          tiles.push(new LatticeTile(x + tileSize / 2, y + tileSize / 2));
+        }
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Display time at the top center
+      displayDigitalTime(hr, mn, sc);
+
+      // Update and draw each tile
+      for (let t of tiles) {
+        t.update(hr, mn, sc);
+        t.display(hr, mn, sc);
+      }
+    }
+
+    function displayDigitalTime(hr, mn, sc) {
+      noStroke();
+      fill(255);
+      textAlign(CENTER, TOP);
+      textSize(18);
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(`${displayHour}:${minStr}:${secStr} ${ampm}`, width / 2, 10);
+    }
+
+    class LatticeTile {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.rotation = random(360);
+      }
+
+      update(hr, mn, sc) {
+        // Rotation influenced by seconds
+        let rotationSpeed = map(sc, 0, 59, 0, 5);
+        this.rotation += rotationSpeed * 0.05;
+      }
+
+      display(hr, mn, sc) {
+        push();
+        translate(this.x, this.y);
+        rotate(this.rotation);
+
+        let tileColor = this.getColorByHour(hr);
+        strokeWeight(1);
+        stroke(tileColor);
+        fill(tileColor, 100);
+
+        // Choose shape style based on minute
+        let shapeType = (mn % 3);
+        let size = tileSize * 0.8;
+
+        if (shapeType === 0) {
+          // Draw diamond shape
+          beginShape();
+          vertex(0, -size * 0.5);
+          vertex(size * 0.5, 0);
+          vertex(0, size * 0.5);
+          vertex(-size * 0.5, 0);
+          endShape(CLOSE);
+        } else if (shapeType === 1) {
+          // Draw circle
+          ellipse(0, 0, size, size);
+        } else {
+          // Draw star shape
+          star(0, 0, size * 0.4, size * 0.2, 5);
+        }
+
+        pop();
+      }
+
+      getColorByHour(hr) {
+        // Map hour to a hue from 0..255
+        let hue = map(hr, 0, 23, 0, 255);
+        // Return color in an HSB style using p5's colorMode if desired
+        // But we'll mix manually: R and B from hue, G from an offset
+        colorMode(RGB);
+        // Simple approach: shift color with the hour
+        return color((hue + 50) % 255, (hue + 150) % 255, (hue + 200) % 255);
+      }
+    }
+
+    function star(x, y, radius1, radius2, npoints) {
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2.0;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius1;
+        let sy = y + sin(a) * radius1;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius2;
+        sy = y + sin(a + halfAngle) * radius2;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

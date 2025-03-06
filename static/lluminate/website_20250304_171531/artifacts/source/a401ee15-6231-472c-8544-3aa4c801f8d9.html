@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Time Pyramid Maze Tesseract</title>
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+    /* 512x512 container */
+    #myCanvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      background-color: #000;
+    }
+
+    /* Instructions overlay (shown on hover) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      box-sizing: border-box;
+      padding: 20px;
+      display: none;
+      pointer-events: none;
+    }
+    #myCanvasContainer:hover #hoverOverlay {
+      display: block;
+    }
+    .overlay-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      max-width: 400px;
+      transform: translate(-50%, -50%);
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="myCanvasContainer">
+    <div id="hoverOverlay">
+      <div class="overlay-content">
+        <strong>Time Pyramid Maze Tesseract</strong><br><br>
+        • Wave background amplitude changes with the hour<br>
+        • Maze regenerates on each new minute<br>
+        • Fractal tree grows with the current minute<br>
+        • Pyramid rotates with the hour and changes color by minute<br>
+        • Tesseract rotates with the seconds<br>
+        Hover away to see it in motion!
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Blended Interactive Component:
+      1) Wave background: amplitude based on hour
+      2) Maze that regenerates each minute
+      3) Fractal tree growing according to minute
+      4) Rotating pyramid: rotation with hour, color by minute
+      5) Rotating tesseract: rotation rate tied to seconds
+      6) Small digital clock in the corner
+    */
+
+    const CANVAS_SIZE = 512;
+    const MAZE_ROWS = 8;
+    const MAZE_COLS = 8;
+    let cellSize;
+    let walls = [];
+    let lastMinute = -1;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE, WEBGL);
+      cnv.parent('myCanvasContainer');
+      angleMode(DEGREES);
+      cellSize = CANVAS_SIZE / MAZE_COLS;
+      generateMaze();
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Regenerate maze if minute changed
+      if (mn !== lastMinute) {
+        generateMaze();
+        lastMinute = mn;
+      }
+
+      // Move the scene slightly back for 3D layering
+      translate(0, 0, 0);
+
+      // 1) Draw wave background in 2D overlay
+      push();
+      resetMatrix(); // Return to default view to overlay 2D
+      drawWaveBackground(hr);
+      pop();
+
+      // 2) Draw Maze in orthographic overhead 2D
+      push();
+      resetMatrix();
+      stroke(255);
+      strokeWeight(2);
+      drawMaze();
+      pop();
+
+      // 3) Draw fractal tree near bottom center
+      push();
+      resetMatrix();
+      translate(width / 2, height * 0.75);
+      stroke(200);
+      drawFractalTree(60, mn);
+      pop();
+
+      // 4) Draw rotating pyramid in the center
+      push();
+      let hrRotation = map(hr % 12, 0, 12, 0, 360);
+      let mnHue = map(mn, 0, 59, 0, 255);
+      rotateY(hrRotation);
+      // Subtle tilt to see pyramid better
+      rotateX(20);
+      ambientLight(100);
+      directionalLight(255, 255, 255, 0.5, -1, -1);
+      fill(mnHue, 200, 200);
+      drawPyramid(70, 100);
+      pop();
+
+      // 5) Draw rotating tesseract
+      push();
+      let scRotation = map(sc, 0, 59, 0, 360);
+      rotateY(scRotation);
+      rotateX(scRotation * 0.5);
+      stroke(255, 120, 80);
+      noFill();
+      drawTesseract(40);
+      pop();
+
+      // 6) Digital clock in 2D
+      push();
+      resetMatrix();
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(`[${nf(hr,2)}:${nf(mn,2)}:${nf(sc,2)}]`, 10, 10);
+      pop();
+    }
+
+    // ---------------- (1) WAVE BACKGROUND
+    function drawWaveBackground(h) {
+      // We'll draw a simple wave pattern behind everything in 2D
+      // Create a separate graphics layer
+      let waveAmp = map(h % 12, 0, 12, 10, 60);
+      stroke(80, 180, 220, 140);
+      noFill();
+
+      // Translate to 0,0 for 2D
+      for (let y = 0; y < height; y += 15) {
+        beginShape();
+        for (let x = 0; x < width; x += 10) {
+          let wave = sin((x + frameCount) * 0.02) * waveAmp;
+          vertex(x, y + wave);
+        }
+        endShape();
+      }
+    }
+
+    // ---------------- (2) MAZE
+    function generateMaze() {
+      walls = [];
+      let disjointSet = [];
+      for (let r = 0; r < MAZE_ROWS; r++) {
+        for (let c = 0; c < MAZE_COLS; c++) {
+          disjointSet.push({ row: r, col: c, parent: r * MAZE_COLS + c });
+        }
+      }
+      let edges = [];
+      for (let r = 0; r < MAZE_ROWS; r++) {
+        for (let c = 0; c < MAZE_COLS; c++) {
+          if (r < MAZE_ROWS - 1) edges.push({ c1: {r, c}, c2: {r: r+1, c} });
+          if (c < MAZE_COLS - 1) edges.push({ c1: {r, c}, c2: {r, c: c+1} });
+        }
+      }
+      edges.sort(() => random() - 0.5);
+
+      function findSet(idx) {
+        if (disjointSet[idx].parent !== idx) {
+          disjointSet[idx].parent = findSet(disjointSet[idx].parent);
+        }
+        return disjointSet[idx].parent;
+      }
+      function unionSet(i, j) {
+        let rootA = findSet(i);
+        let rootB = findSet(j);
+        disjointSet[rootB].parent = rootA;
+      }
+
+      let finalEdges = [];
+      for (let e of edges) {
+        let idx1 = e.c1.r * MAZE_COLS + e.c1.c;
+        let idx2 = e.c2.r * MAZE_COLS + e.c2.c;
+        if (findSet(idx1) !== findSet(idx2)) {
+          unionSet(idx1, idx2);
+          finalEdges.push(e);
+        }
+      }
+      for (let e of edges) {
+        if (!finalEdges.includes(e)) {
+          walls.push(e);
+        }
+      }
+    }
+
+    function drawMaze() {
+      // Draw borders
+      for (let r = 0; r <= MAZE_ROWS; r++) {
+        line(0, r*cellSize, MAZE_COLS*cellSize, r*cellSize);
+      }
+      for (let c = 0; c <= MAZE_COLS; c++) {
+        line(c*cellSize, 0, c*cellSize, MAZE_ROWS*cellSize);
+      }
+      // Draw walls
+      for (let w of walls) {
+        let x1 = w.c1.c * cellSize;
+        let y1 = w.c1.r * cellSize;
+        let x2 = w.c2.c * cellSize;
+        let y2 = w.c2.r * cellSize;
+        line(x1, y1, x2, y2);
+      }
+    }
+
+    // ---------------- (3) FRACTAL TREE
+    function drawFractalTree(len, m) {
+      let angleVar = map(m, 0, 59, 15, 45);
+      line(0, 0, 0, -len);
+      translate(0, -len);
+
+      if (len > 5) {
+        push();
+        rotate(angleVar);
+        drawFractalTree(len * 0.7, m);
+        pop();
+
+        push();
+        rotate(-angleVar);
+        drawFractalTree(len * 0.7, m);
+        pop();
+      }
+    }
+
+    // ---------------- (4) PYRAMID
+    function drawPyramid(baseSize, height) {
+      let half = baseSize / 2;
+      beginShape();
+      vertex(-half, 0, -half);
+      vertex(half, 0, -half);
+      vertex(0, -height, 0);
+      endShape(CLOSE);
+
+      beginShape();
+      vertex(half, 0, -half);
+      vertex(half, 0, half);
+      vertex(0, -height, 0);
+      endShape(CLOSE);
+
+      beginShape();
+      vertex(half, 0, half);
+      vertex(-half, 0, half);
+      vertex(0, -height, 0);
+      endShape(CLOSE);
+
+      beginShape();
+      vertex(-half, 0, half);
+      vertex(-half, 0, -half);
+      vertex(0, -height, 0);
+      endShape(CLOSE);
+
+      // Base
+      beginShape();
+      vertex(-half, 0, -half);
+      vertex(half, 0, -half);
+      vertex(half, 0, half);
+      vertex(-half, 0, half);
+      endShape(CLOSE);
+    }
+
+    // ---------------- (5) TESSERACT
+    function drawTesseract(size) {
+      // Approximate a 2D tesseract projection
+      // Two squares: "front" and "back"
+      let front = [
+        createVector(-size, -size),
+        createVector(size, -size),
+        createVector(size, size),
+        createVector(-size, size),
+      ];
+      let back = [
+        createVector(-size*0.5, -size*0.5),
+        createVector(size*0.5, -size*0.5),
+        createVector(size*0.5, size*0.5),
+        createVector(-size*0.5, size*0.5),
+      ];
+
+      // Front square
+      beginShape();
+      for (let v of front) {
+        vertex(v.x, v.y);
+      }
+      endShape(CLOSE);
+
+      // Back square
+      beginShape();
+      for (let v of back) {
+        vertex(v.x, v.y);
+      }
+      endShape(CLOSE);
+
+      // Connect corners
+      for (let i = 0; i < 4; i++) {
+        line(front[i].x, front[i].y, back[i].x, back[i].y);
+      }
+    }
+  </script>
+</body>
+</html>

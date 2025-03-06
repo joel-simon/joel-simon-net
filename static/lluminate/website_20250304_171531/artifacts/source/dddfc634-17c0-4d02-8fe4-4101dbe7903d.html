@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Time City Skyline</title>
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+    /* Instructions overlay (hidden by default) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.85);
+      box-sizing: border-box;
+      padding: 1rem;
+      color: #111;
+      font-family: sans-serif;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+<div id="canvas-container">
+  <div id="hover-instructions">
+    <div class="instructions-text">
+      <strong>Time City Skyline</strong><br><br>
+      • Sky transitions gradually from day to night based on the hour<br>
+      • Lit windows appear after sunset<br>
+      • Neon sign color changes with minute<br>
+      • Car zips across each second
+    </div>
+  </div>
+</div>
+
+<script>
+  let w = 512;
+  let h = 512;
+
+  // For the moving car
+  let carX = -50;
+
+  function setup() {
+    let c = createCanvas(w, h);
+    c.parent("canvas-container");
+    noStroke();
+    frameRate(30);
+  }
+
+  function draw() {
+    let hr = hour() % 24; // 0-23
+    let mn = minute();    // 0-59
+    let sc = second();    // 0-59
+
+    // 1) Draw sky color that transitions from day to night
+    drawSky(hr, mn, sc);
+
+    // 2) Draw city silhouette with windows
+    drawCitySilhouette(hr);
+
+    // 3) Draw neon sign that changes color based on minute
+    drawNeonSign(mn);
+
+    // 4) Draw and update car position each second
+    updateCar(sc);
+    drawCar();
+
+    // Display current time in the corner
+    displayTime(hr, mn, sc);
+  }
+
+  // Smooth day-to-night color transitions
+  function drawSky(hr, mn, sc) {
+    // Fraction of the day from 0..1
+    let dayFraction = (hr + mn/60 + sc/3600) / 24.0;
+
+    // Day color (morning to mid-day)
+    let dayColor = color(135, 206, 235);  // sky blue
+    // Night color
+    let nightColor = color(20, 24, 82);   // deep navy
+
+    // Lerp between day and night
+    let skyCol = lerpColor(dayColor, nightColor, easeInOutCubic(dayFraction * 2 % 1));
+    background(skyCol);
+  }
+
+  // City silhouette drawn along the bottom
+  function drawCitySilhouette(hr) {
+    // Consider "nighttime" to be 18..6 (6pm to 6am)
+    let isNight = (hr >= 18 || hr < 6);
+
+    push();
+    fill(30); // Dark silhouette
+    rect(0, height * 0.6, width, height * 0.4);
+    
+    // We'll draw a few "buildings" for a simple skyline
+    // Each building: a rectangle, possibly with lit windows if isNight=true
+    let buildingCount = 6;
+    let buildingWidth = width / buildingCount;
+    for (let i = 0; i < buildingCount; i++) {
+      let bX = i * buildingWidth;
+      // random building height, but consistent each frame by using noise or pseudo
+      // we'll do a simple variant:
+      let bHeight = map((i * 8253) % 25, 0, 25, 80, 180);
+      let bY = height * 0.6 - bHeight;
+      fill(40);
+      rect(bX, bY, buildingWidth - 4, bHeight);
+      
+      // Windows
+      if (isNight) {
+        let windowRows = 6;
+        let windowCols = 3;
+        for (let r = 0; r < windowRows; r++) {
+          for (let c = 0; c < windowCols; c++) {
+            // Random chance that window is lit
+            if (((r + c + i) * (hr + 1)) % 5 === 0) {
+              fill(250, 240, 140);
+              rect(bX + 6 + c*10, bY + 6 + r*16, 6, 10);
+            }
+          }
+        }
+      }
+    }
+    pop();
+  }
+
+  // Neon sign changing color based on minute
+  function drawNeonSign(mn) {
+    let signColor = color(
+      map(mn, 0, 59, 100, 255),
+      map(mn, 0, 59, 255, 100),
+      200
+    );
+    push();
+    fill(signColor);
+    rect(width * 0.3, height * 0.2, width * 0.4, 30, 10);
+
+    // Sign text
+    fill(20);
+    textSize(16);
+    textAlign(CENTER, CENTER);
+    text("WELCOME", width * 0.3 + (width * 0.4)/2, height * 0.2 + 15);
+    pop();
+  }
+
+  // Car moves each second from left to right
+  function updateCar(sc) {
+    // If second changed, move car to a new position
+    // We'll map second 0..59 to range 0..(width + 100)
+    carX = map(sc, 0, 59, -50, width + 50);
+  }
+
+  function drawCar() {
+    push();
+    fill(200, 0, 0);
+    rectMode(CENTER);
+    let groundLevel = height * 0.6 + 40; // "road" area
+    rect(carX, groundLevel, 40, 20, 5);
+    // wheels
+    fill(50);
+    ellipse(carX - 12, groundLevel + 10, 8, 8);
+    ellipse(carX + 12, groundLevel + 10, 8, 8);
+    pop();
+  }
+
+  // Show hour:minute:second
+  function displayTime(hr, mn, sc) {
+    fill(255);
+    textSize(14);
+    textAlign(LEFT, TOP);
+    text(nf(hr,2) + ":" + nf(mn,2) + ":" + nf(sc,2), 10, 10);
+  }
+
+  // Helper function for smoother sky color transition
+  // Easing function (cubic ease in-out)
+  function easeInOutCubic(t) {
+    return t < 0.5 ? 4*t*t*t : 1 - pow(-2*t + 2, 3)/2;
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Reversal Galaxy</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for better contrast */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Reversal Galaxy</strong><br><br>
+        • Experience reversed time: watch hours, minutes, and seconds count backward.<br>
+        • Stars in orbit revolve in reverse speed.<br>
+        • Observe the mesmerizing cosmic swirl at the center.<br><br>
+        Hover to read instructions; the countdown updates continuously!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let stars = [];
+    let numStars = 60;
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+
+      // Initialize star positions
+      for (let i = 0; i < numStars; i++) {
+        stars.push({
+          angle: random(360),
+          radius: random(50, 220), 
+          speed: random(0.2, 1.5)
+        });
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      // Gather real-time from system
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Reverse the time
+      let revHr = 23 - hr;
+      let revMn = 59 - mn;
+      let revSc = 59 - sc;
+
+      // Clean up values if current seconds/minutes/hours are 0 
+      // to avoid negative display at rollover
+      if (sc === 0) revSc = 0; 
+      if (mn === 0) revMn = 0;
+      if (hr === 0) revHr = 0;
+
+      // Render the reversed time swirl
+      drawGalaxy(revHr, revMn, revSc);
+
+      // Display reversed time in the center
+      displayReversedTime(revHr, revMn, revSc);
+    }
+
+    // Function to draw a swirling galaxy whose rotation is tied to reversed time
+    function drawGalaxy(rh, rm, rs) {
+      push();
+      translate(width/2, height/2);
+
+      // The swirl speed is tied to reversed seconds
+      // More reversed seconds => slower rotation to emphasize "backwards" effect
+      let swirlSpeed = map(rs, 0, 59, 3, 0.1);
+
+      noStroke();
+      fill(255);
+
+      // Update and draw each star
+      for (let s of stars) {
+        // Reverse the rotation direction by using a negative sign on swirlSpeed
+        s.angle -= s.speed * swirlSpeed;
+        let x = s.radius * cos(s.angle);
+        let y = s.radius * sin(s.angle);
+        ellipse(x, y, 3, 3);
+      }
+
+      // Central swirl (like a pulsing black hole) 
+      // that scales with reversed hour and minute
+      let swirlSize = map(rh + rm, 0, 82, 20, 120);
+      fill(120, 120, 255, 150);
+      ellipse(0, 0, swirlSize, swirlSize);
+
+      pop();
+    }
+
+    // Display reversed time text
+    function displayReversedTime(rh, rm, rs) {
+      push();
+      translate(width / 2, height / 2);
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      fill(255);
+      noStroke();
+
+      // Format the reversed time
+      let hrStr = nf(rh, 2);
+      let mnStr = nf(rm, 2);
+      let scStr = nf(rs, 2);
+      text(hrStr + ":" + mnStr + ":" + scStr + " (Reversed)", 0, 5);
+      pop();
+    }
+  </script>
+</body>
+</html>

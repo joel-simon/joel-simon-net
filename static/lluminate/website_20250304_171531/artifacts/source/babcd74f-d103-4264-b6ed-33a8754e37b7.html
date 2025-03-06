@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Celestial Gears Maze Fractal</title>
+  <style>
+    /* Base page styling and full background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      font-family: Arial, sans-serif;
+      color: #fff;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    /* 512x512 container for the p5 sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0,0,0,0.8);
+      cursor: pointer;
+    }
+    /* Instructions overlay (appear on hover) */
+    #infoOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    #canvasContainer:hover #infoOverlay {
+      display: flex;
+    }
+    /* Force the canvas to be exactly 512x512 */
+    #defaultCanvas0 {
+      width: 512px !important;
+      height: 512px !important;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="infoOverlay">
+      <p>
+        <strong>Celestial Gears Maze Fractal</strong><br><br>
+        • A regenerating maze in the background changes with hour & minute.<br>
+        • A fractal tree on the left side grows with the hour.<br>
+        • Three interlocked gears in the center rotate at speeds based on hour, minute, and second.<br>
+        • Move the white explorer square with the arrow keys.<br>
+        Hover away to explore!
+      </p>
+    </div>
+  </div>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /* 
+      Celestial Gears Maze Fractal
+      - Background: Maze that regenerates each time hour or minute changes.
+      - Left side: Fractal tree that grows with hour.
+      - Center: Three gears spinning at speeds tied to hour, minute, second.
+      - Movable explorer: Arrow keys.
+    */
+
+    let w = 512, h = 512;
+
+    // Maze data
+    let maze = [];
+    let stack = [];
+    let cols, rows;
+    let cellSize;
+
+    // Keep track of time for regeneration
+    let prevHour, prevMinute;
+
+    // Player explorer
+    let player = { col: 0, row: 0 };
+    
+    // Setup p5
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+
+      // Generate an initial maze
+      generateMaze();
+    }
+
+    // p5 draw loop
+    function draw() {
+      background(0);
+
+      // Check if hour/minute changed => regenerate maze
+      let hr = hour();
+      let mn = minute();
+      if (hr !== prevHour || mn !== prevMinute) {
+        generateMaze();
+      }
+
+      // Draw background maze
+      drawMaze();
+
+      // Draw fractal tree on left side (scales with hour)
+      push();
+      translate(70, height - 10);
+      drawFractalTree(60, -90, 5 + hr % 12);
+      pop();
+
+      // Draw spinning gears in the center
+      drawGears(width / 2, height / 2);
+
+      // Draw player explorer
+      drawPlayer();
+
+      // Display time in corner
+      displayTime();
+    }
+
+    // Generate a maze based on current hour and minute
+    function generateMaze() {
+      cols = floor(map(hour(), 0, 23, 6, 16));
+      rows = floor(map(minute(), 0, 59, 6, 24));
+      cellSize = floor(min(width / cols, height / rows));
+
+      maze = [];
+      for (let r = 0; r < rows; r++) {
+        maze[r] = [];
+        for (let c = 0; c < cols; c++) {
+          maze[r][c] = {
+            visited: false,
+            walls: { top: true, right: true, bottom: true, left: true }
+          };
+        }
+      }
+
+      let startCell = { r: 0, c: 0 };
+      maze[0][0].visited = true;
+      stack = [startCell];
+
+      // Depth-first search to carve the maze
+      while (stack.length > 0) {
+        let current = stack[stack.length - 1];
+        let next = getUnvisitedNeighbor(current);
+        if (next) {
+          maze[next.r][next.c].visited = true;
+          stack.push(next);
+          removeWalls(current, next);
+        } else {
+          stack.pop();
+        }
+      }
+
+      // Reset explorer
+      player.col = 0;
+      player.row = 0;
+
+      prevHour = hour();
+      prevMinute = minute();
+    }
+
+    // Return random unvisited neighbor
+    function getUnvisitedNeighbor(cell) {
+      let { r, c } = cell;
+      let neighbors = [];
+      if (r > 0 && !maze[r - 1][c].visited) neighbors.push({ r: r - 1, c });
+      if (r < rows - 1 && !maze[r + 1][c].visited) neighbors.push({ r: r + 1, c });
+      if (c > 0 && !maze[r][c - 1].visited) neighbors.push({ r, c: c - 1 });
+      if (c < cols - 1 && !maze[r][c + 1].visited) neighbors.push({ r, c: c + 1 });
+      return neighbors.length ? random(neighbors) : null;
+    }
+
+    // Remove walls between two adjacent cells
+    function removeWalls(a, b) {
+      let dr = b.r - a.r;
+      let dc = b.c - a.c;
+      if (dr === 1) {
+        // b is below a
+        maze[a.r][a.c].walls.bottom = false;
+        maze[b.r][b.c].walls.top = false;
+      } else if (dr === -1) {
+        // b is above a
+        maze[a.r][a.c].walls.top = false;
+        maze[b.r][b.c].walls.bottom = false;
+      } else if (dc === 1) {
+        // b is right of a
+        maze[a.r][a.c].walls.right = false;
+        maze[b.r][b.c].walls.left = false;
+      } else if (dc === -1) {
+        // b is left of a
+        maze[a.r][a.c].walls.left = false;
+        maze[b.r][b.c].walls.right = false;
+      }
+    }
+
+    // Draw the maze on screen
+    function drawMaze() {
+      stroke(255);
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          let x = c * cellSize;
+          let y = r * cellSize;
+          let cell = maze[r][c];
+          // top
+          if (cell.walls.top) line(x, y, x + cellSize, y);
+          // right
+          if (cell.walls.right) line(x + cellSize, y, x + cellSize, y + cellSize);
+          // bottom
+          if (cell.walls.bottom) line(x, y + cellSize, x + cellSize, y + cellSize);
+          // left
+          if (cell.walls.left) line(x, y, x, y + cellSize);
+        }
+      }
+    }
+
+    // Draw player explorer as a white square
+    function drawPlayer() {
+      fill(255);
+      noStroke();
+      let px = player.col * cellSize + cellSize / 4;
+      let py = player.row * cellSize + cellSize / 4;
+      rect(px, py, cellSize / 2, cellSize / 2);
+    }
+
+    // Key controls for explorer
+    function keyPressed() {
+      let currentCell = maze[player.row][player.col];
+      if (keyCode === LEFT_ARROW && !currentCell.walls.left) {
+        player.col = max(player.col - 1, 0);
+      } else if (keyCode === RIGHT_ARROW && !currentCell.walls.right) {
+        player.col = min(player.col + 1, cols - 1);
+      } else if (keyCode === UP_ARROW && !currentCell.walls.top) {
+        player.row = max(player.row - 1, 0);
+      } else if (keyCode === DOWN_ARROW && !currentCell.walls.bottom) {
+        player.row = min(player.row + 1, rows - 1);
+      }
+    }
+
+    // Draw fractal tree on the left side
+    function drawFractalTree(length, angle, depth) {
+      stroke(160, 110, 60);
+      strokeWeight(2);
+      branch(length, angle, depth);
+    }
+
+    function branch(len, angle, depth) {
+      if (depth === 0) return;
+      push();
+      rotate(angle);
+      line(0, 0, 0, -len);
+      translate(0, -len);
+      branch(len * 0.7, 25, depth - 1);
+      branch(len * 0.7, -25, depth - 1);
+      pop();
+    }
+
+    // Draw multiple gears in the center that rotate at speeds based on hour, minute, second
+    function drawGears(cx, cy) {
+      push();
+      translate(cx, cy);
+      let sc = second();
+      let mn = minute();
+      let hr = hour() % 12;
+
+      // Rotate gear for seconds
+      push();
+      rotate(sc * 6); // each second = 6 degrees
+      drawGear(0, 0, 50, 30, 12);
+      pop();
+
+      // Rotate gear for minutes (slower)
+      push();
+      rotate(mn * 6); // each minute = 6 degrees
+      translate(70, 0);
+      drawGear(0, 0, 30, 15, 10);
+      pop();
+
+      // Rotate gear for hours (slowest)
+      push();
+      rotate(hr * 30 + mn * 0.5); // each hour = 30°, plus a fraction for minutes
+      translate(-70, 0);
+      drawGear(0, 0, 40, 20, 8);
+      pop();
+      pop();
+    }
+
+    // Gear drawing function
+    function drawGear(x, y, outerR, innerR, teethCount) {
+      noStroke();
+      fill(200);
+      // Gear outline with teeth
+      beginShape();
+      for (let i = 0; i < 360; i += 360 / (teethCount * 2)) {
+        let radius = (i % (360 / teethCount) === 0) ? outerR : outerR - 5;
+        vertex(x + radius * cos(i), y + radius * sin(i));
+      }
+      endShape(CLOSE);
+
+      // Inner circle
+      fill(120);
+      circle(x, y, innerR * 2);
+    }
+
+    // Display the current time in the corner
+    function displayTime() {
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+      let ampm = hr >= 12 ? "PM" : "AM";
+      let displayHour = (hr % 12) || 12;
+      text(displayHour + ":" + nf(mn, 2) + ":" + nf(sc, 2) + " " + ampm, 10, 10);
+    }
+  </script>
+</body>
+</html>

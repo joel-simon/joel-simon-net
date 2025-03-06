@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Galaxy Explorer</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset default margins and background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container exactly 512x512 */
+    #timeGalaxyContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    /* Instruction overlay on hover */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      box-sizing: border-box;
+      text-align: center;
+      padding: 30px;
+    }
+    #timeGalaxyContainer:hover #instructionsOverlay {
+      display: block;
+    }
+
+    h1, p {
+      margin: 1em 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="timeGalaxyContainer">
+    <div id="instructionsOverlay">
+      <h1>Time Galaxy Explorer</h1>
+      <p>
+        • The star's color shifts with the current hour.<br>
+        • The planet orbits faster or slower depending on the minutes.<br>
+        • The moon's orbit speed changes with the seconds.<br>
+        • Hover again to view these instructions.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      TIME GALAXY EXPLORER
+      - Central star color depends on hour.
+      - Orbit speed of the planet depends on minute.
+      - The moon orbits around its planet at a rate determined by seconds.
+      - A digital clock is displayed in the top-left corner.
+    */
+
+    // Galaxy objects
+    let starColor;
+    let planetAngle = 0;
+    let moonAngle = 0;
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('timeGalaxyContainer');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Star color changes based on hour
+      // Map hour 0..23 to hue 0..360
+      colorMode(HSL);
+      starColor = color(map(h, 0, 23, 0, 360), 100, 50);
+
+      // Draw star at center
+      push();
+      noStroke();
+      fill(starColor);
+      translate(width / 2, height / 2);
+      ellipse(0, 0, 60, 60);
+      pop();
+
+      // Calculate orbit speeds from time
+      // Planet speed = minute-based
+      let planetSpeed = map(m, 0, 59, 0.3, 5);
+      planetAngle += planetSpeed;
+
+      // Moon speed = second-based
+      let moonSpeed = map(s, 0, 59, 1, 10);
+      moonAngle += moonSpeed;
+
+      // Draw planet orbiting around star
+      let orbitRadius = 120;
+      let planetX = width / 2 + orbitRadius * cos(planetAngle);
+      let planetY = height / 2 + orbitRadius * sin(planetAngle);
+
+      // Planet
+      push();
+      noStroke();
+      fill('skyblue');
+      ellipse(planetX, planetY, 30, 30);
+      pop();
+
+      // Draw Moon orbit around planet
+      let moonOrbitRadius = 40;
+      let moonX = planetX + moonOrbitRadius * cos(moonAngle);
+      let moonY = planetY + moonOrbitRadius * sin(moonAngle);
+
+      push();
+      fill(200);
+      noStroke();
+      ellipse(moonX, moonY, 15, 15);
+      pop();
+
+      // Return to default color mode for text
+      colorMode(RGB);
+
+      // Display digital time at top-left
+      fill(255);
+      noStroke();
+      textSize(24);
+      textAlign(LEFT, TOP);
+      let displayHour = h % 12;
+      if (displayHour === 0) displayHour = 12;
+      let ampm = (h >= 12) ? "PM" : "AM";
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      let timeString = displayHour + ":" + minStr + ":" + secStr + " " + ampm;
+      text(timeString, 10, 10);
+    }
+  </script>
+</body>
+</html>

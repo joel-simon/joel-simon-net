@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fusion Time Display</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* 512x512 canvas container */
+    #fusionTimeContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Instructions overlay, hidden by default. Display on hover. */
+    #instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      padding: 20px;
+      box-sizing: border-box;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    #fusionTimeContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="fusionTimeContainer">
+  <div id="instructions">
+    <h3>Fusion Time Display</h3>
+    <ul>
+      <li>A swirling wave background alters shape with the second.</li>
+      <li>The fractal tree's branching angle reflects the current hour.</li>
+      <li>The tree's depth changes based on the current minute.</li>
+      <li>A star in the center rotates according to the current second.</li>
+      <li>The time (HH:MM:SS) is shown in the upper-left corner.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  const CANVAS_SIZE = 512;
+
+  function setup() {
+    let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+    cnv.parent("fusionTimeContainer");
+    angleMode(DEGREES);
+    textFont('sans-serif');
+  }
+
+  function draw() {
+    background(10);
+
+    let hr = hour();
+    let mn = minute();
+    let sc = second();
+
+    drawWaves(sc);
+
+    // Draw fractal tree from bottom center
+    push();
+    translate(width / 2, height);
+    let angle = map(hr, 0, 23, 15, 50);   // hour-based branching angle
+    let depth = map(mn, 0, 59, 4, 10);    // minute-based depth
+    stroke(220);
+    fractalTree(depth, angle, 80);
+    pop();
+
+    // Draw rotating star in the center of the canvas
+    push();
+    translate(width / 2, height / 2);
+    rotate(sc * 6); // rotate star by seconds
+    drawStar(0, 0, 25, 60, 5);
+    pop();
+
+    // Display current time in the corner
+    fill(255);
+    noStroke();
+    textSize(16);
+    textAlign(LEFT, TOP);
+    text(nf(hr,2)+":"+nf(mn,2)+":"+nf(sc,2), 10, 10);
+  }
+
+  // Draw swirling lines as a background
+  function drawWaves(secondVal) {
+    noFill();
+    stroke(255, 120);
+    let waveCount = 6;
+    for (let i = 0; i < waveCount; i++) {
+      beginShape();
+      let offsetY = i * 30 + 50;
+      for (let x = 0; x <= width; x += 10) {
+        let freq = 0.02 + secondVal * 0.0005;
+        let amp = 20 + secondVal * 0.1;
+        let y = offsetY + sin(x * freq + frameCount * 0.02) * amp;
+        vertex(x, y);
+      }
+      endShape();
+    }
+  }
+
+  // Draw a fractal tree with given depth and angle
+  function fractalTree(level, angle, branchLength) {
+    line(0, 0, 0, -branchLength);
+    translate(0, -branchLength);
+
+    if(level > 0) {
+      push();
+      rotate(angle);
+      fractalTree(level - 1, angle, branchLength * 0.7);
+      pop();
+
+      push();
+      rotate(-angle);
+      fractalTree(level - 1, angle, branchLength * 0.7);
+      pop();
+    }
+  }
+
+  // Draw a star shape
+  // Adapted from typical poly star drawing
+  function drawStar(x, y, radius1, radius2, npoints) {
+    stroke(255, 200);
+    fill(255, 180, 0, 150);
+    strokeWeight(2);
+    let angle = 360 / npoints;
+    let halfAngle = angle / 2;
+    beginShape();
+    for (let a = 0; a < 360; a += angle) {
+      let sx = x + cos(a) * radius2;
+      let sy = y + sin(a) * radius2;
+      vertex(sx, sy);
+      sx = x + cos(a + halfAngle) * radius1;
+      sy = y + sin(a + halfAngle) * radius1;
+      vertex(sx, sy);
+    }
+    endShape(CLOSE);
+  }
+</script>
+</body>
+</html>

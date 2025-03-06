@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Bloom Flower</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* 512x512 container for the canvas */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      background: #222;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      pointer-events: none; /* Mouse events pass through to the canvas */
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 80%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Bloom Flower</strong><br><br>
+        • Number of petals depends on the current hour.<br>
+        • Petal color shifts with the current minute.<br>
+        • Flower's pulsation and rotation respond to the current second.<br>
+        • Hover here to see instructions again.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Bloom Flower:
+      - The number of petals = (hour % 12) + 1.
+      - Petal hue is based on the minute (0-59).
+      - The entire flower rotates and pulses with the second.
+      - The background also shifts slightly with time for extra visual interest.
+    */
+
+    let w = 512, h = 512;
+
+    function setup() {
+      const canvas = createCanvas(w, h);
+      canvas.parent('canvas-container');
+      angleMode(DEGREES);
+      colorMode(HSB);
+    }
+
+    function draw() {
+      background(0); // Start with a dark background
+
+      // Acquire the current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Smooth color shift for the background
+      // We'll use minute for hue base, second for brightness
+      let bgHue = map(mn, 0, 59, 0, 360);
+      let bgBri = map(sc, 0, 59, 40, 60);
+      background(bgHue, 40, bgBri);
+
+      // Time-based parameters
+      let petals = (hr % 12) + 1;       // petals range from 1 to 12
+      let petalHue = map(mn, 0, 59, 0, 360);
+      let scalePulse = map(sc, 0, 59, 0.9, 1.1); // pulsing factor
+      let rotationOffset = map(sc, 0, 59, 0, 360) + frameCount * 0.3; // slow spin
+
+      // Move to center
+      translate(width / 2, height / 2);
+      // Add rotation for swirling effect
+      rotate(rotationOffset);
+      scale(scalePulse);
+
+      // Draw the Time Bloom Flower
+      drawFlower(petals, petalHue);
+
+      // Reset color mode for overlay text
+      colorMode(RGB);
+      drawTimeText();
+    }
+
+    function drawFlower(petals, hueVal) {
+      // We'll draw a symmetrical shape with 'petals' count
+      // Each petal is a curved wedge rotating equally around center
+      noStroke();
+      for (let i = 0; i < petals; i++) {
+        push();
+        let angleStep = 360 / petals;
+        rotate(i * angleStep);
+        
+        // Petal gradient approach
+        for (let r = 0; r < 8; r++) {
+          fill(hueVal, 60, map(r, 0, 7, 50, 100));
+          // The outer shape arcs outwards
+          let petalWidth = 20;
+          let petalHeight = 120;
+          // Draw a small ellipse or fan segment for the petal
+          ellipse(0, -petalHeight * 0.6, petalWidth * (8 - r), petalWidth * (8 - r) * 0.8);
+        }
+
+        pop();
+      }
+
+      // Draw a center circle
+      fill(hueVal, 90, 80);
+      ellipse(0, 0, 50, 50);
+    }
+
+    function drawTimeText() {
+      // Show the current time in the corner
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      let displayHour = (hr % 12) || 12;
+      let ampm = hr >= 12 ? "PM" : "AM";
+      let mnStr = nf(mn, 2);
+      let scStr = nf(sc, 2);
+
+      // Shift the origin to top-left for the text
+      resetMatrix();
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(displayHour + ":" + mnStr + ":" + scStr + " " + ampm, 10, 10);
+    }
+  </script>
+</body>
+</html>

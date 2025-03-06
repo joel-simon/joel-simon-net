@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Mandala Bloom</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the “Time Mandala Bloom”!<br><br>
+        • The central hue shifts with the current hour.<br>
+        • The mandala’s rotation speed is driven by minutes.<br>
+        • The petal size pulses with the passing seconds.<br><br>
+        Hover away to see the mandala bloom.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Dynamic color in the center based on hour
+      let baseColor = color(
+        map(h, 0, 23, 0, 255),
+        120,
+        map(h, 0, 23, 255, 0)
+      );
+
+      // Rotation speed linked to minute
+      let rotationSpeed = map(m, 0, 59, 0.5, 5);
+
+      // Pulsing size factor linked to seconds
+      let sizeFactor = map(s, 0, 59, 0.7, 1.3);
+
+      // Draw a radiant background gradient
+      drawCentralGlow(baseColor);
+
+      // Translate to center for mandala drawing
+      push();
+      translate(width/2, height/2);
+
+      // Rotate incrementally each frame
+      rotate(frameCount * rotationSpeed);
+
+      // Draw multiple layers of mirrored petals
+      for (let layer = 0; layer < 3; layer++) {
+        push();
+        rotate(layer * 30); 
+        drawMandalaLayer(baseColor, sizeFactor, layer);
+        pop();
+      }
+      pop();
+
+      // Small digital clock display
+      drawDigitalClock(h, m, s);
+    }
+
+    // --------------------------------------------
+    // Functions
+    // --------------------------------------------
+    function drawCentralGlow(col){
+      // Create a radial gradient-like effect
+      for (let r = 512; r > 0; r -= 2) {
+        let alphaVal = map(r, 512, 0, 0, 255);
+        fill(red(col), green(col), blue(col), alphaVal * 0.05);
+        ellipse(width/2, height/2, r, r);
+      }
+    }
+
+    function drawMandalaLayer(baseCol, sizeFactor, layerIndex) {
+      // Adjust color slightly for each layer
+      let hueShift = layerIndex * 40;
+      let c = color(
+        constrain(red(baseCol) + hueShift, 0, 255),
+        green(baseCol),
+        constrain(blue(baseCol) - hueShift, 0, 255),
+        180
+      );
+      fill(c);
+
+      // Number of petals * rotations
+      let petalCount = 12;
+      for (let i = 0; i < petalCount; i++) {
+        push();
+        rotate((360 / petalCount) * i);
+        ellipse(0, 60 * sizeFactor, 30 * sizeFactor, 100 * sizeFactor);
+        pop();
+      }
+    }
+
+    function drawDigitalClock(h, m, s) {
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      text(`${hDisp}:${mDisp}:${sDisp}`, width / 2, height - 30);
+    }
+  </script>
+</body>
+</html>

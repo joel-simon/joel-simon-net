@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Blossom Garden</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+    /* Fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-family: sans-serif;
+    }
+    /* Reveal the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Blossom Garden<br><br>
+        • The sky transitions between day and night depending on the hour.<br>
+        • Each minute, a fresh set of flowers sprout in the garden.<br>
+        • Fireflies appear every second, flickering briefly in the air.<br>
+        • Watch the time tick by at the bottom of the garden.<br><br>
+        Hover away to see the animation in action.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let flowers = [];
+    let oldMinute = -1;
+
+    let fireflies = [];
+    let oldSecond = -1;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      noStroke();
+    }
+
+    function draw() {
+      drawDayNightBackground(); 
+      manageFlowers();
+      drawFlowers();
+      manageFireflies();
+      drawFireflies();
+      drawTime();
+    }
+
+    // Gradual sky coloring based on hour
+    function drawDayNightBackground() {
+      let h = hour();
+      // Map hour of day to two colors: day and night
+      // We'll create a top-to-bottom gradient
+      let topColor, bottomColor;
+      // Ranges from early morning (0) to next midnight (23)
+      let factor = map(h, 0, 23, 0, 1);
+      // Bright day sky color
+      topColor = color(135, 206, 235);   // light sky blue
+      // Night-sky color
+      bottomColor = color(25, 25, 112);  // midnight blue
+
+      for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        let c = lerpColor( 
+          lerpColor(topColor, bottomColor, factor), 
+          lerpColor(topColor, bottomColor, (factor > 0.5) ? 1 : 0),
+          inter
+        );
+        stroke(c);
+        line(0, y, width, y);
+      }
+    }
+
+    // Create new flowers if a new minute has arrived
+    function manageFlowers() {
+      let m = minute();
+      if (m !== oldMinute) {
+        flowers = [];
+        let numFlowers = m + 5; // at least 5 flowers, plus up to 59 more
+        for (let i = 0; i < numFlowers; i++) {
+          flowers.push(new Flower(random(width), random(height*0.4, height*0.8)));
+        }
+        oldMinute = m;
+      }
+    }
+
+    // Draw each flower in the array
+    function drawFlowers() {
+      for (let f of flowers) {
+        f.display();
+      }
+    }
+
+    // Flowers that softly animate
+    class Flower {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.size = random(12, 24);
+        this.petalCount = floor(random(5, 9));
+        this.col = color(random(180, 255), random(100, 200), random(100, 255));
+        this.offset = random(1000);
+      }
+
+      display() {
+        push();
+        translate(this.x, this.y);
+        // Subtle bobbing motion
+        let bob = sin(frameCount * 0.02 + this.offset) * 2;
+        translate(0, bob);
+        fill(this.col);
+        noStroke();
+        // Draw petals around a center
+        let angleStep = 360 / this.petalCount;
+        for (let a = 0; a < 360; a += angleStep) {
+          push();
+          rotate(a);
+          ellipse(0, -this.size * 0.7, this.size, this.size * 1.5);
+          pop();
+        }
+        // Center
+        fill(255, 255, 0);
+        ellipse(0, 0, this.size, this.size);
+        pop();
+      }
+    }
+
+    // Create a few fireflies each second
+    function manageFireflies() {
+      let s = second();
+      // On second change, spawn fireflies
+      if (s !== oldSecond) {
+        for (let i = 0; i < 5; i++) {
+          fireflies.push(new Firefly());
+        }
+        oldSecond = s;
+      }
+      // Remove any that have faded
+      fireflies = fireflies.filter(ff => !ff.isDone());
+    }
+
+    // Update and draw the fireflies
+    function drawFireflies() {
+      for (let ff of fireflies) {
+        ff.update();
+        ff.display();
+      }
+    }
+
+    // Firefly class: small, glowy orbs that fade and move upwards
+    class Firefly {
+      constructor() {
+        this.x = random(width);
+        this.y = random(height*0.2, height*0.8);
+        this.alpha = 255;
+        this.speed = random(0.2, 1);
+        this.radius = random(4, 8);
+        this.twinkle = random(20, 100);
+      }
+      update() {
+        this.y -= this.speed;
+        this.alpha -= 2;
+      }
+      display() {
+        noStroke();
+        fill(255, 255, 150, this.alpha);
+        ellipse(this.x + random(-1,1), this.y + random(-1,1), this.radius + sin(frameCount * 0.1) * 2);
+      }
+      isDone() {
+        return (this.alpha <= 0);
+      }
+    }
+
+    // Render current hour, minute, second at the bottom
+    function drawTime() {
+      fill(255);
+      textSize(18);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, width / 2, height - 20);
+    }
+  </script>
+</body>
+</html>

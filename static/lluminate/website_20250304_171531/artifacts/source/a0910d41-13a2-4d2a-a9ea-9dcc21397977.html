@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Constellation</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* The container at exactly 512x512 */
+    #constellationContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    /* Instruction overlay on hover */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 30px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #constellationContainer:hover #instructionsOverlay {
+      display: block;
+    }
+
+    h1, p {
+      margin: 1em 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="constellationContainer">
+    <div id="instructionsOverlay">
+      <h1>Time Constellation</h1>
+      <p>The stars are randomly placed. The hour defines how far stars can connect, minutes define the line hue, and seconds affect the line thickness.</p>
+      <p>Hover again to read instructions at any time.</p>
+    </div>
+  </div>
+
+  <script>
+    let stars = [];
+    const starCount = 100;
+    let maxConnectDist = 50; // adjusted on the fly by hour
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('constellationContainer');
+      // Generate random stars
+      for (let i = 0; i < starCount; i++) {
+        stars.push({
+          x: random(width),
+          y: random(height),
+          brightness: random(150, 255)
+        });
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      // Current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Modify maxConnectDist by hour (maps 0..23 => 50..150)
+      maxConnectDist = map(h, 0, 23, 50, 150);
+
+      // Use minute to drive line color in HSL
+      // minute => hue in [0..360]
+      let lineHue = map(m, 0, 59, 0, 360);
+
+      // Use seconds to set line thickness from [0.5..5]
+      let lineThickness = map(s, 0, 59, 0.5, 5);
+
+      noStroke();
+      // Draw stars
+      for (let i = 0; i < stars.length; i++) {
+        fill(stars[i].brightness);
+        circle(stars[i].x, stars[i].y, 3);
+      }
+
+      // Draw connections
+      strokeWeight(lineThickness);
+      colorMode(HSL);
+      stroke(lineHue, 100, 50);
+      for (let i = 0; i < stars.length; i++) {
+        for (let j = i + 1; j < stars.length; j++) {
+          let distVal = dist(stars[i].x, stars[i].y, stars[j].x, stars[j].y);
+          if (distVal < maxConnectDist) {
+            line(stars[i].x, stars[i].y, stars[j].x, stars[j].y);
+          }
+        }
+      }
+      colorMode(RGB);
+
+      // Display digital time
+      fill(255);
+      noStroke();
+      textSize(24);
+      textAlign(LEFT, TOP);
+
+      // Format hours in 12-hour style with AM/PM
+      let displayHour = h % 12;
+      if (displayHour === 0) displayHour = 12;
+      let ampm = (h >= 12) ? "PM" : "AM";
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      let timeString = displayHour + ":" + minStr + ":" + secStr + " " + ampm;
+      text(timeString, 10, 10);
+    }
+  </script>
+</body>
+</html>

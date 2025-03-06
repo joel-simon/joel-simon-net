@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Origami Garden</title>
+  <style>
+    /* Basic reset and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay, only visible on hover */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      pointer-events: none;
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+      max-width: 80%;
+      margin: auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Origami Garden</strong><br><br>
+        • Each hour determines the number of petals.<br>
+        • Petal color changes with minutes.<br>
+        • Flowers rotate based on the current second.<br>
+        Hover to read instructions. Watch how each minute and second reshape the garden.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+    let maxFlowers = 6; // We'll have up to 6 flowers displayed
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      // Draw a subtle radial gradient for the garden's backdrop
+      drawRadialGradient();
+
+      // Current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // The number of petals is based on hour (hr % 12 + 3)
+      let petals = (hr % 12) + 3;
+
+      // The color for petals changes each minute
+      // We'll shift hue based on minutes
+      let petalHue = map(mn, 0, 59, 0, 360);
+
+      // The rotation speed of each flower depends on the second
+      let rotation = map(sc, 0, 59, 0, 360);
+
+      // Draw multiple origami-style flowers around the canvas
+      push();
+      translate(width / 2, height / 2);
+      for (let i = 0; i < maxFlowers; i++) {
+        push();
+        // Distribute flowers in a circle
+        let angle = (360 / maxFlowers) * i + rotation;
+        rotate(angle);
+        translate(120, 0); // Move each flower away from center
+
+        // Draw a flower with "petals" shape
+        drawFlower(petals, petalHue, i);
+        pop();
+      }
+      pop();
+
+      // Display the digital time near the bottom of canvas
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, width / 2, height - 25);
+    }
+
+    // Helper: draw a flower using triangles or "petals"
+    function drawFlower(numPetals, baseHue, offset) {
+      let angleStep = 360 / numPetals;
+      for (let p = 0; p < numPetals; p++) {
+        let hueOffset = (baseHue + (p * 10) + offset * 20) % 360;
+        fill(getColor(hueOffset, 80, 80));
+        push();
+        rotate(p * angleStep);
+        beginShape();
+        vertex(0, 0);
+        vertex(-15, -40);
+        vertex(15, -40);
+        endShape(CLOSE);
+        pop();
+      }
+    }
+
+    // Simple radial gradient
+    function drawRadialGradient() {
+      for (let r = 512; r > 0; r -= 4) {
+        let alpha = map(r, 512, 0, 255, 0);
+        fill(30, 30, 60, alpha);
+        ellipse(width / 2, height / 2, r, r);
+      }
+    }
+
+    // Convert HSB-like values into p5's default (RGB) fill
+    function getColor(h, s, b) {
+      colorMode(HSB);
+      let c = color(h, s, b);
+      colorMode(RGB);
+      return c;
+    }
+  </script>
+</body>
+</html>

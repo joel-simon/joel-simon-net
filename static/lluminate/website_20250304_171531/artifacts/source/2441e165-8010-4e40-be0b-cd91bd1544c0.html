@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cosmic Maze Orbits</title>
+  <style>
+    /* Reset margins/padding and set background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      height: 100vh;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* 512x512 container to fit the iframe */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      background: #222;
+    }
+
+    /* Instructions overlay (visible on hover) */
+    #hover-instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      box-sizing: border-box;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.75);
+      padding: 20px;
+      display: none; /* hidden by default */
+      pointer-events: none; /* so that the mouse doesn't block the canvas */
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+    /* Center instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.6em;
+    }
+
+    /* Keep the p5 canvas exactly 512x512 */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Cosmic Maze Orbits</strong><br><br>
+        • Use arrow keys to move your explorer through the maze.<br>
+        • The maze regenerates every minute.<br>
+        • Orbiting planets (top-left corner) revolve with the current hour, minute, and second.<br>
+        • The current time is also displayed. Explore and see how time shapes this maze!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    // Maze variables
+    let cols = 20;
+    let rows = 20;
+    let cellSize = 25;
+    let grid = [];
+    let stack = [];
+    let currentCell;
+    let mazeGenerated = false;
+    let oldMinute = -1;
+
+    // Player position in cell coordinates
+    let playerCol = 0;
+    let playerRow = 0;
+
+    // For checking minute changes
+    let lastMinute = -1;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent("canvas-container");
+      frameRate(30);
+
+      generateMaze();  // Initial Maze
+      oldMinute = minute();
+    }
+
+    function draw() {
+      background(0);
+
+      // Check if minute has changed -> regenerate Maze
+      let mn = minute();
+      if (mn !== oldMinute) {
+        generateMaze();
+        oldMinute = mn;
+      }
+
+      // Draw Maze
+      drawMaze();
+
+      // Draw the player
+      drawPlayer();
+
+      // Draw orbits and time in the top-left
+      drawOrbitsAndTime();
+    }
+
+    // Generate a new Maze using DFS backtracking
+    function generateMaze() {
+      grid = [];
+      stack = [];
+
+      // Create cell objects
+      for (let j = 0; j < rows; j++) {
+        for (let i = 0; i < cols; i++) {
+          grid.push(new Cell(i, j));
+        }
+      }
+
+      // Maze generation
+      currentCell = grid[0];
+      currentCell.visited = true;
+      stack.push(currentCell);
+
+      while (stack.length > 0) {
+        let next = currentCell.checkNeighbors();
+        if (next) {
+          // Step forward
+          next.visited = true;
+          stack.push(currentCell);
+          removeWalls(currentCell, next);
+          currentCell = next;
+        } else if (stack.length > 0) {
+          // Backtrack
+          currentCell = stack.pop();
+        }
+      }
+
+      // Reset player to top-left
+      playerCol = 0;
+      playerRow = 0;
+    }
+
+    // Cell object
+    function Cell(i, j) {
+      this.i = i;
+      this.j = j;
+      this.visited = false;
+      // Top, right, bottom, left
+      this.walls = [true, true, true, true];
+
+      this.checkNeighbors = function() {
+        let neighbors = [];
+
+        let top    = getCell(i, j - 1);
+        let right  = getCell(i + 1, j);
+        let bottom = getCell(i, j + 1);
+        let left   = getCell(i - 1, j);
+
+        if (top && !top.visited)    neighbors.push(top);
+        if (right && !right.visited)  neighbors.push(right);
+        if (bottom && !bottom.visited) neighbors.push(bottom);
+        if (left && !left.visited)   neighbors.push(left);
+
+        if (neighbors.length > 0) {
+          let r = floor(random(0, neighbors.length));
+          return neighbors[r];
+        } else {
+          return undefined;
+        }
+      }
+    }
+
+    // Remove walls between two adjacent cells
+    function removeWalls(a, b) {
+      let x = a.i - b.i;
+      if (x === 1) {
+        a.walls[3] = false;
+        b.walls[1] = false;
+      } else if (x === -1) {
+        a.walls[1] = false;
+        b.walls[3] = false;
+      }
+      let y = a.j - b.j;
+      if (y === 1) {
+        a.walls[0] = false;
+        b.walls[2] = false;
+      } else if (y === -1) {
+        a.walls[2] = false;
+        b.walls[0] = false;
+      }
+    }
+
+    // Retrieve cell from grid
+    function getCell(i, j) {
+      if (i < 0 || j < 0 || i > cols - 1 || j > rows - 1) {
+        return undefined;
+      }
+      return grid[i + j * cols];
+    }
+
+    // Draw Maze
+    function drawMaze() {
+      stroke(255);
+      strokeWeight(2);
+
+      for (let c of grid) {
+        let x = c.i * cellSize;
+        let y = c.j * cellSize;
+
+        // Draw walls
+        if (c.walls[0]) line(x, y, x + cellSize, y);           // top
+        if (c.walls[1]) line(x + cellSize, y, x + cellSize, y + cellSize); // right
+        if (c.walls[2]) line(x, y + cellSize, x + cellSize, y + cellSize); // bottom
+        if (c.walls[3]) line(x, y, x, y + cellSize);           // left
+      }
+    }
+
+    // Draw the player's position (small circle)
+    function drawPlayer() {
+      fill(0, 255, 0);
+      noStroke();
+      let x = playerCol * cellSize + cellSize / 2;
+      let y = playerRow * cellSize + cellSize / 2;
+      circle(x, y, cellSize * 0.5);
+    }
+
+    // Key presses to move the player if no wall blocks the path
+    function keyPressed() {
+      let current = getCell(playerCol, playerRow);
+      if (!current) return;
+
+      // Up
+      if (keyCode === UP_ARROW) {
+        if (!current.walls[0]) {
+          playerRow--;
+        }
+      }
+      // Right
+      else if (keyCode === RIGHT_ARROW) {
+        if (!current.walls[1]) {
+          playerCol++;
+        }
+      }
+      // Down
+      else if (keyCode === DOWN_ARROW) {
+        if (!current.walls[2]) {
+          playerRow++;
+        }
+      }
+      // Left
+      else if (keyCode === LEFT_ARROW) {
+        if (!current.walls[3]) {
+          playerCol--;
+        }
+      }
+    }
+
+    // Draw orbits (hour, minute, second) and the time
+    function drawOrbitsAndTime() {
+      let h = hour() % 12; 
+      let m = minute();
+      let s = second();
+
+      // Position orbits near top-left
+      push();
+      translate(80, 80);
+      noFill();
+      stroke(200);
+      strokeWeight(1);
+
+      // Orbits with decreasing radii:
+      // hourOrbit ~ 30 px, minuteOrbit ~ 20 px, secondOrbit ~ 10 px
+      circle(0, 0, 60); // hour
+      circle(0, 0, 40); // minute
+      circle(0, 0, 20); // second
+
+      // Hour planet (one revolution in 12 hours)
+      let hourAngle = (h + m / 60.0) * ( TWO_PI / 12 );
+      let hx = 30 * cos(hourAngle);
+      let hy = 30 * sin(hourAngle);
+      fill(80, 120, 255);
+      noStroke();
+      circle(hx, hy, 8);
+
+      // Minute planet (one revolution in 60 minutes)
+      let minuteAngle = (m + s / 60.0) * ( TWO_PI / 60 );
+      let mx = 20 * cos(minuteAngle);
+      let my = 20 * sin(minuteAngle);
+      fill(150, 255, 150);
+      circle(mx, my, 6);
+
+      // Second planet (one revolution in 60 seconds)
+      let secondAngle = s * ( TWO_PI / 60 );
+      let sx = 10 * cos(secondAngle);
+      let sy = 10 * sin(secondAngle);
+      fill(255, 100, 100);
+      circle(sx, sy, 4);
+
+      pop();
+
+      // Display time in top-left corner
+      push();
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let displayHour = h || 12; // convert "0" to "12"
+      let ampm = (hour() >= 12) ? "PM" : "AM";
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      text(`${displayHour}:${minStr}:${secStr} ${ampm}`, 10, 10);
+      pop();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Kaleidoscope</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0; 
+      padding: 0; 
+      background: #000;
+    }
+    /* The container at exactly 512x512 */
+    #kaleidoscopeContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    /* Instruction overlay on hover */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      padding: 30px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #kaleidoscopeContainer:hover #instructionsOverlay {
+      display: block;
+    }
+    h1, p {
+      margin: 1em 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="kaleidoscopeContainer">
+    <div id="instructionsOverlay">
+      <h1>Time Kaleidoscope</h1>
+      <p>This kaleidoscope’s size, color, and evolving shapes are all connected to the current hour, minute, and second. The heart of the display rotates and splits into mirrored segments, refreshed continually every second.</p>
+      <p>Hover over this area to read instructions.</p>
+    </div>
+  </div>
+
+  <script>
+    let shapes = [];
+    let prevSecond = -1;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('kaleidoscopeContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Update shapes once per second
+      if(s !== prevSecond) {
+        shapes.push(createNewShape(h, m, s));
+        // Limit stored shapes to keep it manageable
+        if (shapes.length > 60) shapes.shift();
+        prevSecond = s;
+      }
+
+      translate(width / 2, height / 2);
+      // Color mode for dynamic minute-based hue
+      colorMode(HSB);
+
+      // Scale the kaleidoscope based on hour [1..12 -> small..large]
+      let scaleFactor = map(h % 12 || 12, 1, 12, 0.6, 1.3);
+      scale(scaleFactor);
+
+      // Mirror the shapes into multiple segments
+      for(let seg = 0; seg < 8; seg++){
+        push();
+        rotate(seg * (360 / 8));
+        for(let shapeObj of shapes) {
+          fill((m * 6 + shapeObj.hueOffset) % 360, 80, 90);
+          drawShape(shapeObj.x, shapeObj.y, shapeObj.size, shapeObj.type);
+        }
+        pop();
+      }
+
+      // Reset color mode for text
+      colorMode(RGB);
+
+      // Show digital time in center
+      noStroke();
+      fill(255);
+      textSize(20);
+      textAlign(CENTER, CENTER);
+      let displayHour = h % 12 || 12;
+      let ampm = (h >= 12) ? "PM" : "AM";
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 0, 0);
+    }
+
+    // Create a shape object for the kaleidoscope
+    function createNewShape(h, m, s) {
+      // Random position near center
+      let xPos = random(-80, 80);
+      let yPos = random(-80, 80);
+
+      // Size scaled by hour
+      let sizeVal = map(h % 12 || 12, 1, 12, 10, 60);
+
+      // Decide shape type based on second
+      let shapeType = (s % 2 === 0) ? 'ellipse' : 'rect';
+
+      // A random hue offset
+      let hueOffset = random(360);
+
+      return {
+        x: xPos,
+        y: yPos,
+        size: sizeVal,
+        type: shapeType,
+        hueOffset: hueOffset
+      };
+    }
+
+    // Draw a chosen shape
+    function drawShape(x, y, size, type) {
+      if(type === 'ellipse'){
+        ellipse(x, y, size, size);
+      } else {
+        rectMode(CENTER);
+        rect(x, y, size, size);
+        rectMode(CORNER);
+      }
+    }
+  </script>
+</body>
+</html>

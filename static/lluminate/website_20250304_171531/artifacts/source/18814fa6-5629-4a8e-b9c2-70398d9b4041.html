@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Time Desert Mirage</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic reset and page styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Overlay shown on hover for instructions */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(0,0,0,0.8);
+      box-sizing: border-box;
+      padding: 20px;
+      color: #fff;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    p {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        TIME DESERT MIRAGE<br><br>
+        • Sky color fades with the hour.<br>
+        • Desert dunes shift every minute.<br>
+        • A cactus grows taller with each hour.<br>
+        • A scorpion scurries to mark the seconds.<br><br>
+        Hover away to wander the sands!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const CANVAS_SIZE = 512;
+    let lastMinute = -1;
+    let duneOffset = 0;  // shifts with minutes
+    let scorpionX = 0;   // scorpion position, updated with seconds
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      noStroke();
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Update duneOffset if the minute changes
+      if (m !== lastMinute) {
+        duneOffset += 50;  // shift dunes more each minute
+        lastMinute = m;
+      }
+
+      // Draw dynamic sky background
+      drawSky(h);
+
+      // Draw dunes
+      drawDunes(h, m);
+
+      // Draw cactus that grows with hour
+      drawCactus(h);
+
+      // Draw scorpion scurrying on the desert floor (seconds)
+      drawScorpion(s);
+
+      // Simple digital clock
+      showClock(h, m, s);
+    }
+
+    // Sky color changes with hour
+    function drawSky(hr) {
+      // Map hour to a color range from early dawn to late dusk
+      let topColor = color(map(hr, 0, 23, 10, 255), 80, map(hr, 0, 23, 30, 80));
+      let bottomColor = color(map(hr, 0, 23, 0, 100), map(hr, 0, 23, 0, 140), map(hr, 0, 23, 50, 150));
+      for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        let c = lerpColor(topColor, bottomColor, inter);
+        stroke(c);
+        line(0, y, width, y);
+      }
+    }
+
+    // Draw desert dunes with wavy shapes
+    function drawDunes(h, m) {
+      fill(194, 178, 128); // desert sand color
+      for (let i = 0; i < 5; i++) {
+        let yPos = height - (i * 30);
+        beginShape();
+        for (let x = 0; x <= width; x += 10) {
+          let wave = sin((x + frameCount * 0.5 + duneOffset) * 0.02 + i) * 8;
+          vertex(x, yPos + wave);
+        }
+        vertex(width, height);
+        vertex(0, height);
+        endShape(CLOSE);
+      }
+    }
+
+    // Cactus grows with hour (taller trunk)
+    function drawCactus(h) {
+      let cactusHeight = map(h % 12, 0, 11, 60, 180);
+      fill(34, 139, 34);
+      // Base trunk
+      rect(width * 0.2, height - cactusHeight - 20, 20, cactusHeight);
+      // Left arm
+      rect(width * 0.2 - 10, height - cactusHeight * 0.7 - 50, 10, 30);
+      // Right arm
+      rect(width * 0.2 + 20, height - cactusHeight * 0.5 - 30, 10, 30);
+    }
+
+    // Scorpion moves horizontally with seconds
+    function drawScorpion(sec) {
+      scorpionX = map(sec, 0, 59, width * 0.3, width * 0.8);
+      // Body
+      fill(60);
+      ellipse(scorpionX, height - 25, 25, 15);
+      // Tail
+      fill(40);
+      ellipse(scorpionX + 10, height - 30, 10, 10);
+      // Pincers
+      fill(50);
+      ellipse(scorpionX - 12, height - 30, 7, 7);
+      ellipse(scorpionX - 8, height - 22, 7, 7);
+    }
+
+    // Show a small digital clock in the corner
+    function showClock(h, m, s) {
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 10, height - 15);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cosmic Growth Garden</title>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* A fixed 512x512 container (for iframe) */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      border: none;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Cosmic Growth Garden</strong><br><br>
+        • Sky hue changes with hour<br>
+        • Spiraling cosmic arcs shift size with minute<br>
+        • Central flower pulses according to seconds<br>
+        • A butterfly flutters across the garden<br><br>
+        Hover here for instructions
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      COSMIC GROWTH GARDEN
+
+      Features:
+       1) Background color changes with hour
+       2) Cosmic spiral arcs sized by minute
+       3) A pulsing flower based on seconds
+       4) A butterfly that flutters across the screen
+       5) Digital clock in corner
+
+      Canvas: 512 x 512
+    */
+
+    const CANVAS_SIZE = 512;
+
+    // Butterfly variables
+    let butterflyX, butterflyY, butterflySpeedX, butterflySpeedY;
+    let wingAngle = 0;
+
+    // Setup p5
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+
+      // Initialize butterfly position and speed
+      butterflyX = width / 2;
+      butterflyY = height / 2;
+      butterflySpeedX = random(-2, 2);
+      butterflySpeedY = random(-2, 2);
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // (1) Background color (depends on hour)
+      // Range hour 0-23 mapped to hue 0-360
+      let hueVal = map(hr, 0, 23, 0, 360);
+      drawCosmicSky(hueVal);
+
+      // (2) Spiraling arcs (depends on minute)
+      // minute 0-59 controlling how large spiral arcs become
+      drawCosmicSpirals(mn);
+
+      // (3) Pulsing flower (depends on second)
+      // second 0-59 controlling flower scale
+      drawCenterFlower(sc);
+
+      // (4) Butterfly movement
+      moveButterfly();
+      drawButterfly();
+
+      // (5) Time display
+      drawClock(hr, mn, sc);
+    }
+
+    /* (1) Draw sky with hue mapped to hour */
+    function drawCosmicSky(hueVal) {
+      colorMode(HSB, 360, 100, 100);
+      background(hueVal, 60, 30);
+      colorMode(RGB);
+    }
+
+    /* (2) Draw cosmic spirals sized by minutes */
+    function drawCosmicSpirals(mn) {
+      push();
+      noFill();
+      stroke(255, 180);
+      strokeWeight(2);
+      translate(width/2, height/2);
+      let spiralSize = map(mn, 0, 59, 50, 200);
+      // Draw arcs in a spiral
+      for (let i = 0; i < 360; i += 10) {
+        let rad = map(i, 0, 360, spiralSize/4, spiralSize);
+        arc(0, 0, rad, rad, i, i+15);
+      }
+      pop();
+    }
+
+    /* (3) Pulsing flower in the center, scale depends on seconds */
+    function drawCenterFlower(sc) {
+      push();
+      translate(width/2, height/2);
+      let pulse = map(sc, 0, 59, 0.8, 1.2);
+      scale(pulse);
+      // Flower petals
+      noStroke();
+      fill(255, 100, 150, 200);
+      for (let a = 0; a < 360; a += 45) {
+        push();
+        rotate(a);
+        ellipse(0, 30, 20, 60);
+        pop();
+      }
+      // Flower center
+      fill(255, 220, 0);
+      circle(0, 0, 40);
+      pop();
+    }
+
+    /* (4a) Move butterfly with random bouncing */
+    function moveButterfly() {
+      butterflyX += butterflySpeedX;
+      butterflyY += butterflySpeedY;
+      // Bounce off edges
+      if (butterflyX < 0 || butterflyX > width) {
+        butterflySpeedX *= -1;
+      }
+      if (butterflyY < 0 || butterflyY > height) {
+        butterflySpeedY *= -1;
+      }
+      wingAngle += 10; // animate wings
+    }
+
+    /* (4b) Draw butterfly */
+    function drawButterfly() {
+      push();
+      translate(butterflyX, butterflyY);
+      noStroke();
+
+      // Body
+      fill(80);
+      rectMode(CENTER);
+      rect(0, 0, 10, 30, 5);
+
+      // Wings
+      let wingSpread = 20 * sin(wingAngle);
+      fill(255, 100, 200, 220);
+
+      // Left wing
+      push();
+      translate(-5, 0);
+      ellipse(0, 0, 40 + wingSpread, 30 + wingSpread);
+      pop();
+
+      // Right wing
+      push();
+      translate(5, 0);
+      ellipse(0, 0, 40 + wingSpread, 30 + wingSpread);
+      pop();
+
+      pop();
+    }
+
+    /* (5) Digital clock in bottom-left */
+    function drawClock(h, m, s) {
+      push();
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 10, height - 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

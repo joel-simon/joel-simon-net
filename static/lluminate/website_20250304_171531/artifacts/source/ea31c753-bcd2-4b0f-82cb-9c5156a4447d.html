@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Kaleidoscope Orchard</title>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: sans-serif;
+      overflow: hidden;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container (for iframe) */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      border: none;
+      overflow: hidden;
+      background: #000;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    .instructions-text {
+      position: absolute;
+      width: 80%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Kaleidoscope Orchard</strong><br><br>
+        • Sky color shifts through the day based on hour.<br>
+        • Trees sprout randomly, mirrored in each quadrant.<br>
+        • Bubbles float upward, their colors mapped to seconds.<br>
+        • Observe kaleidoscopic reflections and orchard illusions.<br><br>
+        Hover here for instructions. Enjoy!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time Kaleidoscope Orchard
+      Significantly different from previous examples:
+      1. Changing sky color by hour.
+      2. Random orchard trees in one quadrant, then mirrored in four quadrants.
+      3. Colorful floating bubbles keyed to seconds.
+      4. Digital clock in bottom-left corner.
+
+      All drawn within a 512 x 512 canvas.
+    */
+
+    const CANVAS_SIZE = 512;
+
+    // To store orchard trees in one quadrant
+    let orchardTrees = [];
+    const NUM_TREES = 12;
+
+    // For floating bubbles
+    let bubbles = [];
+    const NUM_BUBBLES = 30;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      noStroke();
+      initOrchardTrees();
+      initBubbles();
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // 1) Sky color shifts with hour
+      drawSky(hr);
+
+      // 2) Orchard quadrant + kaleidoscopic reflection
+      drawKaleidoscopicOrchard();
+
+      // 3) Bubbles floating up - color mapped to seconds
+      drawBubbles(sc);
+
+      // 4) Draw optional digital clock
+      drawClock(hr, mn, sc);
+    }
+
+    /* Initialize random orchard trees in quadrant 1 */
+    function initOrchardTrees() {
+      orchardTrees = [];
+      for (let i = 0; i < NUM_TREES; i++) {
+        orchardTrees.push({
+          x: random(width*0.05, width*0.45),
+          y: random(height*0.55, height*0.95),
+          size: random(15, 40),
+          trunkHeight: random(20, 40),
+          hue: random(360)
+        });
+      }
+    }
+
+    /* Draw orchard quadrant in top-left, then reflect to create kaleidoscope */
+    function drawKaleidoscopicOrchard() {
+      push();
+      // Draw orchard in top-left
+      // Reflect across center lines for kaleidoscope
+      // We'll treat (width/2, height/2) as mirror axis
+
+      // First quadrant draw
+      drawOrchardQuadrant(0, 0, 1, 1);
+
+      // Mirror horizontally
+      push();
+      scale(-1, 1);
+      translate(-width, 0);
+      drawOrchardQuadrant(0, 0, 1, 1);
+      pop();
+
+      // Mirror vertically
+      push();
+      scale(1, -1);
+      translate(0, -height);
+      drawOrchardQuadrant(0, 0, 1, 1);
+      pop();
+
+      // Mirror both horizontally and vertically
+      push();
+      scale(-1, -1);
+      translate(-width, -height);
+      drawOrchardQuadrant(0, 0, 1, 1);
+      pop();
+
+      pop();
+    }
+
+    function drawOrchardQuadrant(xOffset, yOffset, xScale, yScale) {
+      push();
+      translate(xOffset, yOffset);
+      scale(xScale, yScale);
+
+      // Draw orchard ground
+      fill(40, 80, 20); // basic ground color
+      rect(0, height*0.5, width*0.5, height*0.5);
+
+      // Draw orchard trees from orchardTrees array
+      colorMode(HSB, 360, 100, 100);
+      orchardTrees.forEach(tree => {
+        // trunk
+        fill(25, 80, 40);
+        rect(tree.x, tree.y - tree.trunkHeight, 6, tree.trunkHeight);
+
+        // leafy top
+        fill(tree.hue, 70, 70);
+        ellipse(tree.x + 3, tree.y - tree.trunkHeight, tree.size, tree.size);
+      });
+      pop();
+    }
+
+    /* Initialize the floating bubbles */
+    function initBubbles() {
+      for (let i = 0; i < NUM_BUBBLES; i++) {
+        bubbles.push({
+          x: random(width),
+          y: random(height, height * 1.5),
+          speed: random(0.5, 2),
+          diameter: random(10, 20)
+        });
+      }
+    }
+
+    /* Draw and update the bubbles */
+    function drawBubbles(sc) {
+      colorMode(HSB, 360, 100, 100);
+      for (let b of bubbles) {
+        let bubbleHue = map(sc, 0, 59, 0, 360);
+        fill((bubbleHue + b.x * 0.5) % 360, 60, 90, 0.7 * 100); // some variety
+        ellipse(b.x, b.y, b.diameter);
+        b.y -= b.speed;
+        if (b.y < -50) {
+          b.y = random(height, height * 1.5);
+          b.x = random(width);
+        }
+      }
+      colorMode(RGB);
+    }
+
+    /* Sky color that changes across 24 hours (simple gradient) */
+    function drawSky(hr) {
+      // Map hour (0-23) to color (a gradient from midnight to noon to evening)
+      let topColor, bottomColor;
+      if (hr < 12) {
+        // morning to noon: blend from dark blue to light blue
+        let pct = hr / 12;
+        topColor = lerpColor(color(10, 10, 50), color(60, 150, 240), pct);
+        bottomColor = lerpColor(color(30, 40, 80), color(150, 200, 255), pct);
+      } else {
+        // afternoon to midnight: blend from light blue to dark
+        let pct = (hr - 12) / 12;
+        topColor = lerpColor(color(60, 150, 240), color(10, 10, 50), pct);
+        bottomColor = lerpColor(color(150, 200, 255), color(30, 40, 80), pct);
+      }
+      // Draw gradient
+      noFill();
+      for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        let c = lerpColor(topColor, bottomColor, inter);
+        stroke(c);
+        line(0, y, width, y);
+      }
+    }
+
+    /* Small digital clock in bottom-left corner */
+    function drawClock(hr, mn, sc) {
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, BASELINE);
+      text(`${nf(hr,2)}:${nf(mn,2)}:${nf(sc,2)}`, 10, height - 10);
+      pop();
+    }
+  </script>
+</body>
+</html>

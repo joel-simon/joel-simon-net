@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Race</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset body margin/padding and enforce black background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container set to exactly 512x512 to match the iframe requirement */
+    #timeRaceContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, shown only on hover */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 30px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #timeRaceContainer:hover #instructionsOverlay {
+      display: block;
+    }
+
+    h1, p {
+      margin: 1em 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="timeRaceContainer">
+    <div id="instructionsOverlay">
+      <h1>Time Race</h1>
+      <p>The big square represents the hours, the medium square represents the minutes, and the small square represents the seconds.</p>
+      <p>Watch them circle around the center, with colors changing according to the current time. Hover again to revisit these instructions.</p>
+    </div>
+  </div>
+
+  <script>
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('timeRaceContainer');
+      colorMode(HSB);
+      angleMode(DEGREES);
+      textAlign(CENTER, CENTER);
+      textSize(24);
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Calculate angles for hour, minute, second
+      // (h % 12): 0-11, plus fraction of hour by minutes/seconds
+      let hourAngle = ((h % 12) + m/60 + s/3600) * 30;  // 360/12 = 30
+      let minuteAngle = (m + s/60) * 6;                // 360/60 = 6
+      let secondAngle = s * 6;                         // 360/60 = 6
+
+      // Radii where squares will orbit
+      let hourRadius = 90;
+      let minuteRadius = 140;
+      let secondRadius = 190;
+
+      push();
+      translate(width / 2, height / 2);
+
+      // Draw hour square
+      push();
+      rotate(hourAngle);
+      translate(hourRadius, 0);
+      fill((h % 12)*20, 255, 255);
+      noStroke();
+      rectMode(CENTER);
+      // Larger square for hour
+      rect(0, 0, 40, 40);
+      pop();
+
+      // Draw minute square
+      push();
+      rotate(minuteAngle);
+      translate(minuteRadius, 0);
+      fill(m * 4, 255, 255);
+      noStroke();
+      rectMode(CENTER);
+      // Medium square for minute
+      rect(0, 0, 30, 30);
+      pop();
+
+      // Draw second square
+      push();
+      rotate(secondAngle);
+      translate(secondRadius, 0);
+      fill(s * 4, 255, 255);
+      noStroke();
+      rectMode(CENTER);
+      // Small square for second
+      rect(0, 0, 20, 20);
+      pop();
+
+      // Digital time display
+      fill(255);
+      noStroke();
+      // Format hours in 12-hour style
+      let displayHour = h % 12;
+      if (displayHour === 0) displayHour = 12;
+      let ampm = (h >= 12) ? "PM" : "AM";
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      let timeString = displayHour + ":" + minStr + ":" + secStr + " " + ampm;
+      text(timeString, 0, -200);
+      pop();
+    }
+  </script>
+</body>
+</html>

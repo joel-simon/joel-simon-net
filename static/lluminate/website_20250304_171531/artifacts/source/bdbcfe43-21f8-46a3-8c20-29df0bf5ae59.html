@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Robot Factory</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for better contrast */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Robot Factory</strong><br><br>
+        • The background color changes with the hour.<br>
+        • The conveyor belt speed depends on the minutes.<br>
+        • The robotic arm rotates according to the seconds.<br>
+        • Lights blink each second.<br><br>
+        Hover to read instructions and watch the factory evolve with time.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    // Conveyor belt variables
+    let conveyorOffset = 0;
+
+    function setup() {
+      const cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      noStroke();
+      textFont('sans-serif');
+    }
+
+    function draw() {
+      // Get current time
+      let hr = hour();   // 0-23
+      let mn = minute(); // 0-59
+      let sc = second(); // 0-59
+
+      // 1) Draw the dynamic background based on hour
+      drawBackground(hr);
+
+      // 2) Draw conveyor belt moving at speed depending on minute
+      drawConveyor(mn);
+
+      // 3) Draw robotic arm rotating with seconds
+      drawRobotArm(sc);
+
+      // 4) Draw lights blinking every second
+      blinkLights(sc);
+
+      // 5) Display current time in the top-left corner
+      displayTime(hr, mn, sc);
+    }
+
+    function drawBackground(hr) {
+      // Simple color shift based on hour
+      // Map hour 0-23 to a value 0-255
+      let cValue = map(hr, 0, 23, 0, 255);
+      background(cValue, 100, 150);
+    }
+
+    function drawConveyor(mn) {
+      // Conveyor speed tied to minute: from slow (when mn=0) to faster (when mn=59)
+      let speed = map(mn, 0, 59, 0.5, 3);
+      conveyorOffset -= speed; // move left each frame
+
+      // Draw the conveyor belt: repeated dark rectangles
+      fill(40);
+      rect(0, height * 0.7, width, height * 0.3);
+
+      // Draw rectangular "plates" evenly spaced
+      fill(70);
+      let plateWidth = 60;
+      let spacing = 100;
+      for (let x = conveyorOffset; x < width + plateWidth; x += spacing) {
+        rect(x, height * 0.68, plateWidth, height * 0.04);
+      }
+    }
+
+    function drawRobotArm(sc) {
+      // Robotic arm base in the middle
+      push();
+      translate(width * 0.5, height * 0.5);
+
+      // Draw base
+      fill(80);
+      rectMode(CENTER);
+      rect(0, 0, 50, 50);
+
+      // The arm rotates with seconds
+      let armAngle = map(sc, 0, 59, 0, 360);
+      push();
+      rotate(armAngle);
+      fill(150);
+      rect(25, 0, 50, 15); // simple arm
+      // "Grabber"
+      fill(200);
+      rect(50, 0, 10, 30);
+      pop();
+      pop();
+    }
+
+    function blinkLights(sc) {
+      // Lights along the top of the factory, blinking each second
+      // if sc is even, lights are on; if odd, off
+      let isOn = (sc % 2 === 0);
+
+      push();
+      translate(0, 0);
+      for (let i = 0; i < 5; i++) {
+        let xPos = 50 + i * 100;
+        let yPos = 30;
+        if (isOn) {
+          fill(255, 50, 50);
+        } else {
+          fill(50);
+        }
+        ellipse(xPos, yPos, 20, 20);
+      }
+      pop();
+    }
+
+    function displayTime(hr, mn, sc) {
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(`${displayHour}:${minStr}:${secStr} ${ampm}`, 10, 10);
+    }
+  </script>
+</body>
+</html>

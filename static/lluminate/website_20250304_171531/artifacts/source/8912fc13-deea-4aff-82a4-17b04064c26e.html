@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Creative Combined Time Display</title>
+  <style>
+    /* Basic resets and layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* Container for the 512x512 canvas */
+    #p5sketch-container {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Instructions overlay, hidden by default */
+    .instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      font-size: 14px;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 1em;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #p5sketch-container:hover .instructions {
+      display: flex;
+    }
+
+    /* Cursor hint for interactivity */
+    #p5sketch-container:hover {
+      cursor: help;
+    }
+  </style>
+</head>
+<body>
+  <div id="p5sketch-container">
+    <div class="instructions">
+      <strong>Creative Combined Time Display</strong><br><br>
+      • A fractal tree in the background changes branching based on the minute<br>
+      • A central gear rotates according to the hour<br>
+      • Kaleidoscopic shapes shift colors with each second<br>
+      • Hover away to return to the animation
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let gearAngle = 0;  // Tracks the gear's rotation
+    let shapes = [];    // For storing kaleidoscopic shapes
+    let lastSecond;     // Used to detect second changes
+    let kaleidoSegments; // Number of kaleidoscope segments based on hour
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('p5sketch-container');
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100);
+      noStroke();
+      lastSecond = second();
+
+      // Initialize kaleidoscope segments based on the current hour
+      let hr = hour() % 12 || 12; // 1-12
+      kaleidoSegments = hr;
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour() % 12 || 12; // Keep hours in 1-12
+      let mn = minute();
+      let sc = second();
+
+      // Update gear rotation speed based on hour (hr=0 => minimal speed)
+      let rotationSpeed = map(hr === 0 ? 1 : hr, 1, 12, 0.5, 3);
+      gearAngle += rotationSpeed;
+
+      // Update fractal tree in background
+      push();
+      translate(width / 2, height - 20);
+      drawFractalTree(70, mn, sc);
+      pop();
+
+      // Draw central rotating gear
+      push();
+      translate(width/2, height/2);
+      drawGear(60, 12, gearAngle, color(200, 100, 80));
+      pop();
+
+      // Update kaleidoscope segments if hour changes
+      if (hr !== kaleidoSegments) {
+        kaleidoSegments = hr;
+        shapes = []; // Clear shapes to reinitialize
+      }
+
+      // On each new second, clear shapes (to create a fresh color shift)
+      if (sc !== lastSecond) {
+        lastSecond = sc;
+        shapes = [];
+      }
+
+      // Draw kaleidoscopic shapes around the edges
+      push();
+      translate(width/2, height/2);
+      let angleStep = 360 / kaleidoSegments;
+
+      // If not enough shapes, create new shapes
+      if (shapes.length < kaleidoSegments) {
+        let shapeSize = map(mn, 0, 59, 10, 80);
+        let shape = {
+          r: shapeSize,
+          c: color(map(sc, 0, 59, 0, 359), 90, 90),
+          xOff: random(-100, 100),
+          yOff: random(-100, 100)
+        };
+        shapes.push(shape);
+      }
+
+      shapes.forEach(shp => {
+        fill(shp.c);
+        for (let i = 0; i < kaleidoSegments; i++) {
+          push();
+          rotate(i * angleStep);
+          ellipse(shp.xOff, shp.yOff, shp.r, shp.r);
+          pop();
+        }
+      });
+      pop();
+
+      // Show digital clock readout
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(nf(hour(),2) + ":" + nf(mn,2) + ":" + nf(sc,2), 10, 10);
+      pop();
+    }
+
+    // Draw a fractal tree in the background
+    function drawFractalTree(branchSize, m, s) {
+      let maxDepth = floor(map(m, 0, 59, 4, 8)); // More branches as minute increases
+      stroke(140, 50, 80);
+      strokeWeight(2);
+      branch(branchSize, 1, maxDepth, s);
+    }
+
+    // Recursive function for fractal tree
+    function branch(length, depth, maxDepth, s) {
+      // Sway factor influenced by the second
+      let swayAngle = map(sin(frameCount + s*2), -1, 1, -5, 5);
+      line(0, 0, 0, -length);
+      translate(0, -length);
+
+      if (depth < maxDepth) {
+        push();
+        rotate(20 + swayAngle);
+        branch(length * 0.7, depth + 1, maxDepth, s);
+        pop();
+        push();
+        rotate(-20 - swayAngle);
+        branch(length * 0.7, depth + 1, maxDepth, s);
+        pop();
+      }
+    }
+
+    // Draw a gear with specified radius, number of teeth, angle, and color
+    function drawGear(radius, teeth, rotationAngle, gearColor) {
+      push();
+      rotate(rotationAngle);
+      fill(gearColor);
+      stroke(0);
+      strokeWeight(1);
+
+      // Main gear body
+      ellipse(0, 0, radius * 2, radius * 2);
+
+      // Gear teeth
+      for (let i = 0; i < 360; i += 360 / teeth) {
+        push();
+        rotate(i);
+        rect(0, -radius, radius * 0.2, radius * 0.4);
+        pop();
+      }
+
+      // Center circle
+      fill(0, 70);
+      ellipse(0, 0, radius * 0.5, radius * 0.5);
+      pop();
+    }
+  </script>
+</body>
+</html>

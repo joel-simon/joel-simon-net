@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Orbital Time</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <style>
+    /* Reset body margin/padding and ensure the page is centered */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Enforce the 512x512 size and position the tooltip */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none; 
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      border-radius: 4px;
+      padding: 10px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 240px;
+      z-index: 2;
+      line-height: 1.4em;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+
+    /* Keep the p5 canvas at exactly 512x512 */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      Orbital Time Instructions:<br><br>
+      • The central star pulses in size with the seconds.<br>
+      • Three planetary orbits revolve based on hours, minutes, and seconds.<br>
+      • Watch how each orbit speed and planet color correspond to real clock time.
+    </div>
+  </div>
+
+  <script>
+    // Store star positions for a star field in the background
+    let starPositions = [];
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent("canvasContainer");
+      angleMode(RADIANS);
+      noStroke();
+
+      // Create a random star field
+      for(let i = 0; i < 200; i++){
+        starPositions.push({
+          x: random(width),
+          y: random(height),
+          brightness: random(50, 255),
+          size: random(1, 3)
+        });
+      }
+    }
+
+    function draw(){
+      background(0);
+      
+      // Draw the star field
+      fill(255);
+      for (let star of starPositions) {
+        fill(star.brightness);
+        circle(star.x, star.y, star.size);
+      }
+
+      // Retrieve current time
+      let h = hour() % 12; // 0-11
+      let m = minute();    // 0-59
+      let s = second();    // 0-59
+
+      // Map each to an orbital angle
+      // Hour planet (completes one revolution in 12 hours)
+      let hourAngle = (h + m/60) * (TWO_PI / 12);
+      // Minute planet (completes one revolution in 60 minutes)
+      let minuteAngle = (m + s/60) * (TWO_PI / 60);
+      // Second planet (completes one revolution in 60 seconds)
+      let secondAngle = s * (TWO_PI / 60);
+
+      // Center star pulses with seconds
+      // E.g. a slight "heartbeat" with sin or just a direct mapping
+      let starSize = 20 + 10 * sin(frameCount * 0.1);
+
+      // Draw the center star
+      push();
+      translate(width/2, height/2);
+      fill(255, 200, 0);
+      circle(0, 0, starSize);
+      pop();
+
+      // Draw orbital lines (just for a bit of clarity)
+      push();
+      translate(width/2, height/2);
+      stroke(100, 100, 150, 50);
+      noFill();
+      strokeWeight(1);
+      circle(0, 0, 300); // Hour orbit radius ~ 150
+      circle(0, 0, 200); // Minute orbit radius ~ 100
+      circle(0, 0, 100); // Second orbit radius ~ 50
+      pop();
+
+      // Hour planet
+      push();
+      translate(width/2, height/2);
+      let hourRadius = 150;
+      let hx = hourRadius * cos(hourAngle);
+      let hy = hourRadius * sin(hourAngle);
+      noStroke();
+      fill(80, 100, 200);
+      circle(hx, hy, 20);
+      pop();
+
+      // Minute planet
+      push();
+      translate(width/2, height/2);
+      let minuteRadius = 100;
+      let mx = minuteRadius * cos(minuteAngle);
+      let my = minuteRadius * sin(minuteAngle);
+      fill(100, 220, 100);
+      circle(mx, my, 15);
+      pop();
+
+      // Second planet
+      push();
+      translate(width/2, height/2);
+      let secondRadius = 50;
+      let sx = secondRadius * cos(secondAngle);
+      let sy = secondRadius * sin(secondAngle);
+      fill(220, 80, 100);
+      circle(sx, sy, 10);
+      pop();
+    }
+  </script>
+</body>
+</html>

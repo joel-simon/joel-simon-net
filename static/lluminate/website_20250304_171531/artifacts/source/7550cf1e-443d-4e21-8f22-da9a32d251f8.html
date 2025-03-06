@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Celestial Kaleidoscope</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Celestial Kaleidoscope</strong><br><br>
+        • Colors shift each hour.<br>
+        • Rotation speed adjusts each minute.<br>
+        • Swirl patterns intensify each second.<br>
+        • Current time is shown in the top-left corner.<br><br>
+        Hover to reveal instructions and observe the ever-changing kaleidoscope.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+    
+    // Offscreen graphics for random doodles
+    let doodle;
+    // Angle used for rotation
+    let mainAngle = 0;
+    // For swirling shapes that respond to time
+    let swirl = 0;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+
+      // Create an offscreen graphics buffer for doodles
+      doodle = createGraphics(w/2, h/2);
+      doodle.angleMode(DEGREES);
+      doodle.noStroke();
+      doodle.background(0);
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Prepare doodle layer color based on hour
+      // Use hour % 12 to cycle color themes
+      let hueVal = map(hr % 12, 0, 11, 0, 360);
+      doodle.colorMode(HSB, 360, 100, 100);
+      doodle.background(hueVal, 80, 30, 0.02); // slow fade effect
+
+      // Draw random shapes on doodle buffer each frame
+      drawRandomShapes(doodle, hueVal);
+
+      // Increase swirl intensity with seconds
+      swirl += map(sc, 0, 59, 0.01, 0.3);
+
+      // Render kaleidoscope
+      push();
+      translate(width / 2, height / 2);
+      let slices = 8;
+      let sliceAngle = 360 / slices;
+      // Rotation speed increases with minutes
+      mainAngle += map(mn, 0, 59, 0.1, 2);
+      rotate(mainAngle);
+
+      for (let i = 0; i < slices; i++) {
+        push();
+        rotate(i * sliceAngle);
+        // Reflect and draw doodle
+        scale(1, -1);
+        image(doodle, 0, 0, w/2, h/2);
+        pop();
+      }
+      pop();
+
+      // Display time in the top-left corner
+      textTime(hr, mn, sc);
+    }
+
+    function drawRandomShapes(pg, baseHue) {
+      // Draw swirl arcs or circles
+      let x = random(pg.width);
+      let y = random(pg.height);
+      let shapeSize = random(5, 20);
+
+      pg.push();
+      pg.fill(baseHue, random(50,100), random(70,100), 0.8);
+      pg.translate(x, y);
+      if (random(1) > 0.5) {
+        pg.circle(0, 0, shapeSize);
+      } else {
+        let angle = random(360);
+        pg.rotate(angle);
+        pg.rectMode(CENTER);
+        pg.rect(0, 0, shapeSize, shapeSize * 0.6);
+      }
+      pg.pop();
+    }
+
+    function textTime(hr, mn, sc) {
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 10, 10);
+    }
+  </script>
+</body>
+</html>

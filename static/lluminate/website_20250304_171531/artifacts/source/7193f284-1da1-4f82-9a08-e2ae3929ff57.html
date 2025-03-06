@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Creative Time Display - Time Spirograph</title>
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic page reset and center content */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f7f7f7;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Tooltip (instructions on hover) */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 220px;
+      padding: 10px;
+      font-family: sans-serif;
+      font-size: 14px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #444;
+      z-index: 10;
+    }
+
+    /* Show tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      Explore this animated “Time Spirograph.” 
+      • Hour sets the large radius. 
+      • Minute sets the smaller gear. 
+      • Second changes pen offset and color. 
+      Watch the swirling lines trace out time!
+    </div>
+  </div>
+
+  <script>
+    let baseAngle = 0; // used to rotate the entire spirograph over time
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100);
+      noFill();
+    }
+
+    function draw() {
+      background(0, 0, 95);
+
+      // Current time
+      let h = hour() % 12; // 0-11
+      let m = minute();    // 0-59
+      let s = second();    // 0-59
+
+      // Map hour to large radius (R), minute to smaller radius (r),
+      // and second to pen offset (l).
+      // Add some base values & scaling so shapes remain interesting.
+      let R = map(h, 0, 11, 50, 180); 
+      let r = map(m, 0, 59, 10, 80);
+      let l = map(s, 0, 59, 10, 80);
+
+      // Make hue respond to seconds so color shifts each second
+      let hueVal = map(s, 0, 59, 0, 360);
+
+      // Slight rotation each draw for subtle movement
+      baseAngle += 0.2;
+      push();
+      translate(width / 2, height / 2);
+      rotate(baseAngle);
+
+      // Draw the spirograph by connecting points of a hypotrochoid
+      stroke(hueVal, 80, 70);
+      strokeWeight(1.5);
+      beginShape();
+      for (let t = 0; t <= 360 * 6; t += 2) {
+        // Hypotrochoid parametric equations
+        // (R - r) * cos(t) + l * cos(((R - r)/r) * t)
+        // (R - r) * sin(t) - l * sin(((R - r)/r) * t)
+        
+        let x = (R - r) * cos(t) + l * cos(((R - r) / r) * t);
+        let y = (R - r) * sin(t) - l * sin(((R - r) / r) * t);
+        vertex(x, y);
+      }
+      endShape();
+
+      pop();
+
+      // Display time in top-left
+      noStroke();
+      fill(30);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(nf(hour(), 2) + ":" + nf(minute(), 2) + ":" + nf(second(), 2), 10, 10);
+    }
+  </script>
+</body>
+</html>

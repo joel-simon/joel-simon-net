@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Origami Flower</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Origami Flower<br><br>
+        • Hour sets the number of petals.<br>
+        • Minute changes petal colors.<br>
+        • Second controls the fold and sway.<br><br>
+        Hover away to watch it bloom.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    function setup() {
+      let cnv = createCanvas(512, 512, WEBGL);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(0);
+
+      // Time values
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // At least 1 petal after midnight:
+      let petals = max(1, h);
+      // Petals revolve around the center, each separated by this angle:
+      let angleBetweenPetals = 360 / petals;
+      
+      // Color hue reference from minute:
+      let hueBase = map(m, 0, 59, 0, 360);
+      
+      // Petal fold/unfold motion influenced by the second
+      // We'll tilt each petal a bit
+      let foldAngle = map(s, 0, 59, 5, 60);
+
+      // Basic lighting
+      directionalLight(255, 255, 255, 0, 0, -1);
+      ambientLight(40);
+
+      // Center a bit and rotate for a nice perspective
+      push();
+      rotateX(65);
+      rotateY(frameCount * 0.2);
+
+      // Draw each petal
+      for (let i = 0; i < petals; i++) {
+        push();
+        // Rotate petal around center
+        rotateY(i * angleBetweenPetals);
+
+        // Move it outward from center
+        translate(80, 0, 0);
+
+        // Now tilt the petal open/closed
+        rotateZ(-foldAngle);
+
+        // Petal color based on minute + index
+        colorMode(HSB, 360, 100, 100);
+        let localHue = (hueBase + i * (360 / petals)) % 360;
+        fill(localHue, 80, 100);
+        noStroke();
+
+        // Draw a slightly triangular petal in 3D
+        beginShape();
+          vertex(-20,  0, 0);
+          vertex(  0, -80, 0);
+          vertex( 20,  0, 0);
+          vertex(  0, -10, 0);
+        endShape(CLOSE);
+
+        pop();
+      }
+      pop();
+
+      // Show digital clock in 2D overlay
+      push();
+      resetMatrix();
+      translate(-width/2 + 10, height/2 - 20);
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, CENTER);
+      // Leading zeros
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, 0, 0);
+      pop();
+    }
+  </script>
+</body>
+</html>

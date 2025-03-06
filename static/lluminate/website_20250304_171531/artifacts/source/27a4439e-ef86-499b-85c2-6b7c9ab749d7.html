@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Mandala Spin</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for contrast */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Mandala Spin</strong><br><br>
+        • The number of mandala “arms” is determined by the hour.<br>
+        • Colors shift according to the current minute.<br>
+        • Each second changes the background's blending pulsation.<br>
+        • Use the arrow keys to rotate the entire mandala.<br><br>
+        Hover to see these tips again and enjoy the evolving, time-based mandala!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let canvasSize = 512;
+    let mandalaRotation = 0;  // Overall rotation of the mandala
+    let rotationSpeed = 0;    // How quickly we rotate per frame
+    let arms;                 // Number of mandala arms
+    let t = 0;                // Time variable for background changes
+
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+
+      // Determine initial arms based on current hour
+      arms = max(2, hour() % 12 || 12);
+    }
+
+    function draw() {
+      backgroundGradient(); 
+      updateMandalaArms();  
+      drawTime();
+      push();
+        translate(width / 2, height / 2);
+        rotate(mandalaRotation);
+        drawMandala(arms);
+      pop();
+
+      mandalaRotation += rotationSpeed; 
+      t += 0.02; // Increment time for background pulsing
+    }
+
+    // Update number of mandala arms if hour changes
+    function updateMandalaArms() {
+      let currentArms = max(2, hour() % 12 || 12);
+      if (currentArms !== arms) {
+        arms = currentArms;
+      }
+    }
+
+    // Draw a mandala with a given number of arms
+    function drawMandala(numArms) {
+      let mn = minute();
+      let sc = second();
+
+      // Colors shift based on minute
+      let colorBase = map(mn, 0, 59, 0, 360);
+      noFill();
+      strokeWeight(2);
+
+      // Draw repeated arcs or shapes
+      for (let i = 0; i < numArms; i++) {
+        push();
+        rotate(i * (360 / numArms));
+        
+        // Stroke sets hue based on minute and lightness on second
+        stroke((colorBase + i * 10) % 360, 100, map(sc, 0, 59, 40, 100));
+        
+        // Draw arcs
+        beginShape();
+        for (let angle = 0; angle < 360; angle += 10) {
+          let rad = map(sin(angle + sc * 6), -1, 1, 30, 100);
+          let x = rad * cos(angle);
+          let y = rad * sin(angle);
+          vertex(x, y);
+        }
+        endShape(CLOSE);
+
+        pop();
+      }
+    }
+
+    // Display time in the top-left corner
+    function drawTime() {
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      let displayHour = hr % 12 || 12;
+      let ampm = hr >= 12 ? "PM" : "AM";
+      let mnStr = nf(mn, 2);
+      let scStr = nf(sc, 2);
+
+      text(displayHour + ":" + mnStr + ":" + scStr + " " + ampm, 10, 10);
+    }
+
+    // Pulsating radial background
+    function backgroundGradient() {
+      let sc = second();
+      // We blend two colors dynamically based on second
+      let blendFactor = map(sin(t + sc), -1, 1, 0, 1);
+      for (let r = 0; r < height / 2; r++) {
+        let inter = map(r, 0, height / 2, 0, 1);
+        // Colors shift from pinkish to teal
+        let col1 = color(200, 50, 100);
+        let col2 = color(0, 200, 180);
+        let c = lerpColor(col1, col2, (inter + blendFactor) % 1);
+        stroke(c);
+        line(width / 2 - r, 0 + r, width / 2 + r, 0 + r);
+        line(width / 2 - r, height - r, width / 2 + r, height - r);
+      }
+    }
+
+    // Adjust rotation speed using arrow keys
+    function keyPressed() {
+      if (keyCode === LEFT_ARROW) {
+        rotationSpeed -= 0.5;
+      }
+      else if (keyCode === RIGHT_ARROW) {
+        rotationSpeed += 0.5;
+      }
+      else if (keyCode === UP_ARROW) {
+        rotationSpeed = 0;
+      }
+    }
+  </script>
+</body>
+</html>

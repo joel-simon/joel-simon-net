@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creative Time Display - Glitch Clock</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center the page content and give a neutral background */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #131313;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #444;
+      padding: 8px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 200px;
+      z-index: 1;
+      line-height: 1.4em;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      Glitchy time display. Watch random strips distorting the clock. Colors shift with hour, minute, and second.
+    </div>
+  </div>
+
+  <script>
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      textAlign(CENTER, CENTER);
+      textSize(64);
+      noStroke();
+    }
+
+    function draw() {
+      let hr = hour() % 24;
+      let mn = minute();
+      let sc = second();
+
+      // Background color shifts based on hours and minutes
+      background((hr / 24) * 255, (mn / 60) * 140, 60);
+
+      // Centered text
+      fill((hr / 24) * 255, (mn / 60) * 255, (sc / 60) * 255);
+      text(nf(hr, 2) + ":" + nf(mn, 2) + ":" + nf(sc, 2), width / 2, height / 2);
+
+      // Create a glitch effect by slicing horizontal strips & offsetting them
+      let numSlices = 10;  // Number of strips to distort
+      for (let i = 0; i < numSlices; i++) {
+        let sliceY = random(height);
+        let sliceH = random(5, 25);
+        // Capture slice from current canvas
+        let sliceImage = get(0, sliceY, width, sliceH);
+        // Slightly offset each slice horizontally
+        image(sliceImage, random(-15, 15), sliceY);
+      }
+    }
+  </script>
+</body>
+</html>

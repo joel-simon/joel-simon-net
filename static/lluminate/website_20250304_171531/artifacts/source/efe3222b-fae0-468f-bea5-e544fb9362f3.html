@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Gears</title>
+  <style>
+    /* Basic reset and dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for our 512x512 sketch */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Hover instructions overlay */
+    #instructions {
+      pointer-events: none;
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #canvas-container:hover #instructions {
+      display: block;
+    }
+
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.5em;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="instructions">
+      <div class="instructions-text">
+        Time Gears Display:<br><br>
+        • Each gear represents hours, minutes, and seconds.<br>
+        • Watch them rotate at different speeds as time advances.<br>
+        • The digital time is displayed at the center.<br><br>
+        Observe how the gear rotations update in real-time!
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    const w = 512;
+    const h = 512;
+
+    function setup() {
+      const myCanvas = createCanvas(w, h);
+      myCanvas.parent('canvas-container');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(30);
+
+      // Current time
+      const hr = hour();
+      const mn = minute();
+      const sc = second();
+
+      // Center the origin
+      translate(width / 2, height / 2);
+
+      // Draw the hour gear
+      push();
+      const hourRotation = map(hr % 12, 0, 12, 0, 360) + map(mn, 0, 60, 0, 30);
+      drawGear(100, 12, hourRotation, color(200, 120, 20));
+      pop();
+
+      // Draw the minute gear
+      push();
+      const minuteRotation = map(mn, 0, 60, 0, 360) + map(sc, 0, 60, 0, 6);
+      drawGear(70, 14, minuteRotation, color(20, 150, 200));
+      pop();
+
+      // Draw the second gear
+      push();
+      const secondRotation = map(sc, 0, 60, 0, 360);
+      drawGear(40, 10, secondRotation, color(140, 200, 20));
+      pop();
+
+      // Digital time in the center
+      noStroke();
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(24);
+      const timeStr = nf(hr, 2) + ':' + nf(mn, 2) + ':' + nf(sc, 2);
+      text(timeStr, 0, 0);
+    }
+
+    // Function to draw a simple gear with a given radius, tooth count, angle, and color
+    function drawGear(radius, toothCount, rotationAngle, gearColor) {
+      rotate(rotationAngle);
+      stroke(gearColor);
+      strokeWeight(2);
+      noFill();
+
+      // Draw outer ring
+      ellipse(0, 0, radius * 2, radius * 2);
+
+      // Draw inner ring
+      ellipse(0, 0, radius * 1.2, radius * 1.2);
+
+      // Draw gear teeth
+      const angleStep = 360 / toothCount;
+      for (let i = 0; i < 360; i += angleStep) {
+        push();
+        rotate(i);
+        line(radius * 1.2 / 2, 0, radius, 0);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

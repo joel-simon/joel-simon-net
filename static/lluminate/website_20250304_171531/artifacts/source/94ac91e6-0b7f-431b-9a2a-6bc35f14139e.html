@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Reflection Orbits</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center page with dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Container for 512x512 canvas */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Overlay for instructions, shown on hover */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.8);
+      box-sizing: border-box;
+      color: #111;
+      font-family: sans-serif;
+      padding: 1rem;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Reflection Orbits</strong><br><br>
+        • Hours define color spectrum.<br>
+        • Minutes influence orbit radius.<br>
+        • Seconds flip orbit direction on the fly.<br>
+        • Click to add rings, right-click to remove rings.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let rings = []; // collection of orbital rings
+
+    function setup() {
+      const c = createCanvas(512, 512);
+      c.parent("canvas-container");
+      angleMode(DEGREES);
+      // Initialize with a few rings
+      for (let i = 0; i < 3; i++) {
+        rings.push(new OrbitalRing(
+          random(40, 200),
+          random(5, 30),
+          random(0.5, 2),
+          random(0, 360)
+        ));
+      }
+    }
+
+    function draw() {
+      background(30);
+
+      // Current time
+      let hr = hour() % 12;  // 0-11
+      let mn = minute();     // 0-59
+      let sc = second();     // 0-59
+
+      push();
+      translate(width / 2, height / 2);
+
+      // Use hour to shift color range
+      let colorBase = map(hr, 0, 11, 0, 360);
+      colorMode(HSB);
+
+      // For each ring:
+      // - updated speed or direction based on second
+      // - radius gently oscillates with minute
+      for (let i = 0; i < rings.length; i++) {
+        let ring = rings[i];
+        ring.updateDirection(sc);
+        ring.updateRadius(mn);
+        ring.display(colorBase + i * 20); // stagger colors
+      }
+
+      colorMode(RGB);
+      pop();
+
+      // Display digital time in the corner
+      noStroke();
+      fill(255);
+      textSize(16);
+      textAlign(RIGHT, TOP);
+      text(nf(hour(),2) + ':' + nf(mn,2) + ':' + nf(sc,2), width - 10, 10);
+    }
+
+    // Add ring on left-click
+    function mousePressed() {
+      if (mouseButton === LEFT) {
+        rings.push(new OrbitalRing(
+          random(40, 220),
+          random(5, 30),
+          random(0.5, 2),
+          random(0, 360)
+        ));
+      }
+    }
+
+    // Remove ring on right-click
+    function mouseClicked(event) {
+      // 2 indicates right-click
+      if (event.button === 2 && rings.length > 0) {
+        rings.pop();
+      }
+    }
+
+    // Disable context menu for right-click in canvas
+    document.oncontextmenu = function(e) {
+      let withinCanvas =
+        mouseX >= 0 && mouseX <= width &&
+        mouseY >= 0 && mouseY <= height;
+      if (withinCanvas) {
+        e.preventDefault();
+      }
+    };
+
+    // Class for each orbiting ring
+    class OrbitalRing {
+      constructor(radius, ringSize, speed, angle) {
+        this.baseRadius = radius;
+        this.ringSize = ringSize;
+        this.speed = speed;
+        this.angle = angle;
+
+        // direction flips if second is odd
+        this.direction = 1;
+      }
+
+      updateDirection(currentSecond) {
+        // Flip direction when second is odd
+        this.direction = (currentSecond % 2 === 1) ? -1 : 1;
+      }
+
+      updateRadius(currentMinute) {
+        // Slight expansion or contraction over time
+        let offset = map(sin(frameCount + currentMinute), -1, 1, -5, 5);
+        this.currentRadius = this.baseRadius + offset;
+      }
+
+      display(c) {
+        push();
+        rotate(this.angle);
+        this.angle += this.speed * this.direction;
+        fill(c % 360, 90, 90);
+        noStroke();
+        let r = this.currentRadius;
+        ellipse(r, 0, this.ringSize, this.ringSize);
+
+        // Outer ring
+        noFill();
+        stroke(c % 360, 100, 100);
+        strokeWeight(2);
+        ellipse(0, 0, r * 2, r * 2);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

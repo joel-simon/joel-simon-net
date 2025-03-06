@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Mandala Cloud</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the "Time Mandala Cloud"!<br><br>
+        • The swirling cloud's hue changes with the hour.<br>
+        • The mandala has petals equal to the current minute.<br>
+        • Watch the mandala rotate faster as seconds pass.<br><br>
+        Hover away to view and enjoy the moment!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let angleOffset = 0;  // Will increase based on second to animate rotation
+    let noiseOffset = 0;  // For swirling background effect
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100);
+      noStroke();
+    }
+
+    function draw() {
+      drawSwirlingBackground();
+      drawTimeMandala();
+    }
+
+    function drawSwirlingBackground() {
+      let h = hour();
+      /*
+       * Create a subtle swirling background using noise.
+       * The hue changes based on hour, brightness and saturation
+       * remain the same for a pleasing effect.
+       */
+      let bgHue = map(h, 0, 24, 0, 360);
+      noiseOffset += 0.01;
+      loadPixels();
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          // Use some noise combination to generate a swirl pattern
+          let nx = x / 100.0 + noiseOffset;
+          let ny = y / 100.0 + noiseOffset;
+          let n = noise(nx, ny);
+          // Amplify to get a swirl effect
+          let bright = map(n, 0, 1, 0, 100);
+          let index = (x + y * width) * 4;
+          let c = color(bgHue, 60, bright);
+          pixels[index] = hue(c);     // R channel (but in HSB, we re-map later)
+          pixels[index + 1] = saturation(c); // G channel
+          pixels[index + 2] = brightness(c); // B channel
+          pixels[index + 3] = 255;    // Alpha
+        }
+      }
+      updatePixels();
+    }
+
+    function drawTimeMandala() {
+      /*
+       * The mandala's petal count is determined by minute(),
+       * Its rotation speed is determined by second().
+       */
+      let m = minute();
+      let s = second();
+      let petals = constrain(m, 1, 59); // Always at least 1 petal
+      angleOffset += map(s, 0, 60, 0.5, 5); // Rotation speed grows with seconds
+
+      push();
+      translate(width / 2, height / 2);
+      rotate(angleOffset);
+      for (let i = 0; i < petals; i++) {
+        push();
+        // Evenly spread petals around a circle
+        rotate((360 / petals) * i);
+        // Petal shape
+        drawPetal();
+        pop();
+      }
+      pop();
+
+      // A minimal digital clock in the corner
+      displayClock();
+    }
+
+    function drawPetal() {
+      /*
+       * Drawing a stylized petal shape:
+       * a combination of arcs or ellipses can be used.
+       */
+      fill(255, 90);
+      beginShape();
+      vertex(0, 0);
+      bezierVertex(-20, -50, 20, -50, 0, -100);
+      bezierVertex(20, -50, -20, -50, 0, 0);
+      endShape(CLOSE);
+    }
+
+    function displayClock() {
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

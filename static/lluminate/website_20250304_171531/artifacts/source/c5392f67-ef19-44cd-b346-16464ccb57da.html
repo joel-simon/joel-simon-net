@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Combined Time Mosaic, Fractal & Gear</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset default margins and background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container exactly 512x512 */
+    #combinedTimeCanvas {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      cursor: default;
+      overflow: hidden;
+    }
+
+    /* Instruction overlay on hover */
+    #overlayInstructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 30px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #combinedTimeCanvas:hover #overlayInstructions {
+      display: block;
+    }
+
+    h1, p {
+      margin: 0.5em 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="combinedTimeCanvas">
+    <div id="overlayInstructions">
+      <h1>Time Mosaic, Fractal & Gear</h1>
+      <p>
+        • Mosaic tiles shift hue with the hour.<br>
+        • A fractal tree's branching adjusts every minute.<br>
+        • A gear rotates with the passing seconds.<br>
+        • Hover again to see instructions.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Combined Time Mosaic, Fractal, & Gear
+      ---------------------------------------
+      - Mosaic background colors reflect the current hour.
+      - A fractal tree at the center changes depth with the minute.
+      - A gear in the corner rotates according to the seconds.
+      - A digital clock displays the current time at the top-left.
+      ---------------------------------------
+    */
+
+    let gearAngle = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('combinedTimeCanvas');
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100);
+    }
+
+    function draw() {
+      background(0);
+
+      // Grab current local time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Draw mosaic background
+      drawMosaicBackground(h);
+
+      // Draw fractal tree in center (depth depends on current minute)
+      push();
+      translate(width / 2, height * 0.7);
+      stroke(0, 0, 100);
+      strokeWeight(2);
+      let depth = floor(map(m, 0, 59, 3, 8));
+      drawFractalTree(50, 25, depth);
+      pop();
+
+      // Draw and rotate gear in top-right corner (based on seconds)
+      gearAngle = (s / 60) * 360;
+      push();
+      translate(width - 70, 70);
+      rotate(gearAngle);
+      drawGear(40, 12);
+      pop();
+
+      // Draw digital clock at top-left
+      drawTimeDisplay(h, m, s);
+    }
+
+    // Mosaic background function
+    function drawMosaicBackground(currentHour) {
+      let tileSize = 32;
+      for (let y = 0; y < height; y += tileSize) {
+        for (let x = 0; x < width; x += tileSize) {
+          // Slight variation in hue based on tile position
+          let hueVal = (currentHour * 15 + x + y) % 360; 
+          fill(hueVal, 80, 40);
+          noStroke();
+          rect(x, y, tileSize, tileSize);
+        }
+      }
+    }
+
+    // Recursive fractal tree
+    // length: branch length, angle: branch angle, depth: levels of recursion
+    function drawFractalTree(branchLen, angle, depth) {
+      line(0, 0, 0, -branchLen);
+      translate(0, -branchLen);
+      if (depth > 0) {
+        push();
+        rotate(angle);
+        drawFractalTree(branchLen * 0.7, angle, depth - 1);
+        pop();
+
+        push();
+        rotate(-angle);
+        drawFractalTree(branchLen * 0.7, angle, depth - 1);
+        pop();
+      }
+    }
+
+    // Basic gear drawing function
+    // r: radius of gear, teeth: number of teeth
+    function drawGear(r, teeth) {
+      fill(200, 50, 90);
+      noStroke();
+
+      beginShape();
+      for (let i = 0; i < 360; i += 360/teeth) {
+        let outerX = (r + 10) * cos(i);
+        let outerY = (r + 10) * sin(i);
+        let innerX = r * cos(i + (360/(teeth*2)));
+        let innerY = r * sin(i + (360/(teeth*2)));
+        vertex(outerX, outerY);
+        vertex(innerX, innerY);
+      }
+      endShape(CLOSE);
+
+      // Center circle
+      fill(0, 0, 100);
+      circle(0, 0, r * 0.6);
+    }
+
+    // Digital clock display in the corner
+    function drawTimeDisplay(h, m, s) {
+      fill(255);
+      noStroke();
+      textSize(18);
+      textAlign(LEFT, TOP);
+
+      let displayHour = h % 12;
+      if (displayHour === 0) displayHour = 12;
+      let ampm = h >= 12 ? "PM" : "AM";
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      let timeString = displayHour + ":" + minStr + ":" + secStr + " " + ampm;
+      text(timeString, 10, 10);
+    }
+  </script>
+</body>
+</html>

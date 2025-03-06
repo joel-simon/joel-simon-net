@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Flow Field</title>
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset and center everything */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    /* Container for our 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative; /* for tooltip positioning */
+    }
+    /* Hide tooltip by default; show on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      font-family: sans-serif;
+      font-size: 13px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #666;
+      padding: 10px;
+      width: 250px;
+      z-index: 10;
+    }
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <!-- Tooltip instructions appear on hover -->
+    <div class="tooltip">
+      Time Flow Field: 
+      · Each second, an invisible “flow” field is reshaped, guiding particle swirls. 
+      · Colors change every minute. 
+      · Faster motion under later hours. 
+      · Watch how these orbs dynamically dance to the clock.
+    </div>
+  </div>
+
+  <script>
+    // Canvas size
+    const w = 512;
+    const h = 512;
+
+    // Number of particles
+    let numParticles = 150;
+    // Array to store particle objects
+    let particles = [];
+    // Flow field resolution
+    let scaleFactor = 20;
+    // Angles for flow field
+    let flowField = [];
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      noStroke();
+      fill(255);
+
+      // Initialize particles at random positions
+      for (let i = 0; i < numParticles; i++) {
+        particles.push(new Particle(random(width), random(height)));
+      }
+    }
+
+    function draw() {
+      // Get current time
+      let hr = hour() % 12; // 0-11
+      let mn = minute();    // 0-59
+      let sc = second();    // 0-59
+
+      // Use second as random seed so the pattern changes every second
+      randomSeed(sc);
+
+      // Create a background gradient that shifts with hour/minute
+      let topColor = color( (hr*15 + mn*2) % 255, (120 + hr*5) % 255, (180 + mn*3) % 255);
+      let bottomColor = color( (hr*25 + mn*3) % 255, (60 + mn*3) % 255, (200 + hr*10) % 255);
+      setVerticalGradient(0, 0, width, height, topColor, bottomColor);
+
+      // Recalculate the flow field each frame, but variation is impacted by second
+      let xoff = 0;
+      for (let x = 0; x < width; x += scaleFactor) {
+        let yoff = 0;
+        for (let y = 0; y < height; y += scaleFactor) {
+          // Combine hour, minute, random noise to create angle
+          let angle = noise(xoff + (hr*0.1), yoff + (mn*0.1), sc*0.1) * TWO_PI * 2;
+          let index = (x/scaleFactor) + (y/scaleFactor) * floor(width/scaleFactor);
+          flowField[index] = angle;
+          yoff += 0.1;
+        }
+        xoff += 0.1;
+      }
+
+      // Update and display each particle
+      let hourSpeedFactor = map(hr, 0, 11, 0.5, 2.5); // speed depends on hour
+      for (let i = 0; i < particles.length; i++) {
+        particles[i].follow(flowField);
+        particles[i].update(hourSpeedFactor);
+        particles[i].edges();
+        particles[i].display();
+      }
+
+      // Show digital time in bottom center
+      fill(50);
+      textSize(20);
+      textAlign(CENTER, CENTER);
+      text(
+        nf(hour(), 2) + ":" + nf(mn, 2) + ":" + nf(sc, 2),
+        width / 2,
+        height - 20
+      );
+    }
+
+    // Draws a vertical gradient background
+    function setVerticalGradient(x, y, w, h, c1, c2) {
+      noFill();
+      for (let i = y; i <= y + h; i++) {
+        let inter = map(i, y, y + h, 0, 1);
+        let c = lerpColor(c1, c2, inter);
+        stroke(c);
+        line(x, i, x + w, i);
+      }
+    }
+
+    // Particle class
+    class Particle {
+      constructor(x, y) {
+        this.pos = createVector(x, y);
+        this.vel = createVector(0, 0);
+        this.acc = createVector(0, 0);
+        this.maxSpeed = 3;
+        // Color depends on minute
+        this.r = random(0, 255);
+      }
+
+      follow(flowField) {
+        let xIndex = floor(this.pos.x / scaleFactor);
+        let yIndex = floor(this.pos.y / scaleFactor);
+        let index = xIndex + yIndex * floor(width / scaleFactor);
+        let angle = flowField[index];
+        let force = p5.Vector.fromAngle(angle);
+        this.applyForce(force);
+      }
+
+      applyForce(force) {
+        this.acc.add(force);
+      }
+
+      update(speedFactor) {
+        // Adjust velocity according to hour-based speed factor
+        this.vel.add(this.acc.mult(speedFactor));
+        this.vel.limit(this.maxSpeed);
+        this.pos.add(this.vel);
+        this.acc.mult(0);
+      }
+
+      edges() {
+        // Wrap around the edges
+        if (this.pos.x > width) this.pos.x = 0;
+        if (this.pos.x < 0) this.pos.x = width;
+        if (this.pos.y > height) this.pos.y = 0;
+        if (this.pos.y < 0) this.pos.y = height;
+      }
+
+      display() {
+        // Particle color changes slightly with the minute
+        // We set alpha to create a trailing effect
+        let mn = minute();
+        let sc = second();
+        fill( (this.r + mn*4) % 255, (150 + mn*2) % 255, (220 + sc*3) % 255, 100);
+        ellipse(this.pos.x, this.pos.y, 5, 5);
+      }
+    }
+  </script>
+</body>
+</html>

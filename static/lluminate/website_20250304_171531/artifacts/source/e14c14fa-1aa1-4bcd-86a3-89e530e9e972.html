@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Reverse Time Swirl</title>
+  <style>
+    /* Ensure no scrollbars & no page margin */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #ddd;
+    }
+    /* Container is sized to hold a 512x512 canvas */
+    #container {
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      position: relative;
+    }
+    /* Overlay for hover instructions */
+    #hover-info {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #container:hover #hover-info {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="hover-info">
+      <p>
+        Observe the swirling arcs. We’ve reversed the usual assumption of time flowing forward; the swirl spins backward. Colors shift with the hour, minute, and second. Move your mouse away to watch it in action.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let canvasSize = 512;
+    let angleOffset = 0;
+
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent('container');
+      angleMode(DEGREES);
+      noFill();
+      strokeWeight(2);
+    }
+
+    function draw() {
+      background(0);
+      
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Reverse the swirl by rotating in the negative direction
+      angleOffset -= 0.2; 
+
+      // Use time components to influence color and swirl geometry
+      let swirlColor = color(
+        map(h, 0, 23, 0, 255), 
+        map(m, 0, 59, 0, 255), 
+        map(s, 0, 59, 0, 255)
+      );
+      stroke(swirlColor);
+
+      push();
+      translate(width / 2, height / 2);
+
+      // The swirl is drawn by layering arcs that rotate 
+      // opposite to the direction of increasing time
+      let maxRings = 8; 
+      for (let i = 0; i < maxRings; i++) {
+        push();
+        let ringAngle = angleOffset + i * 15;
+        rotate(ringAngle);
+        let ringSize = (i + 1) * 25 + (s * 2);
+        arc(0, 0, ringSize, ringSize, 180, 360);
+        pop();
+      }
+
+      pop();
+
+      // Display the reversed swirl concept with current time
+      fill(255);
+      noStroke();
+      textAlign(CENTER, CENTER);
+      textSize(14);
+      text(
+        nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2),
+        width / 2, 
+        height - 20
+      );
+    }
+  </script>
+</body>
+</html>

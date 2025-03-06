@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Spiral Mandala</title>
+  <style>
+    /* Basic reset and body background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      overflow: hidden; /* Hide any scrollbars */
+    }
+
+    /* A container for the 512x512 canvas */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Instructions overlay, visible on hover */
+    #instructions {
+      pointer-events: none; /* Let mouse events pass through to the canvas */
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    #canvas-container:hover #instructions {
+      display: block;
+    }
+
+    /* Center the instruction text */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="instructions">
+      <div class="instructions-text">
+        This spiral mandala depicts the current time.<br/><br/>
+        • Spiral growth = hour<br/>
+        • Shape position and color = minute<br/>
+        • Rotating swirl = second<br/>
+        Move your mouse away to see the visualization clearly.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <script>
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let myCanvas = createCanvas(w, h);
+      myCanvas.parent('canvas-container');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour() % 24; // 0..23
+      let mn = minute();    // 0..59
+      let sc = second();    // 0..59
+
+      // Show a subtle clock in the corner
+      fill(255);
+      noStroke();
+      textSize(14);
+      textAlign(RIGHT, BOTTOM);
+      text(nf(hr, 2) + ":" + nf(mn, 2) + ":" + nf(sc, 2), width - 10, height - 10);
+
+      translate(width / 2, height / 2);
+
+      // Spiral radius grows with hour
+      let radiusGrowth = map(hr, 0, 23, 70, 300);
+
+      // We'll create a shape repeated around a spiral
+      // Frequencies and angles shift with time
+      let totalShapes = map(mn, 0, 59, 5, 25);
+      let angleShift = frameCount * map(sc, 0, 59, 0.2, 2); // swirl speed
+
+      for (let i = 0; i < totalShapes; i++) {
+        let fraction = i / totalShapes;
+        let angle = fraction * 360 + angleShift;
+
+        // Spiral radius is also multiplied by fraction
+        let r = radiusGrowth * fraction;
+
+        // Position for each shape
+        let x = r * cos(angle);
+        let y = r * sin(angle);
+
+        push();
+        translate(x, y);
+
+        // Shape color changes over time
+        fill(
+          map(mn, 0, 59, 100, 255), 
+          map(hr, 0, 23, 50, 255), 
+          map(sc, 0, 59, 50, 255)
+        );
+
+        // Subtly rotate each shape to face outward
+        rotate(angle + 90);
+
+        // Draw shape
+        noStroke();
+        beginShape();
+        // A simple trapezoid-like shape for variety
+        vertex(-10, -20);
+        vertex(10, -20);
+        vertex(20, 20);
+        vertex(-20, 20);
+        endShape(CLOSE);
+
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

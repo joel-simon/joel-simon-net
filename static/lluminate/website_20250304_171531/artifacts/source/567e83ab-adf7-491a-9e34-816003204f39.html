@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Origami Desert</title>
+  <!-- Include p5.js -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Zero out page margins and ensure a dark background behind the canvas */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Fixed 512x512 container for our canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden; /* Clip any off-canvas content */
+      background-color: #000;
+    }
+
+    /* Hover overlay for instructions (initially hidden) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-family: sans-serif;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    /* Show the overlay text only on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <h2>Time Origami Desert</h2>
+      <p>
+        • Sky color shifts with each hour.<br>
+        • Cacti (origami-style) grow as the hours pass.<br>
+        • Rolling dunes sway with the current minute.<br>
+        • Glowing spirits appear every second and fade away.<br>
+        • Time is pinned in a desert vortex at the bottom.<br>
+        Hover away to explore!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Origami Desert
+      - The desert sky color transitions based on the hour (0-23).
+      - Origami-style cacti grow taller as hours increase (0-23).
+      - Dunes gently wave according to the current minute (0-59).
+      - Ephemeral glowing spirits appear each second, then fade.
+      - A digital time readout is displayed at the bottom.
+    */
+
+    const CANVAS_SIZE = 512;
+    let cacti = [];
+    let spirits = [];
+    let lastSecond = -1;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100);
+
+      // Create some cacti
+      for (let i = 0; i < 5; i++) {
+        let xPos = random(50, width - 50);
+        // Assign a random base height & branch style to each
+        let baseHeight = random(40, 80);
+        cacti.push(new Cactus(xPos, baseHeight));
+      }
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Draw sky
+      drawSkyColor(hr, mn, sc);
+
+      // Draw dunes
+      drawDunes(mn);
+
+      // Update and draw cacti
+      for (let c of cacti) {
+        c.update(hr);
+        c.display();
+      }
+
+      // Produce ephemeral spirit on second change
+      if (sc !== lastSecond) {
+        spirits.push(new Spirit());
+        lastSecond = sc;
+      }
+
+      // Update and display ephemeral spirits
+      for (let s of spirits) {
+        s.update();
+        s.display();
+      }
+      // Keep only those not fully faded
+      spirits = spirits.filter((s) => s.lifespan > 0);
+
+      // Show time readout near bottom
+      fill(255);
+      noStroke();
+      textSize(20);
+      textAlign(CENTER, BASELINE);
+      text(`${hr}:${nf(mn, 2)}:${nf(sc, 2)}`, width / 2, height - 10);
+    }
+
+    // Sky color smoothly transitions with hour
+    function drawSkyColor(h, m, s) {
+      let totalSec = h * 3600 + m * 60 + s;
+      let hue = map(totalSec % 86400, 0, 86400, 0, 360);
+      background(hue, 60, 60);
+    }
+
+    // Draw gently rolling dunes
+    function drawDunes(mn) {
+      noStroke();
+      // Two layers of dunes, each offset to produce a parallax effect
+      let waveOffsetM = mn * 2; // Minute-based shift
+
+      // Foreground dune
+      fill(30, 80, 90);
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 8) {
+        let yOff = sin((frameCount + waveOffsetM + x) * 0.02) * 20;
+        vertex(x, height - 100 + yOff);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+
+      // Background dune
+      fill(30, 100, 60);
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 8) {
+        let yOff = cos((frameCount * 0.015) + (x * 0.03) + waveOffsetM) * 15;
+        vertex(x, height - 150 + yOff);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+    }
+
+    // Cactus that grows over hours
+    class Cactus {
+      constructor(x, baseHeight) {
+        this.x = x;
+        this.baseHeight = baseHeight; // base height
+      }
+
+      update(hr) {
+        // Cactus height grows between 0 and 23 hours, up to an additional 60px
+        this.currentHeight = this.baseHeight + map(hr, 0, 23, 0, 60);
+      }
+
+      display() {
+        push();
+        translate(this.x, height);
+        strokeWeight(2);
+        noFill();
+        stroke(120, 80, 50);
+
+        // Draw main trunk as an origami-like polygon
+        let trunkWidth = 20;
+        beginShape();
+        vertex(-trunkWidth / 2, 0);
+        vertex(trunkWidth / 2, 0);
+        vertex(trunkWidth / 2, -this.currentHeight);
+        vertex(0, -this.currentHeight - 10);  // heading to a point
+        vertex(-trunkWidth / 2, -this.currentHeight);
+        endShape(CLOSE);
+
+        // Draw some vertical segments to mimic folds
+        let folds = 3;
+        for (let i = 1; i < folds; i++) {
+          let yFold = map(i, 0, folds, 0, -this.currentHeight);
+          line(-trunkWidth / 2, yFold, trunkWidth / 2, yFold);
+        }
+
+        pop();
+      }
+    }
+
+    // Glowing spirit that appears each second and fades out
+    class Spirit {
+      constructor() {
+        this.x = random(width);
+        this.y = random(height - 200);
+        this.size = random(10, 30);
+        this.lifespan = 255;
+      }
+
+      update() {
+        // Slowly fade
+        this.lifespan -= 3;
+        // Float upwards slightly
+        this.y -= 0.5;
+      }
+
+      display() {
+        push();
+        translate(this.x, this.y);
+        noStroke();
+        fill(200, 100, 100, this.lifespan * 0.7);
+        ellipse(0, 0, this.size, this.size);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

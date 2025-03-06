@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Planetary Time</title>
+  <style>
+    /* Overall page styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100vh;
+      width: 100vw;
+      display: grid;
+      place-items: center;
+    }
+
+    /* Tooltip container */
+    .info-tip {
+      position: relative;
+      font-family: sans-serif;
+      user-select: none;
+      cursor: pointer;
+      color: #fff;
+      margin-bottom: 0.5em;
+    }
+    /* Tooltip content (hidden by default) */
+    .info-content {
+      visibility: hidden;
+      width: 250px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.9em;
+      line-height: 1.4em;
+      z-index: 1;
+    }
+    /* Show the text when hovering over the container */
+    .info-tip:hover .info-content {
+      visibility: visible;
+    }
+
+    /* Ensure the canvas is exactly 512x512 with no extra scrollbars */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="info-tip">
+    Hover for instructions
+    <div class="info-content">
+      Observe the planetary orbits as they represent hour (center star),
+      minute (orbiting planet), and second (orbiting moon). Each orbit
+      grows or shrinks with current time to provide a dynamic display.
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let centerX, centerY;
+
+    function setup() {
+      createCanvas(512, 512);
+      angleMode(DEGREES);
+      centerX = width / 2;
+      centerY = height / 2;
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Central star (based on hour)
+      push();
+      translate(centerX, centerY);
+      let starRadius = map(h % 12, 0, 11, 40, 100);
+      let starColor = color(map(h, 0, 23, 100, 255), 120, 180);
+      noStroke();
+      fill(starColor);
+      drawStar(0, 0, starRadius * 0.5, starRadius, 8);
+      pop();
+
+      // Orbit radius for minutes
+      let minuteOrbitRadius = map(m, 0, 59, 60, 180);
+
+      // Orbit radius for seconds
+      let secondOrbitRadius = map(s, 0, 59, 20, 70);
+
+      // Draw orbit paths
+      noFill();
+      stroke(255, 50);
+      circle(centerX, centerY, minuteOrbitRadius * 2);
+      circle(centerX, centerY, secondOrbitRadius * 2);
+
+      // Orbiting planet for minutes
+      push();
+      translate(centerX, centerY);
+      let angleM = map(m, 0, 59, 0, 360);
+      rotate(angleM);
+      fill(0, 120, 200);
+      noStroke();
+      circle(minuteOrbitRadius, 0, 25);
+      pop();
+
+      // Orbiting moon for seconds
+      push();
+      translate(centerX, centerY);
+      let angleS = map(s, 0, 59, 0, 360);
+      rotate(angleS);
+      fill(200, 100, map(s, 0, 59, 50, 255));
+      noStroke();
+      circle(secondOrbitRadius, 0, 10);
+      pop();
+    }
+
+    // A simple function to draw a star
+    function drawStar(x, y, radius1, radius2, npoints) {
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

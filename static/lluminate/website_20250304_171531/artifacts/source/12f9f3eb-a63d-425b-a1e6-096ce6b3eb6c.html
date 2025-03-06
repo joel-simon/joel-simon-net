@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Kaleidoscope</title>
+  <style>
+    /* Page and body reset, center content */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      height: 100vh;
+      width: 100vw;
+      display: grid;
+      place-items: center;
+    }
+    /* Tooltip container */
+    .info-tip {
+      position: relative;
+      font-family: sans-serif;
+      user-select: none;
+      cursor: pointer;
+      color: #fff;
+      margin-bottom: 0.5em;
+    }
+    /* Tooltip content (hidden by default) */
+    .info-content {
+      visibility: hidden;
+      width: 300px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.9em;
+      line-height: 1.4em;
+      z-index: 1;
+    }
+    /* Show the text when hovering over the container */
+    .info-tip:hover .info-content {
+      visibility: visible;
+    }
+    /* Ensure the canvas is exactly 512x512 and centered */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+<div class="info-tip">
+  Hover for instructions
+  <div class="info-content">
+    Time Kaleidoscope Instructions:
+    • The number of slices changes at the top of every hour. 
+    • The color palette is re-seeded every minute. 
+    • The pattern continuously rotates with real time (seconds). 
+    • Press UP/DOWN keys to add or remove slices in real time.
+  </div>
+</div>
+
+<!-- p5.js library -->
+<script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+<script>
+/*
+  TIME KALEIDOSCOPE
+  -----------------------------------
+  A creative time-based kaleidoscope:
+  - Hour sets the base # of slices
+  - Minute changes color palette each minute
+  - Seconds continuously rotate the pattern
+  - UP and DOWN keys allow manual slice adjustment
+*/
+
+let baseSlices;         // Base number of slices driven by hour
+let sliceAdjust = 0;    // Additional slices set by user presses
+let paletteSeed = 0;    // Palette seed re-set every minute
+let lastMinute = -1;    // Track changes in minute
+
+function setup() {
+  createCanvas(512, 512);
+  angleMode(DEGREES);
+  colorMode(HSB);
+
+  // Initialize with current time
+  baseSlices = calcSlices(hour());
+  minuteChanged();
+}
+
+function draw() {
+  background(0);
+
+  let h = hour();
+  let m = minute();
+  let s = second();
+
+  // Check minute changes to reset palette
+  if(m !== lastMinute){
+    minuteChanged();
+  }
+
+  // Number of symmetrical slices = baseSlices + any manual adjustment
+  let slices = max(3, baseSlices + sliceAdjust);
+
+  // Fade background based on hour
+  let hourHue = map((h % 12), 0, 11, 0, 360);
+  background(hourHue, 50, 15);
+
+  // Overall rotation with second-based movement
+  let rotationOffset = map(s, 0, 60, 0, 360) + (frameCount * 0.02);
+  translate(width/2, height/2);
+  rotate(rotationOffset);
+
+  // Draw kaleidoscope by repeating a shape around the circle
+  let sliceAngle = 360 / slices;
+  for(let i = 0; i < slices; i++){
+    push();
+    rotate(sliceAngle * i);
+    drawKaleidoscopeSegment(sliceAngle);
+    pop();
+  }
+}
+
+/*
+  Whenever minute changes, re-randomize 
+  the color palette by seeding random()
+*/
+function minuteChanged() {
+  randomSeed(millis()); 
+  lastMinute = minute();
+  paletteSeed = random(10000); 
+}
+
+/*
+  The # of slices is determined by hour:
+  - Keep a base between 6 and 18 slices
+*/
+function calcSlices(currentHour) {
+  // default from 6 slices (at 0hr) to 18 slices (at 11hr)
+  let modH = currentHour % 12; 
+  return floor(map(modH, 0, 11, 6, 18));
+}
+
+/*
+  Draw one slice (or wedge) of the kaleidoscope:
+  Random arcs, lines, shapes using the current palette
+*/
+function drawKaleidoscopeSegment(sliceW) {
+  // Use the paletteSeed offset to get random colors
+  randomSeed(paletteSeed + frameCount * 0.001);
+
+  // We only draw in half the wedge to keep symmetrical look
+  let halfSlice = sliceW * 0.5;
+
+  // Draw random arcs / lines in this half-slice region
+  noStroke();
+  let steps = 5;
+  for(let i = 0; i < steps; i++){
+    let hueVal = random(360);
+    let satVal = 60 + random(40);
+    let briVal = 70 + random(30);
+    fill(hueVal, satVal, briVal, 0.6);
+
+    let r1 = random(30, 180);
+    let r2 = r1 + random(10, 40);
+    let startA = -halfSlice + random(halfSlice * 2);
+    let endA = startA + random(10, 40);
+
+    arc(0, 0, r2*2, r2*2, startA, endA);
+
+    // Potential additional shape
+    if(random() < 0.3){
+      let rRect = random(20,40);
+      rectMode(CENTER);
+      push();
+      rotate(random(-halfSlice, halfSlice));
+      fill(hueVal, satVal, briVal, 0.9);
+      rect(0, r2 + rRect/2, rRect, rRect);
+      pop();
+    }
+  }
+}
+
+/*
+  Use arrow keys to add or remove slices 
+  from the kaleidoscope in real time
+*/
+function keyPressed() {
+  if (keyCode === UP_ARROW) {
+    sliceAdjust++;
+  } else if (keyCode === DOWN_ARROW) {
+    sliceAdjust--;
+  }
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Maze Tree Fusion</title>
+  <style>
+    /* Basic resets and layout settings */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container to hold our 512x512 p5 canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+    }
+
+    /* The hover overlay for instructions */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.8);
+    }
+    /* Reveal overlay on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+
+    /* Provide a subtle indicator of interactivity */
+    #canvasContainer:hover {
+      cursor: help;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        TIME MAZE TREE FUSION<br><br>
+        • A new maze is generated every time the minute changes.<br>
+        • Use arrow keys to navigate your explorer through the maze.<br>
+        • A fractal tree in the background evolves with the current time.<br><br>
+        Hover away to return to the animation.
+      </p>
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /***********************
+      GLOBAL VARIABLES
+    ***********************/
+    let cols = 16;
+    let rows = 16;
+    let cellSize = 32;          // 16 x 32 = 512
+    
+    let grid = [];              // Maze cells
+    let stack = [];             // Stack for maze generation
+    let currentCell;            // For DFS-based maze generation
+    let lastMinute = -1;        // Track when to regenerate the maze
+
+    // Player properties
+    let playerX = 0;
+    let playerY = 0;
+    
+    // For fractal tree
+    let maxDepth;
+    let baseBranchLen;
+    
+    /***********************
+      CELL CLASS
+    ***********************/
+    class Cell {
+      constructor(i, j) {
+        this.i = i;    // column
+        this.j = j;    // row
+        // Maze walls
+        this.top = true;
+        this.right = true;
+        this.bottom = true;
+        this.left = true;
+        this.visited = false;
+      }
+
+      index(col, row) {
+        // Safely return index in grid
+        if (col < 0 || row < 0 || col >= cols || row >= rows) {
+          return -1;
+        }
+        return col + row * cols;
+      }
+
+      checkNeighbors() {
+        let neighbors = [];
+        let top    = grid[this.index(this.i, this.j - 1)];
+        let right  = grid[this.index(this.i + 1, this.j)];
+        let bottom = grid[this.index(this.i, this.j + 1)];
+        let left   = grid[this.index(this.i - 1, this.j)];
+
+        if (top && !top.visited)    neighbors.push(top);
+        if (right && !right.visited)  neighbors.push(right);
+        if (bottom && !bottom.visited) neighbors.push(bottom);
+        if (left && !left.visited)   neighbors.push(left);
+
+        if (neighbors.length > 0) {
+          let r = floor(random(0, neighbors.length));
+          return neighbors[r];
+        } else {
+          return undefined;
+        }
+      }
+
+      draw() {
+        stroke(255);
+        strokeWeight(2);
+        let x = this.i * cellSize;
+        let y = this.j * cellSize;
+        
+        // Draw each wall
+        if (this.top) {
+          line(x, y, x + cellSize, y);
+        }
+        if (this.right) {
+          line(x + cellSize, y, x + cellSize, y + cellSize);
+        }
+        if (this.bottom) {
+          line(x + cellSize, y + cellSize, x, y + cellSize);
+        }
+        if (this.left) {
+          line(x, y + cellSize, x, y);
+        }
+      }
+    }
+
+    /***********************
+      MAZE GENERATION
+    ***********************/
+    function generateMaze() {
+      // Initialize the grid
+      grid = [];
+      for (let j = 0; j < rows; j++) {
+        for (let i = 0; i < cols; i++) {
+          let cell = new Cell(i, j);
+          grid.push(cell);
+        }
+      }
+
+      // Randomized Depth-First Search approach
+      currentCell = grid[0];
+      currentCell.visited = true;
+      stack = [];
+      
+      // Keep drilling until we've visited all cells
+      while (true) {
+        // Step 1: Check neighbors
+        let next = currentCell.checkNeighbors();
+        if (next) {
+          next.visited = true;
+          // Step 2: Push current to stack
+          stack.push(currentCell);
+          // Step 3: Remove walls
+          removeWalls(currentCell, next);
+          // Step 4: Move on
+          currentCell = next;
+        } else if (stack.length > 0) {
+          currentCell = stack.pop();
+        } else {
+          break;
+        }
+      }
+
+      // Reset player location
+      playerX = 0;
+      playerY = 0;
+    }
+
+    // Utility to remove walls between two adjacent cells
+    function removeWalls(a, b) {
+      let xDiff = a.i - b.i;
+      if (xDiff === 1) {
+        a.left = false;
+        b.right = false;
+      } else if (xDiff === -1) {
+        a.right = false;
+        b.left = false;
+      }
+      let yDiff = a.j - b.j;
+      if (yDiff === 1) {
+        a.top = false;
+        b.bottom = false;
+      } else if (yDiff === -1) {
+        a.bottom = false;
+        b.top = false;
+      }
+    }
+
+    /***********************
+      P5 SETUP & DRAW
+    ***********************/
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      // Generate initial maze
+      generateMaze();
+      // Fractal tree angle mode
+      angleMode(RADIANS);
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // If minute changed, regenerate the maze
+      if (m !== lastMinute) {
+        lastMinute = m;
+        generateMaze();
+      }
+
+      // Draw fractal tree in the background
+      // Depth and base branch length guided by hour, minute, second
+      push();
+      translate(width/2, height); 
+      stroke(80, 180, 80, 100);
+      maxDepth = floor(map(h, 0, 23, 4, 10));
+      baseBranchLen = map(m, 0, 59, 40, 120);
+      drawFractalTree(baseBranchLen, -PI/2, 0);
+      pop();
+
+      // Draw the maze
+      for (let i = 0; i < grid.length; i++) {
+        grid[i].draw();
+      }
+
+      // Draw player as a small rectangle
+      fill(255, 50, 50);
+      noStroke();
+      rect(playerX * cellSize + 8, playerY * cellSize + 8, cellSize - 16, cellSize - 16);
+
+      // Optional reference clock at bottom-left
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, CENTER);
+      text(nf(h,2) + ":" + nf(m,2) + ":" + nf(s,2), 10, height - 20);
+    }
+
+    /***********************
+      FRACTAL TREE
+    ***********************/
+    function drawFractalTree(len, angle, depth) {
+      // Draw a branch
+      strokeWeight(map(depth, 0, maxDepth, 2, 0.5));
+      line(0, 0, 0, -len);
+      translate(0, -len);
+
+      if (depth < maxDepth) {
+        // Adjust angles by second-based variation
+        let angleVariation = map(second(), 0, 59, -0.2, 0.2);
+
+        // Right branch
+        push();
+        rotate(angle + angleVariation);
+        drawFractalTree(len * 0.67, angle, depth + 1);
+        pop();
+
+        // Left branch
+        push();
+        rotate(-angle + angleVariation);
+        drawFractalTree(len * 0.67, angle, depth + 1);
+        pop();
+      }
+    }
+
+    /***********************
+      PLAYER MOVEMENT
+    ***********************/
+    function keyPressed() {
+      let indexCurrent = playerX + playerY * cols;
+      let c = grid[indexCurrent];
+      if (!c) return;
+
+      // Up arrow
+      if (keyCode === UP_ARROW && !c.top) {
+        playerY = max(playerY - 1, 0);
+      }
+      // Down arrow
+      else if (keyCode === DOWN_ARROW && !c.bottom) {
+        playerY = min(playerY + 1, rows - 1);
+      }
+      // Left arrow
+      else if (keyCode === LEFT_ARROW && !c.left) {
+        playerX = max(playerX - 1, 0);
+      }
+      // Right arrow
+      else if (keyCode === RIGHT_ARROW && !c.right) {
+        playerX = min(playerX + 1, cols - 1);
+      }
+    }
+  </script>
+</body>
+</html>

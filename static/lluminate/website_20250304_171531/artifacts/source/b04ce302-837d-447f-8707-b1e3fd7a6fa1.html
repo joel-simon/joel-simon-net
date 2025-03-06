@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Tidal Waves</title>
+  <style>
+    /* Basic setup for a black background and no margins */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* Keep everything to 512x512 for the iframe */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (visible on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Tidal Waves</strong><br><br>
+        • Color changes by hour.<br>
+        • Wave amplitude adjusts with minutes.<br>
+        • Wave speed widens or narrows with seconds.<br>
+        • Observe the current digital time at the top.<br><br>
+        Hover to see instructions. Enjoy!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+    }
+
+    function draw() {
+      background(0);
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+      
+      displayDigitalTime(hr, mn, sc);
+
+      // Map time to wave parameters
+      // Color: based on hour (0-23)
+      let waveColor = map(hr, 0, 23, 0, 360); 
+      // Amplitude: based on minute (0-59)
+      let amplitude = map(mn, 0, 59, 20, 150);
+      // Speed/frequency: based on second (0-59)
+      let freq = map(sc, 0, 59, 0.005, 0.05);
+
+      // Draw multiple arcs (3 layers) for visual interest
+      noFill();
+      strokeWeight(3);
+      colorMode(HSB, 360, 100, 100);
+      for (let i = 0; i < 3; i++) {
+        stroke((waveColor + i * 40) % 360, 80, 100);
+        beginShape();
+        for (let x = 0; x <= width; x += 5) {
+          let y = h / 2 + (i - 1) * 60; 
+          // Wave formula
+          y += sin(x * freq + frameCount * 0.02 + i * 40) * amplitude;
+          vertex(x, y);
+        }
+        endShape();
+      }
+      colorMode(RGB, 255); 
+    }
+
+    function displayDigitalTime(hr, mn, sc) {
+      noStroke();
+      fill(255);
+      textAlign(CENTER, TOP);
+      textSize(18);
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(`${displayHour}:${minStr}:${secStr} ${ampm}`, width / 2, 10);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reverse Time Spiral</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic page setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Container for the 512x512 sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      box-sizing: border-box;
+      pointer-events: none;
+      padding: 30px;
+      text-align: center;
+      font-size: 14px;
+      line-height: 1.5em;
+    }
+    /* Appear on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: block;
+    }
+
+    /* Center the instruction text */
+    #hoverOverlay p {
+      position: relative;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Reverse Time Spiral<br><br>
+        • Observe how time appears to run backwards in this swirling animation.<br>
+        • The spiral shrinks or grows based on the hour, coloring shifts with the minute,<br>
+          and “reverse” rotation speed depends on the second.<br>
+        • Hover away to watch the animation react to your real time, just reversed.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let swirlAngle = 0;
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      noFill();
+      strokeWeight(2);
+    }
+
+    function draw() {
+      background(34);
+
+      // Current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      /* 
+         We reverse our typical assumption of forward-moving time by 
+         rotating in the negative direction at a rate dependent on the current second.
+         Meanwhile, the maximum spiral radius is tied to the current hour,
+         and color shifts come from the current minute.
+      */
+
+      // Convert time to parameters
+      let hourMaxRadius = map(h, 0, 23, 50, 250);     // Spiral can be smaller at midnight, bigger near midnight next day
+      let minuteHue = map(m, 0, 59, 0, 360);         // Hue cycles around the color wheel each hour
+      // Negative swirl speed influenced by seconds
+      let swirlSpeed = map(s, 0, 59, 0.5, 3.5);
+
+      // Reverse rotation
+      swirlAngle -= swirlSpeed;
+
+      // Translate to center
+      push();
+      translate(width / 2, height / 2);
+
+      // Draw reversed spiral
+      strokeCap(ROUND);
+      for (let i = 0; i < 200; i++) {
+        // Spiral radius from 0 to hourMaxRadius
+        let r = map(i, 0, 199, 0, hourMaxRadius);
+        let angleOffset = i * 4 + swirlAngle; // Spread out the arms of the spiral
+        let x = r * cos(angleOffset);
+        let y = r * sin(angleOffset);
+        // Color depends on minute + gradual change per spiral segment
+        stroke((minuteHue + i * 2) % 360, 80, 80, 0.9);
+        // Use HSB color with a built-in converter from p5
+        colorMode(HSB, 360, 100, 100, 1);
+
+        // Draw a little connected line to the swirl
+        if (i > 0) {
+          // For a smooth trailing line connect from previous point
+          let pr = map(i - 1, 0, 199, 0, hourMaxRadius);
+          let pAngleOffset = (i - 1) * 4 + swirlAngle;
+          let px = pr * cos(pAngleOffset);
+          let py = pr * sin(pAngleOffset);
+          line(px, py, x, y);
+        }
+      }
+      pop();
+
+      colorMode(RGB);
+
+      // Show “reversed time” as text near bottom
+      // Indicate that even though real time is moving forward, we label it as "reversed"
+      noStroke();
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(16);
+      text(
+        "Reversed Time: " + nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2),
+        width / 2, height - 20
+      );
+    }
+  </script>
+</body>
+</html>

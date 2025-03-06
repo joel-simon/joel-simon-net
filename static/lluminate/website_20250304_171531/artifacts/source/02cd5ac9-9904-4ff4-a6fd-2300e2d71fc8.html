@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Time Petal Mandala</title>
+  <style>
+    /* Page setup to ensure only a 512x512 area is visible for the canvas */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas and overlay */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: auto;
+      overflow: hidden;
+      background-color: #111;
+    }
+
+    /* Instructions overlay hidden by default, appears on hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: none;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.8);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Petal Mandala</strong><br><br>
+        • Number of petals follows the current hour (in 12-hour format).<br>
+        • Petal color changes with the minute.<br>
+        • Rotation speed depends on the second.<br>
+        • Automatically updates over time.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      // Time components
+      let hr = hour() % 12;
+      if (hr === 0) hr = 12;  // Convert "0" to "12"
+      let mn = minute();
+      let sc = second();
+
+      // Background gradient: shift slightly by minute
+      setGradientBackground(mn);
+
+      // Translate to center
+      translate(width / 2, height / 2);
+
+      // Calculate color from minute
+      // We'll map minute [0..59] to a hue [0..359]
+      let baseHue = map(mn, 0, 59, 0, 359);
+
+      // Petal rotation speed depends on second
+      let rotationSpeed = map(sc, 0, 59, 0, 5);
+
+      // Draw the petals
+      let petalCount = hr; 
+      let angleStep = 360 / petalCount;
+      noStroke();
+      for (let i = 0; i < petalCount; i++) {
+        push();
+        rotate(frameCount * rotationSpeed + angleStep * i);
+        fill((baseHue + i * 15) % 360, 80, 90, 1); 
+        petal(0, 0, 40, 150);
+        pop();
+      }
+
+      // Draw time readout at center
+      displayClock(hour(), mn, sc);
+    }
+
+    // Function to draw a single petal shape
+    function petal(x, y, r1, r2) {
+      // We'll draw a symmetrical shape
+      beginShape();
+      vertex(x, y - r1);
+      bezierVertex(x + r2 * 0.4, y - r1 * 0.65, x + r2, y - r1 * 0.2, x + r2, y);
+      bezierVertex(x + r2, y + r1 * 0.2, x + r2 * 0.4, y + r1 * 0.65, x, y + r1);
+      bezierVertex(x - r2 * 0.4, y + r1 * 0.65, x - r2, y + r1 * 0.2, x - r2, y);
+      bezierVertex(x - r2, y - r1 * 0.2, x - r2 * 0.4, y - r1 * 0.65, x, y - r1);
+      endShape(CLOSE);
+    }
+
+    // Display a time readout at center
+    function displayClock(hr, mn, sc) {
+      push();
+      rotate(0); 
+      fill(255);
+      noStroke();
+      textAlign(CENTER, CENTER);
+      textSize(20);
+
+      let displayHour = hr % 12 || 12;
+      let ampm = hr >= 12 ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+
+      // Show 24-hour time if you prefer, or stick to 12-hour notation
+      // For clarity, we'll do 12-hour as described
+      text(displayHour + ":" + minStr + ":" + secStr + " " + (hour() >= 12 ? "PM" : "AM"), 0, 0);
+      pop();
+    }
+
+    // Helper: set a radial gradient background
+    function setGradientBackground(mn) {
+      // We can do a soft radial gradient from center
+      // We'll pick a base color that shifts with minute
+      let fromColor = color((mn * 6) % 360, 70, 15);
+      let toColor = color((mn * 3) % 360, 70, 40);
+      noFill();
+      for (let r = 0; r < width / 2; r++) {
+        let inter = map(r, 0, width / 2, 0, 1);
+        let c = lerpColor(fromColor, toColor, inter);
+        stroke(c);
+        ellipse(width / 2, height / 2, r * 2, r * 2);
+      }
+    }
+
+    // We override colorMode to HSB for certain calls
+    // (Advanced usage: keep a separate function or re-set color mode)
+    // We'll just do it inline for clarity
+    function color(h, s, b, a=1) {
+      push();
+      colorMode(HSB, 360, 100, 100, 1);
+      let c = super.color(h, s, b, a);
+      pop();
+      return c;
+    }
+  </script>
+</body>
+</html>

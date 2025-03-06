@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Celestial Orbit Time Display</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for contrast */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Celestial Orbit Time Display</strong><br><br>
+        • Rings revolve around the center, symbolizing the passage of time.<br>
+        • Outer rings use the hour to set size and revolve speed.<br>
+        • Inner rings use the minute to shift diameter and add color changes.<br>
+        • Central swirl color pulsates with each second.<br>
+        • Watch the time in the top-left corner!<br><br>
+        Hover to see tips!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <script>
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      // Retrieve current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Draw time in corner
+      drawTime(hr, mn, sc);
+
+      // Translate to center for rotational drawing
+      translate(width / 2, height / 2);
+
+      // Create a swirling background effect by layering some arcs
+      // Outer orbit (hours): revolve speed + ring thickness
+      push();
+      rotate((frameCount * (hr + 1)) % 360);
+      drawOrbitRing(hr, mn, sc, 160, 20);
+      pop();
+
+      // Middle orbit (minutes): revolve with minutes, color shifts
+      push();
+      rotate((frameCount * (mn + 1)) % 360);
+      drawOrbitRing(hr, mn, sc, 100, 15);
+      pop();
+
+      // Inner swirling shape (seconds): pulsate color with each second
+      push();
+      rotate(frameCount * 2);
+      drawPulsatingSwirl(sc, 40);
+      pop();
+    }
+
+    // Draw an orbiting ring with dynamic color and size
+    function drawOrbitRing(hr, mn, sc, radius, thickness) {
+      let ringColor = color(
+        map(hr, 0, 23, 0, 255),
+        map(mn, 0, 59, 100, 255),
+        map(sc, 0, 59, 150, 255)
+      );
+      fill(ringColor);
+      ellipse(0, 0, radius + map(mn, 0, 59, 0, 30), radius + map(mn, 0, 59, 0, 30));
+      fill(0);
+      ellipse(0, 0, (radius - thickness) + map(mn, 0, 59, 0, 30), (radius - thickness) + map(mn, 0, 59, 0, 30));
+    }
+
+    // Draw the central swirl that pulsates with seconds
+    function drawPulsatingSwirl(sc, size) {
+      let swirlColor = color(
+        map(sc, 0, 59, 50, 255),
+        100,
+        map(sc, 0, 59, 255, 50)
+      );
+      fill(swirlColor);
+      beginShape();
+      // Create random swirl pattern based on second
+      for (let a = 0; a < 360; a += 30) {
+        let r = size + map(sin(a + frameCount * 2), -1, 1, -10, 10);
+        let x = r * cos(a);
+        let y = r * sin(a);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+    }
+
+    // Display the time in the top-left corner
+    function drawTime(hr, mn, sc) {
+      push();
+      resetMatrix();
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let displayHour = hr % 12 || 12;
+      let ampm = hr >= 12 ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 10, 10);
+      pop();
+    }
+  </script>
+</body>
+</html>

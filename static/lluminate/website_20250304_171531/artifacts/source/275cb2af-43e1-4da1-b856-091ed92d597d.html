@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Time Origami Bloom</title>
+  <!-- p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset body margin/padding and use a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container fixed at 512x512, centered */
+    #clock-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+    }
+
+    /* Instructions overlay, hidden by default */
+    #instructions {
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      display: none;
+      background-color: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      line-height: 1.5;
+      padding: 2rem;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #clock-container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="clock-container">
+  <div id="instructions">
+    <h2>Time Origami Bloom</h2>
+    <p>Observe the origami petals bloom with changing hours.<br/>
+       The colors shift with minutes, and rotation evolves with seconds.<br/>
+       Enjoy the unfolding time tapestry!</p>
+  </div>
+</div>
+
+<script>
+  let canvasSize = 512;
+
+  function setup() {
+    let myCanvas = createCanvas(canvasSize, canvasSize);
+    myCanvas.parent("clock-container");
+    angleMode(RADIANS);
+    colorMode(HSB, 255);
+    noStroke();
+  }
+
+  function draw() {
+    background(0);
+    let hr = hour();
+    let mn = minute();
+    let sc = second();
+
+    // Translate to center
+    translate(width/2, height/2);
+
+    // Number of "petals" in the bloom: base it on hours, ensuring at least 3 petals
+    let petals = (hr % 12) + 3;
+
+    // Rotation offset based on seconds
+    let rotationOffset = map(sc, 0, 59, 0, TWO_PI);
+
+    // Draw each petal in a radial arrangement
+    for (let i = 0; i < petals; i++) {
+      push();
+      let angleStep = (TWO_PI / petals) * i + rotationOffset;
+      rotate(angleStep);
+
+      // Petal color based on minutes
+      // HSB: Hue varies with minutes, with moderate saturation and brightness
+      fill(mn * 4, 200, 200);
+
+      // Draw a polygon that acts as a petal
+      drawPolygon(0, 0, 80, 3 + (hr % 5)); 
+      pop();
+    }
+
+    // Show digital clock near bottom center
+    push();
+    translate(-width/2, -height/2);
+    fill(255);
+    textSize(24);
+    textAlign(CENTER, CENTER);
+    text(`${hr}:${nf(mn, 2)}:${nf(sc, 2)}`, width / 2, height - 30);
+    pop();
+  }
+
+  /* Utility function to draw a regular polygon */
+  function drawPolygon(x, y, radius, npoints) {
+    let angle = TWO_PI / npoints;
+    beginShape();
+    for (let a = 0; a < TWO_PI; a += angle) {
+      let sx = x + cos(a) * radius;
+      let sy = y + sin(a) * radius;
+      vertex(sx, sy);
+    }
+    endShape(CLOSE);
+  }
+</script>
+</body>
+</html>

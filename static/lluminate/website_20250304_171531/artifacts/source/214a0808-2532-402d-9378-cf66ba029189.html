@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creative Time Display - Rotating Star</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center the page content and give a neutral background */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f7f7f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #444;
+      padding: 8px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 200px;
+      z-index: 1;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      This display is a star whose number of points equals (hours+3),
+      size changes with the seconds, and rotation with the minutes.
+    </div>
+  </div>
+
+  <script>
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(RADIANS);
+    }
+
+    function draw() {
+      background(230);
+      
+      let hr = hour() % 12; 
+      let mn = minute();
+      let sc = second();
+
+      // Map time to star parameters
+      let starPoints = hr + 3;          // Star points depend on hour
+      let rotationAngle = map(mn, 0, 60, 0, TWO_PI);  // Rotation depends on minute
+      let outerRadius = map(sc, 0, 60, 50, 200);      // Size depends on second
+
+      push();
+      translate(width / 2, height / 2);
+      rotate(rotationAngle);
+      drawStar(0, 0, outerRadius, outerRadius * 0.5, starPoints);
+      pop();
+
+      // Digital time in the center
+      fill(50);
+      noStroke();
+      textSize(28);
+      textAlign(CENTER, CENTER);
+      text(nf(hour(),2) + ':' + nf(minute(),2) + ':' + nf(second(),2), width / 2, height / 2);
+    }
+
+    // Function to draw a star from https://p5js.org/examples/form-star.html
+    function drawStar(x, y, radius1, radius2, npoints) {
+      let angle = TWO_PI / npoints;
+      let halfAngle = angle / 2.0;
+      stroke(70, 100, 200);
+      strokeWeight(2);
+      fill(150, 180, 255);
+      beginShape();
+      for (let a = 0; a < TWO_PI; a += angle) {
+        let sx = x + cos(a) * radius1;
+        let sy = y + sin(a) * radius1;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius2;
+        sy = y + sin(a + halfAngle) * radius2;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

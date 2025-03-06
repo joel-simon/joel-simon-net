@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Combined Time Display</title>
+  <style>
+    /* Basic reset */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      font-family: sans-serif;
+    }
+
+    /* Container to hold the 512x512 canvas */
+    .canvas-container {
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    /* Canvas styling to ensure it is displayed at 512x512 */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Instructions overlay, hidden by default */
+    .instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background-color: rgba(0,0,0,0.6);
+      display: none;
+      color: #fff;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    .canvas-container:hover .instructions {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div class="canvas-container">
+    <!-- Hover instructions -->
+    <div class="instructions">
+      <p>
+        This combined display merges a pulsating wave with a rotating star.<br><br>
+        • The wave's amplitude, frequency, and phase align with the hour, minute, and second.<br>
+        • The star rotates and glows based on hour and minute values.<br>
+        • A digital time readout is shown at the center.<br><br>
+        Hover away to enjoy the animation!
+      </p>
+    </div>
+  </div>
+  
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    function setup() {
+      let canvas = createCanvas(512, 512);
+      canvas.parent(document.querySelector('.canvas-container'));
+      angleMode(RADIANS);
+    }
+
+    function draw() {
+      background(17);
+
+      // Current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Calculate wave properties from time
+      let amplitude = map(hr, 0, 23, 20, 120); // wave amplitude
+      let frequency = map(mn, 0, 59, 0.01, 0.08); // wave frequency
+      let phase = map(sc, 0, 59, 0, TWO_PI); // wave phase offset
+
+      // Draw a wave across the background
+      noFill();
+      stroke(160, 160, 255);
+      strokeWeight(2);
+      beginShape();
+      for (let x = 0; x < width; x++) {
+        let y = height / 2 + amplitude * sin(frequency * x + phase);
+        vertex(x, y);
+      }
+      endShape();
+
+      // Translate to the center for rotating star
+      push();
+      translate(width / 2, height / 2);
+      
+      // Calculate star rotation based on hour + minute
+      let starRotation = map(hr * 60 + mn, 0, 1440, 0, TWO_PI);
+      rotate(starRotation);
+
+      // Star color shift based on minute
+      let starHue = map(mn, 0, 59, 0, 255);
+      stroke(starHue, 255 - starHue, starHue);
+      strokeWeight(3);
+      fill(0);
+
+      // Draw a star
+      let points = 5;
+      let outerRadius = 80;
+      let innerRadius = 40;
+      beginShape();
+      for (let i = 0; i < 2 * points; i++) {
+        let r = i % 2 === 0 ? outerRadius : innerRadius;
+        let angle = i * PI / points;
+        vertex(r * cos(angle), r * sin(angle));
+      }
+      endShape(CLOSE);
+
+      pop();
+
+      // Draw digital time readout at center
+      fill(255);
+      textSize(24);
+      noStroke();
+      textAlign(CENTER, CENTER);
+      text(nf(hr, 2) + ":" + nf(mn, 2) + ":" + nf(sc, 2), width / 2, height / 2);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Mural Maze</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the “Time Mural Maze”!<br><br>
+        • Hours seed the maze layout (changes every hour).<br>
+        • Minutes shift the background color.<br>
+        • Seconds add a floating glow around your explorer.<br><br>
+        Use arrow keys to navigate from top-left to bottom-right.<br>
+        Hover away to begin your journey.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /* 
+      Time Mural Maze
+      - Maze changes layout every hour (using hour() as seed).
+      - Background color transitions with minutes.
+      - A glow effect around the player intensifies each second.
+      - Move with arrow keys to explore from top-left cell to bottom-right cell.
+    */
+
+    let maze = [];
+    let rows = 10;
+    let cols = 10;
+
+    // Maze cell dimensions in pixels
+    let cellSize = 50; 
+
+    // Player position in cell coordinates
+    let playerRow = 0;
+    let playerCol = 0;
+
+    // Used for labyrinth generation (Depth-first search)
+    function Cell(r, c) {
+      this.r = r;
+      this.c = c;
+      this.visited = false;
+      // Each cell starts with walls on all four sides
+      this.walls = { top: true, right: true, bottom: true, left: true };
+    }
+
+    let stack = [];
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      frameRate(30);
+
+      // Use the current hour to seed the randomizer so the maze changes each hour
+      // If hour is 0 (midnight), let's allow that as well
+      randomSeed(hour());
+
+      // Create the 2D array of cells
+      for (let r = 0; r < rows; r++) {
+        maze[r] = [];
+        for (let c = 0; c < cols; c++) {
+          maze[r][c] = new Cell(r, c);
+        }
+      }
+
+      // Generate the maze
+      generateMaze();
+
+      // Place the player at the first cell
+      playerRow = 0;
+      playerCol = 0;
+    }
+
+    function draw() {
+      // Background color transitions based on minutes
+      let m = minute();
+      let bgCol = map(m, 0, 59, 0, 255);
+      background(bgCol, bgCol * 0.5, 120);
+
+      // Draw the entire maze
+      stroke(255);
+      strokeWeight(2);
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          let x = c * cellSize;
+          let y = r * cellSize;
+          let cell = maze[r][c];
+          // Draw each wall if present
+          if (cell.walls.top)    line(x, y, x + cellSize, y);
+          if (cell.walls.right)  line(x + cellSize, y, x + cellSize, y + cellSize);
+          if (cell.walls.bottom) line(x, y + cellSize, x + cellSize, y + cellSize);
+          if (cell.walls.left)   line(x, y, x, y + cellSize);
+        }
+      }
+
+      // Player color / glow based on seconds
+      let s = second();
+      let glow = map(s, 0, 59, 0, 150);
+
+      noStroke();
+      fill(255, 255, 255, 180);
+      let playerX = playerCol * cellSize + cellSize / 2;
+      let playerY = playerRow * cellSize + cellSize / 2;
+
+      // Draw a glow or aura
+      fill(255, 255, 0, glow);
+      ellipse(playerX, playerY, 40, 40);
+
+      // Actual player in the center
+      fill(0, 200, 200);
+      ellipse(playerX, playerY, 20, 20);
+
+      // Simple textual time display in the bottom-left corner
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, CENTER);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, 10, height - 20);
+
+      handleMovement();
+    }
+
+    // Maze generation using a depth-first search
+    function generateMaze() {
+      let current = maze[0][0];
+      current.visited = true;
+      stack.push(current);
+
+      while (stack.length > 0) {
+        let neighbors = getUnvisitedNeighbors(current);
+        if (neighbors.length > 0) {
+          // Pick a random neighbor
+          let next = random(neighbors);
+          // Mark it as visited
+          next.visited = true;
+          // Push current to stack
+          stack.push(current);
+          // Remove walls between current and next
+          removeWalls(current, next);
+          // Make the chosen cell current
+          current = next;
+        } else {
+          // Backtrack
+          current = stack.pop();
+        }
+      }
+    }
+
+    function getUnvisitedNeighbors(cell) {
+      let neighbors = [];
+      let { r, c } = cell;
+      // Up
+      if (r > 0 && !maze[r - 1][c].visited) {
+        neighbors.push(maze[r - 1][c]);
+      }
+      // Right
+      if (c < cols - 1 && !maze[r][c + 1].visited) {
+        neighbors.push(maze[r][c + 1]);
+      }
+      // Down
+      if (r < rows - 1 && !maze[r + 1][c].visited) {
+        neighbors.push(maze[r + 1][c]);
+      }
+      // Left
+      if (c > 0 && !maze[r][c - 1].visited) {
+        neighbors.push(maze[r][c - 1]);
+      }
+      return neighbors;
+    }
+
+    function removeWalls(current, next) {
+      let dx = next.c - current.c;
+      let dy = next.r - current.r;
+      if (dx === 1) {
+        // next is to the right
+        current.walls.right = false;
+        next.walls.left = false;
+      } else if (dx === -1) {
+        // next is to the left
+        current.walls.left = false;
+        next.walls.right = false;
+      } else if (dy === 1) {
+        // next is below
+        current.walls.bottom = false;
+        next.walls.top = false;
+      } else if (dy === -1) {
+        // next is above
+        current.walls.top = false;
+        next.walls.bottom = false;
+      }
+    }
+
+    // Player movement with basic wall checks
+    function handleMovement() {
+      if (keyIsDown(LEFT_ARROW)) {
+        // check left wall
+        if (!maze[playerRow][playerCol].walls.left) {
+          playerCol = max(0, playerCol - 1);
+        }
+      }
+      if (keyIsDown(RIGHT_ARROW)) {
+        // check right wall
+        if (!maze[playerRow][playerCol].walls.right) {
+          playerCol = min(cols - 1, playerCol + 1);
+        }
+      }
+      if (keyIsDown(UP_ARROW)) {
+        // check top wall
+        if (!maze[playerRow][playerCol].walls.top) {
+          playerRow = max(0, playerRow - 1);
+        }
+      }
+      if (keyIsDown(DOWN_ARROW)) {
+        // check bottom wall
+        if (!maze[playerRow][playerCol].walls.bottom) {
+          playerRow = min(rows - 1, playerRow + 1);
+        }
+      }
+    }
+  </script>
+</body>
+</html>

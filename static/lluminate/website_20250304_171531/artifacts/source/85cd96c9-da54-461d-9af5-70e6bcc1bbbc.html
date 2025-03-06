@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Cauldron Maze Explorer</title>
+  <!-- Include p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset and center body content */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0e0e0e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* 512x512 container with relative positioning to hold canvas + hover instructions */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      background: #111;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Instructions panel appears on hover */
+    #hoverInstructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.75);
+      box-sizing: border-box;
+      pointer-events: none; /* so the mouse can still interact with the canvas */
+      text-align: center;
+      padding: 20px;
+    }
+    #canvasContainer:hover #hoverInstructions {
+      display: block;
+    }
+
+    /* Center the instructions text inside the overlay */
+    .instructionsText {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverInstructions">
+      <div class="instructionsText">
+        <strong>Time Cauldron Maze Explorer</strong><br><br>
+        • Maze changes each minute<br>
+        • Cauldron color changes with hour<br>
+        • Bubbles float at speeds tied to the current second<br>
+        • Use arrow keys to move a small explorer in the maze<br>
+        • Hover here any time for details
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* 
+      Time Cauldron Maze Explorer
+      - Maze:
+          * Regenerates every new minute
+      - Cauldron:
+          * Color changes with current hour
+          * Bubbles float at speeds tied to seconds
+      - Explorer:
+          * Arrow keys move a simple "player" around
+    */
+
+    const SIZE = 512;
+    const COLS = 16;    // Maze columns
+    const ROWS = 16;    // Maze rows
+    const CELL_SIZE = SIZE / COLS; // 32 if 16x16
+    let maze = [];
+    let visited = [];
+    let stack = [];
+    let currentCell;
+    let lastMinute = -1;     // Track when we last generated the maze
+    let playerPos;           // Player's position in the maze
+
+    // Cauldron bubble properties
+    let bubbles = [];
+    const BUBBLE_COUNT = 20;
+
+    function setup() {
+      let cnv = createCanvas(SIZE, SIZE);
+      cnv.parent("canvasContainer");
+      frameRate(30);
+
+      // Initialize the maze
+      generateMaze();
+
+      // Initialize player position in top-left cell
+      playerPos = createVector(CELL_SIZE / 2, CELL_SIZE / 2);
+
+      // Create some bubble objects
+      for (let i = 0; i < BUBBLE_COUNT; i++) {
+        bubbles.push(new Bubble());
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      // Retrieve the current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Check if minute changed -> regenerate maze
+      if (mn !== lastMinute) {
+        generateMaze();
+        lastMinute = mn;
+      }
+
+      // Draw the maze
+      stroke(255);
+      for (let c of maze) {
+        c.show();
+      }
+
+      // Draw the player
+      handlePlayerMovement();
+      push();
+      fill(255, 100, 100);
+      noStroke();
+      ellipse(playerPos.x, playerPos.y, CELL_SIZE * 0.5);
+      pop();
+
+      // Draw the Cauldron at the bottom center
+      drawCauldron(hr);
+
+      // Draw bubbles rising from cauldron
+      for (let b of bubbles) {
+        b.update(sc);
+        b.display();
+      }
+
+      // Reset bubbles that reach the top
+      for (let b of bubbles) {
+        if (b.pos.y < 0) {
+          b.reset();
+        }
+      }
+
+      // Show the time in the top-left corner
+      fill(255);
+      noStroke();
+      textSize(14);
+      textAlign(LEFT, TOP);
+      text(nf(hr,2) + ":" + nf(mn,2) + ":" + nf(sc,2), 10, 10);
+    }
+
+    // Maze generation using Recursive Backtracking
+    function generateMaze() {
+      maze = [];
+      visited = [];
+      stack = [];
+
+      // Create all cells
+      for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+          maze.push(new Cell(col, row));
+        }
+      }
+
+      currentCell = maze[0];
+      currentCell.visited = true;
+      visited.push(currentCell);
+
+      while (true) {
+        // Step 1: pick an unvisited neighbor
+        let next = currentCell.checkNeighbors();
+        if (next) {
+          next.visited = true;
+          visited.push(next);
+          // Step 2: push current cell to stack
+          stack.push(currentCell);
+          // Step 3: remove walls
+          removeWalls(currentCell, next);
+          // Step 4: set next as current
+          currentCell = next;
+        } else if (stack.length > 0) {
+          currentCell = stack.pop();
+        } else {
+          break;
+        }
+      }
+    }
+
+    // Maze cell
+    class Cell {
+      constructor(col, row) {
+        this.col = col;
+        this.row = row;
+        this.visited = false;
+        this.walls = [true, true, true, true]; // top, right, bottom, left
+      }
+
+      checkNeighbors() {
+        let neighbors = [];
+        let top    = getCell(this.col, this.row - 1);
+        let right  = getCell(this.col + 1, this.row);
+        let bottom = getCell(this.col, this.row + 1);
+        let left   = getCell(this.col - 1, this.row);
+
+        if (top && !top.visited)    neighbors.push(top);
+        if (right && !right.visited)  neighbors.push(right);
+        if (bottom && !bottom.visited) neighbors.push(bottom);
+        if (left && !left.visited)   neighbors.push(left);
+
+        if (neighbors.length > 0) {
+          let r = floor(random(neighbors.length));
+          return neighbors[r];
+        } else {
+          return undefined;
+        }
+      }
+
+      show() {
+        let x = this.col * CELL_SIZE;
+        let y = this.row * CELL_SIZE;
+
+        // draw walls
+        stroke(255);
+        strokeWeight(2);
+        if (this.walls[0]) line(x, y, x + CELL_SIZE, y);             // top
+        if (this.walls[1]) line(x + CELL_SIZE, y, x + CELL_SIZE, y + CELL_SIZE); // right
+        if (this.walls[2]) line(x + CELL_SIZE, y + CELL_SIZE, x, y + CELL_SIZE); // bottom
+        if (this.walls[3]) line(x, y + CELL_SIZE, x, y);             // left
+      }
+    }
+
+    function getCell(c, r) {
+      if (c < 0 || c >= COLS || r < 0 || r >= ROWS) {
+        return undefined;
+      }
+      return maze[r * COLS + c];
+    }
+
+    function removeWalls(a, b) {
+      let x = a.col - b.col;
+      if (x === 1) {
+        a.walls[3] = false;
+        b.walls[1] = false;
+      } else if (x === -1) {
+        a.walls[1] = false;
+        b.walls[3] = false;
+      }
+
+      let y = a.row - b.row;
+      if (y === 1) {
+        a.walls[0] = false;
+        b.walls[2] = false;
+      } else if (y === -1) {
+        a.walls[2] = false;
+        b.walls[0] = false;
+      }
+    }
+
+    // Handle arrow key input for the player
+    function handlePlayerMovement() {
+      // Use WASD or arrow keys
+      if (keyIsDown(LEFT_ARROW) || keyIsDown(65)) { // left
+        movePlayer(-2, 0);
+      }
+      if (keyIsDown(RIGHT_ARROW) || keyIsDown(68)) { // right
+        movePlayer(2, 0);
+      }
+      if (keyIsDown(UP_ARROW) || keyIsDown(87)) { // up
+        movePlayer(0, -2);
+      }
+      if (keyIsDown(DOWN_ARROW) || keyIsDown(83)) { // down
+        movePlayer(0, 2);
+      }
+    }
+
+    function movePlayer(dx, dy) {
+      // Simple boundary check
+      let newX = playerPos.x + dx;
+      let newY = playerPos.y + dy;
+
+      if (newX > 0 && newX < width && newY > 0 && newY < height) {
+        // Optional: check collisions with walls—omitted here for simplicity
+        playerPos.x = newX;
+        playerPos.y = newY;
+      }
+    }
+
+    // Draw the Cauldron at bottom center
+    function drawCauldron(hr) {
+      push();
+      let cauldronX = width / 2;
+      let cauldronY = height - 40;
+
+      // Cauldron color changes with hour
+      fill(map(hr, 0, 23, 0, 255), 120, 100);
+      noStroke();
+      ellipse(cauldronX, cauldronY, 120, 60);
+
+      // Draw a small base
+      fill(50);
+      ellipse(cauldronX, cauldronY + 10, 140, 20);
+      pop();
+    }
+
+    //---------------------------------------------------------------------
+    // Bubble class
+    //---------------------------------------------------------------------
+    class Bubble {
+      constructor() {
+        this.reset();
+      }
+
+      reset() {
+        this.pos = createVector(width / 2, height - 40);
+        this.r = random(5, 10);
+        this.xOff = random(-30, 30);
+      }
+
+      update(sc) {
+        // Vertical speed influenced by current second
+        let speed = map(sc, 0, 59, 1, 3);
+        this.pos.y -= speed * 0.5; 
+        // Slight horizontal wiggle
+        this.pos.x += sin(frameCount * 0.05) * 0.5;
+      }
+
+      display() {
+        push();
+        fill(150, 200);
+        noStroke();
+        ellipse(this.pos.x + this.xOff, this.pos.y, this.r * 2);
+        pop();
+      }
+    }
+
+  </script>
+</body>
+</html>

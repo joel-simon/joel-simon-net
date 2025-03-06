@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Candy Mixer</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Candy Mixer<br><br>
+        • The swirling candy batter in the center changes movement speed with the seconds.<br>
+        • The hue of the swirl adjusts based on the minute.<br>
+        • The ring of candies grows or shrinks with the hour.<br>
+        • A digital clock is shown at the bottom.<br><br>
+        Hover away to see it in motion.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let candyCount = 16;      // Number of candy pieces in the ring
+    let swirlAngle = 0;       // Angle to spin the central swirl
+    let swirlRadius = 80;     // Radius of the swirl shape
+    let swirlSegments = 30;   // Number of arcs in the swirl
+    let swirlSpeed = 0;       // Base rotation speed for swirl
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100);
+      noStroke();
+    }
+
+    function draw() {
+      background(25);
+
+      // Gather current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Calculate swirl speed from seconds
+      swirlSpeed = map(s, 0, 59, 0.5, 5);
+
+      // Calculate swirl hue from minute
+      let swirlHue = map(m, 0, 59, 0, 360);
+
+      // Calculate the candy ring radius from hour
+      let ringRadius = map(h % 12, 0, 11, 60, 180);
+
+      // -------------------
+      // Draw swirling center
+      // -------------------
+      push();
+      translate(width / 2, height / 2);
+      swirlAngle += swirlSpeed;
+      rotate(swirlAngle);
+
+      for (let i = 0; i < swirlSegments; i++) {
+        let segAngle = map(i, 0, swirlSegments, 0, 360);
+        let segRadius = swirlRadius + 10 * sin(i + frameCount * 0.03);
+        fill((swirlHue + i * 2) % 360, 80, 100);
+        push();
+        rotate(segAngle);
+        arc(0, 0, segRadius, segRadius, 0, 10); 
+        pop();
+      }
+      pop();
+
+      // --------------------
+      // Draw ring of candies
+      // --------------------
+      push();
+      translate(width / 2, height / 2);
+      for (let i = 0; i < candyCount; i++) {
+        let angleStep = 360 / candyCount;
+        let cAngle = angleStep * i + frameCount * 0.5; 
+        let x = ringRadius * cos(cAngle);
+        let y = ringRadius * sin(cAngle);
+        fill((swirlHue + i * 20) % 360, 90, 100);
+        ellipse(x, y, 15, 15);
+      }
+      pop();
+
+      // -------------------
+      // Display digital time
+      // -------------------
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, width / 2, height - 30);
+    }
+  </script>
+</body>
+</html>

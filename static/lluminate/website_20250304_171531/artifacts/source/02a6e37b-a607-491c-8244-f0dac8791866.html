@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Glitch Tree</title>
+  <!-- Include p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      box-shadow: 0 0 8px rgba(0,0,0,0.4);
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 32px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Glitch Tree</strong><br><br>
+        • Glitch waves form a backdrop synchronized with seconds.<br>
+        • A fractal tree grows and shifts angles based on the current hour, minute, and second.<br>
+        • Even seconds trigger a mild "glitch" shift.<br><br>
+        Hover away to see the animation.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      colorMode(HSB, 360, 100, 100);
+      strokeWeight(1.5);
+    }
+
+    function draw() {
+      background(0);
+
+      const h = hour();
+      const m = minute();
+      const s = second();
+
+      // Glitch effect on even seconds
+      if (s % 2 === 0) {
+        push();
+        translate(random(-2, 2), random(-2, 2));
+        rotate(random(-0.01, 0.01));
+      }
+
+      // Draw glitchy waves in the background
+      drawGlitchWaves(h, m, s);
+
+      if (s % 2 === 0) {
+        pop(); // end glitch effect
+      }
+
+      // Draw a fractal tree influenced by time
+      push();
+      translate(width / 2, height); // Start at bottom center
+      let baseLen = map(m, 0, 59, 90, 150);   // trunk length changes with minute
+      let angle = map(s, 0, 59, 0, PI / 2);   // angle changes with second
+      let thick = map(h, 0, 23, 1, 4);        // trunk thickness changes with hour
+      strokeWeight(thick);
+      stroke((h*15 + m + s) % 360, 70, 90);   // color variation
+      fractalBranch(baseLen, angle, 0);
+      pop();
+
+      // Time text display in bottom-left
+      noStroke();
+      fill(255);
+      textSize(15);
+      textAlign(LEFT, BOTTOM);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, 10, height - 10);
+    }
+
+    // Draw waves from top to bottom
+    function drawGlitchWaves(h, m, s) {
+      strokeWeight(2);
+      for (let y = 0; y < height; y += 5) {
+        let waveOff = sin((frameCount * 0.03) + (y * 0.08)) * 80;
+        // Hue changes with time
+        stroke((h * 15 + m + y) % 360, 60, 80);
+        line(width / 2 + waveOff, y, width / 2 - waveOff, y);
+      }
+    }
+
+    // Recursive fractal tree function
+    function fractalBranch(len, angle, depth) {
+      // draw branch
+      line(0, 0, 0, -len);
+      translate(0, -len);
+
+      // reduce length for next branches
+      len *= 0.7;
+
+      if (len > 8) {
+        push();
+        rotate(angle);
+        fractalBranch(len, angle, depth + 1);
+        pop();
+
+        push();
+        rotate(-angle);
+        fractalBranch(len, angle, depth + 1);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

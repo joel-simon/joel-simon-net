@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Coral Reef Time Display</title>
+  <!-- Required p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset margins and paddings, and set background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #f0f8ff; /* Light aqua background reminiscent of water */
+    }
+
+    /* Container that holds a 512x512 canvas and the overlay */
+    #reefContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden; /* Hide any overflow outside 512x512 */
+    }
+
+    /* Overlay instructions, initially hidden */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      text-align: center;
+      box-sizing: border-box;
+      padding: 50px 20px;
+    }
+
+    /* Show instructions when hovering over container */
+    #reefContainer:hover #instructionsOverlay {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="reefContainer">
+    <div id="instructionsOverlay">
+      <h2>Coral Reef Time Display</h2>
+      <p>Observe the arcs for hours (blue), minutes (green), and seconds (pink), blooming like coral branches.</p>
+      <p>Hover here anytime to revisit these instructions.</p>
+    </div>
+  </div>
+
+  <script>
+    let centerX, centerY;
+  
+    function setup() {
+      // Create canvas and place it in the reefContainer
+      let cnv = createCanvas(512, 512);
+      cnv.parent('reefContainer');
+      angleMode(DEGREES);
+      centerX = width / 2;
+      centerY = height / 2;
+      noStroke();
+    }
+  
+    function draw() {
+      background(240, 248, 255); // same color for a consistent background
+
+      // Time variables
+      let h = hour() % 12;
+      let m = minute();
+      let s = second();
+
+      // ----------- Coral-like arcs -----------
+      // Convert time data to angles
+      let hourAngle = map(h + m/60.0, 0, 12, 0, 360);
+      let minuteAngle = map(m, 0, 60, 0, 360);
+      let secondAngle = map(s, 0, 60, 0, 360);
+
+      push();
+      translate(centerX, centerY);
+      rotate(-90);
+
+      // Draw the second arc (pink)
+      stroke(255, 105, 180); // HotPink
+      strokeWeight(8);
+      noFill();
+      arc(0, 0, 310, 310, 0, secondAngle);
+
+      // Draw the minute arc (green)
+      stroke(0, 200, 100);
+      arc(0, 0, 280, 280, 0, minuteAngle);
+
+      // Draw the hour arc (blue)
+      stroke(30, 144, 255);
+      arc(0, 0, 250, 250, 0, hourAngle);
+      pop();
+
+      // ---------- Draw some 'branch' lines (decorative) ----------
+      // Random short arcs or lines to mimic coral branches each frame
+      // They fade quickly, giving a subtle drifting effect
+      for (let i = 0; i < 10; i++) {
+        let x = random(width);
+        let y = random(height);
+        let branchLen = random(10, 25);
+        stroke(255, 182, 193, 80); // Light pink + alpha
+        strokeWeight(random(1, 3));
+        line(x, y, x + branchLen * cos(random(360)), y + branchLen * sin(random(360)));
+      }
+
+      // ---------- Digital Time Display in the center ----------
+      textAlign(CENTER, CENTER);
+      textSize(32);
+      fill(50);
+      noStroke();
+      let fullHour = hour();
+      let ampm = fullHour >= 12 ? "PM" : "AM";
+      let displayHour = fullHour % 12;
+      if (displayHour === 0) displayHour = 12;
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, centerX, centerY);
+    }
+  </script>
+</body>
+</html>

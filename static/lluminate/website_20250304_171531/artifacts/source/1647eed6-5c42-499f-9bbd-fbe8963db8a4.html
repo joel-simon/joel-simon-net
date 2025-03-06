@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Creative Time Display - Rotating Squares</title>
+  <style>
+    /* Ensure no extra offsets and a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #121212;
+      font-family: sans-serif;
+    }
+
+    /* Canvas container */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Instructions overlay (shown on hover) */
+    #instructions {
+      pointer-events: none;
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-size: 16px;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #canvas-container:hover #instructions {
+      display: block;
+    }
+
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      text-align: center;
+      transform: translate(-50%, -50%);
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <!-- Hover overlay instructions -->
+    <div id="instructions">
+      <div class="instructions-text">
+        Hover to see how to read this clock:
+        <br><br>
+        1) Outer Square = Hour (12-hr)
+        <br>
+        2) Middle Square = Minute
+        <br>
+        3) Inner Square = Second
+        <br><br>
+        Observe rotation and size changes to interpret time.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let myCanvas = createCanvas(w, h);
+      myCanvas.parent('canvas-container');
+      angleMode(DEGREES);
+      rectMode(CENTER);
+    }
+
+    function draw() {
+      background(20);
+
+      let hr = hour() % 12;
+      let mn = minute();
+      let sc = second();
+
+      // Map each time component to angles and sizes for squares
+      let hrAngle = map(hr + mn / 60 + sc / 3600, 0, 12, 0, 360);
+      let mnAngle = map(mn + sc / 60, 0, 60, 0, 360);
+      let scAngle = map(sc, 0, 60, 0, 360);
+
+      // Map hour and minute to sizes
+      // Outer square changes size based on hour
+      let hrSize = map(hr, 0, 12, 150, 300);
+      // Middle square changes size based on minute
+      let mnSize = map(mn, 0, 60, 80, 150);
+      // Inner square is static in size but rotates with seconds
+      let scSize = 50;
+
+      // Translation to the center
+      push();
+      translate(width / 2, height / 2);
+
+      // Draw hour square
+      push();
+      rotate(hrAngle);
+      strokeWeight(3);
+      stroke(255, 0, 150);
+      fill(255, 0, 150, 50);
+      rect(0, 0, hrSize, hrSize);
+      pop();
+
+      // Draw minute square
+      push();
+      rotate(mnAngle * 1.5); // spin at a different rate
+      strokeWeight(3);
+      stroke(0, 200, 255);
+      fill(0, 200, 255, 50);
+      rect(0, 0, mnSize, mnSize);
+      pop();
+
+      // Draw second square
+      push();
+      rotate(scAngle * 3);
+      strokeWeight(3);
+      stroke(255, 200, 0);
+      fill(255, 200, 0, 60);
+      rect(0, 0, scSize, scSize);
+      pop();
+
+      // Show digital time text
+      noStroke();
+      fill(255);
+      textSize(24);
+      textAlign(CENTER, CENTER);
+      let timeStr = nf(hour(), 2) + ':' + nf(mn, 2) + ':' + nf(sc, 2);
+      text(timeStr, 0, 0);
+
+      pop();
+    }
+  </script>
+</body>
+</html>

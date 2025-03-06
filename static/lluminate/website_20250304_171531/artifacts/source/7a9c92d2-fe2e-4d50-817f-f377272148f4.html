@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Bloom Portal</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-family: sans-serif;
+    }
+    /* Reveal the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Bloom Portal<br><br>
+        • Swirling backdrop hues shift each hour.<br>
+        • A garden of blossoms grows with each passing minute.<br>
+        • Butterflies appear at every second; watch them flutter away over time.<br>
+        • Current time is displayed at the bottom.<br><br>
+        Hover away to view the scene!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let butterflies = [];
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      colorMode(HSB, 360, 100, 100);
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      drawBackground();
+      drawFlowers();
+      handleButterflies();
+      displayTime();
+    }
+
+    // Swirling background color depends on the current hour
+    function drawBackground() {
+      let h = hour();
+      let hueVal = map(h, 0, 23, 0, 360);
+      push();
+      translate(width/2, height/2);
+      for (let r = 300; r > 0; r -= 10) {
+        let inter = map(r, 0, 300, 1, 0);
+        fill((hueVal + frameCount * 0.2) % 360, 60, 80 * inter);
+        ellipse(0, 0, r*2, r*2);
+        rotate(0.5);
+      }
+      pop();
+    }
+
+    // Draw blossoms based on the current minute
+    function drawFlowers() {
+      let m = minute();
+      push();
+      translate(width/2, height/2);
+      for (let i = 0; i < m; i++) {
+        push();
+        rotate((360 / m) * i + frameCount * 0.1);
+        translate(60, 0);
+        drawFlower(12 + m * 0.2);
+        pop();
+      }
+      pop();
+    }
+    
+    // Simple flower shape
+    function drawFlower(size) {
+      fill(random(300, 360), 80, 80);
+      let petals = 6;
+      for (let i = 0; i < petals; i++) {
+        ellipse(0, 0, size, size/2);
+        rotate(360 / petals);
+      }
+      fill(55, 80, 90);
+      ellipse(0, 0, size*0.4, size*0.4);
+    }
+
+    // Handle butterflies born every time the second changes
+    function handleButterflies() {
+      if (frameCount % 60 === 0) {
+        butterflies.push(new Butterfly(random(width), random(height), 100 + random(60)));
+      }
+      for (let b of butterflies) {
+        b.update();
+        b.display();
+      }
+      butterflies = butterflies.filter(b => !b.done);
+    }
+
+    // Display current time
+    function displayTime() {
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, width/2, height - 20);
+    }
+
+    // Butterfly class
+    class Butterfly {
+      constructor(x, y, lifespan) {
+        this.x = x;
+        this.y = y;
+        this.lifespan = lifespan;
+        this.done = false;
+        this.angle = random(360);
+      }
+      update() {
+        this.lifespan--;
+        if (this.lifespan < 0) this.done = true;
+        this.angle += 2;
+        this.x += sin(this.angle) * 0.5;
+        this.y -= 1;
+      }
+      display() {
+        push();
+        translate(this.x, this.y);
+        rotate(this.angle);
+        fill(200, 80, 80, this.lifespan * 0.8);
+        ellipse(0, 0, 10, 20);
+        ellipse(0, 0, 10, 20);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

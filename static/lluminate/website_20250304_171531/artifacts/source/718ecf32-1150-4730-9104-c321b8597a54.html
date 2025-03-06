@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Coral Reef</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic page styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: sans-serif;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    /* 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Overlay for hover instructions (hidden by default) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.75);
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Coral Reef<br><br>
+        • Coral branches grow based on the current hour.<br>
+        • Fish colors shift with the minute.<br>
+        • Bubbles rise with each passing second.<br>
+        • The background shimmers subtly over time.<br><br>
+        Hover away to explore!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Coral Reef:
+      1) A fractal coral that grows based on the current hour.
+      2) Fish whose colors depend on the minute.
+      3) Bubbles that appear each second.
+      4) Subtle background shimmer that reflects time progression.
+    */
+
+    const SIZE = 512;
+    let fishArray = [];
+    let bubbles = [];
+    let lastSecond = -1;
+    let angleOffset; // changes over time for background shimmer
+
+    function setup() {
+      let cnv = createCanvas(SIZE, SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+
+      // Create some fish
+      for (let i = 0; i < 10; i++) {
+        fishArray.push(new Fish());
+      }
+      angleOffset = 0;
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Create a subtle shifting background
+      angleOffset += 0.1; 
+      let bgColor = map(sin(angleOffset), -1, 1, 20, 60);
+      background(bgColor, 100, 120);
+
+      // Draw coral: fractal style
+      push();
+      translate(width * 0.5, height);
+      drawCoral(h, 80); // depth related to hour, length set as a base
+      pop();
+      
+      // Update and draw fish (color depends on minute)
+      for (let f of fishArray) {
+        f.update(m);
+        f.display();
+      }
+
+      // Spawn new bubble each second
+      if (s !== lastSecond) {
+        bubbles.push(new Bubble());
+        lastSecond = s;
+      }
+
+      // Update and draw bubbles
+      for (let b of bubbles) {
+        b.update();
+        b.display();
+      }
+
+      // Remove bubbles that have drifted off the top
+      bubbles = bubbles.filter(b => !b.offScreen);
+    }
+
+    /*
+      Recursive function to draw branching coral.
+      The number of branches or steps is influenced by hour.
+    */
+    function drawCoral(h, len) {
+      // Base stroke
+      stroke(200, 150, 250);
+      strokeWeight(map(len, 80, 5, 5, 0.5));
+      line(0, 0, 0, -len);
+
+      translate(0, -len);
+      if (len > 5 && h > 0) {
+        // Each hour is a level of recursion
+        let branches = map(h, 1, 12, 2, 5); 
+        for (let i = 0; i < branches; i++) {
+          push();
+          // Spread of angles
+          let angle = map(i, 0, branches - 1, -45, 45);
+          rotate(angle);
+          drawCoral(h - 1, len * 0.67);
+          pop();
+        }
+      }
+    }
+
+    /*
+      Fish class
+    */
+    class Fish {
+      constructor() {
+        this.x = random(width);
+        this.y = random(height / 2, height - 50);
+        this.size = random(15, 30);
+        this.speed = random(1, 2);
+        this.colorValue = 0;
+      }
+
+      update(m) {
+        // Color depends on minute
+        this.colorValue = map(m, 0, 59, 0, 255);
+        this.x += this.speed;
+        if (this.x > width + this.size) {
+          this.x = -this.size;
+          this.y = random(height / 2, height - 50);
+        }
+      }
+
+      display() {
+        push();
+        translate(this.x, this.y);
+        noStroke();
+        colorMode(HSB, 255);
+        fill(this.colorValue, 200, 200);
+        colorMode(RGB, 255);
+
+        // Fish body
+        ellipse(0, 0, this.size * 2, this.size);
+
+        // Tail
+        let tailSize = this.size * 0.6;
+        triangle(
+          -this.size, 0,
+          -this.size - tailSize, -this.size * 0.3,
+          -this.size - tailSize, this.size * 0.3
+        );
+
+        // Eye
+        fill(255);
+        ellipse(this.size * 0.3, -this.size * 0.15, this.size * 0.4, this.size * 0.4);
+        fill(0);
+        ellipse(this.size * 0.3, -this.size * 0.15, this.size * 0.2, this.size * 0.2);
+
+        pop();
+      }
+    }
+
+    /*
+      Bubble class
+    */
+    class Bubble {
+      constructor() {
+        this.x = random(width);
+        this.y = height + 10;
+        this.size = random(5, 10);
+        this.speed = random(1, 2);
+        this.offScreen = false;
+      }
+
+      update() {
+        this.y -= this.speed;
+        if (this.y < -this.size) {
+          this.offScreen = true;
+        }
+      }
+
+      display() {
+        push();
+        noFill();
+        stroke(255);
+        ellipse(this.x, this.y, this.size);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

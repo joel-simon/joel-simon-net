@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Time Geometry Meltdown</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* 512x512 container */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      background: #111;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay: appears on hover */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      pointer-events: none; /* So the mouse can still interact with the canvas */
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Geometry Meltdown</strong><br><br>
+        • Hour controls the number of shapes drawn.<br>
+        • Minute influences their rotation speed and warp intensity.<br>
+        • Second-based colors create continuous changes.<br>
+        • Watch as geometry warps over time.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Geometry Meltdown
+      - Hour controls how many shapes are drawn (and shape type).
+      - Minute dictates rotation speed and a warp factor.
+      - Second drives color changes across the canvas.
+    */
+
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let canvas = createCanvas(w, h);
+      canvas.parent('canvas-container');
+      angleMode(DEGREES);
+      frameRate(30);
+      noStroke();
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Background color changes every second
+      background(map(sc, 0, 59, 0, 255), map(mn, 0, 59, 50, 100), map(hr, 0, 23, 100, 200));
+
+      // Number of shapes depends on the hour (1-12, or 13-23). We'll treat 0 as 12 to keep it interesting.
+      let effectiveHour = (hr % 12 === 0) ? 12 : (hr % 12);
+      let shapeCount = effectiveHour;
+
+      // Each shape's size
+      let baseSize = 40;
+
+      // We'll warp shapes based on minute
+      let warpFactor = map(mn, 0, 59, 0.3, 2.0);
+
+      // Rotation speed also depends on minute
+      let rotationSpeed = mn * 0.5;
+
+      // Draw multiple shapes around the center
+      translate(width * 0.5, height * 0.5);
+      for (let i = 0; i < shapeCount; i++) {
+        push();
+        
+        // Rotate each shape differently, plus animate them over time
+        rotate(frameCount * 0.5 + rotationSpeed * i);
+
+        // Use second-based color fluctuations
+        let colR = map(sc + i * 10, 0, 59 + shapeCount * 10, 50, 255) % 255;
+        let colG = map(sc + i * 5, 0, 59 + shapeCount * 5, 50, 200) % 255;
+        let colB = map(sc + i * 2, 0, 59 + shapeCount * 2, 100, 255) % 255;
+
+        fill(colR, colG, colB, 150);
+
+        // The shape is a polygon with side count = (hr % 6) + 3 to create variety
+        let sides = (hr % 6) + 3;
+
+        // Warp the drawing by scaling it in a wiggly way
+        let scaleAmount = 1 + sin(frameCount + i * 20) * warpFactor * 0.2;
+        scale(scaleAmount);
+
+        // Distance from center
+        translate((baseSize + i * 20) * sin(frameCount + i * 10), (baseSize + i * 20) * cos(frameCount + i * 10));
+        
+        // Draw the polygon
+        polygon(0, 0, baseSize + i * 5, sides);
+        pop();
+      }
+
+      drawTime();
+    }
+
+    // Utility to draw regular polygons
+    function polygon(x, y, radius, npoints) {
+      let angle = 360 / npoints;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius;
+        let sy = y + sin(a) * radius;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+
+    // Overlay the time in the top-left corner
+    function drawTime() {
+      resetMatrix(); // Return to default coordinate system
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+      let displayHour = (hr % 12) || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let mnStr = nf(mn, 2);
+      let scStr = nf(sc, 2);
+      text(displayHour + ":" + mnStr + ":" + scStr + " " + ampm, 10, 10);
+    }
+  </script>
+</body>
+</html>

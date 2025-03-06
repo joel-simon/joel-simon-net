@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Time Kaleidoscope</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      color: #fff;
+      font-family: sans-serif;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Canvas container to hold the 512x512 sketch */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Instructions overlay, hidden by default */
+    .instructions {
+      display: none;
+      position: absolute;
+      top: 0; 
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      font-size: 14px;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 1em;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #canvasContainer:hover .instructions {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+<div id="canvasContainer">
+  <div class="instructions">
+    Each second, a new polygon appears in the kaleidoscope. 
+    • Hour determines the polygon’s number of sides.<br>
+    • Minute colors the shape.<br>
+    • Second sets its rotation.<br>
+    Watch them accumulate and shift over time!
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+<script>
+  let shapes = [];
+  let lastSec = -1;
+
+  function setup() {
+    let cnv = createCanvas(512, 512);
+    cnv.parent("canvasContainer");
+    angleMode(DEGREES);
+    noStroke();
+  }
+
+  function draw() {
+    // Fade the background slowly so previous shapes linger
+    background(0, 15);
+
+    let hr = hour() % 12;  // 0-11
+    let mn = minute();     // 0-59
+    let sc = second();     // 0-59
+
+    // Each second, add a new polygon to the array
+    if (sc !== lastSec) {
+      let polygonSides = hr + 3; // at least 3 sides, plus hour
+      let col = color(
+        map(mn, 0, 59, 0, 255),
+        map(mn, 0, 59, 255, 0),
+        map(mn, 0, 59, 100, 255)
+      );
+      let rotation = map(sc, 0, 59, 0, 360);
+
+      shapes.push({
+        x: random(width),
+        y: random(height),
+        sides: max(3, polygonSides),
+        shapeColor: col,
+        baseAngle: rotation,
+        size: random(30, 80),
+        birthFrame: frameCount
+      });
+      lastSec = sc;
+    }
+
+    // Draw all shapes
+    for (let i = 0; i < shapes.length; i++) {
+      let s = shapes[i];
+      let framesAlive = frameCount - s.birthFrame;
+
+      push();
+      translate(s.x, s.y);
+      rotate(s.baseAngle + framesAlive * 0.2); // rotate a bit more each frame
+      fill(s.shapeColor);
+      drawPolygon(0, 0, s.size, s.sides);
+      pop();
+    }
+  }
+
+  // Helper function to draw a polygon with n sides
+  function drawPolygon(x, y, radius, npoints) {
+    beginShape();
+    for (let a = 0; a < 360; a += 360 / npoints) {
+      let vx = x + cos(a) * radius;
+      let vy = y + sin(a) * radius;
+      vertex(vx, vy);
+    }
+    endShape(CLOSE);
+  }
+</script>
+</body>
+</html>

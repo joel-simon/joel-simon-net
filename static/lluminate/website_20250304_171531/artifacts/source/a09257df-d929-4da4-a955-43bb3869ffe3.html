@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Radiant Wheel</title>
+  <style>
+    /* Basic page reset and background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for contrast */
+    }
+
+    /* Container at 512x512, centered on the page */
+    #clock-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 40px auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (only visible on hover) */
+    #hover-instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-family: sans-serif;
+      padding: 1.5rem;
+      box-sizing: border-box;
+      text-align: center;
+      display: none;
+      pointer-events: none; /* Allows pointer events to pass to the canvas. */
+    }
+    #clock-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* p5 canvas styling to ensure 512x512 exactly */
+    canvas {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="clock-container">
+    <div id="hover-instructions">
+      <h2>Time Radiant Wheel</h2>
+      <p>
+        Lines and arcs radiate from the center, responding to the current hour, 
+        minute, and second. Observe how colors shift with each minute and how 
+        the lines gently pulse with the passing seconds.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let canvasSize = 512;
+
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent('clock-container');
+      angleMode(DEGREES);
+      rectMode(CENTER);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      // Retrieve current time
+      let h = hour();    // 0-23
+      let m = minute();  // 0-59
+      let s = second();  // 0-59
+
+      // Move origin to center
+      translate(width / 2, height / 2);
+
+      // Create a subtle gradient-like background effect within the canvas
+      drawCenterGlow(h, m, s);
+
+      // Draw radial lines (like sunrays) - one for each second plus some extras
+      push();
+      let totalRays = 60;
+      for (let i = 0; i < totalRays; i++) {
+        push();
+        rotate((360 / totalRays) * i);
+
+        // The color changes based on hour and second
+        let rayColor = color(
+          map(h, 0, 23, 10, 255),
+          map(s, 0, 59, 100, 240),
+          map(h + m, 0, 83, 150, 255)
+        );
+        fill(rayColor);
+
+        // The length of each ray is affected by minute
+        let rayLength = map(m, 0, 59, 80, 230);
+
+        // Add a subtle pulsation based on second
+        let pulse = map(sin(frameCount + i * 2), -1, 1, -8, 8);
+
+        rect(0, -rayLength / 2, 4, rayLength + pulse);
+        pop();
+      }
+      pop();
+
+      // Draw arcs that sweep around the center, changing with hour and second
+      push();
+      let arcCount = 8; 
+      strokeWeight(2); 
+      strokeCap(SQUARE);
+
+      for (let j = 0; j < arcCount; j++) {
+        let arcRadius = map(j, 0, arcCount - 1, 80, 220);
+        let hueVal = map(h + j, 0, 31, 0, 255); // Extend range for variety
+
+        // Arc color changes with hour, minute, and second
+        let arcColor = color(
+          hueVal,
+          map(m, 0, 59, 100, 200),
+          map(s, 0, 59, 180, 255),
+          200 // alpha for partial transparency
+        );
+        stroke(arcColor);
+        noFill();
+
+        // The arc sweeps across an angle determined by second
+        let arcAngle = map(s, 0, 59, 0, 360);
+        arc(0, 0, arcRadius * 2, arcRadius * 2, 0, arcAngle);
+      }
+      pop();
+    }
+
+    // Adds a soft circular gradient in the center
+    function drawCenterGlow(h, m, s) {
+      let gradientSteps = 100;
+      let maxRadius = width * 0.6;
+
+      for (let i = gradientSteps; i >= 0; i--) {
+        let stepRatio = i / gradientSteps;
+        let ringColor = lerpColor(
+          color(
+            map(h, 0, 23, 10, 100),
+            map(s, 0, 59, 40, 160),
+            map(m, 0, 59, 60, 180)
+          ),
+          color(0, 0, 0),
+          stepRatio
+        );
+        fill(ringColor);
+        noStroke();
+        let thisRadius = maxRadius * stepRatio;
+        ellipse(0, 0, thisRadius, thisRadius);
+      }
+    }
+  </script>
+</body>
+</html>

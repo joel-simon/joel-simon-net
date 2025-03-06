@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Dissonance Mandala</title>
+  <style>
+    /* Page setup for a 512x512 display */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas and overlay */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: auto;
+      overflow: hidden;
+      background-color: #111;
+    }
+
+    /* Instructions overlay hidden by default, appears on hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: none;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.8);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Dissonance Mandala</strong><br><br>
+        • Each ring follows its own notion of time, sometimes backward.<br>
+        • Colors shift with the clock hours.<br>
+        • The center text remains the conventional clock for reference.<br><br>
+        Hover away to see the animated dissonance.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    const CANVAS_SIZE = 512;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // "Fundamental assumption reversed": Each ring has its own concept of time speed/direction.
+      // Hour ring rotates forward, minute ring rotates backward, second ring at a unique speed forward.
+
+      /* 
+         For a striking visual:
+         - Outer ring: color mapped to hour, rotates with hour * 1.25 degrees each frame
+         - Middle ring: color mapped to minute, rotates backward with minute * 2 degrees each frame
+         - Inner ring: color mapped to second, rotates forward at second * 3 degrees each frame
+         The rings pulsate slightly based on their respective time units.
+      */
+
+      translate(width / 2, height / 2);
+
+      // Outer ring: Hour ring
+      push();
+        rotate(frameCount * (hr * 1.25));
+        drawRing(
+          map(hr, 0, 23, 0, 360),
+          200 + sin(frameCount * 0.5 * (hr / 6.0)) * 10,
+          40
+        );
+      pop();
+
+      // Middle ring: Minute ring (rotates backward)
+      push();
+        rotate(-frameCount * (mn * 2));
+        drawRing(
+          map(mn, 0, 59, 0, 360),
+          120 + sin(frameCount * 2 * (mn / 20.0)) * 8,
+          30
+        );
+      pop();
+
+      // Inner ring: Second ring
+      push();
+        rotate(frameCount * (sc * 3));
+        drawRing(
+          map(sc, 0, 59, 0, 360),
+          60 + sin(frameCount * 5 * (sc / 30.0)) * 8,
+          20
+        );
+      pop();
+
+      // Show conventional time in center
+      push();
+        fill(255);
+        noStroke();
+        textAlign(CENTER, CENTER);
+        textSize(24);
+        let displayHour = (hr % 12) || 12;
+        let ampm = (hr >= 12) ? "PM" : "AM";
+        text(displayHour + ":" + nf(mn, 2) + ":" + nf(sc, 2) + " " + ampm, 0, 0);
+      pop();
+    }
+
+    // Function to draw a ring with dynamic color
+    function drawRing(hueVal, radius, ringThickness) {
+      colorMode(HSB);
+      strokeWeight(ringThickness);
+      stroke(hueVal, 100, 100);
+      noFill();
+      ellipse(0, 0, radius, radius);
+    }
+  </script>
+</body>
+</html>

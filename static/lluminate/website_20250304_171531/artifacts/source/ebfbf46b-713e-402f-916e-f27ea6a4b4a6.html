@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Zen Shroom Garden</title>
+  <!-- Include p5.js -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic page setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #1f1f1f;
+    }
+
+    /* Container to maintain the 512x512 canvas area */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      background-color: #000;
+      overflow: hidden;
+    }
+
+    /* Hover overlay for instructions */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-family: sans-serif;
+      font-size: 16px;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    /* Show the overlay text only on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <h2>Zen Shroom Garden</h2>
+      <p>
+        • Watch mushrooms grow with the passing time.<br>
+        • Hour, minute, and second affect their size and color.<br>
+        • Click and hold to "water" them for faster growth.<br>
+        • Press any key to add a new mushroom.<br>
+        Hover away to explore the garden!
+      </p>
+    </div>
+  </div>
+  <script>
+    /*
+      Zen Shroom Garden:
+        - A tranquil setting where mushrooms "grow" as time passes.
+        - Each mushroom's size and color shift based on hour (H), minute (M), and second (S).
+        - Clicking and holding the mouse over the canvas "waters" the mushrooms, speeding their growth.
+        - Pressing any key spawns a new mushroom at a random spot in the garden.
+        - A digital clock at the bottom shows real-time updates.
+    */
+
+    const SIZE = 512;
+    let mushrooms = [];
+    let watering = false;  // Track mouse hold for watering
+
+    function setup() {
+      let cnv = createCanvas(SIZE, SIZE);
+      cnv.parent("canvasContainer");
+
+      // Create a few initial mushrooms
+      for (let i = 0; i < 5; i++) {
+        mushrooms.push(makeMushroom(random(width), random(height)));
+      }
+    }
+
+    function draw() {
+      background(getSkyColor());
+
+      // Get current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Update and draw mushrooms
+      for (let m of mushrooms) {
+        updateMushroom(m, hr, mn, sc);
+        drawMushroom(m);
+      }
+
+      // Display time at bottom
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      text(`${hr}:${nf(mn, 2)}:${nf(sc, 2)}`, width / 2, height - 20);
+    }
+
+    // Returns a color that shifts based on hour, for a subtle sky-like transition
+    function getSkyColor() {
+      let hr = hour();
+      // Map hour (0-23) to a hue range
+      let hueValue = map(hr, 0, 23, 0, 360);
+      colorMode(HSB);
+      let c = color(hueValue, 60, 30); 
+      colorMode(RGB);
+      return c;
+    }
+
+    function makeMushroom(x, y) {
+      return {
+        x: x,
+        y: y,
+        baseSize: random(10, 25),    // Base cap size
+        stemHeight: random(15, 25),  // Stem height
+        growthRate: random(0.01, 0.03)
+      };
+    }
+
+    function updateMushroom(m, hr, mn, sc) {
+      // Base growth factor from time
+      let timeFactor = map(hr + mn / 60 + sc / 3600, 0, 23.9999, 0.1, 2);
+      // Watering speeds up growth
+      let waterBonus = watering ? 0.1 : 0;
+      // Mushroom's size changes slightly with time
+      m.baseSize += m.growthRate * (timeFactor + waterBonus);
+      m.stemHeight += (m.growthRate / 2) * (timeFactor + waterBonus);
+    }
+
+    function drawMushroom(m) {
+      push();
+      translate(m.x, m.y);
+      noStroke();
+
+      // Draw stem
+      fill(200, 180, 150);
+      rectMode(CENTER);
+      rect(0, m.stemHeight * -0.5, m.baseSize / 4, m.stemHeight);
+
+      // Draw cap (color impacted by second)
+      let sc = second();
+      let capColor = color(map(sc, 0, 59, 0, 255), 50, map(sc, 0, 59, 100, 255));
+      fill(capColor);
+      ellipse(0, -m.stemHeight, m.baseSize * 2, m.baseSize);
+
+      pop();
+    }
+
+    // Update watering status when mouse is pressed/released
+    function mousePressed() {
+      watering = true;
+    }
+    function mouseReleased() {
+      watering = false;
+    }
+
+    // Add new mushroom on any key press
+    function keyPressed() {
+      mushrooms.push(makeMushroom(random(width), random(height)));
+    }
+  </script>
+</body>
+</html>

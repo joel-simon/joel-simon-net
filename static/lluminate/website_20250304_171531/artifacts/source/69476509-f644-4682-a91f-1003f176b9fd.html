@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Mosaic Display</title>
+  <style>
+    /* Ensure no scrollbars & no page margin */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      font-family: sans-serif;
+      color: #ddd;
+    }
+    /* Container is positioned to hold a 512x512 canvas */
+    #container {
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      position: relative;
+    }
+    /* Overlay for hover instructions */
+    #hover-info {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #container:hover #hover-info {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="hover-info">
+      <p>
+        Welcome to the Time Mosaic! There are 24 columns for the hours (in 24-hour format) and 60 rows for the minutes. Squares in the range of the current hour and minute glow with a color that pulses each second. Move your mouse away to view the full mosaic.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let canvasSize = 512;
+    let cols = 24;  // 24 hours
+    let rows = 60;  // 60 minutes
+    let tileW, tileH;
+
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent('container');
+      tileW = floor(width / cols);
+      tileH = floor(height / rows);
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      noStroke();
+    }
+
+    function draw() {
+      background(17);
+
+      // Current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Center the mosaic (calculate leftover space)
+      let mosaicWidth = tileW * cols;
+      let mosaicHeight = tileH * rows;
+      let offsetX = (width - mosaicWidth) / 2;
+      let offsetY = (height - mosaicHeight) / 2;
+
+      push();
+      translate(offsetX, offsetY);
+
+      // Draw mosaic
+      for (let col = 0; col < cols; col++) {
+        for (let row = 0; row < rows; row++) {
+          if (col < h && row < m) {
+            // Make the color pulse a bit with seconds
+            fill((s * 4) % 256, 150, 200);
+          } else {
+            fill(68);
+          }
+          rect(col * tileW, row * tileH, tileW, tileH);
+        }
+      }
+      pop();
+
+      // Display the current time at the bottom center
+      fill(220);
+      text(
+        nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2),
+        width / 2, 
+        height - 20
+      );
+    }
+  </script>
+</body>
+</html>

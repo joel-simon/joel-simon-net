@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Maze Aquarium</title>
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic page resets */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; 
+      color: #fff; 
+      font-family: sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* 512x512 container for our sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Hover instructions overlay (initially hidden) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.6);
+    }
+    /* Reveal instructions on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Maze Aquarium<br><br>
+        • A new maze appears every minute.<br>
+        • Fish size changes with the hour.<br>
+        • Fish color shifts with the minute.<br>
+        • Bubbles appear each second.<br>
+        Hover away to watch!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Maze Aquarium:
+      1. Maze background that regenerates each minute.
+      2. Fish swimming in the foreground:
+         - Size scales with hour.
+         - Color changes with minute.
+      3. Bubbles rise every second.
+    */
+
+    // Maze variables
+    let cols, rows;
+    let w = 16; // Cell size
+    let grid = [];
+    let current;
+    let stack = [];
+    let lastMinuteMaze = -1;
+
+    // Fish and bubble variables
+    let fishGroup = [];
+    let bubbles = [];
+    let lastSecondBubble = -1;
+
+    const CANVAS_SIZE = 512;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvasContainer');
+      frameRate(30);
+
+      // Prepare initial maze
+      regenerateMaze();
+
+      // Create fish objects
+      for (let i = 0; i < 8; i++) {
+        fishGroup.push(new Fish());
+      }
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // If the minute changes, rebuild the maze
+      if (m !== lastMinuteMaze) {
+        regenerateMaze();
+        lastMinuteMaze = m;
+      }
+
+      // Draw the background and the maze
+      background(0);
+      for (let i = 0; i < grid.length; i++) {
+        grid[i].show();
+      }
+
+      // Maze generation step
+      mazeStep();
+
+      // Fish: update size, color, position
+      for (let fish of fishGroup) {
+        fish.update(h, m);
+        fish.display();
+      }
+
+      // Generate a bubble each time second increments
+      if (s !== lastSecondBubble) {
+        bubbles.push(new Bubble());
+        lastSecondBubble = s;
+      }
+
+      // Draw and update bubbles
+      for (let b of bubbles) {
+        b.update();
+        b.display();
+      }
+      // Filter out popped bubbles
+      bubbles = bubbles.filter(b => !b.popped);
+    }
+
+    //----------------------------------
+    // Maze generation (recursive backtracking)
+    //----------------------------------
+    function regenerateMaze() {
+      grid = [];
+      stack = [];
+
+      cols = floor(width / w);
+      rows = floor(height / w);
+
+      // Create all cells
+      for (let j = 0; j < rows; j++) {
+        for (let i = 0; i < cols; i++) {
+          let cell = new Cell(i, j);
+          grid.push(cell);
+        }
+      }
+      // Start in top-left cell
+      current = grid[0];
+    }
+
+    function mazeStep() {
+      current.visited = true;
+      // Step 1: Check neighbors
+      let next = current.checkNeighbors();
+      if (next) {
+        next.visited = true;
+        // Step 2: Push current to stack
+        stack.push(current);
+        // Step 3: Remove walls
+        removeWalls(current, next);
+        // Step 4: Move to next
+        current = next;
+      } else if (stack.length > 0) {
+        // Backtrack
+        current = stack.pop();
+      }
+    }
+
+    function index(i, j) {
+      // Out of bounds
+      if (i < 0 || j < 0 || i > cols - 1 || j > rows - 1) {
+        return -1;
+      }
+      return i + j * cols;
+    }
+
+    function removeWalls(a, b) {
+      let x = a.i - b.i;
+      if (x === 1) {
+        a.walls.left = false;
+        b.walls.right = false;
+      } else if (x === -1) {
+        a.walls.right = false;
+        b.walls.left = false;
+      }
+
+      let y = a.j - b.j;
+      if (y === 1) {
+        a.walls.top = false;
+        b.walls.bottom = false;
+      } else if (y === -1) {
+        a.walls.bottom = false;
+        b.walls.top = false;
+      }
+    }
+
+    class Cell {
+      constructor(i, j) {
+        this.i = i;
+        this.j = j;
+        this.walls = {
+          top: true,
+          right: true,
+          bottom: true,
+          left: true
+        };
+        this.visited = false;
+      }
+
+      checkNeighbors() {
+        let neighbors = [];
+        let top    = grid[index(this.i, this.j - 1)];
+        let right  = grid[index(this.i + 1, this.j)];
+        let bottom = grid[index(this.i, this.j + 1)];
+        let left   = grid[index(this.i - 1, this.j)];
+
+        if (top && !top.visited)    neighbors.push(top);
+        if (right && !right.visited)  neighbors.push(right);
+        if (bottom && !bottom.visited) neighbors.push(bottom);
+        if (left && !left.visited)   neighbors.push(left);
+
+        if (neighbors.length > 0) {
+          let r = floor(random(0, neighbors.length));
+          return neighbors[r];
+        } else {
+          return undefined;
+        }
+      }
+
+      show() {
+        let x = this.i * w;
+        let y = this.j * w;
+        stroke(255);
+        if (this.walls.top)    line(x, y, x + w, y);
+        if (this.walls.right)  line(x + w, y, x + w, y + w);
+        if (this.walls.bottom) line(x + w, y + w, x, y + w);
+        if (this.walls.left)   line(x, y + w, x, y);
+      }
+    }
+
+    //----------------------------------
+    // Fish class
+    //----------------------------------
+    class Fish {
+      constructor() {
+        this.x = random(width);
+        this.y = random(height);
+        this.baseSize = 15;
+        this.xSpeed = random(0.8, 1.5);
+        this.ySpeed = random(-0.5, 0.5);
+        this.col = color(200, 100, 100);
+      }
+
+      update(h, m) {
+        // Hour affects size
+        let hourVal = (h % 12) || 12; 
+        this.fishSize = this.baseSize + hourVal * 2;
+
+        // Minute affects color
+        colorMode(HSB, 255);
+        let cVal = map(m, 0, 59, 0, 255);
+        this.col = color(cVal, 200, 220);
+        colorMode(RGB, 255);
+
+        // Movement
+        this.x += this.xSpeed;
+        this.y += this.ySpeed;
+
+        // Wrap around
+        if (this.x > width + this.fishSize) {
+          this.x = -this.fishSize;
+          this.y = random(height);
+        }
+        if (this.y < -this.fishSize) {
+          this.y = height + this.fishSize;
+        } else if (this.y > height + this.fishSize) {
+          this.y = -this.fishSize;
+        }
+      }
+
+      display() {
+        push();
+        translate(this.x, this.y);
+        noStroke();
+        fill(this.col);
+
+        // Body
+        ellipse(0, 0, this.fishSize * 2, this.fishSize);
+
+        // Tail
+        let tailOffset = this.fishSize * 0.7;
+        triangle(
+          -this.fishSize, 0,
+          -this.fishSize - tailOffset, -this.fishSize * 0.3,
+          -this.fishSize - tailOffset, this.fishSize * 0.3
+        );
+
+        // Eye
+        fill(255);
+        ellipse(this.fishSize * 0.3, -this.fishSize * 0.1, this.fishSize * 0.4, this.fishSize * 0.4);
+        fill(0);
+        ellipse(this.fishSize * 0.3, -this.fishSize * 0.1, this.fishSize * 0.2, this.fishSize * 0.2);
+        pop();
+      }
+    }
+
+    //----------------------------------
+    // Bubble class
+    //----------------------------------
+    class Bubble {
+      constructor() {
+        this.x = random(width);
+        this.y = height + 10;
+        this.size = random(5, 12);
+        this.speed = random(1, 2);
+        this.popped = false;
+      }
+
+      update() {
+        this.y -= this.speed;
+        if (this.y < -this.size) {
+          this.popped = true;
+        }
+      }
+
+      display() {
+        push();
+        translate(this.x, this.y);
+        stroke(255);
+        strokeWeight(1);
+        noFill();
+        ellipse(0, 0, this.size, this.size);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

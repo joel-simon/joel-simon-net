@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Fractal Wave Swirl Time Display</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #fusionContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+    /* Instructions overlay hidden by default. Shown on container hover. */
+    #instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.85);
+      color: #222;
+      font-family: sans-serif;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    #fusionContainer:hover #instructions {
+      display: block;
+    }
+    /* Ensure the canvas remains 512x512 */
+    canvas {
+      display: block;
+      border: 1px solid #aaa;
+    }
+  </style>
+</head>
+<body>
+<div id="fusionContainer">
+  <div id="instructions">
+    <h3>Fractal Wave Swirl Time Display</h3>
+    <p>• Background wave amplitude reflects the current minute.</p>
+    <p>• The fractal tree grows and angles itself based on the hour.</p>
+    <p>• A swirling pattern in the sky animates with the current second.</p>
+  </div>
+</div>
+
+<script>
+  const CANVAS_SIZE = 512;
+
+  function setup() {
+    let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+    cnv.parent("fusionContainer");
+    angleMode(DEGREES);
+    strokeCap(ROUND);
+  }
+
+  function draw() {
+    let hr = hour() % 12;   // 0-11
+    let mn = minute();      // 0-59
+    let sc = second();      // 0-59
+
+    background(30);
+
+    // Draw wave background influenced by minutes
+    drawWaveBackground(mn);
+
+    // Draw swirling particles for seconds
+    drawSwirl(sc);
+
+    // Draw fractal tree based on hour
+    push();
+    translate(width / 2, height * 0.75);
+    let treeHeight = map(hr, 0, 11, 80, 220);
+    let branchAngle = map(hr, 0, 11, 15, 45);
+    stroke(120, 220, 120);
+    fractalTree(treeHeight, 0, branchAngle);
+    pop();
+  }
+
+  function drawWaveBackground(mn) {
+    noStroke();
+    fill(70, 130, 180, 120);
+    let waveCount = 5;
+    for (let i = 0; i < waveCount; i++) {
+      let waveHeight = (height / waveCount) * (i + 1);
+      let amplitude = map(mn, 0, 59, 10, 80);
+      beginShape();
+      for (let x = 0; x <= width; x += 10) {
+        let w = map(x, 0, width, 0, TWO_PI);
+        let yOffset = amplitude * sin(w + frameCount * 0.02 + i * 2);
+        vertex(x, waveHeight + yOffset);
+      }
+      vertex(width, height);
+      vertex(0, height);
+      endShape(CLOSE);
+    }
+  }
+
+  function drawSwirl(sc) {
+    push();
+    translate(width/2, height/4);
+    noFill();
+    stroke(220, 160, 250);
+    strokeWeight(2);
+
+    let swirlArms = 36;
+    let swirlRotation = frameCount * 0.5 + sc * 6;
+    rotate(swirlRotation);
+    for (let i = 0; i < swirlArms; i++) {
+      let angle = map(i, 0, swirlArms, 0, 360);
+      let x = 40 + i * 2;
+      let y = 0;
+      push();
+      rotate(angle);
+      line(0, 0, x, y);
+      pop();
+    }
+    pop();
+  }
+
+  function fractalTree(branchLength, level, branchAngle) {
+    // Base condition
+    if (branchLength < 10) return;
+
+    line(0, 0, 0, -branchLength);
+    translate(0, -branchLength);
+
+    push();
+    rotate(branchAngle);
+    fractalTree(branchLength * 0.67, level + 1, branchAngle);
+    pop();
+
+    push();
+    rotate(-branchAngle);
+    fractalTree(branchLength * 0.67, level + 1, branchAngle);
+    pop();
+  }
+</script>
+</body>
+</html>

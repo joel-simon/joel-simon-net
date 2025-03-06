@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Origami Mandala</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for 512x512 canvas */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      background: #222;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay: appears on hover */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Origami Mandala</strong><br><br>
+        • The mandala’s number of “petals” is determined by the hour.<br>
+        • It grows or shrinks in size based on the current minute.<br>
+        • Colors pulse according to the current second.<br>
+        • Watch the animation to see time’s subtle transformations.<br>
+        • Hover here to revisit instructions.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Origami Mandala
+      ====================
+      - Hour determines the number of symmetrical “petals”.
+      - Minute affects the overall radius scaling.
+      - Second drives color pulses and subtle rotation.
+    */
+
+    let w = 512, h = 512;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent("canvas-container");
+      angleMode(DEGREES);
+      frameRate(30);
+    }
+
+    function draw() {
+      background(30);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Convert 24-hour format to a range for petal count
+      // Minimum 4 petals, maximum 16
+      let petals = map(hr, 0, 23, 4, 16);
+      petals = floor(petals);
+
+      // Mandala grows/shrinks with minute (scaling factor)
+      let radiusScaler = map(mn, 0, 59, 0.5, 1.5);
+
+      // Color pulses with second
+      // We'll use HSB color mode briefly for a hue shift
+      push();
+      colorMode(HSB);
+      let baseHue = map(sc, 0, 59, 0, 360);
+      let petalColor = color(baseHue, 100, 100);
+      pop();
+
+      // Draw the mandala at center
+      translate(width/2, height/2);
+
+      // Subtle rotation driven by seconds for a slow spin
+      rotate(map(sc, 0, 59, 0, 360)/20);
+
+      // Draw multiple concentric layers for an origami feel
+      let layers = 5; // fixed layers
+      for (let layer = 1; layer <= layers; layer++) {
+        // Each layer is a polygon with 'petals' sides
+        let polygonPoints = petals;
+        let polygonRadius = layer * 30 * radiusScaler;
+
+        push();
+        // Alternate rotating each layer slightly
+        rotate(layer * 3);
+
+        // Pick color variation
+        let layerHue = (baseHue + layer*10) % 360;
+        colorMode(HSB);
+        fill(layerHue, 100, 100, 0.7*255);
+        noStroke();
+
+        beginShape();
+        for (let i = 0; i < polygonPoints; i++) {
+          let angle = map(i, 0, polygonPoints, 0, 360);
+          let x = polygonRadius * cos(angle);
+          let y = polygonRadius * sin(angle);
+          vertex(x, y);
+        }
+        endShape(CLOSE);
+        pop();
+      }
+
+      // Draw a smaller star shape in the center
+      // more sides for a crisp detail
+      push();
+      rotate(frameCount / 2);
+      let starPoints = petals * 2;
+      let starRadius = 20 * radiusScaler;
+      fill(255);
+      noStroke();
+      beginShape();
+      for (let i = 0; i < starPoints; i++) {
+        let angle = map(i, 0, starPoints, 0, 360);
+        let x = starRadius * cos(angle);
+        let y = starRadius * sin(angle);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+      pop();
+
+      // Draw the digital time in the top-left corner
+      drawTimeDisplay();
+    }
+
+    // Helper function: display the current time text
+    function drawTimeDisplay() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      let displayHour = (hr % 12) || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let mnStr = nf(mn, 2);
+      let scStr = nf(sc, 2);
+
+      push();
+      resetMatrix(); // go back to default coordinates
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(`${displayHour}:${mnStr}:${scStr} ${ampm}`, 10, 10);
+      pop();
+    }
+  </script>
+</body>
+</html>

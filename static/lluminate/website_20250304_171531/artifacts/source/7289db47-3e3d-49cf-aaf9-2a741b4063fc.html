@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Time Waterfall</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset body margin/padding and use a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container fixed at 512x512, centered */
+    #clock-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+    }
+
+    /* Instructions overlay, hidden by default */
+    #instructions {
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      display: none;
+      background-color: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      line-height: 1.5;
+      padding: 2rem;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #clock-container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="clock-container">
+  <div id="instructions">
+    <h2>Time Waterfall</h2>
+    <p>
+      Observe how the cascade of droplets changes throughout the day!<br>
+      Each hour, minute, and second influences the color, speed, and volume of the flowing water.<br>
+      Hover to see these instructions; enjoy the peaceful rush of flowing time.
+    </p>
+  </div>
+</div>
+
+<script>
+  // Canvas dimensions
+  let canvasSize = 512;
+
+  // Array to store droplets
+  let droplets = [];
+
+  // Number of droplets is adjusted by the current minute
+  let dropletCount;
+
+  function setup() {
+    let myCanvas = createCanvas(canvasSize, canvasSize);
+    myCanvas.parent("clock-container");
+    noStroke();
+    angleMode(RADIANS);
+  }
+
+  function draw() {
+    backgroundGradient();
+
+    // Gather current time values
+    let hr = hour();
+    let mn = minute();
+    let sc = second();
+
+    // Recompute droplet count according to current minute
+    dropletCount = map(mn, 0, 59, 25, 200);
+    dropletCount = int(dropletCount);
+
+    // Add new droplets if needed
+    while (droplets.length < dropletCount) {
+      droplets.push(new Droplet());
+    }
+
+    // Update and display droplets
+    for (let i = droplets.length - 1; i >= 0; i--) {
+      droplets[i].update(sc);
+      droplets[i].show(hr, mn, sc);
+      // Remove droplet once it falls off screen
+      if (droplets[i].offScreen()) {
+        droplets.splice(i, 1);
+      }
+    }
+
+    // Display digital time near the bottom edge
+    textSize(24);
+    textAlign(CENTER, CENTER);
+    fill(255);
+    text(`${hr}:${nf(mn, 2)}:${nf(sc, 2)}`, width / 2, height - 20);
+  }
+
+  // A class for each droplet in the waterfall
+  class Droplet {
+    constructor() {
+      this.x = random(width);
+      this.y = random(-200, 0);  // start slightly off screen
+      this.size = random(2, 7);
+      this.speed = random(2, 5);
+    }
+
+    update(second) {
+      // Gravity influenced by current second
+      let gravity = map(second, 0, 59, 0.05, 0.3);
+      this.y += this.speed + gravity;
+    }
+
+    show(hr, mn, sc) {
+      // Color of droplet influences: hr -> red, mn -> green, sc -> blue
+      let r = map(hr, 0, 23, 50, 255);
+      let g = map(mn, 0, 59, 50, 255);
+      let b = map(sc, 0, 59, 50, 255);
+      fill(r, g, b, 200);
+      circle(this.x, this.y, this.size);
+    }
+
+    offScreen() {
+      return this.y > height + this.size;
+    }
+  }
+
+  // Draw a vertical gradient background
+  function backgroundGradient() {
+    for (let y = 0; y < height; y++) {
+      let inter = map(y, 0, height, 0, 1);
+      let c = lerpColor(color(0, 0, 60), color(0, 0, 20), inter);
+      stroke(c);
+      line(0, y, width, y);
+    }
+  }
+</script>
+</body>
+</html>

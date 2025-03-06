@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Blended Skyline & Time Fractal Swirl</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* 512x512 container */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (hidden by default) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.8);
+      color: #111;
+      font-family: sans-serif;
+      box-sizing: border-box;
+      padding: 1rem;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Blended Skyline & Time Fractal Swirl</strong><br><br>
+        • Sky color transitions from day to night based on the hour.<br>
+        • Buildings light up windows depending on the minute.<br>
+        • A fractal tree grows, responding to real-time changes.<br>
+        • Orbital swirls in the center rotate and shift color by the second.<br>
+        • Hover here anytime to revisit instructions!
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*
+      This sketch merges features from two interactive time displays:
+      1) Skyline & Fractal Tree with swirling orbits.
+      2) Time-based fractal tree and orbital swirl.
+
+      The result:
+      - A gradually transitioning sky (day/night).
+      - A skyline whose windows glow based on minutes.
+      - A central fractal tree that evolves with hour and minute.
+      - A dynamic orbital swirl that changes with the seconds.
+      - A readable digital clock in the corner.
+    */
+
+    let w = 512;
+    let h = 512;
+    let buildingCount = 7;
+
+    function setup() {
+      let c = createCanvas(w, h);
+      c.parent("canvas-container");
+      angleMode(DEGREES);
+      frameRate(30);
+      noStroke();
+    }
+
+    function draw() {
+      let hr = hour() % 12; // 0-11
+      let mn = minute();    // 0-59
+      let sc = second();    // 0-59
+
+      // Smooth fractional hour for background interpolation from day -> night
+      let hourFraction = (hr + mn / 60 + sc / 3600) / 12;
+      let dayColor = color(135, 206, 235); // Pale sky blue
+      let nightColor = color(5, 15, 80);   // Deep night blue
+      let skyColor = lerpColor(dayColor, nightColor, hourFraction);
+      background(skyColor);
+
+      // Draw swirling orbit in the sky
+      push();
+      translate(width / 2, height / 2);
+      drawOrbitalSwirl(sc);
+      pop();
+
+      // Skyline at the bottom
+      drawSkyline(hr, mn);
+
+      // Fractal tree in the center near the bottom
+      push();
+      translate(width / 2, height);
+      let depth = floor(map(hr, 0, 11, 5, 9));    // branch depth from hour
+      let branchLen = map(mn, 0, 59, 60, 150);    // main branch length from minute
+      let angleVal = map(sc, 0, 59, 0, 90);       // angle from seconds
+      drawFractalTree(branchLen, angleVal, depth);
+      pop();
+
+      // Display digital time in the bottom-left
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, CENTER);
+      text(nf(hour(),2) + ":" + nf(mn,2) + ":" + nf(sc,2),
+           10, height - 25);
+    }
+
+    // Skyline from example patterns (buildings + minute-based lit windows)
+    function drawSkyline(hr, mn) {
+      fill(40);
+      let buildingWidth = width / buildingCount;
+
+      for (let i = 0; i < buildingCount; i++) {
+        let buildingHeight = map(noise(i), 0, 1, height/4, (3*height)/4);
+        rect(i * buildingWidth, height - buildingHeight, buildingWidth, buildingHeight);
+
+        // Number of lit windows depends on minute
+        let litWindows = floor(map(mn, 0, 59, 0, 40));
+        let rows = 10;
+        let cols = 4;
+        let windowGapX = buildingWidth / (cols + 1);
+        let windowGapY = buildingHeight / (rows + 1);
+        let windowCount = 0;
+
+        fill(255, 220, 100);
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            windowCount++;
+            if (windowCount <= litWindows) {
+              let wx = i * buildingWidth + (c + 1) * windowGapX - windowGapX / 2;
+              let wy = height - buildingHeight + (r + 1) * windowGapY - windowGapY / 2;
+              rect(wx - 5, wy - 5, 10, 10);
+            }
+          }
+        }
+        fill(40);
+      }
+    }
+
+    // A swirling orbit of small circles that rotate depending on the second
+    function drawOrbitalSwirl(sc) {
+      // Subtle fill behind swirl
+      let baseCol = map(sc, 0, 59, 0, 255);
+      noStroke();
+      fill(baseCol, 30, 60, 50);
+      ellipse(0, 0, width * 2, height * 2);
+
+      // We'll draw multiple rotating rings
+      let rings = 5;
+      let radiusStep = 20;
+      let rotSpeed = map(sc, 0, 59, 0, 4);
+
+      for (let r = 1; r <= rings; r++) {
+        push();
+        let angleOffset = (frameCount * rotSpeed + r * 20) % 360;
+        rotate(angleOffset);
+        let swirlRadius = r * radiusStep + 30;
+
+        // Circle color changes with second + ring offset
+        let col = map(sc + r * 5, 0, 59 + rings * 5, 0, 360) % 360;
+        colorMode(HSB);
+        fill(col, 100, 100);
+        ellipse(swirlRadius, 0, 15, 15);
+        pop();
+      }
+      // Reset color mode to default
+      colorMode(RGB);
+    }
+
+    // Recursive fractal tree
+    function drawFractalTree(len, angleVal, depth) {
+      if (depth <= 0) return;
+
+      stroke(255);
+      strokeWeight(3);
+      line(0, 0, 0, -len);
+
+      translate(0, -len);
+
+      push();
+      rotate(angleVal);
+      drawFractalTree(len * 0.7, angleVal, depth - 1);
+      pop();
+
+      push();
+      rotate(-angleVal);
+      drawFractalTree(len * 0.7, angleVal, depth - 1);
+      pop();
+    }
+
+  </script>
+</body>
+</html>

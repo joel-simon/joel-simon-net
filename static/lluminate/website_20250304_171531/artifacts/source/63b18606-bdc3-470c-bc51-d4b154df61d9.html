@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Constellation Portal</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Constellation Portal</strong><br><br>
+        • The swirling portal color changes each hour.<br>
+        • The number of stars depends on the current minute.<br>
+        • The planet's orbit radius is influenced by the second.<br>
+        • Current time appears in the top-left corner.<br><br>
+        Hover to see how time sculpts this constellation portal.
+      </div>
+    </div>
+  </div>
+
+  <!-- Include p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    // For storing star data
+    let stars = [];
+
+    // Track minute for star reset
+    let currentMinute;
+
+    function setup() {
+      const cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      textFont('sans-serif');
+
+      // Initialize star field
+      currentMinute = minute();
+      createStarField(currentMinute);
+    }
+
+    function draw() {
+      background(0);
+
+      // Retrieve time variables
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Redraw star field if minute changes
+      if (mn !== currentMinute) {
+        currentMinute = mn;
+        createStarField(currentMinute);
+      }
+
+      // Draw swirling portal
+      drawPortal(hr);
+
+      // Draw stars
+      drawStars();
+
+      // Draw orbiting planet
+      drawPlanet(sc);
+
+      // Display time in the corner
+      displayTime(hr, mn, sc);
+    }
+
+    function createStarField(mn) {
+      // Number of stars grows with the minute
+      let starCount = map(mn, 0, 59, 50, 200);
+      stars = [];
+      for (let i = 0; i < starCount; i++) {
+        stars.push({
+          x: random(width),
+          y: random(height),
+          size: random(1, 3)
+        });
+      }
+    }
+
+    function drawStars() {
+      noStroke();
+      fill(255);
+      for (let s of stars) {
+        circle(s.x, s.y, s.size);
+      }
+    }
+
+    function drawPortal(hr) {
+      // Map hour to color range
+      let r = map(hr, 0, 23, 20, 200);
+      let g = map(sin(frameCount * 0.5), -1, 1, 50, 255);
+      let b = map(hr, 0, 23, 200, 50);
+
+      push();
+      translate(width / 2, height / 2);
+      noFill();
+      strokeWeight(2);
+
+      // Draw concentric arcs that rotate
+      let rings = 7;
+      for (let i = 0; i < rings; i++) {
+        push();
+        let angleOffset = frameCount + i * 20;
+        rotate(angleOffset);
+        stroke((r + i * 20) % 256, g, (b + i * 20) % 256);
+        arc(0, 0, 80 + i * 30, 80 + i * 30, 0, 180);
+        pop();
+      }
+      pop();
+    }
+
+    function drawPlanet(sc) {
+      // Orbit radius changes with seconds
+      let orbitRadius = map(sc, 0, 59, 50, 150);
+      let planetSize = 20;
+
+      push();
+      translate(width / 2, height / 2);
+      rotate(frameCount * 0.5);
+      translate(orbitRadius, 0);
+
+      // Draw planet
+      noStroke();
+      let col = map(sc, 0, 59, 100, 255);
+      fill(col, 100, 255);
+      circle(0, 0, planetSize);
+      pop();
+    }
+
+    function displayTime(hr, mn, sc) {
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 10, 10);
+    }
+  </script>
+</body>
+</html>

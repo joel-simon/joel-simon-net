@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Geyser</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for contrast */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Geyser</strong><br><br>
+        • The geyser's spout height changes with the hour.<br>
+        • Its color shifts with the minute.<br>
+        • The spout pulses every second.<br>
+        • Current time is shown near the geyser base.<br><br>
+        Hover to see instructions and watch the geyser evolve in real-time!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    const w = 512, h = 512;
+    
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      noStroke();
+    }
+    
+    function draw() {
+      background(20, 20, 50); // A dark bluish background
+      
+      // Get current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+      
+      // Base "ground" rectangle
+      fill(50, 30, 20);
+      rect(0, height - 60, width, 60);
+      
+      // Map hour (0..23) to geyser height
+      // We'll reduce 24-hr format to a 0..12-like scale for bigger motion
+      let hrHeight = map(hr % 12, 0, 12, 50, 200);
+      
+      // Determine geyser color (shift it by minute)
+      // We'll pick some hue range within 0..255
+      // Then use HSB or do custom color mix
+      // For simplicity, let’s do an RGB approach
+      let r = map(mn, 0, 59, 100, 255);
+      let g = map(mn, 0, 59, 180, 50);
+      let b = map(mn, 0, 59, 200, 255);
+      
+      // The spout pulses every second with a slight "breathing" effect
+      let pulse = 0.2 * sin(frameCount * 3 + sc * 6) * 30;
+      
+      // Draw the geyser spout
+      // We'll place the geyser base around the center of the canvas width
+      let baseX = width / 2;
+      let baseY = height - 60;
+      
+      // Draw a series of vertical "streams" forming the geyser
+      // We'll layer them to create a rough watery look
+      push();
+      translate(baseX, baseY);
+      
+      fill(r, g, b);
+      for (let i = 0; i < 8; i++) {
+        push();
+        // Spread the streams slightly in x-direction
+        let offsetX = map(i, 0, 7, -30, 30);
+        translate(offsetX, 0);
+        
+        beginShape();
+        vertex(0, 0);
+        // We'll curve up to a top point determined by hrHeight plus pulse
+        // Add some random wave near the top
+        let topX = random(-10, 10);
+        let topY = -hrHeight + pulse;
+        // Use a quadratic or bezier to get some fluid shape
+        bezierVertex(topX, topY * 0.5, topX, topY * 0.8, topX, topY);
+        // Loop back to bottom
+        vertex(0, 0);
+        endShape(CLOSE);
+        
+        pop();
+      }
+      pop();
+      
+      // Display the digital time near the base of the geyser
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(24);
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(`${displayHour}:${minStr}:${secStr} ${ampm}`, width / 2, height - 30);
+    }
+  </script>
+</body>
+</html>

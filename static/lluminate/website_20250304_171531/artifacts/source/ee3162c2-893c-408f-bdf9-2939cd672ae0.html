@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Combined Time Display</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic page setup: black background, no scrollbars */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container fixed at 512x512, centered horizontally */
+    #clock-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+    }
+
+    /* Instructions overlay, hidden by default */
+    #instructions {
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      display: none;
+      background-color: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      line-height: 1.5;
+      padding: 2rem;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #clock-container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="clock-container">
+    <div id="instructions">
+      <h2>Combined Time Display</h2>
+      <p>
+        • A fractal tree grows from the bottom, shifting each hour.<br>
+        • A maze regenerates each minute. Use the arrow keys to move the explorer.<br>
+        • A gear rotates in the center, influenced by seconds.<br>
+        Enjoy the interplay of these time-based elements!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      This sketch merges three time-sensitive elements:
+      1) A fractal tree in the background (hour-based).
+      2) A rotating gear in the center (second-based).
+      3) A maze that regenerates each minute (minute-based), with arrow-key navigation.
+    */
+
+    // Global constants and variables
+    const CANVAS_SIZE = 512;
+    const CELL_SIZE = 16;      // Maze cell size
+    let mazeCols, mazeRows;
+    let maze = [];             // 2D array to hold maze cells
+    let player;                // Player's position
+    let lastMinute = -1;       // Track minute changes for re-generating the maze
+
+    // Setup p5
+    function setup() {
+      let myCanvas = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      myCanvas.parent("clock-container");
+      angleMode(RADIANS);
+
+      // Maze calculations
+      mazeCols = floor(width / CELL_SIZE);
+      mazeRows = floor(height / CELL_SIZE);
+
+      // Initialize player in top-left cell
+      player = { col: 0, row: 0 };
+
+      // Generate the maze on startup
+      generateMazeIfNeeded();
+    }
+
+    function draw() {
+      background(0);
+
+      // Get current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // If minute changed, regenerate the maze
+      generateMazeIfNeeded();
+
+      // Draw fractal tree in the background (hour-based)
+      push();
+      translate(width / 2, height);
+      let depth = floor(map(h, 0, 23, 4, 10));
+      let branchLen = map(h, 0, 23, 80, 160);
+      stroke(180, 230, 255, 80);
+      fractalTree(branchLen, PI / 4, depth);
+      pop();
+
+      // Draw the maze on top
+      drawMaze();
+
+      // Draw the rotating gear in the center (second-based)
+      drawGear(s);
+
+      // Draw the player as a small square
+      fill(255, 80, 160);
+      noStroke();
+      rect(player.col * CELL_SIZE + 4, player.row * CELL_SIZE + 4, CELL_SIZE - 8, CELL_SIZE - 8);
+
+      // Display the digital clock in top-left
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(`${h}:${nf(m, 2)}:${nf(s, 2)}`, 5, 5);
+    }
+
+    /* ----- FRACTAL TREE ----- */
+    function fractalTree(len, angle, depth) {
+      if (depth === 0) return;
+
+      strokeWeight(map(depth, 0, 10, 1, 4));
+      line(0, 0, 0, -len);   // Draw the branch
+      translate(0, -len);    // Go to its end
+
+      // Left branch
+      push();
+      rotate(angle);
+      fractalTree(len * 0.7, angle, depth - 1);
+      pop();
+
+      // Right branch
+      push();
+      rotate(-angle);
+      fractalTree(len * 0.7, angle, depth - 1);
+      pop();
+    }
+
+    /* ----- ROTATING GEAR ----- */
+    function drawGear(sec) {
+      push();
+      translate(width / 2, height / 2);
+      // Rotation depends on seconds
+      rotate(radians(map(sec, 0, 59, 0, 360)) + frameCount * 0.01);
+      fill(255, 215, 0);
+      stroke(0);
+      strokeWeight(2);
+
+      // Draw a gear-like shape with 12 cogs
+      let cogCount = 12;
+      let radiusOuter = 40;
+      let radiusInner = 20;
+      beginShape();
+      for (let i = 0; i < cogCount * 2; i++) {
+        let r = i % 2 === 0 ? radiusOuter : radiusInner;
+        let angle = map(i, 0, cogCount * 2, 0, TWO_PI);
+        let x = r * cos(angle);
+        let y = r * sin(angle);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+
+      // Center circle
+      fill(200, 50, 50);
+      circle(0, 0, 12);
+      pop();
+    }
+
+    /* ----- MAZE GENERATION & DRAW ----- */
+    class Cell {
+      constructor(i, j) {
+        this.i = i;
+        this.j = j;
+        this.walls = [true, true, true, true]; // top, right, bottom, left
+        this.visited = false;
+      }
+    }
+
+    function generateMazeIfNeeded() {
+      let currentMinute = minute();
+      if (currentMinute !== lastMinute) {
+        lastMinute = currentMinute;
+        randomSeed(hour() * 100 + currentMinute); // Re-seed random for consistent minute-based mazes
+        buildEmptyMaze();
+        runDFS();
+        // Reset player to top-left
+        player.col = 0;
+        player.row = 0;
+      }
+    }
+
+    function buildEmptyMaze() {
+      maze = [];
+      for (let r = 0; r < mazeRows; r++) {
+        let row = [];
+        for (let c = 0; c < mazeCols; c++) {
+          row.push(new Cell(c, r));
+        }
+        maze.push(row);
+      }
+    }
+
+    function runDFS() {
+      let stack = [];
+      let startCell = maze[0][0];
+      startCell.visited = true;
+      stack.push(startCell);
+
+      while (stack.length > 0) {
+        let current = stack[stack.length - 1];
+        let next = getUnvisitedNeighbor(current);
+        if (next) {
+          next.visited = true;
+          removeWalls(current, next);
+          stack.push(next);
+        } else {
+          stack.pop();
+        }
+      }
+    }
+
+    function getUnvisitedNeighbor(cell) {
+      let neighbors = [];
+      let r = cell.j;
+      let c = cell.i;
+
+      // Top
+      if (r > 0 && !maze[r - 1][c].visited) neighbors.push(maze[r - 1][c]);
+      // Right
+      if (c < mazeCols - 1 && !maze[r][c + 1].visited) neighbors.push(maze[r][c + 1]);
+      // Bottom
+      if (r < mazeRows - 1 && !maze[r + 1][c].visited) neighbors.push(maze[r + 1][c]);
+      // Left
+      if (c > 0 && !maze[r][c - 1].visited) neighbors.push(maze[r][c - 1]);
+
+      if (neighbors.length > 0) {
+        return random(neighbors);
+      } else {
+        return null;
+      }
+    }
+
+    function removeWalls(a, b) {
+      let dx = a.i - b.i;
+      if (dx === 1) {
+        a.walls[3] = false; // left wall of a
+        b.walls[1] = false; // right wall of b
+      } else if (dx === -1) {
+        a.walls[1] = false; // right wall of a
+        b.walls[3] = false; // left wall of b
+      }
+      let dy = a.j - b.j;
+      if (dy === 1) {
+        a.walls[0] = false; // top wall of a
+        b.walls[2] = false; // bottom wall of b
+      } else if (dy === -1) {
+        a.walls[2] = false; // bottom wall of a
+        b.walls[0] = false; // top wall of b
+      }
+    }
+
+    function drawMaze() {
+      push();
+      stroke(200);
+      strokeWeight(2);
+      for (let r = 0; r < mazeRows; r++) {
+        for (let c = 0; c < mazeCols; c++) {
+          let x = c * CELL_SIZE;
+          let y = r * CELL_SIZE;
+          let cell = maze[r][c];
+          // Top
+          if (cell.walls[0]) line(x, y, x + CELL_SIZE, y);
+          // Right
+          if (cell.walls[1]) line(x + CELL_SIZE, y, x + CELL_SIZE, y + CELL_SIZE);
+          // Bottom
+          if (cell.walls[2]) line(x, y + CELL_SIZE, x + CELL_SIZE, y + CELL_SIZE);
+          // Left
+          if (cell.walls[3]) line(x, y, x, y + CELL_SIZE);
+        }
+      }
+      pop();
+    }
+
+    // Handle player movement
+    function keyPressed() {
+      let c = player.col;
+      let r = player.row;
+      let cell = maze[r][c];
+
+      if (keyCode === UP_ARROW) {
+        // Move up if no top wall
+        if (!cell.walls[0]) {
+          player.row--;
+        }
+      } else if (keyCode === DOWN_ARROW) {
+        // Move down if no bottom wall
+        if (!cell.walls[2]) {
+          player.row++;
+        }
+      } else if (keyCode === LEFT_ARROW) {
+        // Move left if no left wall
+        if (!cell.walls[3]) {
+          player.col--;
+        }
+      } else if (keyCode === RIGHT_ARROW) {
+        // Move right if no right wall
+        if (!cell.walls[1]) {
+          player.col++;
+        }
+      }
+    }
+  </script>
+</body>
+</html>

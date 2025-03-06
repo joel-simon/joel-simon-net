@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Fusion Explorations</title>
+  <style>
+    /* Basic body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden; /* Hide scrollbars */
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      border: none;
+      background: #000;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Fusion Explorations</strong><br><br>
+        • Background waves shift with the minute<br>
+        • Fractal tree expands with the hour<br>
+        • Rotating gear follows the seconds<br>
+        • Current time shown at bottom-left<br><br>
+        Enjoy watching the evolving display!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time Fusion Explorations
+      - Background waves shift with minute
+      - Fractal tree grows with hour
+      - Rotating gear reflects second
+      - Digital clock in bottom-left corner
+    */
+
+    const CANVAS_SIZE = 512;
+
+    /* For the gear */
+    let gearTeeth = 12;
+    let gearRadius = 40;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      /* (1) Background Waves (minute-based) */
+      drawWaves(mn);
+
+      /* (2) Fractal Tree in center (hour-based) */
+      push();
+      translate(width / 2, height);
+      stroke(255);
+      let branchCount = map(hr % 12, 0, 12, 3, 8);
+      drawFractalTree(80, branchCount);
+      pop();
+
+      /* (3) Rotating Gear (seconds-based) */
+      push();
+      translate(width * 0.2, height * 0.2);
+      rotate(sc * 6 + frameCount * 0.3);
+      drawGear(gearTeeth, gearRadius);
+      pop();
+
+      /* (4) Display Digital Clock in bottom-left */
+      drawDigitalClock(hr, mn, sc);
+    }
+
+    /* Draw background waves, shifting with minute */
+    function drawWaves(m) {
+      push();
+      noFill();
+      stroke(255, 120);
+      strokeWeight(1);
+      let amplitude = 60;
+      let frequency = map(m, 0, 59, 0.01, 0.1);
+      for (let y = 0; y < height; y += 20) {
+        beginShape();
+        for (let x = 0; x < width; x += 10) {
+          let wave = sin((x + frameCount) * frequency) * amplitude;
+          vertex(x, y + wave);
+        }
+        endShape();
+      }
+      pop();
+    }
+
+    /* Recursive fractal tree, grows with hour */
+    function drawFractalTree(branchLen, depth) {
+      line(0, 0, 0, -branchLen);
+      translate(0, -branchLen);
+
+      if (depth > 0) {
+        push();
+        rotate(25);
+        drawFractalTree(branchLen * 0.7, depth - 1);
+        pop();
+
+        push();
+        rotate(-25);
+        drawFractalTree(branchLen * 0.7, depth - 1);
+        pop();
+      }
+    }
+
+    /* Simple gear shape has teeth around a circle */
+    function drawGear(teeth, radius) {
+      stroke(255);
+      strokeWeight(2);
+      fill(80);
+      beginShape();
+      for (let i = 0; i < teeth * 2; i++) {
+        let angle = 360 / (teeth * 2) * i;
+        let r = i % 2 === 0 ? radius + 10 : radius;
+        let x = r * cos(angle);
+        let y = r * sin(angle);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+
+      // Inner circle
+      fill(0);
+      ellipse(0, 0, radius * 1.2);
+    }
+
+    /* Digital clock in bottom-left corner */
+    function drawDigitalClock(h, m, s) {
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 10, height - 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

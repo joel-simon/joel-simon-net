@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Tesseract</title>
+  <style>
+    /* Page setup for a 512x512 display */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas and overlay */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: auto;
+      overflow: hidden;
+      background-color: #111;
+    }
+
+    /* Instructions overlay hidden by default, appears on hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: none;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.8);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Tesseract</strong><br><br>
+        • A hypercube rotating through dimensions as time passes.<br>
+        • Hour, minute, and second each influence rotation angles.<br>
+        • The tesseract color also shifts with the current hour.<br><br>
+        Hover away to see it in motion.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    // Each vertex of a tesseract (4D hypercube) has coordinates +/-1 in 4 dimensions
+    let tesseractPoints = [];
+    let edges = []; // store pairs of vertices that form edges
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      initTesseract();
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Calculate rotation angles based on the current time
+      // Let’s turn hours into a slow rotation, minutes medium, seconds faster
+      let angleHour = map(hr % 12, 0, 12, 0, TWO_PI);
+      let angleMinute = map(mn, 0, 60, 0, TWO_PI);
+      let angleSecond = map(sc, 0, 60, 0, TWO_PI);
+
+      // Rotate in 4D around several planes based on time
+      // x-w rotation (angleHour), y-w rotation (angleMinute), z-w rotation (angleSecond)
+      let rotated = rotateTesseract(tesseractPoints, angleHour, angleMinute, angleSecond);
+
+      // Project and draw
+      push();
+      translate(width / 2, height / 2);
+      let col = color(map(hr, 0, 23, 0, 360), 80, 80); // shift through HSB
+      colorMode(HSB);
+      stroke(col);
+      noFill();
+      strokeWeight(2);
+
+      // Draw edges
+      for (let [i1, i2] of edges) {
+        let p1 = project(rotated[i1]);
+        let p2 = project(rotated[i2]);
+        line(p1[0], p1[1], p2[0], p2[1]);
+      }
+      pop();
+
+      // Display clock at center
+      displayTime(hr, mn, sc);
+    }
+
+    // Initialize the tesseract (16 vertices, store edges between them)
+    function initTesseract() {
+      // All combinations of +1/-1 for x, y, z, w
+      let coords = [-1, 1];
+      for (let xi of coords) {
+        for (let yi of coords) {
+          for (let zi of coords) {
+            for (let wi of coords) {
+              tesseractPoints.push([xi, yi, zi, wi]);
+            }
+          }
+        }
+      }
+
+      // Find edges: two vertices differ by exactly 1 coordinate sign
+      for (let i = 0; i < tesseractPoints.length; i++) {
+        for (let j = i + 1; j < tesseractPoints.length; j++) {
+          let diff = 0;
+          for (let k = 0; k < 4; k++) {
+            if (tesseractPoints[i][k] !== tesseractPoints[j][k]) diff++;
+          }
+          if (diff === 1) {
+            edges.push([i, j]);
+          }
+        }
+      }
+    }
+
+    // Rotate 4D points around x-w, y-w, z-w planes
+    function rotateTesseract(points, aHr, aMn, aSc) {
+      // Create a copy of points so we don't modify the original
+      let rotated = [];
+      for (let p of points) {
+        let x = p[0];
+        let y = p[1];
+        let z = p[2];
+        let w = p[3];
+
+        // 1) Rotate in x-w plane by angleHour (aHr)
+        //   x' = x*cos(aHr) - w*sin(aHr)
+        //   w' = x*sin(aHr) + w*cos(aHr)
+        let x1 = x * cos(aHr) - w * sin(aHr);
+        let w1 = x * sin(aHr) + w * cos(aHr);
+
+        // 2) Rotate in y-w plane by angleMinute (aMn)
+        //   y' = y*cos(aMn) - w1*sin(aMn)
+        //   w2 = y*sin(aMn) + w1*cos(aMn)
+        let y1 = y * cos(aMn) - w1 * sin(aMn);
+        let w2 = y * sin(aMn) + w1 * cos(aMn);
+
+        // 3) Rotate in z-w plane by angleSecond (aSc)
+        //   z' = z*cos(aSc) - w2*sin(aSc)
+        //   w3 = z*sin(aSc) + w2*cos(aSc)
+        let z1 = z * cos(aSc) - w2 * sin(aSc);
+        let w3 = z * sin(aSc) + w2 * cos(aSc);
+
+        // Now we have the final 4D point after rotation
+        rotated.push([x1, y1, z1, w3]);
+      }
+      return rotated;
+    }
+
+    // Simple 4D -> 2D projection
+    // We'll treat w as a distance factor that shrinks the shape as w grows
+    function project(p) {
+      let perspective = 2;  // A small offset to avoid division by zero
+      let wDist = p[3] + perspective;
+      let xProject = (p[0] / wDist) * 100;
+      let yProject = (p[1] / wDist) * 100;
+      return [xProject, yProject];
+    }
+
+    // Display digital time in the center
+    function displayTime(hr, mn, sc) {
+      push();
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(24);
+      let dh = (hr % 12) || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      text(dh + ":" + nf(mn, 2) + ":" + nf(sc, 2) + " " + ampm, width/2, height/2);
+      pop();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Coral Reef</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to "Time Coral Reef"!<br><br>
+        • The ocean background changes with the hour.<br>
+        • Fractal corals grow differently each minute.<br>
+        • Jellyfish colors shift with the minute, and their movement speeds up with the second.<br>
+        • Enjoy the fusion of fractal coral and luminescent jellyfish!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let jellyfishArray = [];
+    let numJellies = 5; 
+    let angleOffset = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+
+      // Initialize jellyfish with random angles and distances
+      for (let i = 0; i < numJellies; i++) {
+        jellyfishArray.push({
+          angle: random(0, 360),
+          distFromCenter: random(50, 180),
+        });
+      }
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Create a gradient background that transitions with hour
+      let topColor = color(0, 10 + (h * 4), 60 + (h * 8));
+      let bottomColor = color(0, 0, 0);
+      setGradient(0, 0, width, height, topColor, bottomColor);
+
+      // Draw multiple fractal corals near the bottom
+      // We can distribute them across the x-axis
+      push();
+      translate(0, height);
+      let coralCount = 3;
+      for (let i = 0; i < coralCount; i++) {
+        let xPos = map(i, 0, coralCount - 1, width * 0.2, width * 0.8);
+        push();
+        translate(xPos, 0);
+        let depth = floor(map(m, 0, 59, 5, 9)); 
+        let branchLen = map(m, 0, 59, 50, 100); 
+        let angle = map(s, 0, 59, 15, 35); 
+        stroke(255);
+        fractalCoral(branchLen, angle, depth);
+        pop();
+      }
+      pop();
+
+      // Animate swirling for jellyfish based on seconds
+      angleOffset += map(s, 0, 59, 0.5, 3);
+
+      // Draw each jellyfish
+      for (let i = 0; i < jellyfishArray.length; i++) {
+        let j = jellyfishArray[i];
+        j.angle += 0.3 + map(s, 0, 59, 0.1, 0.8);
+
+        // Jellyfish size depends on hour
+        let jellySize = map(h, 0, 23, 30, 80);
+        // Jellyfish color depends on minute
+        let jellyHue = map(m, 0, 59, 120, 300);
+
+        push();
+        translate(width / 2, height / 2);
+        rotate(j.angle + angleOffset);
+        translate(j.distFromCenter, 0);
+
+        // Draw glowing body
+        noStroke();
+        fill(jellyHue, 100, 200, 200);
+        ellipse(0, 0, jellySize, jellySize * 0.8);
+
+        // Tentacles
+        stroke(jellyHue, 200, 255, 150);
+        strokeWeight(2);
+        noFill();
+        for (let t = -2; t < 3; t++) {
+          beginShape();
+          for (let seg = 0; seg <= 10; seg++) {
+            let xOff = map(seg, 0, 10, 0, 10);
+            let wave = sin((frameCount + seg * 10 + t * 20) * 2) * 5;
+            vertex(t * 5 + wave, jellySize * 0.4 + seg * 6);
+          }
+          endShape();
+        }
+        pop();
+      }
+
+      // Display digital clock
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, width / 2, height - 20);
+      pop();
+    }
+
+    // Gradient background
+    function setGradient(x, y, w, h, c1, c2) {
+      noFill();
+      for (let i = y; i <= y + h; i++) {
+        let inter = map(i, y, y + h, 0, 1);
+        let c = lerpColor(c1, c2, inter);
+        stroke(c);
+        line(x, i, x + w, i);
+      }
+    }
+
+    // Recursive fractal for corals
+    function fractalCoral(len, angle, depth) {
+      if (depth === 0) return;
+      strokeWeight(map(depth, 0, 10, 1, 4));
+      line(0, 0, 0, -len);
+      translate(0, -len);
+
+      push();
+      rotate(angle);
+      fractalCoral(len * 0.7, angle, depth - 1);
+      pop();
+
+      push();
+      rotate(-angle);
+      fractalCoral(len * 0.7, angle, depth - 1);
+      pop();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Combined Interactive Time Display</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset body margin/padding and ensure the page is centered */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Enforce the 512x512 size and position the tooltip */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none; 
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      border-radius: 4px;
+      padding: 10px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 260px;
+      z-index: 2;
+      line-height: 1.4em;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+
+    /* Keep the p5 canvas at exactly 512x512 */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      Combined Time Display Instructions:<br><br>
+      • Background waves respond to the hour (higher waves in later hours).<br>
+      • The fractal tree's branching changes with minutes.<br>
+      • The star rotates with the seconds.<br>
+      • Current time is shown at the top-left of the canvas.
+    </div>
+  </div>
+
+  <script>
+    // Variables for digital clock display
+    let currentTimeStr = "";
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent("canvasContainer");
+      angleMode(RADIANS);
+      textFont('sans-serif');
+      textAlign(LEFT, TOP);
+      textSize(16);
+    }
+
+    function draw(){
+      background(20);
+
+      // Get current time from p5
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Update digital time string
+      currentTimeStr = nf(h,2) + ":" + nf(m,2) + ":" + nf(s,2);
+
+      // Draw the dynamic background wave (amplitude based on hour)
+      drawWave(h);
+
+      // Draw the fractal tree in the center (branching changes with minute)
+      push();
+      translate(width/2, height * 0.85); // Start near bottom center
+      rotate(PI); // Flip to draw upwards
+      drawFractalTree(55, 0, m);
+      pop();
+
+      // Draw the rotating star at center top (rotation based on seconds)
+      drawRotatingStar(s);
+
+      // Display digital clock in top-left corner
+      fill(255);
+      text(currentTimeStr, 10, 10);
+    }
+
+    // Function to draw background wave
+    function drawWave(h) {
+      noStroke();
+      fill(30, 90, 150, 130);
+
+      // Wave amplitude grows with hour (0-23)
+      let waveAmp = map(h, 0, 23, 15, 60);
+      let waveCount = 5;  // number of wave bands
+      for (let y = 0; y < waveCount; y++) {
+        beginShape();
+        for (let x = 0; x <= width; x += 10) {
+          let angle = 0.02 * (x + frameCount * 2 + y * 200);
+          let yOffset = sin(angle) * waveAmp;
+          vertex(x, height - (y*30 + yOffset));
+        }
+        vertex(width, height);
+        vertex(0, height);
+        endShape(CLOSE);
+      }
+    }
+
+    // Recursive fractal tree
+    // baseLen is the length of the initial trunk
+    // level counts recursion depth to limit maximum branches
+    // m controls the branching factor (based on current minute)
+    function drawFractalTree(baseLen, level, m) {
+      // Stop after a certain depth
+      if (level > 8) {
+        return;
+      }
+
+      stroke(80, 200, 80);
+      strokeWeight(map(level, 0, 8, 3, 1));
+      line(0, 0, 0, baseLen); // trunk
+
+      // Move to end of trunk
+      translate(0, baseLen);
+
+      // Calculate next branch length
+      let nextLen = baseLen * 0.7;
+
+      // The minute will result in different branching angles
+      let angleOffset = map(m % 10, 0, 9, 0.2, 1.0);
+
+      if (nextLen > 2) {
+        // Left branch
+        push();
+        rotate(-angleOffset);
+        drawFractalTree(nextLen, level + 1, m);
+        pop();
+        
+        // Right branch
+        push();
+        rotate(angleOffset);
+        drawFractalTree(nextLen, level + 1, m);
+        pop();
+      }
+    }
+
+    // Draw a simple star that rotates with the seconds
+    function drawRotatingStar(s) {
+      push();
+      translate(width/2, height*0.2);
+      // Rotation based on seconds
+      rotate(radians(s * 6)); 
+      noStroke();
+      fill(255, 200, 50);
+      star(0, 0, 10, 25, 5);
+      pop();
+    }
+
+    // Helper function to create a star shape
+    function star(x, y, radius1, radius2, npoints) {
+      let angle = TWO_PI / npoints;
+      let halfAngle = angle / 2.0;
+      beginShape();
+      for (let a = 0; a < TWO_PI; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

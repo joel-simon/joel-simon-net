@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Weaving Tapestry</title>
+  <style>
+    /* Page setup for a 512x512 display */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas and overlay */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: auto;
+      overflow: hidden;
+      background-color: #111;
+    }
+
+    /* Instructions overlay hidden by default, appears on hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: none;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.8);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Weaving Tapestry</strong><br><br>
+        • This tapestry continuously weaves according to the current time.<br>
+        • The hour, minute, and second determine the shifting patterns and colors.<br>
+        • Move your mouse horizontally to adjust the weave's amplitude.<br>
+        Hover away to see the animation.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      colorMode(HSB, 360, 100, 100);
+      noLoop();
+    }
+
+    function draw() {
+      background(0);
+
+      // Get current time
+      let hr = hour();   
+      let mn = minute();
+      let sc = second();
+
+      // Map time to color and wave parameters
+      // Hour influences hue of vertical lines
+      // Minute influences hue of horizontal lines
+      // Second influences brightness
+      // Mouse horizontal position => wave amplitude
+      let verticalHue = map(hr % 12, 0, 11, 0, 360);
+      let horizontalHue = map(mn, 0, 59, 0, 360);
+      let waveAmplitude = map(mouseX, 0, width, 0, 60);
+      let brightness = map(sc, 0, 59, 40, 100);
+
+      // Draw vertical "warp" lines
+      for (let x = 0; x <= width; x += 16) {
+        // The wave offset for each line depends on hour, mouse, and x
+        let waveOffset = sin((frameCount * 0.02) + (x * 0.05) + hr) * waveAmplitude;
+        stroke(verticalHue, 80, brightness);
+        strokeWeight(2);
+        line(x, 0 + waveOffset, x, height - waveOffset);
+      }
+
+      // Draw horizontal "weft" lines
+      for (let y = 0; y <= height; y += 16) {
+        // The wave offset for each line depends on the minute, mouse, and y
+        let waveOffset = cos((frameCount * 0.02) + (y * 0.05) + mn) * waveAmplitude;
+        stroke(horizontalHue, 80, brightness);
+        strokeWeight(2);
+        line(0 + waveOffset, y, width - waveOffset, y);
+      }
+
+      // Redraw periodically for a gentle weaving motion
+      setTimeout(() => { redraw(); }, 50);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Combined Time Mosaic, Fractal Tree & Gear</title>
+  <style>
+    /* Basic page reset */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Maintain a strict 512x512 area for the interactive sketch */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (hidden until hover) */
+    #hover-instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 30px;
+      cursor: default;
+    }
+
+    #canvas-container:hover #hover-instructions {
+      display: flex;
+    }
+
+    #hover-instructions p {
+      margin: 0;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <p>
+        <strong>Combined Time Mosaic, Fractal Tree & Gear</strong><br><br>
+        • Background mosaic highlights hours and minutes, pulsing with seconds.<br>
+        • A fractal tree on the left side changes branching depth and angle based on the current hour and minute.<br>
+        • A rotating gear on the right revolves according to the current second.<br>
+        • Real-time digital clock is displayed at the top.<br><br>
+        Hover away to see the animation.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    // Mosaic grid settings
+    let cols = 24; // up to 24 hours
+    let rows = 60; // up to 60 minutes
+    let tileW, tileH;
+
+    // Fractal Tree settings
+    // Use hour to set max depth, minute for the branching angle
+    let maxDepth;
+    let branchAngle;
+
+    // Gear rotation
+    let gearAngle = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      tileW = width / cols;
+      tileH = height / rows;
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Draw background mosaic
+      drawMosaic(hr, mn, sc);
+
+      // Draw fractal tree (left side)
+      push();
+        translate(width * 0.25, height * 0.7);
+        rotate( -90 );
+        maxDepth = map(hr, 0, 23, 5, 10);      // More hours => deeper tree
+        branchAngle = map(mn, 0, 59, 15, 45); // More minutes => wider angle
+        drawFractalTree(80, maxDepth);
+      pop();
+
+      // Draw gear (right side)
+      push();
+        translate(width * 0.75, height * 0.5);
+        gearAngle += map(sc, 0, 59, 1, 5); // Speed changes slightly with seconds
+        rotate(gearAngle);
+        drawGear(40, 20, color(200, 180, 80));
+      pop();
+
+      // Display digital time
+      displayTime(hr, mn, sc);
+    }
+
+    // --- Mosaic background ---
+    function drawMosaic(hr, mn, sc) {
+      for (let c = 0; c < cols; c++) {
+        for (let r = 0; r < rows; r++) {
+          let x = c * tileW + tileW / 2;
+          let y = r * tileH + tileH / 2;
+          // If within the "time boundary" for hours/minutes, give a pulsing color
+          if (c < hr || r < mn) {
+            // Pulsing effect from seconds
+            let pulsing = map(sin(frameCount + sc * 10), -1, 1, 50, 255);
+            fill(pulsing, 90, 200);
+          } else {
+            fill(40);
+          }
+          noStroke();
+          rectMode(CENTER);
+          rect(x, y, tileW, tileH);
+        }
+      }
+    }
+
+    // --- Fractal Tree (recursive) ---
+    function drawFractalTree(len, depth) {
+      if (depth === 0) return;
+
+      // Draw the branch
+      stroke(140, 200, 140);
+      strokeWeight(map(depth, 0, maxDepth, 1, 4));
+      line(0, 0, len, 0);
+
+      // Move to the end of the branch
+      translate(len, 0);
+
+      // Left subtree
+      push();
+        rotate(-branchAngle);
+        drawFractalTree(len * 0.7, depth - 1);
+      pop();
+
+      // Right subtree
+      push();
+        rotate(branchAngle);
+        drawFractalTree(len * 0.7, depth - 1);
+      pop();
+    }
+
+    // --- Gear drawing ---
+    function drawGear(radius, toothCount, c) {
+      fill(c);
+      noStroke();
+      // Main gear body
+      ellipse(0, 0, radius * 2);
+
+      // Teeth
+      for (let a = 0; a < 360; a += 360 / toothCount) {
+        push();
+          rotate(a);
+          rectMode(CENTER);
+          rect(0, -radius, radius * 0.2, radius * 0.4);
+        pop();
+      }
+
+      // Center circle
+      fill(0, 70);
+      ellipse(0, 0, radius * 0.4);
+    }
+
+    // --- Time display ---
+    function displayTime(hr, mn, sc) {
+      fill(255);
+      noStroke();
+      textSize(18);
+      textAlign(CENTER, TOP);
+      let displayHour = (hr % 12) || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let mStr = nf(mn, 2);
+      let sStr = nf(sc, 2);
+      text(`${displayHour}:${mStr}:${sStr} ${ampm}`, width / 2, 10);
+    }
+  </script>
+</body>
+</html>

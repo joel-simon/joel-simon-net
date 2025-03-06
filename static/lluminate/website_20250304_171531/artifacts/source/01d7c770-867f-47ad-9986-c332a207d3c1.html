@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Desert & UFO</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+    /* Instructions overlay (hidden by default) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.8);
+      box-sizing: border-box;
+      padding: 1rem;
+      color: #111;
+      font-family: sans-serif;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Desert & UFO</strong><br><br>
+        • The sky transitions throughout the day.<br>
+        • Cacti grow taller with later hours.<br>
+        • A UFO spins and hovers, following the seconds.<br>
+        • A tumbleweed rolls across, reflecting the current minute.<br>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let w = 512;
+    let h = 512;
+
+    // Tumbleweed position and speed
+    let tumbleX = 0;
+    let tumbleSpeed = 0;
+
+    function setup() {
+      let c = createCanvas(w, h);
+      c.parent("canvas-container");
+      angleMode(DEGREES);
+      frameRate(30);
+      noStroke();
+    }
+
+    function draw() {
+      let hr = hour() % 24;  // 0-23
+      let mn = minute();     // 0-59
+      let sc = second();     // 0-59
+
+      backgroundDesert(hr, mn, sc);
+
+      // Draw cacti based on the current hour
+      drawCacti(hr);
+
+      // Update and draw tumbleweed based on minute
+      updateTumbleweed(mn);
+      drawTumbleweed();
+
+      // Draw UFO that rotates with the second
+      drawUFO(sc);
+
+      // Display digital time
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(nf(hour(),2) + ":" + nf(mn,2) + ":" + nf(sc,2), 10, 10);
+    }
+
+    // Gradual transition of desert sky color through the day
+    function backgroundDesert(hr, mn, sc) {
+      // Calculate a fractional day: 0 <= dayFraction < 1
+      let dayFraction = (hr + mn/60 + sc/3600) / 24;
+      // Define key colors for morning, noon, evening, night
+      let morningColor = color(255, 200, 100);
+      let noonColor = color(100, 180, 255);
+      let eveningColor = color(255, 120, 60);
+      let nightColor = color(10, 10, 30);
+
+      // Map the dayFraction to four gradient segments:
+      // 0 -> morningColor, 0.25 -> noonColor
+      // 0.5 -> eveningColor, 0.75 -> nightColor, then wraps to morning
+      let c1, c2, t;
+      if (dayFraction < 0.25) {
+        c1 = morningColor;
+        c2 = noonColor;
+        t = map(dayFraction, 0, 0.25, 0, 1);
+      } else if (dayFraction < 0.5) {
+        c1 = noonColor;
+        c2 = eveningColor;
+        t = map(dayFraction, 0.25, 0.5, 0, 1);
+      } else if (dayFraction < 0.75) {
+        c1 = eveningColor;
+        c2 = nightColor;
+        t = map(dayFraction, 0.5, 0.75, 0, 1);
+      } else {
+        c1 = nightColor;
+        c2 = morningColor;
+        t = map(dayFraction, 0.75, 1, 0, 1);
+      }
+      let skyCol = lerpColor(c1, c2, t);
+      background(skyCol);
+
+      // Draw "ground" as a flat desert
+      fill(150, 120, 80);
+      rect(0, height * 0.7, width, height * 0.3);
+    }
+
+    // Draw cacti along the desert; height depends on hour
+    function drawCacti(hr) {
+      fill(40, 150, 40);
+      // Number of cacti
+      let cactusCount = 5;
+      for (let i = 0; i < cactusCount; i++) {
+        // hour-based maximum height
+        let cactusHeight = map(hr, 0, 23, 50, 180);
+        // random horizontal distribution
+        let x = (i + 1) * (width / (cactusCount + 1));
+        let baseY = height * 0.7;
+
+        // Draw main column
+        rectMode(CENTER);
+        rect(x, baseY - cactusHeight/2, 20, cactusHeight);
+
+        // Draw arms
+        let armLength = cactusHeight * 0.3;
+        rect(x - 15, baseY - cactusHeight*0.40, 10, armLength);
+        rect(x + 15, baseY - cactusHeight*0.60, 10, armLength);
+
+        rectMode(CORNER);
+      }
+    }
+
+    // Update tumbleweed position according to minute
+    function updateTumbleweed(mn) {
+      // Speed changes each minute
+      tumbleSpeed = map(mn, 0, 59, 0.5, 5);
+      tumbleX += tumbleSpeed;
+      // Wrap around
+      if (tumbleX > width + 50) {
+        tumbleX = -50;
+      }
+    }
+
+    // Draw tumbleweed
+    function drawTumbleweed() {
+      push();
+      translate(tumbleX, height * 0.7 + 5);
+      noFill();
+      stroke(80, 50, 20);
+      strokeWeight(2);
+      // Multi-circle structure to mimic a tumbleweed
+      for (let i = 0; i < 6; i++) {
+        rotate(10);
+        ellipse(0, 0, 30 + i*4, 30 - i*2);
+      }
+      noStroke();
+      pop();
+    }
+
+    // Draw a UFO that spins with current second
+    function drawUFO(sc) {
+      push();
+      translate(width/2, height*0.3);
+      // Let it hover up/down
+      let hoverOffset = sin(frameCount * 2) * 5;
+      translate(0, hoverOffset);
+      rotate(map(sc, 0, 59, 0, 360));
+
+      // UFO main body
+      fill(180);
+      ellipse(0, 0, 80, 40);
+
+      // Dome
+      fill(100, 200, 255);
+      ellipse(0, -10, 40, 20);
+
+      pop();
+    }
+  </script>
+</body>
+</html>

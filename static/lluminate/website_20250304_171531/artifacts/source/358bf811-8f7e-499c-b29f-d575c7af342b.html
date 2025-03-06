@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Bee Colony</title>
+  <style>
+    /* Basic reset and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay, only visible on hover */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      pointer-events: none;
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+      max-width: 80%;
+      margin: auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Bee Colony</strong><br><br>
+        • Hour determines the number of bees.<br>
+        • Minute changes bee color patterns.<br>
+        • Second controls how quickly bees fly around the hive.<br>
+        Hover for instructions and watch the bees respond to the passing time.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+    let bees = [];
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(30, 30, 60);
+      drawSkyGradient();
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Determine number of bees based on hour
+      let totalBees = (hr % 12) + 1;
+      if (bees.length !== totalBees) {
+        bees = [];
+        for (let i = 0; i < totalBees; i++) {
+          // Start each bee at the center
+          bees.push(createBee());
+        }
+      }
+
+      // Fly speed grows with seconds
+      let flySpeed = map(sc, 0, 59, 0.01, 0.15);
+
+      // Bee color changes each minute
+      let baseHue = map(mn, 0, 59, 0, 360);
+
+      push();
+      translate(width / 2, height / 2);
+
+      // Draw hive
+      drawHive();
+
+      // Update and draw bees
+      for (let i = 0; i < bees.length; i++) {
+        let b = bees[i];
+        b.angle += flySpeed;
+        let x = b.orbitRadius * cos(b.angle + i * 15);
+        let y = b.orbitRadius * sin(b.angle + i * 15);
+
+        push();
+        translate(x, y);
+        drawBee(baseHue + i * 20); // Slight shift for variety
+        pop();
+      }
+      pop();
+
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, width / 2, height - 25);
+    }
+
+    // Simple function to create a bee object
+    function createBee() {
+      return {
+        angle: random(360),
+        orbitRadius: random(80, 140)
+      };
+    }
+
+    // Draw sky gradient
+    function drawSkyGradient() {
+      let c1 = color(30, 30, 60);
+      let c2 = color(10, 10, 20);
+      for (let i = 0; i < height; i++) {
+        let inter = map(i, 0, height, 0, 1);
+        let c = lerpColor(c1, c2, inter);
+        stroke(c);
+        line(0, i, width, i);
+      }
+      noStroke();
+    }
+
+    // Draw a simple beehive in the center
+    function drawHive() {
+      fill(120, 70, 20);
+      ellipse(0, 30, 100, 80);
+      ellipse(0, 10, 120, 90);
+      ellipse(0, -10, 140, 100);
+      ellipse(0, -30, 120, 90);
+      ellipse(0, -50, 100, 80);
+      fill(0);
+      ellipse(0, 0, 30, 30); // Entrance
+    }
+
+    // Draw a bee
+    function drawBee(hueVal) {
+      colorMode(HSB, 360, 100, 100);
+      // Bee body
+      fill(hueVal % 360, 100, 100);
+      ellipse(0, 0, 20, 12);
+      // Stripes
+      fill(hueVal % 360, 100, 30);
+      rectMode(CENTER);
+      rect(0, 0, 5, 12);
+      // Wings
+      fill(200, 20, 100, 80);
+      ellipse(-5, -5, 10, 6);
+      ellipse(5, -5, 10, 6);
+      colorMode(RGB, 255);
+    }
+  </script>
+</body>
+</html>

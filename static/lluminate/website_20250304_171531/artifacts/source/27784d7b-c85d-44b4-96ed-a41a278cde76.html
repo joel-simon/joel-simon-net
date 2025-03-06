@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Underwater Time Fish</title>
+  <style>
+    /* Reset and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      font-family: sans-serif;
+    }
+
+    /* Container for our 512x512 canvas */
+    #container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+    }
+
+    /* Instructions overlay is hidden by default */
+    #instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: #eee;
+      display: none;
+      text-align: center;
+      padding-top: 40%;
+      box-sizing: border-box;
+      cursor: default;
+    }
+
+    /* Show instructions on hover */
+    #container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="instructions">
+      Hover over this clock to see instructions.<br><br>
+      This underwater-inspired time display uses a single fish whose size, color, and position are mapped to the current hour, minute, and second. Observe:<br>
+      - Fish size grows or shrinks with the hour (0-23).<br>
+      - Body color hue shifts with the minute (0-59).<br>
+      - Horizontal drifting changes with the second (0-59).<br>
+      Enjoy this unique view of time beneath the waves!
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let myCanvas;
+
+    function setup() {
+      myCanvas = createCanvas(512, 512);
+      myCanvas.parent("container");
+      colorMode(HSB, 255);
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(200, 150, 100); // soft ocean-like hue
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Map the hour to fish size
+      let fishSize = map(hr, 0, 23, 40, 200);
+
+      // Map the minute to fish hue
+      let fishHue = map(mn, 0, 59, 0, 255);
+
+      // Map the second to fish x-position offset
+      let xOffset = map(sc, 0, 59, -width/2 + fishSize/2, width/2 - fishSize/2);
+
+      // Center everything
+      translate(width / 2, height / 2);
+
+      // Draw a simple fish shape
+      push();
+      translate(xOffset, 0);
+      fill(fishHue, 255, 255);
+
+      // Fish body
+      ellipse(0, 0, fishSize * 1.5, fishSize);
+
+      // Fish tail
+      fill(fishHue, 200, 200);
+      triangle(-fishSize, 0, -fishSize*1.4, -fishSize*0.3, -fishSize*1.4, fishSize*0.3);
+
+      // Fish eye
+      fill(0, 0, 255); 
+      ellipse(fishSize*0.37, -fishSize*0.2, fishSize*0.1, fishSize*0.1);
+
+      pop();
+    }
+  </script>
+</body>
+</html>

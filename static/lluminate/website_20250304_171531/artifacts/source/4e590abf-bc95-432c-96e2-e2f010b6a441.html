@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Planetary Orbit</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Show the overlay on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to “Time Planetary Orbit”!<br><br>
+        • The background color changes based on the hour.<br>
+        • Each planet orbits at speeds determined by the current minute.<br>
+        • The star in the center pulsates according to the seconds.<br>
+        • Hover away to enjoy the cosmic dance!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let centerX = 256;
+    let centerY = 256;
+
+    // Orbital radius scaling factors (each planet has a different baseline distance)
+    let orbitRadii = [70, 110, 150];
+    // The base angles for each planet
+    let angles = [0, 0, 0];
+
+    // Global speed factor: orbits will use minute-based speed adjustments
+    let baseSpeeds = [0.5, 0.3, 0.2];
+
+    // Star pulse
+    let starPulse = 0;
+    let starPulseDir = 1;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      backgroundWithHourColor();
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // 1) Pulsating star in the center (based on seconds)
+      fill(255, 230, 0);
+      push();
+      translate(centerX, centerY);
+      starPulse += starPulseDir * 0.3;
+      if(starPulse > 20 || starPulse < 0){
+        starPulseDir *= -1;
+      }
+      let starSize = map(s, 0, 59, 60, 100) + starPulse;
+      drawStar(0, 0, starSize * 0.4, starSize, 8);
+      pop();
+
+      // 2) Orbiting planets (speeds determined by current minute)
+      // Update angles based on minute. Multiply base speed by minute*simplified factor
+      for(let i=0; i<orbitRadii.length; i++){
+        angles[i] += baseSpeeds[i] + (m * 0.005);
+        let x = centerX + orbitRadii[i] * cos(angles[i]);
+        let y = centerY + orbitRadii[i] * sin(angles[i]);
+
+        // Planet color changes slightly with seconds
+        fill((i*60 + s*4) % 360, 80, 90, 1);
+        colorMode(HSB);
+        ellipse(x, y, 30, 30);
+        colorMode(RGB);
+      }
+
+      // 3) Draw digital clock at the bottom
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(16);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+    }
+
+    // Utility function to draw a star
+    function drawStar(x, y, radius1, radius2, npoints) {
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+
+    // Function to change background color based on current hour
+    function backgroundWithHourColor() {
+      let h = hour();
+      // Map hour to a hue from 0 to 359
+      let hourHue = map(h, 0, 23, 0, 359);
+      colorMode(HSB);
+      background(hourHue, 50, 15);
+      colorMode(RGB);
+    }
+  </script>
+</body>
+</html>

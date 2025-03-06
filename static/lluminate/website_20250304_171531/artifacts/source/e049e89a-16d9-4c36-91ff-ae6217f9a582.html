@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Surreal Oasis Time Display</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Body styling for centering and background color */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #ddd;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Container for the p5 canvas with tooltips on hover */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 220px;
+      padding: 10px;
+      font-family: sans-serif;
+      font-size: 14px;
+      background: rgba(255,255,255,0.85);
+      border: 1px solid #888;
+      z-index: 2;
+      line-height: 1.4em;
+    }
+    /* Reveal the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      Welcome to the Surreal Oasis Time Display!<br><br>
+      • The desert background shifts with the hour.<br>
+      • Branching fractal adjusts with the minute and second.<br>
+      • Fish drift from right to left with each passing second.<br>
+      • A rotating star in the center mirrors the current time.<br><br>
+      Hover to see these instructions, enjoy!
+    </div>
+  </div>
+
+  <script>
+    let fishArray = [];
+    let lastSecond = -1;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent("canvasContainer");
+      angleMode(RADIANS);
+      noStroke();
+
+      // Initialize some fish
+      for (let i = 0; i < 6; i++) {
+        fishArray.push(new Fish());
+      }
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Desert background that shifts with hour
+      drawDesertSky(hr);
+      drawDunes();
+
+      // Draw fractal tree
+      push();
+      translate(width * 0.5, height * 0.75);
+      let baseLen = map(mn, 0, 59, 60, 200);
+      let maxDepth = map(hr % 12, 0, 11, 4, 8);
+      let angleVar = map(sc, 0, 59, 0, PI / 2);
+      fractalTree(baseLen, angleVar, maxDepth);
+      pop();
+
+      // Update and draw fish
+      for (let i = 0; i < fishArray.length; i++) {
+        fishArray[i].update();
+        fishArray[i].display();
+      }
+
+      // Add a new fish when seconds change
+      if (sc !== lastSecond) {
+        fishArray.push(new Fish());
+        lastSecond = sc;
+      }
+      // Remove off-screen fish
+      fishArray = fishArray.filter(f => !f.offScreen());
+
+      // Draw rotating star in the center
+      push();
+      translate(width / 2, height / 2);
+      let starAngle = map(sc, 0, 60, 0, TWO_PI);
+      rotate(starAngle);
+      drawStar(0, 0, 20, 40, (hr % 12) + 5);
+      pop();
+
+      // Show time in corner
+      fill(255);
+      textSize(16);
+      textAlign(RIGHT, TOP);
+      text(nf(hr,2) + ":" + nf(mn,2) + ":" + nf(sc,2), width - 10, 10);
+    }
+
+    function drawDesertSky(hh) {
+      // Day (6..18) vs Night (else) gradient
+      let topC, bottomC;
+      if (hh >= 6 && hh < 18) {
+        topC = color(135, 206, 235);
+        bottomC = color(220, 240, 255);
+      } else {
+        topC = color(5, 15, 50);
+        bottomC = color(20, 30, 65);
+      }
+      for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        let c = lerpColor(topC, bottomC, inter);
+        stroke(c);
+        line(0, y, width, y);
+      }
+    }
+
+    function drawDunes() {
+      fill(194, 178, 128);
+      ellipse(width * 0.3, height * 0.8, width * 0.9, height * 0.4);
+      ellipse(width * 0.7, height * 0.85, width, height * 0.5);
+    }
+
+    // A simple recursive fractal tree
+    function fractalTree(length, angle, depth) {
+      if (depth === 0) return;
+
+      stroke(80, 50, 20);
+      strokeWeight(map(depth, 1, 8, 1, 5));
+      line(0, 0, 0, -length);
+      translate(0, -length);
+
+      push();
+      rotate(angle);
+      fractalTree(length * 0.7, angle, depth - 1);
+      pop();
+
+      push();
+      rotate(-angle);
+      fractalTree(length * 0.7, angle, depth - 1);
+      pop();
+    }
+
+    // Draw a star shape
+    function drawStar(x, y, radius1, radius2, npoints) {
+      let angle = TWO_PI / npoints;
+      let halfAngle = angle / 2.0;
+      fill(255, 204, 0, 180);
+      beginShape();
+      for (let a = 0; a < TWO_PI; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+
+    class Fish {
+      constructor() {
+        this.x = width + random(100, 200);
+        this.y = random(height * 0.3, height * 0.8);
+        this.speed = random(1, 3);
+        this.color = color(random(100,255), random(100,255), random(100,255), 200);
+        this.size = random(15, 30);
+      }
+
+      update() {
+        this.x -= this.speed;
+      }
+
+      display() {
+        fill(this.color);
+        ellipse(this.x, this.y, this.size * 1.5, this.size); // body
+        // Tail
+        triangle(
+          this.x + this.size * 0.75, this.y,
+          this.x + this.size * 1.0, this.y - this.size * 0.3,
+          this.x + this.size * 1.0, this.y + this.size * 0.3
+        );
+      }
+
+      offScreen() {
+        return (this.x < -50);
+      }
+    }
+  </script>
+</body>
+</html>

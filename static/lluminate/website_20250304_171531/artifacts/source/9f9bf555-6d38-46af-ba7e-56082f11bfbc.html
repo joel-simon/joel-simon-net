@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Helix</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the “Time Helix”!<br><br>
+        • A field of stars twinkles in the background.<br>
+        • A rotating 3D double helix evolves with the hour, minute, and second.<br>
+        • Observe how colors and rotation speed reflect the current time.<br><br>
+        Hover away to return to the animation.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let stars = [];
+    let numStars = 150;
+    let helixPoints = 100;
+    let angleOff = 0;
+
+    const starMinZ = 100;  // nearest star position
+    const starMaxZ = 800;  // farthest star position
+
+    function setup() {
+      let cnv = createCanvas(512, 512, WEBGL);
+      cnv.parent('canvasContainer');
+      // Generate star positions
+      for (let i = 0; i < numStars; i++) {
+        stars.push({
+          x: random(-width, width),
+          y: random(-height, height),
+          z: random(starMinZ, starMaxZ)
+        });
+      }
+    }
+
+    function draw() {
+      background(0);
+      orbitControl(1, 1, 0); // allows gentle user orbit; optional
+
+      // time variables
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Adjust rotation speed and color shifts based on time
+      let rotationSpeed = map(s, 0, 59, 0.01, 0.2);
+      let hueValue = (h * 15 + m * 2 + s) % 360;
+
+      // Starfield in the background
+      push();
+      translate(0, 0, 0); 
+      noStroke();
+      for (let i = 0; i < numStars; i++) {
+        let star = stars[i];
+        push();
+        translate(star.x, star.y, -star.z);
+        fill(255);
+        // Twinkle effect: slightly vary star size with noise
+        let twinkle = map(noise(frameCount * 0.01 + i), 0, 1, 1, 2.5);
+        sphere(twinkle);
+        pop();
+
+        // Move the star forward for a mild 'zoom' effect
+        star.z -= 0.5;
+        if (star.z < starMinZ) {
+          star.z = starMaxZ; 
+          star.x = random(-width, width);
+          star.y = random(-height, height);
+        }
+      }
+      pop();
+
+      // 3D Double Helix
+      // The spacing and wave amplitude vary with hour and minute
+      let helixSpacing = map(m, 0, 59, 2, 10);
+      let helixAmplitude = map(h, 0, 23, 50, 150);
+
+      angleOff += rotationSpeed;
+      rotateY(angleOff);
+
+      // Use colorMode(HSB) briefly to draw the helix in an HSB hue
+      colorMode(HSB);
+      stroke(hueValue, 255, 255);
+      noFill();
+
+      beginShape();
+      for (let i = 0; i < helixPoints; i++) {
+        let theta = map(i, 0, helixPoints, 0, TWO_PI * 2); // 2 full turns
+        let x = helixAmplitude * cos(theta);
+        let y = helixSpacing * (i - helixPoints / 2);
+        let z = helixAmplitude * sin(theta);
+        vertex(x, y, z);
+      }
+      endShape();
+
+      beginShape();
+      // second strand: phase shift
+      for (let i = 0; i < helixPoints; i++) {
+        let theta = map(i, 0, helixPoints, 0, TWO_PI * 2);
+        let x = helixAmplitude * cos(theta + PI); // offset by PI
+        let y = helixSpacing * (i - helixPoints / 2);
+        let z = helixAmplitude * sin(theta + PI);
+        vertex(x, y, z);
+      }
+      endShape();
+      colorMode(RGB);
+
+      // Display digital time in the lower corner
+      // We'll position it using screenX, screenY for a fixed 2D overlay in 3D mode
+      push();
+      // transform a point to screen coordinates
+      let sx = screenX(-width / 2.2, height / 2.2, 0);
+      let sy = screenY(-width / 2.2, height / 2.2, 0);
+
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, sx, sy);
+      pop();
+    }
+  </script>
+</body>
+</html>

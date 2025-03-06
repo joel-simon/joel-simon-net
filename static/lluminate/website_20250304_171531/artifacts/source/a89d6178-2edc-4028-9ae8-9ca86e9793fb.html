@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Tardigrade Aquarium</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #fafafa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #aquariumContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      background: #ececec;
+    }
+
+    /* Instructions overlay, hidden by default. Display on hover. */
+    #instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.85);
+      color: #333;
+      font-family: sans-serif;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    #aquariumContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="aquariumContainer">
+  <div id="instructions">
+    <h3>Time Tardigrade Aquarium</h3>
+    <p>
+      • Watch the water background shift according to the current hour.<br/>
+      • The number of tardigrades swimming around changes with each minute.<br/>
+      • Their coloration pulses with passing seconds.<br/>
+      • Current time is displayed at the bottom of the aquarium!
+    </p>
+  </div>
+</div>
+
+<script>
+  let canvasSize = 512;
+  let tardigrades = [];
+  let lastMinute = -1;
+
+  class Tardigrade {
+    constructor(x, y, speedX, speedY, size) {
+      this.x = x;
+      this.y = y;
+      this.speedX = speedX;
+      this.speedY = speedY;
+      this.size = size;
+    }
+    move() {
+      this.x += this.speedX;
+      this.y += this.speedY;
+      // Bounce off edges
+      if (this.x < 0 || this.x > width) {
+        this.speedX *= -1;
+      }
+      if (this.y < 0 || this.y > height) {
+        this.speedY *= -1;
+      }
+    }
+    display(sec) {
+      // Color pulses with the current second
+      push();
+      noStroke();
+      let r = map(sin(sec * 0.1), -1, 1, 100, 255);
+      let g = map(cos(sec * 0.1), -1, 1, 100, 200);
+      fill(r, g, 255, 180);
+      ellipse(this.x, this.y, this.size, this.size * 1.4); // a slightly oblong shape
+      pop();
+    }
+  }
+
+  function setup() {
+    let c = createCanvas(canvasSize, canvasSize);
+    c.parent("aquariumContainer");
+    noStroke();
+  }
+
+  function draw() {
+    let hr = hour();
+    let mn = minute();
+    let sc = second();
+
+    // Re-generate tardigrades if minute changes
+    if (mn !== lastMinute) {
+      lastMinute = mn;
+      generateTardigrades(mn);
+    }
+
+    // Background color transitions with hour
+    // (0-23) -> create a color gradient from morning to night
+    let hourRatio = (hr % 24) / 24;
+    let morningColor = color(160, 220, 255); // lighter blue
+    let nightColor = color(15, 30, 60);      // dark bluish
+    let bgColor = lerpColor(morningColor, nightColor, hourRatio);
+    background(bgColor);
+
+    // Move and display tardigrades
+    for (let t of tardigrades) {
+      t.move();
+      t.display(sc);
+    }
+
+    // Time display
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textSize(18);
+    let timeText = nf(hr, 2) + ":" + nf(mn, 2) + ":" + nf(sc, 2);
+    text(timeText, width/2, height - 20);
+  }
+
+  function generateTardigrades(mn) {
+    // Clear the current array
+    tardigrades = [];
+    // Generate a number of tardigrades proportional to the minute (0-59)
+    let count = mn + 1; // Just so we never have 0
+    for (let i = 0; i < count; i++) {
+      let x = random(width);
+      let y = random(height);
+      // Speed in either positive or negative direction
+      let speedX = random(-2, 2);
+      let speedY = random(-2, 2);
+      let size = random(10, 25);
+      tardigrades.push(new Tardigrade(x, y, speedX, speedY, size));
+    }
+  }
+</script>
+</body>
+</html>

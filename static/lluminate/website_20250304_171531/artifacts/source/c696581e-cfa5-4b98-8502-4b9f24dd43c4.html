@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time-Reflected Fractal Orchard</title>
+  <style>
+    /* Basic Page and Container Setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* A fixed 512x512 container (for iframe) */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      border: none;
+      overflow: hidden;
+    }
+
+    /* Instructions Overlay (shown on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      pointer-events: none;
+      transition: opacity 0.2s ease-in-out;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    .instructions-text {
+      position: absolute;
+      width: 80%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time-Reflected Fractal Orchard</strong><br><br>
+        • Background waves rise/fall with the hour & minute.<br>
+        • Orchard quadrant sprouts trees and mirrors them.<br>
+        • Fractal branches proliferate each minute refresh.<br>
+        • Center swirl rotates with seconds.<br>
+        • Digital clock in bottom-left corner.<br><br>
+        Hover here to view instructions. Enjoy!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time-Reflected Fractal Orchard
+      1) Background wave pattern shifts with hour & minute.
+      2) Orchard quadrant replicates trees, mirrored in four quadrants.
+      3) Fractal branches mapped to the current minute, regenerating each minute.
+      4) A swirling shape in the center rotating with seconds.
+      5) Digital clock in the bottom-left corner.
+
+      Canvas is 512x512 to fit the iframe instructions.
+    */
+
+    const CANVAS_SIZE = 512;
+    const NUM_TREES = 8;    // orchard trees
+    let orchardTrees = [];
+    // For fractal branch generation
+    let fractalBranches = [];
+    // For swirl
+    let swirlAngle = 0;
+    // Keep track of last minute for refresh
+    let lastMinuteGenerated = -1;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvas-container');
+
+      angleMode(DEGREES);
+
+      // Initialize orchard quadrant trees
+      initOrchardTrees();
+      // Initialize fractal branches
+      generateFractalBranches();
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Regenerate fractal if minute changed
+      if (mn !== lastMinuteGenerated) {
+        generateFractalBranches();
+        lastMinuteGenerated = mn;
+      }
+
+      // 1) Background wave pattern
+      drawBackgroundWaves(hr, mn);
+
+      // 2) Orchard quadrant mirrored four ways
+      drawKaleidoscopicOrchard();
+
+      // 3) Fractal branches (draw on top of orchard)
+      drawFractalBranches();
+
+      // 4) Time swirl in the center
+      drawCenterSwirl(sc);
+
+      // 5) Optional digital clock
+      drawTimeClock(hr, mn, sc);
+    }
+
+    /* (1) Wavy background that depends on hour & minute */
+    function drawBackgroundWaves(hr, mn) {
+      push();
+      noFill();
+      stroke(255, 90);
+      let freq = map(mn, 0, 59, 0.02, 0.08);
+      let amp = map(hr % 12, 0, 11, 10, 80);
+
+      for (let y = 0; y < height; y += 15) {
+        beginShape();
+        for (let x = 0; x <= width; x += 10) {
+          let wave = sin((x + frameCount) * freq) * amp;
+          vertex(x, y + wave);
+        }
+        endShape();
+      }
+      pop();
+    }
+
+    /* (2) Create orchard quadrant and replicate to form a kaleidoscopic orchard */
+    function drawKaleidoscopicOrchard() {
+      // Draw orchard in top-left, reflect to other quadrants
+      push();
+      drawOrchardQuadrant();
+      
+      // Reflect horizontally
+      push();
+      scale(-1, 1);
+      translate(-width, 0);
+      drawOrchardQuadrant();
+      pop();
+
+      // Reflect vertically
+      push();
+      scale(1, -1);
+      translate(0, -height);
+      drawOrchardQuadrant();
+      pop();
+
+      // Reflect both horizontally and vertically
+      push();
+      scale(-1, -1);
+      translate(-width, -height);
+      drawOrchardQuadrant();
+      pop();
+
+      pop();
+    }
+
+    /* Draw orchard in top-left quadrant */
+    function drawOrchardQuadrant() {
+      push();
+      // Ground area
+      noStroke();
+      fill(30, 80, 30);
+      rect(0, height * 0.5, width * 0.5, height * 0.5);
+
+      // Draw orchard trees
+      for (let t of orchardTrees) {
+        drawSingleTree(t.x, t.y, t.size, t.trunk, t.hueVal);
+      }
+      pop();
+    }
+
+    /* Initialize random orchard trees in the quadrant */
+    function initOrchardTrees() {
+      colorMode(HSB, 360, 100, 100);
+      orchardTrees = [];
+      for (let i = 0; i < NUM_TREES; i++) {
+        orchardTrees.push({
+          x: random(width * 0.05, width * 0.45),
+          y: random(height * 0.55, height * 0.95),
+          size: random(20, 40),
+          trunk: random(20, 40),
+          hueVal: random(360)
+        });
+      }
+      colorMode(RGB);
+    }
+
+    /* Draw a single orchard tree */
+    function drawSingleTree(x, y, crownSize, trunkHeight, hueVal) {
+      push();
+      translate(x, y);
+      noStroke();
+      fill(53, 33, 20);
+      rect(0, -trunkHeight, 6, trunkHeight);
+      colorMode(HSB, 360, 100, 100);
+      fill(hueVal, 60, 70);
+      ellipse(3, -trunkHeight, crownSize, crownSize);
+      colorMode(RGB);
+      pop();
+    }
+
+    /* (3) Generate fractal branches once per minute */
+    function generateFractalBranches() {
+      fractalBranches = [];
+      // Variation based on minute
+      let iterationLevels = map(minute(), 0, 59, 2, 5);
+
+      // We'll create "branch data" at random angles
+      for (let i = 0; i < iterationLevels; i++) {
+        fractalBranches.push({
+          angle: random(-30, 30),
+          length: random(50, 80),
+          depth: floor(random(3, 6))
+        });
+      }
+    }
+
+    /* Draw fractal branches near the top center */
+    function drawFractalBranches() {
+      push();
+      translate(width / 2, height * 0.4);
+
+      // Draw each set of branches
+      stroke(200);
+      strokeWeight(2);
+      for (let b of fractalBranches) {
+        push();
+        rotate(b.angle);
+        branch(b.length, b.depth);
+        pop();
+      }
+      pop();
+    }
+
+    /* Recursive branch function */
+    function branch(len, depth) {
+      line(0, 0, 0, -len);
+      translate(0, -len);
+
+      if (depth > 0) {
+        push();
+        rotate(30);
+        branch(len * 0.7, depth - 1);
+        pop();
+
+        push();
+        rotate(-25);
+        branch(len * 0.7, depth - 1);
+        pop();
+      }
+    }
+
+    /* (4) Draw a swirl in the center rotating with seconds */
+    function drawCenterSwirl(sc) {
+      push();
+      translate(width / 2, height / 2);
+      swirlAngle = map(sc, 0, 60, 0, 360);
+      rotate(swirlAngle);
+      noFill();
+      stroke(255);
+      strokeWeight(2);
+
+      beginShape();
+      for (let a = 0; a < 360; a += 10) {
+        let r = map(a, 0, 360, 10, 80);
+        let x = r * cos(a);
+        let y = r * sin(a);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+
+      pop();
+    }
+
+    /* (5) Optional digital clock - bottom-left corner */
+    function drawTimeClock(hr, mn, sc) {
+      push();
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, CENTER);
+      text(`${nf(hr,2)}:${nf(mn,2)}:${nf(sc,2)}`, 10, height - 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

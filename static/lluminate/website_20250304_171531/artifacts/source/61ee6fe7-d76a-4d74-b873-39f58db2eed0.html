@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Bioluminescent Maze Forest</title>
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset and general styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* 512x512 container centered */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Overlay for instructions (shown on hover) */
+    #instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+    }
+    #canvasContainer:hover #instructions {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="instructions">
+      <p>
+        <strong>Time Bioluminescent Maze Forest</strong><br><br>
+        • The fractal forest expands with the hour<br>
+        • A new maze forms each minute<br>
+        • Glowing spores swirl every second<br>
+        • Move the mouse to shift the magical hue<br>
+        <br>
+        Hover away to immerse yourself in the forest
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Maze variables
+    let cellSize = 16;
+    let mazeCols, mazeRows;
+    let mazeGrid = [];
+    
+    // Time checks
+    let lastMinute = -1;
+
+    // Fractal tree settings
+    let maxDepth = 5;
+    let branchLen = 100;
+
+    // Spore objects for seconds
+    let spores = [];
+    let sporeSpawnSecond = -1;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+
+      mazeCols = floor(width / cellSize);
+      mazeRows = floor(height / cellSize);
+      generateMaze(); // create initial maze
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // If a new minute, regenerate the maze
+      if (m !== lastMinute) {
+        generateMaze();
+        lastMinute = m;
+      }
+
+      // Color shift based on mouse movement across canvas
+      let colorShift = map(mouseX, 0, width, 0, 255);
+
+      // (1) Subtle background gradient influenced by the hour
+      drawBackgroundGradient(h);
+
+      // (2) Draw the time-based maze
+      drawMaze(m, colorShift);
+
+      // (3) Fractal forest in the center, size depending on hour
+      push();
+      translate(width / 2, height * 0.65);
+      stroke(255);
+      strokeWeight(2);
+      branchLen = map(h % 12, 0, 11, 60, 140);
+      maxDepth = floor(map(h, 0, 23, 3, 6));
+      fractalForest(branchLen, maxDepth);
+      pop();
+
+      // (4) Glowing spores swirling from the center each second
+      manageSpores(s);
+      drawSpores(colorShift);
+
+      // (5) Digital clock in the top-left corner
+      drawClock(h, m, s);
+    }
+
+    /* Draw background gradient */
+    function drawBackgroundGradient(hr) {
+      let topCol = color(map(hr, 0, 23, 30, 200), 0, map(hr, 0, 23, 50, 150));
+      let bottomCol = color(0);
+
+      for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        let c = lerpColor(topCol, bottomCol, inter);
+        stroke(c);
+        line(0, y, width, y);
+      }
+    }
+
+    /* Maze generation using DFS approach */
+    function generateMaze() {
+      // Reset grid
+      mazeGrid = [];
+      for (let r = 0; r < mazeRows; r++) {
+        mazeGrid[r] = [];
+        for (let c = 0; c < mazeCols; c++) {
+          mazeGrid[r][c] = {
+            walls: [true, true, true, true], // top, right, bottom, left
+            visited: false
+          };
+        }
+      }
+
+      let stack = [];
+      let current = {r: 0, c: 0};
+      mazeGrid[0][0].visited = true;
+      stack.push(current);
+
+      while (stack.length > 0) {
+        current = stack[stack.length - 1];
+        let neighbors = getUnvisitedNeighbors(current.r, current.c);
+        if (neighbors.length > 0) {
+          let next = random(neighbors);
+          removeWalls(current, next);
+          mazeGrid[next.r][next.c].visited = true;
+          stack.push(next);
+        } else {
+          stack.pop();
+        }
+      }
+    }
+
+    /* Get unvisited neighbors */
+    function getUnvisitedNeighbors(r, c) {
+      let neighbors = [];
+      if(r > 0 && !mazeGrid[r - 1][c].visited) neighbors.push({r: r - 1, c: c});
+      if(c < mazeCols - 1 && !mazeGrid[r][c + 1].visited) neighbors.push({r: r, c: c + 1});
+      if(r < mazeRows - 1 && !mazeGrid[r + 1][c].visited) neighbors.push({r: r + 1, c: c});
+      if(c > 0 && !mazeGrid[r][c - 1].visited) neighbors.push({r: r, c: c - 1});
+      return neighbors;
+    }
+
+    /* Remove walls between cells */
+    function removeWalls(a, b) {
+      let dx = b.c - a.c;
+      let dy = b.r - a.r;
+      if (dx === 1) {
+        // b is right of a
+        mazeGrid[a.r][a.c].walls[1] = false;
+        mazeGrid[b.r][b.c].walls[3] = false;
+      } else if (dx === -1) {
+        // b is left of a
+        mazeGrid[a.r][a.c].walls[3] = false;
+        mazeGrid[b.r][b.c].walls[1] = false;
+      }
+
+      if (dy === 1) {
+        // b is below a
+        mazeGrid[a.r][a.c].walls[2] = false;
+        mazeGrid[b.r][b.c].walls[0] = false;
+      } else if (dy === -1) {
+        // b is above a
+        mazeGrid[a.r][a.c].walls[0] = false;
+        mazeGrid[b.r][b.c].walls[2] = false;
+      }
+    }
+
+    /* Draw the maze with color shift from minutes + mouse */
+    function drawMaze(minVal, colorShift) {
+      let mazeColor = color(map(minVal, 0, 59, 0, 255), 255, 255);
+      stroke(mazeColor);
+      strokeWeight(2);
+
+      for (let r = 0; r < mazeRows; r++) {
+        for (let c = 0; c < mazeCols; c++) {
+          let x = c * cellSize;
+          let y = r * cellSize;
+          let walls = mazeGrid[r][c].walls;
+
+          // top
+          if (walls[0]) line(x, y, x + cellSize, y);
+          // right
+          if (walls[1]) line(x + cellSize, y, x + cellSize, y + cellSize);
+          // bottom
+          if (walls[2]) line(x, y + cellSize, x + cellSize, y + cellSize);
+          // left
+          if (walls[3]) line(x, y, x, y + cellSize);
+        }
+      }
+    }
+
+    /* Recursive fractal forest */
+    function fractalForest(len, depth) {
+      if (depth <= 0) return;
+      line(0, 0, 0, -len);
+      translate(0, -len);
+
+      push();
+      rotate(25);
+      fractalForest(len * 0.7, depth - 1);
+      pop();
+
+      push();
+      rotate(-20);
+      fractalForest(len * 0.7, depth - 1);
+      pop();
+    }
+
+    /* Glowing spores:
+       Each new second spawns a spore expanding outward */
+    function manageSpores(currentSecond) {
+      if (currentSecond !== sporeSpawnSecond) {
+        spores.push(new Spore());
+        sporeSpawnSecond = currentSecond;
+      }
+    }
+
+    class Spore {
+      constructor() {
+        this.r = 0;
+        this.alpha = 255;
+      }
+      update() {
+        this.r += 2;
+        this.alpha -= 2;
+      }
+      display(colorShift) {
+        stroke((colorShift + this.r) % 255, 255, 255, this.alpha);
+        noFill();
+        circle(width / 2, height / 2, this.r * 2);
+      }
+    }
+
+    function drawSpores(colorShift) {
+      for (let i = spores.length - 1; i >= 0; i--) {
+        spores[i].update();
+        spores[i].display(colorShift);
+        if (spores[i].alpha <= 0) {
+          spores.splice(i, 1);
+        }
+      }
+    }
+
+    /* Digital clock in top-left corner */
+    function drawClock(h, m, s) {
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(nf(h, 2) + ':' + nf(m, 2) + ':' + nf(s, 2), 10, 10);
+    }
+  </script>
+</body>
+</html>

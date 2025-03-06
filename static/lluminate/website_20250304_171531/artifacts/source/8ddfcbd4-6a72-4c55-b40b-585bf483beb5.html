@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Time Gravity Orbs</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset body margin/padding and use a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container fixed at 512x512, centered */
+    #clock-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+    }
+
+    /* Instructions overlay, hidden by default */
+    #instructions {
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      display: none;
+      background-color: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      line-height: 1.5;
+      padding: 1.5rem;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #clock-container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="clock-container">
+  <div id="instructions">
+    <h2>Time Gravity Orbs</h2>
+    <p>
+      • Orbs spawn around the edges every second.<br>
+      • The hour affects gravity's pull to the center.<br>
+      • The minute defines orb color transitions.<br>
+      • Hover to see instructions, then watch them swirl!
+    </p>
+  </div>
+</div>
+
+<script>
+  const canvasSize = 512;
+  let orbs = [];
+
+  function setup() {
+    let myCanvas = createCanvas(canvasSize, canvasSize);
+    myCanvas.parent("clock-container");
+  }
+
+  function draw() {
+    background(0);
+
+    // Get current time
+    let hr = hour();
+    let mn = minute();
+    let sc = second();
+
+    // Calculate a gravitational pull factor based on hour (0 to 23)
+    // Mapping from mild to stronger pull
+    let g = map(hr, 0, 23, 0.01, 0.15);
+
+    // Color shift factor from minutes
+    // This influences the base hue
+    let baseHue = map(mn, 0, 59, 0, 360);
+
+    // Spawn a new orb each second at random edges
+    if (frameCount % 60 === 0) {
+      spawnOrb();
+    }
+
+    // Update and display each orb
+    for (let i = orbs.length - 1; i >= 0; i--) {
+      let orb = orbs[i];
+
+      // Calculate gravitational force toward center
+      let centerX = width / 2;
+      let centerY = height / 2;
+      let dx = centerX - orb.x;
+      let dy = centerY - orb.y;
+      let distSq = dx * dx + dy * dy;
+      let distRoot = sqrt(distSq);
+
+      // Normalized direction
+      let fx = (dx / distRoot) * g;
+      let fy = (dy / distRoot) * g;
+
+      // Update velocity by applying "gravity"
+      orb.vx += fx;
+      orb.vy += fy;
+
+      // Move orb
+      orb.x += orb.vx;
+      orb.y += orb.vy;
+
+      // Color each orb: base hue + offset by orb's initial shift
+      let orbHue = (baseHue + orb.hueOffset) % 360;
+      fill(orbHue, 100, 100, 1);
+
+      // Display the orb
+      noStroke();
+      colorMode(HSB, 360, 100, 100, 1);
+      circle(orb.x, orb.y, orb.size);
+
+      // Remove orbs that get close to center
+      if (distRoot < 10) {
+        orbs.splice(i, 1);
+      }
+    }
+  }
+
+  // Function to spawn a new orb at a random edge position
+  function spawnOrb() {
+    // Random edge selection: top, bottom, left, or right
+    let edge = floor(random(4));
+    let x, y;
+    switch(edge) {
+      case 0: // Top edge
+        x = random(width);
+        y = 0;
+        break;
+      case 1: // Right edge
+        x = width;
+        y = random(height);
+        break;
+      case 2: // Bottom edge
+        x = random(width);
+        y = height;
+        break;
+      default: // Left edge
+        x = 0;
+        y = random(height);
+    }
+
+    // Give the orb a small random velocity to start
+    let vx = random(-1, 1);
+    let vy = random(-1, 1);
+
+    // Random size for orb
+    let size = random(6, 15);
+
+    // Random color offset
+    let hueOffset = random(0, 359);
+
+    orbs.push({
+      x: x,
+      y: y,
+      vx: vx,
+      vy: vy,
+      size: size,
+      hueOffset: hueOffset
+    });
+  }
+</script>
+</body>
+</html>

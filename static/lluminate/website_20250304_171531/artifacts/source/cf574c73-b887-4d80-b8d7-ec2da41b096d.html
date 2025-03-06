@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Fractal Wave Mosaic Time Display</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+      background: #000;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the Fractal Wave Mosaic Time Display!<br><br>
+        • The flowing wave background is tied to the hour.<br>
+        • The fractal tree in the center grows with the minute.<br>
+        • Mosaic squares at the edges shift with each second.<br><br>
+        Hover away to see everything in motion!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let w = 512, h = 512;
+
+    // Wave variables
+    let waveOffset = 0;
+
+    // Mosaic settings
+    let mosaicCols = 6;
+    let mosaicRows = 6;
+    let mosaicSize = 70; // approximate tile size
+
+    function setup() {
+      const cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      rectMode(CENTER);
+    }
+
+    function draw() {
+      background(0);
+
+      drawWaveBackground();
+      drawMosaic();
+      push();
+      translate(width/2, height*0.7);
+      drawFractalTree(minute(), 75);
+      pop();
+      displayTime();
+    }
+
+    // -----------------------------
+    //  Time-Synced Wave Background
+    // -----------------------------
+    function drawWaveBackground() {
+      // The hour influences wave amplitude
+      let hr = hour();
+      let amplitude = map(hr, 0, 23, 20, 80);
+      let frequency = 0.025;
+      let baseline = h/2;
+
+      noStroke();
+      fill(40, 50, 120, 50);
+      beginShape();
+      vertex(0, h);
+      for (let x = 0; x <= w; x += 10) {
+        let y = baseline + sin(x * frequency + waveOffset) * amplitude;
+        vertex(x, y);
+      }
+      vertex(w, h);
+      endShape(CLOSE);
+
+      waveOffset += 0.05;
+    }
+
+    // -----------------------------
+    //  Time-Synced Mosaic
+    // -----------------------------
+    function drawMosaic() {
+      // The second changes the color
+      let s = second();
+      let colorShift = map(s, 0, 59, 0, 255);
+
+      push();
+      noStroke();
+      for (let i = 0; i < mosaicCols; i++) {
+        for (let j = 0; j < mosaicRows; j++) {
+          // Position each tile around the edges but not overlapping central zone
+          let x = mosaicSize * 0.5 + i * mosaicSize;
+          let y = mosaicSize * 0.5 + j * mosaicSize;
+          // Only draw "border" cells
+          if (i === 0 || i === mosaicCols - 1 || j === 0 || j === mosaicRows - 1) {
+            fill( (colorShift + i*20 + j*20) % 255, 100, 180 );
+            rect(x, y, mosaicSize, mosaicSize);
+          }
+        }
+      }
+      pop();
+    }
+
+    // -----------------------------
+    //  Fractal Tree (time = minute)
+    // -----------------------------
+    function drawFractalTree(m, len) {
+      // minute influences recursion depth and color
+      let depth = floor(map(m, 0, 59, 2, 7));
+      stroke(200, 150, 50);
+      branch(len, depth);
+    }
+
+    function branch(len, depth) {
+      if (depth === 0) return;
+      line(0, 0, 0, -len);
+      translate(0, -len);
+      push();
+      rotate(25);
+      branch(len * 0.67, depth - 1);
+      pop();
+      push();
+      rotate(-25);
+      branch(len * 0.67, depth - 1);
+      pop();
+    }
+
+    // -----------------------------
+    //  Time Display
+    // -----------------------------
+    function displayTime() {
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(16);
+      let hr = nf(hour(), 2);
+      let mn = nf(minute(), 2);
+      let sc = nf(second(), 2);
+      text(hr + ":" + mn + ":" + sc, width / 2, height - 20);
+    }
+  </script>
+</body>
+</html>

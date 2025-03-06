@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Circus Juggler</title>
+  <style>
+    /* Basic page reset and layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: Arial, sans-serif;
+      color: #fff;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Container for fixed 512x512 sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0,0,0,0.8);
+      cursor: pointer;
+    }
+
+    /* Instructions overlay (appears on hover) */
+    #infoOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    #canvasContainer:hover #infoOverlay {
+      display: flex;
+    }
+
+    /* Exactly 512x512 canvas */
+    #defaultCanvas0 {
+      width: 512px !important;
+      height: 512px !important;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="infoOverlay">
+      <p>
+        Time Circus Juggler<br><br>
+        • The circus tent colors shift each hour.<br>
+        • The juggler’s balls orbit faster with increasing seconds.<br>
+        • Ring-lights around the stage fade with the current minute.<br>
+        • Use WASD keys to move the ringmaster around the ring.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time Circus Juggler
+      - Big top circus tent colors change each hour.
+      - The juggler’s orbits pick up speed based on seconds.
+      - Ring-lights around the stage pulse with minutes.
+      - A ringmaster moves around the ring with WASD keys.
+    */
+
+    let ringmaster = { x: 256, y: 380, size: 30 };
+    const moveSpeed = 2;
+
+    // Orbiting balls (the juggler’s items)
+    let orbitAngles = [];
+    const numBalls = 4;
+    const orbitRadius = 80;
+
+    // For the ring-lights
+    let ringLights = [];
+    const numLights = 12;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      noStroke();
+      
+      // Initialize orbit angles for the balls
+      for (let i = 0; i < numBalls; i++) {
+        orbitAngles.push((TWO_PI / numBalls) * i);
+      }
+
+      // Position ringlights around the stage
+      for(let i = 0; i < numLights; i++){
+        let angle = map(i, 0, numLights, 0, TWO_PI);
+        ringLights.push({
+          x: width / 2 + 150 * cos(angle),
+          y: height / 2 + 150 * sin(angle),
+          r: 8
+        });
+      }
+    }
+
+    function draw() {
+      let h = hour() % 24;
+      let m = minute();
+      let s = second();
+
+      background(0);
+
+      // Draw the big top circus tent
+      drawCircusTent(h);
+
+      // Pulsing ring lights (brightness depends on minute)
+      let glow = map(sin(frameCount * 0.03 + m), -1, 1, 50, 255);
+      drawRingLights(glow);
+
+      // Juggler in the center
+      push();
+      translate(width/2, height/2);
+      fill(255, 220, 200);
+      ellipse(0, 0, 60, 80); // juggler’s body
+      fill(80);
+      ellipse(0, -50, 40, 40); // juggler’s head
+      pop();
+
+      // Orbit the juggling balls with speed based on seconds
+      updateAndDrawBalls(s);
+
+      // Draw ringmaster
+      fill(200, 0, 50);
+      ellipse(ringmaster.x, ringmaster.y, ringmaster.size, ringmaster.size);
+
+      handleRingmasterMovement();
+    }
+
+    function drawCircusTent(h) {
+      /*
+        A stylized shape with color shifting with hour.
+        We’ll draw stripes in a radial pattern from top center.
+      */
+      let topColor = color(150 + h*4, 0, 50 + h*2);
+      let bottomColor = color(70 + h*2, 0, 30 + h*2);
+
+      // Tent background
+      push();
+      noStroke();
+      for (let y = 0; y < height; y++) {
+        let lerpAmt = map(y, 0, height, 0, 1);
+        let c = lerpColor(topColor, bottomColor, lerpAmt);
+        stroke(c);
+        line(0, y, width, y);
+      }
+      pop();
+
+      // Tent stripes
+      push();
+      let centerX = width/2;
+      let centerY = 100;
+      fill(255, 0, 0, 100);
+      noStroke();
+      let numStripes = 8;
+      let stripeAngle = TWO_PI / numStripes;
+      translate(centerX, centerY);
+      for(let i = 0; i < numStripes; i++){
+        beginShape();
+        vertex(0, 0);
+        for(let a = i*stripeAngle; a <= (i+1)*stripeAngle; a+=0.1){
+          let rad = map(a % TWO_PI, 0, TWO_PI, 150, 250);
+          let x = rad * cos(a);
+          let y = rad * sin(a);
+          vertex(x, y);
+        }
+        endShape(CLOSE);
+      }
+      pop();
+    }
+
+    function drawRingLights(glow) {
+      push();
+      for(let i = 0; i < ringLights.length; i++){
+        fill(255, 255, 150, glow);
+        ellipse(ringLights[i].x, ringLights[i].y, ringLights[i].r * 2);
+      }
+      pop();
+    }
+
+    function updateAndDrawBalls(s) {
+      let orbitSpeed = map(s, 0, 59, 0.01, 0.1); // faster rotation as seconds progress
+      push();
+      translate(width/2, height/2);
+      for (let i = 0; i < numBalls; i++) {
+        orbitAngles[i] += orbitSpeed; 
+        let bx = orbitRadius * cos(orbitAngles[i]);
+        let by = orbitRadius * sin(orbitAngles[i]);
+        fill(255, 255 - i*30, 0);
+        ellipse(bx, by, 15, 15);
+      }
+      pop();
+    }
+
+    function handleRingmasterMovement() {
+      ringmaster.x = constrain(ringmaster.x, ringmaster.size/2, width - ringmaster.size/2);
+      ringmaster.y = constrain(ringmaster.y, ringmaster.size/2, height - ringmaster.size/2);
+    }
+
+    function keyPressed() {
+      if (key === 'a' || key === 'A') {
+        ringmaster.x -= moveSpeed;
+      } else if (key === 'd' || key === 'D') {
+        ringmaster.x += moveSpeed;
+      } else if (key === 'w' || key === 'W') {
+        ringmaster.y -= moveSpeed;
+      } else if (key === 's' || key === 'S') {
+        ringmaster.y += moveSpeed;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Reflection Portal</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the "Time Reflection Portal"!<br><br>
+        • Center ring color: changes with the hour<br>
+        • Orbiting shapes: speed depends on the minute<br>
+        • Sparkling dust: spawned each second<br>
+        • Reflection: a mirror world below the horizon<br><br>
+        Hover away to step through the portal!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let sparkles = [];  // Store sparkle particles
+    let angleOffset = 0; // For orbiting shapes
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+      // Draw top half with transformations
+      push();
+      translate(width / 2, height / 2);
+      drawPortalContents(false);
+      pop();
+
+      // Draw reflection by flipping vertically
+      push();
+      translate(width / 2, height / 2);
+      scale(1, -1);
+      drawPortalContents(true);
+      pop();
+
+      spawnSparklesEachSecond();
+      updateAndDrawSparkles();
+      drawClock();
+    }
+
+    // Main drawing function for the top half and reflection
+    // mirrorMode is a boolean to indicate if we are drawing the reflection
+    function drawPortalContents(mirrorMode) {
+      // Hour controls the color of the center circle
+      let h = hour();
+      let hourHue = map(h, 0, 23, 0, 360);
+
+      // Center circle
+      colorMode(HSB, 360, 100, 100);
+      fill(hourHue, 80, 80);
+      circle(0, 0, 80);
+      colorMode(RGB);
+
+      // Rotate shapes around center, speed depends on minute
+      let m = minute();
+      angleOffset += map(m, 0, 59, 0.5, 3); // faster rotation at higher minute
+      push();
+      rotate(angleOffset);
+      fill(255, 80, 0);
+      // Orb #1
+      push();
+      translate(100, 0);
+      circle(0, 0, 20);
+      pop();
+
+      // Orb #2
+      fill(0, 150, 255);
+      push();
+      rotate(120);
+      translate(100, 0);
+      circle(0, 0, 20);
+      pop();
+
+      // Orb #3
+      fill(80, 255, 100);
+      push();
+      rotate(240);
+      translate(100, 0);
+      circle(0, 0, 20);
+      pop();
+      pop();
+    }
+
+    // Spawn sparkle particles each time the second changes
+    let previousSecond = -1;
+    function spawnSparklesEachSecond() {
+      let s = second();
+      if (s !== previousSecond) {
+        // Create sparkles in random ring
+        for (let i = 0; i < 10; i++) {
+          let angle = random(0, 360);
+          let radius = random(150, 200);
+          let sx = width / 2 + radius * cos(angle);
+          let sy = height / 2 + radius * sin(angle);
+          sparkles.push({
+            x: sx,
+            y: sy,
+            vx: random(-1, 1),
+            vy: random(-1, 1),
+            alpha: 255
+          });
+        }
+        previousSecond = s;
+      }
+    }
+
+    // Update and draw sparkles
+    function updateAndDrawSparkles() {
+      fill(255);
+      for (let i = sparkles.length - 1; i >= 0; i--) {
+        let sp = sparkles[i];
+        // Draw sparkle
+        fill(200, sp.alpha);
+        circle(sp.x, sp.y, 4);
+
+        // Update
+        sp.x += sp.vx;
+        sp.y += sp.vy;
+        sp.alpha -= 2; 
+
+        // Remove if invisible
+        if (sp.alpha <= 0) {
+          sparkles.splice(i, 1);
+        }
+      }
+    }
+
+    // Digital clock near the bottom
+    function drawClock() {
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

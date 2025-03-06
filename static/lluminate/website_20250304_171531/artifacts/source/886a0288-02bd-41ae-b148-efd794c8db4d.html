@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creative Time Synthesis</title>
+  <style>
+    /* Remove default page margins, center container */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #111;
+      font-family: sans-serif;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    /* Container for 512x512 canvas and hover overlay */
+    #container {
+      width: 512px;
+      height: 512px;
+      position: relative;
+      overflow: hidden; /* strictly clip anything beyond 512x512 */
+    }
+
+    /* Hidden instructions overlay */
+    #hover-info {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Reveal instructions on hover */
+    #container:hover #hover-info {
+      display: flex;
+    }
+    p {
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="hover-info">
+      <p>
+        Welcome to the Creative Time Synthesis!<br><br>
+        • A waveform in the background reacts to the hour, minute, and second.<br>
+        • A rotating star in the center updates its points, size, and rotation with time.<br>
+        • Observe the digital clock at the bottom.<br><br>
+        Hover away to return to the display. Enjoy!
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <script>
+    // Wave parameters
+    let waveOffset = 0; // horizontal displacement for the wave
+    let waveSpeed = 0.02; // wave scroll speed
+
+    // Star rotation
+    let starRotation = 0;
+
+    function setup() {
+      const canvas = createCanvas(512, 512);
+      canvas.parent('container');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(0);
+
+      // Grab current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      //-------------- WAVE BACKGROUND --------------
+      // The wave's amplitude, frequency, and phase shift are driven by hour, minute, and second.
+      // amplitude mapped from hour [0..23] -> [20..100]
+      let amplitude = map(h, 0, 23, 20, 100);
+      // frequency mapped from minute [0..59] -> [0.01..0.2]
+      let freq = map(m, 0, 59, 0.01, 0.2);
+      // additional phase shift from second
+      let phaseShift = map(s, 0, 59, 0, TWO_PI);
+
+      push();
+      noStroke();
+      fill(50, 100, 160); // subdued wave color
+      beginShape();
+      vertex(0, height); // start bottom-left corner
+      for (let x = 0; x <= width; x += 5) {
+        let waveY = height / 2 + amplitude * sin(freq * (x + waveOffset) + phaseShift);
+        vertex(x, waveY);
+      }
+      vertex(width, height); // end bottom-right corner
+      endShape(CLOSE);
+      // shift wave offset to simulate continuous motion
+      waveOffset += waveSpeed;
+      pop();
+
+      //-------------- ROTATING STAR --------------
+      // Star's number of points = hours (0-23) but ensure at least 5 points for shape
+      let starPoints = max(5, h);
+      // star rotation increments by a small factor + based on minutes
+      starRotation += 0.2 + (m * 0.01);
+      // star size changes with seconds
+      let starRadius = map(s, 0, 59, 40, 120);
+
+      push();
+      translate(width / 2, height / 2);
+      rotate(starRotation);
+      fill(255, 180, 0);
+      noStroke();
+      drawStar(0, 0, starRadius * 0.4, starRadius, starPoints);
+      pop();
+
+      //-------------- DIGITAL TIME DISPLAY --------------
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ':' + mDisp + ':' + sDisp, width / 2, height * 0.95);
+    }
+
+    // Utility function to draw a star with given points, inner and outer radius
+    // (Modified typical star drawing function)
+    function drawStar(x, y, radius1, radius2, npoints) {
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a)        * radius2;
+        let sy = y + sin(a)        * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

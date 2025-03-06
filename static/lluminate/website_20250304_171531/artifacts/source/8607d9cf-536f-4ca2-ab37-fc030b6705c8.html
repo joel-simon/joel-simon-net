@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Wave</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset margins and paddings */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+    }
+
+    /* Container for the 512x512 canvas */
+    #waveContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay that shows instructions on hover */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      box-sizing: border-box;
+      padding: 40px;
+      text-align: center;
+    }
+    #waveContainer:hover #instructionsOverlay {
+      display: block;
+    }
+
+    h1, p {
+      margin: 1em 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="waveContainer">
+    <div id="instructionsOverlay">
+      <h1>Time Wave</h1>
+      <p>The wave’s height corresponds to the hour, its peaks and troughs shift based on the minute, and its color pulsates with the seconds.</p>
+      <p>Hover again any time to see these instructions.</p>
+    </div>
+  </div>
+
+  <script>
+    let amplitude = 100;
+    let frequency = 0.05;
+    let phaseOffset = 0;
+    let centerY;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('waveContainer');
+      centerY = height / 2;
+      noStroke();
+    }
+
+    function draw() {
+      // Get current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Map hours to amplitude (from 0..23 => 20..200)
+      amplitude = map(h % 12, 0, 12, 20, 200);
+
+      // Map minutes to frequency (0..59 => 0.05..0.3)
+      frequency = map(m, 0, 59, 0.05, 0.3);
+
+      // Map seconds to color hue (0..59 => 0..360)
+      let hueVal = map(s, 0, 59, 0, 360);
+
+      // Set background gradually using hour/minute/second
+      // Blend them to create a subtle dynamic environment
+      background(h * 8, m * 4, s * 4);
+
+      // Draw wave
+      fill(`hsla(${hueVal}, 100%, 50%, 0.8)`);
+      beginShape();
+      for (let x = 0; x <= width; x++) {
+        let angle = x * frequency + (s * 0.1);
+        let y = centerY + sin(angle) * amplitude;
+        vertex(x, y);
+      }
+      vertex(width, height);
+      vertex(0, height);
+      endShape(CLOSE);
+
+      // Draw digital time in corner
+      textSize(24);
+      fill(255);
+      textAlign(LEFT, TOP);
+
+      let fullHour = h % 12;
+      if (fullHour === 0) fullHour = 12;
+      let ampm = h >= 12 ? "PM" : "AM";
+
+      // Format minutes and seconds with leading zeros
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      let timeString = fullHour + ":" + minStr + ":" + secStr + " " + ampm;
+      text(timeString, 10, 10);
+    }
+  </script>
+</body>
+</html>

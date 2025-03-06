@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Creative Time Display - Kaleidoscopic Blend</title>
+  <style>
+    html, body {
+      margin: 0; 
+      padding: 0;
+      background: #fafafa;
+      font-family: sans-serif;
+    }
+    /* Tooltip styling */
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 230px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 10px;
+      position: absolute;
+      z-index: 1;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+    }
+    /* Center the canvas at 512x512 */
+    #p5sketch {
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+    }
+    body, html {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <div class="tooltip">
+    <div id="p5sketch"></div>
+    <div class="tooltiptext">
+      This kaleidoscope reflects the current hour, minute & second.<br>
+      Each wedge changes color with the time.<br>
+      The overall rotation shifts based on seconds.<br>
+      Hover away to hide instructions.
+    </div>
+  </div>
+  
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <!-- Sketch code -->
+  <script>
+    let cnv;
+
+    function setup() {
+      cnv = createCanvas(512, 512);
+      cnv.parent('p5sketch');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(240);
+      translate(width / 2, height / 2);
+      
+      let hr = hour() % 12;
+      let mn = minute();
+      let sc = second();
+      
+      // Determine how many wedges based on hour (1 to 12)
+      // Avoid zero wedges; default to 12 if hour is 0
+      let slices = (hr === 0) ? 12 : hr;
+      let wedgeAngle = 360 / slices;
+      
+      // Slight global rotation changes with the second hand
+      rotate(sc * 6); 
+
+      for (let i = 0; i < slices; i++) {
+        push();
+        // Rotate each slice around the center
+        rotate(i * wedgeAngle);
+
+        // Assign color based on hour, minute, second, and wedge index
+        let r = (mn * 4 + i * 15) % 256;
+        let g = (sc * 4 + i * 10) % 256;
+        let b = (hr * 20 + i * 5) % 256;
+        fill(r, g, b);
+
+        // Draw a wedge shape
+        beginShape();
+        vertex(0, 0); 
+        // We create a curved wedge extending outward
+        for (let angleStep = 0; angleStep <= wedgeAngle; angleStep += 5) {
+          // The radial distance can change with time for a dynamic shape
+          let radius = 120 + 20 * sin((mn + angleStep) * 2) + 10 * cos((sc + i) * 3);
+          let x = radius * cos(angleStep);
+          let y = radius * sin(angleStep);
+          vertex(x, y);
+        }
+        endShape(CLOSE);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

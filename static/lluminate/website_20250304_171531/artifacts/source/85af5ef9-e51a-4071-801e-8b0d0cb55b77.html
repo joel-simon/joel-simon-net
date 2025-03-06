@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Fractal Fish Time</title>
+  <!-- Include p5.js -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center everything and set background for the page */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #f2f2f2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #displayContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Instructions overlay, hidden by default, appears on hover */
+    #instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.8);
+      color: #222;
+      font-family: sans-serif;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    #displayContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="displayContainer">
+    <div id="instructions">
+      <h3>Fractal Fish Time</h3>
+      <p>
+        • The fractal tree grows with hour (branch depth), minute (branch length), and second (branch angle).<br/>
+        • Fish swim around, and their color shifts by the minute.<br/>
+        • Inspect the bottom corner for the time display!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let canvasSize = 512;
+
+    // Fish object structure
+    class Fish {
+      constructor(x, y, speed, colorVal) {
+        this.x = x;
+        this.y = y;
+        this.speed = speed;
+        this.colorVal = colorVal;
+        this.angle = random(TWO_PI);
+        this.size = random(10, 20);
+      }
+
+      update() {
+        this.angle += this.speed * 0.02;
+        this.x += cos(this.angle) * this.speed;
+        this.y += sin(this.angle) * this.speed;
+
+        // Wrap fish around canvas edges
+        if (this.x < 0) this.x = width;
+        if (this.x > width) this.x = 0;
+        if (this.y < 0) this.y = height;
+        if (this.y > height) this.y = 0;
+      }
+
+      display() {
+        fill(this.colorVal);
+        noStroke();
+        ellipse(this.x, this.y, this.size * 1.5, this.size);
+      }
+    }
+
+    let fishCount = 20;
+    let fishArr = [];
+
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent("displayContainer");
+      angleMode(RADIANS);
+      // Create some fish
+      for (let i = 0; i < fishCount; i++) {
+        let x = random(width);
+        let y = random(height);
+        let speed = random(0.5, 2);
+        let c = color(random(100, 255), random(100, 255), random(100, 255));
+        fishArr.push(new Fish(x, y, speed, c));
+      }
+    }
+
+    function draw() {
+      background(30, 80, 120); // A deep water backdrop
+
+      // Get time
+      let hr = hour() % 12;   // 0-11
+      let mn = minute();      // 0-59
+      let sc = second();      // 0-59
+
+      // Update fish colors based on minutes
+      // We'll shift the hue slightly every minute
+      let hueShift = map(mn, 0, 59, 0, 255);
+
+      // Update and draw fish
+      for (let i = 0; i < fishArr.length; i++) {
+        fishArr[i].update();
+        // Adjust color based on minute
+        let r = (red(fishArr[i].colorVal) + hueShift / 5) % 255;
+        let g = (green(fishArr[i].colorVal) + hueShift / 10) % 255;
+        let b = (blue(fishArr[i].colorVal) + hueShift / 15) % 255;
+        fishArr[i].colorVal = color(r, g, b);
+        fishArr[i].display();
+      }
+
+      // Draw fractal tree in center
+      push();
+      translate(width / 2, height - 20);
+      let depth = floor(map(hr, 0, 11, 5, 9));     // Branch depth from hour
+      let length = map(mn, 0, 59, 60, 160);        // Main branch length from minute
+      let angle = map(sc, 0, 59, 0, PI / 2);       // Angle from seconds
+      stroke(255);
+      strokeWeight(3);
+      fractalBranch(length, angle, depth);
+      pop();
+
+      // Time display at the bottom
+      fill(255);
+      noStroke();
+      textSize(20);
+      textAlign(CENTER, CENTER);
+      text(
+        nf(hour(),2) + ":" + nf(minute(),2) + ":" + nf(second(),2),
+        width / 2,
+        height - 40
+      );
+    }
+
+    // Recursive fractal tree
+    function fractalBranch(len, angle, depth) {
+      if (depth <= 0) return;
+      line(0, 0, 0, -len);
+      translate(0, -len);
+
+      push();
+      rotate(angle);
+      fractalBranch(len * 0.7, angle, depth - 1);
+      pop();
+
+      push();
+      rotate(-angle);
+      fractalBranch(len * 0.7, angle, depth - 1);
+      pop();
+    }
+  </script>
+</body>
+</html>

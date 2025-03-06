@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Combined Creative Time Portal</title>
+  <style>
+    /* Page reset and basic styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      background: #000; /* fallback */
+    }
+
+    /* Instructions overlay, only visible on hover */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0,0,0,0.7);
+      pointer-events: none;
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+      max-width: 80%;
+      margin: auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Combined Creative Time Portal</strong><br><br>
+        • Swirling background hue shifts with minutes<br>
+        • Fractal tree grows deeper with the hour<br>
+        • Tree branches sway with seconds<br>
+        • Current time is displayed at the bottom<br>
+        Hover to see instructions, then watch time drive the animation
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let canvasW = 512;
+    let canvasH = 512;
+
+    function setup() {
+      let cnv = createCanvas(canvasW, canvasH);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100);
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Swirling background
+      drawSwirlingBackground(mn, sc);
+
+      // Fractal tree
+      push();
+      translate(width / 2, height);
+      let treeDepth = max(2, (hr % 12) + 2); // Deeper with hour (2..13)
+      let branchAngle = map(sc, 0, 59, 10, 40); 
+      drawFractalTree(100, branchAngle, treeDepth);
+      pop();
+
+      // Time display at bottom
+      drawTimeDisplay(hr, mn, sc);
+    }
+
+    // Draw swirling background based on minute & second
+    function drawSwirlingBackground(mn, sc) {
+      noStroke();
+      // Map minute to base hue, second to rotation
+      let baseHue = map(mn, 0, 59, 0, 360);
+      let swirlRotation = map(sc, 0, 59, 0, 360);
+
+      push();
+      translate(width/2, height/2);
+      rotate(swirlRotation);
+      for (let r = 0; r < width; r += 8) {
+        fill((baseHue + r/2) % 360, 80, 80, 80);
+        ellipse(r, 0, 50, 50);
+        ellipse(-r, 0, 50, 50);
+      }
+      pop();
+    }
+
+    // Recursive fractal tree
+    function drawFractalTree(branchLen, angle, depth) {
+      // Branch
+      stroke(40, 100, 80);
+      strokeWeight(map(depth, 1, 12, 3, 1));
+      line(0, 0, 0, -branchLen);
+      translate(0, -branchLen);
+
+      // Recursion
+      if (depth > 0) {
+        push();
+        rotate(angle);
+        drawFractalTree(branchLen * 0.7, angle, depth - 1);
+        pop();
+
+        push();
+        rotate(-angle);
+        drawFractalTree(branchLen * 0.7, angle, depth - 1);
+        pop();
+      }
+    }
+
+    // Draw current time in digital format
+    function drawTimeDisplay(hr, mn, sc) {
+      push();
+      fill(255);
+      noStroke();
+      textSize(20);
+      textAlign(CENTER, CENTER);
+
+      let displayHour = hr % 12 || 12;
+      let ampm = hr >= 12 ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, width / 2, height - 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creative Time Display - Bubble Parade</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center the page content and give a neutral background */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f7f7f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #444;
+      padding: 8px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 200px;
+      z-index: 1;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      This display shows "time bubbles":<br>
+      • Hour determines the bubble count<br>
+      • Minute affects bubble sizes<br>
+      • Second influences their speed<br>
+      Watch them drift freely!
+    </div>
+  </div>
+
+  <script>
+    let bubbles = [];
+    let prevHour;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      noStroke();
+      createBubbles(); // Initial setup
+      prevHour = hour();
+    }
+
+    function draw() {
+      // Background color shifts slightly with seconds
+      let sc = second();
+      let bgColor = color((sc * 4) % 255, 150, 200);
+      background(bgColor);
+
+      let currentHour = hour();
+      let mn = minute();
+
+      // If the hour changed, recreate bubbles
+      if (currentHour !== prevHour) {
+        createBubbles();
+        prevHour = currentHour;
+      }
+
+      // Update and display bubbles
+      for (let b of bubbles) {
+        b.move(sc);
+        b.display(mn);
+      }
+
+      // Display digital time in corner
+      textSize(16);
+      fill(255);
+      textAlign(RIGHT, TOP);
+      text(nf(currentHour,2) + ":" + nf(mn,2) + ":" + nf(sc,2), width - 10, 10);
+    }
+
+    // Create bubbles according to hour
+    function createBubbles() {
+      let numBubbles = (hour() % 12) + 4; // ensure at least a few bubbles
+      bubbles = [];
+      for (let i = 0; i < numBubbles; i++) {
+        let x = random(width);
+        let y = random(height);
+        bubbles.push(new Bubble(x, y));
+      }
+    }
+
+    // Bubble class
+    class Bubble {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.xSpeed = random(-1, 1);
+        this.ySpeed = random(-1, 1);
+      }
+
+      move(sec) {
+        // Second influences speed factor
+        let speedFactor = map(sec, 0, 59, 0.5, 2);
+        this.x += this.xSpeed * speedFactor;
+        this.y += this.ySpeed * speedFactor;
+
+        // Wrap around edges
+        if (this.x > width) this.x = 0;
+        if (this.x < 0) this.x = width;
+        if (this.y > height) this.y = 0;
+        if (this.y < 0) this.y = height;
+      }
+
+      display(min) {
+        // Minute controls bubble size
+        let size = map(min, 0, 59, 20, 80);
+        fill(255, 255, 255, 100); 
+        circle(this.x, this.y, size);
+      }
+    }
+  </script>
+</body>
+</html>

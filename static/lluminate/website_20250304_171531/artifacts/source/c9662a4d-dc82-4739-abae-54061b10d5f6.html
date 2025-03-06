@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Interactive Time Wave & Star</title>
+  <style>
+    /* Reset body and provide dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      font-family: sans-serif;
+      color: #ddd;
+    }
+
+    /* Container to hold the 512x512 canvas */
+    #canvas-container {
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    /* Instructions overlay (shown on hover) */
+    #hover-info {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #canvas-container:hover #hover-info {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-info">
+      <p>
+        Welcome to the Interactive Time Wave & Star!
+        <br><br>
+        • The wave changes shape with the hour (frequency) and minute (amplitude).<br>
+        • The star rotates and changes size with the seconds.<br>
+        • The displayed time updates live.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(30);
+
+      // Gather current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Create a wave pattern in background
+      // Increase amplitude with minute, increase frequency with hour
+      push();
+      fill(80);
+      for (let y = 0; y < height; y += 5) {
+        let waveValue = sin((frameCount * 0.5 + y * (hr * 0.2)) % 360);
+        let xOffset = waveValue * (mn * 0.8);
+        rect(width/2 + xOffset - (width/2), y, width, 5);
+      }
+      pop();
+
+      // Star in the center that rotates & grows with seconds
+      translate(width / 2, height / 2);
+      let scAngle = map(sc, 0, 60, 0, 360);
+      let starSize = map(sc, 0, 60, 30, 120); // growth factor
+
+      push();
+      rotate(scAngle * 2);
+      fill(255, 200, 0);
+      star(0, 0, starSize * 0.4, starSize, 5);
+      pop();
+
+      // Display numeric time
+      fill(255);
+      textSize(24);
+      textAlign(CENTER, CENTER);
+      text(nf(hr, 2) + ':' + nf(mn, 2) + ':' + nf(sc, 2), 0, 0);
+    }
+
+    // Helper function to draw a star
+    // Taken from p5.js examples with slight modifications
+    function star(x, y, radius1, radius2, npoints) {
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

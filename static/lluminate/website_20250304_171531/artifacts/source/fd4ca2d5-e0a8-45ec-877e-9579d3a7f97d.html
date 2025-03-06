@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Origami Landscape</title>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* A fixed 512x512 container (for iframe) */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Origami Landscape</strong><br><br>
+        • Background hue shifts with the hour.<br>
+        • A flock of birds matching the current minute soars by.<br>
+        • A paper sun rotates with the seconds.<br>
+        • Clouds respond to your mouse movement.<br>
+        Hover here for tips. Enjoy!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time Origami Landscape
+      This sketch:
+       1) Shifts background color with the hour.
+       2) Spawns a flock of birds equal to the current minute.
+       3) Rotates a paper sun according to the seconds.
+       4) Allows clouds to move with the mouse.
+    */
+
+    const CANVAS_SIZE = 512;
+
+    let birds = [];
+    let lastMinute = -1;
+
+    // Precalculate some cloud shape data
+    let cloudLayers = [];
+    const totalClouds = 3;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+
+      // Create random cloud shapes
+      for (let i = 0; i < totalClouds; i++) {
+        let points = [];
+        let segments = floor(random(8, 12));
+        for (let j = 0; j < segments; j++) {
+          let angle = map(j, 0, segments, 0, 360);
+          let r = random(20, 60);
+          points.push({ angle, r });
+        }
+        cloudLayers.push({
+          points,
+          xOffset: random(width),
+          yOffset: random(height / 2),
+          speed: random(0.2, 0.5),
+        });
+      }
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // 1) Background color shifts with hour
+      drawTimeBackground(hr);
+
+      // If minute changed, spawn flock
+      if (mn !== lastMinute) {
+        spawnFlock(mn);
+        lastMinute = mn;
+      }
+
+      // 2) Birds in flight
+      updateBirds();
+      drawBirds();
+
+      // 3) Rotating paper sun at top-right
+      drawRotatingSun(sc);
+
+      // 4) Clouds that respond to mouse movement
+      drawClouds();
+    }
+
+    /* (1) Background color that shifts with the hour */
+    function drawTimeBackground(h) {
+      // Map the hour to a hue range for a pleasant gradient
+      let bgHue = map(h, 0, 23, 0, 360);
+      colorMode(HSB, 360, 100, 100);
+      background(bgHue, 60, 40);
+    }
+
+    /* (2) Birds: spawn a flock equal to current minute in size */
+    function spawnFlock(m) {
+      birds = []; // clear existing flock
+      for (let i = 0; i < m; i++) {
+        let x = random(-300, -50);
+        let y = random(50, height - 50);
+        let speed = random(2, 3);
+        birds.push({ x, y, speed });
+      }
+    }
+
+    function updateBirds() {
+      // Move birds to the right
+      for (let b of birds) {
+        b.x += b.speed;
+      }
+      // Remove birds that exit the canvas
+      birds = birds.filter(b => b.x < width + 50);
+    }
+
+    function drawBirds() {
+      push();
+      noFill();
+      stroke(255);
+      strokeWeight(2);
+      for (let b of birds) {
+        // Draw a simplified "V" shape for each bird
+        line(b.x, b.y, b.x + 10, b.y - 5);
+        line(b.x + 10, b.y - 5, b.x + 20, b.y);
+      }
+      pop();
+    }
+
+    /* (3) A paper sun in the top-right, rotating with seconds */
+    function drawRotatingSun(sc) {
+      push();
+      translate(width * 0.9, height * 0.15);
+      rotate(map(sc, 0, 59, 0, 360));
+      fill(255, 200, 0);
+      stroke(255);
+      strokeWeight(2);
+
+      // Sun rays (origami style)
+      beginShape();
+      for (let i = 0; i < 8; i++) {
+        let angle = i * 45;
+        let r = (i % 2 === 0) ? 30 : 15;
+        let x = r * cos(angle);
+        let y = r * sin(angle);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+
+      pop();
+    }
+
+    /* (4) Clouds that respond to mouse movement */
+    function drawClouds() {
+      push();
+      noStroke();
+      colorMode(RGB);
+      fill(255, 255, 255, 180);
+
+      for (let i = 0; i < cloudLayers.length; i++) {
+        let layer = cloudLayers[i];
+        // Shift horizontal position based on mouse
+        let xOffset = layer.xOffset + (mouseX - width/2) * 0.02 * layer.speed;
+        let yOffset = layer.yOffset + (mouseY - height/2) * 0.02 * layer.speed;
+        push();
+        translate(xOffset, yOffset);
+
+        // Construct cloud shape
+        beginShape();
+        for (let p of layer.points) {
+          let x = p.r * cos(p.angle);
+          let y = p.r * sin(p.angle) * 0.6; // squish cloud vertically
+          vertex(x, y);
+        }
+        endShape(CLOSE);
+
+        pop();
+      }
+      pop();
+    }
+  </script>
+</body>
+</html>

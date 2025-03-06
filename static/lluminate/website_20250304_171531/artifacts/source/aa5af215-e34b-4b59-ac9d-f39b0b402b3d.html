@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time-Kaleido Mandala</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to "Time-Kaleido Mandala"!<br><br>
+        • The overall color hue changes with the hour.<br>
+        • The number of shapes and patterns intensifies with the minute.<br>
+        • The rotation speed is driven by the seconds.<br><br>
+        Hover away to enjoy the kaleidoscopic display!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let angleOffset = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Map the hour to a background hue
+      // Wrap hour from 0..23 into a 0..360 hue range
+      let baseHue = map(h, 0, 23, 0, 360);
+      colorMode(HSB);
+      background(baseHue, 50, 20);
+
+      // Calculate rotation speed from seconds
+      let speed = map(s, 0, 59, 0.5, 3);
+      angleOffset += speed;
+
+      push();
+      translate(width / 2, height / 2);
+
+      // The minute determines how many "petals" we draw
+      // We'll cap the max count to avoid slowdown
+      let layers = constrain(m, 1, 59);
+
+      // Draw kaleidoscopic patterns
+      for (let i = 0; i < layers; i++) {
+        push();
+        rotate((360 / layers) * i + angleOffset);
+        drawKaleidoShape(i, baseHue);
+        pop();
+      }
+      pop();
+
+      // Display digital clock near bottom
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+      pop();
+    }
+
+    // Draw a single 'petal' or shape in the kaleidoscope
+    function drawKaleidoShape(index, baseHue) {
+      // Color shifts per shape
+      let hueShift = (index * 5) % 360;
+      fill((baseHue + hueShift) % 360, 80, 90);
+
+      // Create a shape that fans out from the center
+      beginShape();
+      let totalPoints = 8;
+      for (let i = 0; i < totalPoints; i++) {
+        let angle = map(i, 0, totalPoints, 0, 360);
+        let radius = 50 + index * 2;
+        // Slightly warp the radius to create interesting patterns
+        let warp = sin(frameCount + i * 10 + index * 3) * 10;
+        let x = (radius + warp) * cos(angle);
+        let y = (radius + warp) * sin(angle);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

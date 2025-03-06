@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reverse Time Spiral</title>
+  <style>
+    /* Basic resets and layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas */
+    #p5sketch-container {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Instructions overlay, hidden by default */
+    .instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      font-size: 14px;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 1em;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #p5sketch-container:hover .instructions {
+      display: flex;
+    }
+
+    /* Cursor hint for interactivity */
+    #p5sketch-container:hover {
+      cursor: help;
+    }
+  </style>
+</head>
+<body>
+  <div id="p5sketch-container">
+    <div class="instructions">
+      <strong>HOW THIS DISPLAYS TIME (REVERSED):</strong><br><br>
+      • Hours, minutes, and seconds are drawn as spiraling arcs.<br>
+      • Each arc rotates backward relative to that time component.<br>
+      • The angle and color shift further unmask the reversal of time.<br><br>
+      Hover away to hide instructions.
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let lastTimeStr = '';
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('p5sketch-container');
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100);
+      noStroke();
+    }
+
+    function draw() {
+      // Draw a subtle trailing background
+      background(0, 10);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // This is the "standard" time string
+      let currentTimeStr = nf(h,2) + ':' + nf(m,2) + ':' + nf(s,2);
+
+      // We create "reverse" angles for hour, minute, second
+      // In normal clocks: hour folds forward, we do the opposite
+      // Convert to a 12-hour format if you wish, but let's keep 24 for a bigger range
+      let revHourAngle = map(h, 0, 23, 360, 0); // Reversing hour-based angle
+      let revMinuteAngle = map(m, 0, 59, 360, 0);
+      let revSecondAngle = map(s, 0, 59, 360, 0);
+
+      push();
+      translate(width/2, height/2);
+
+      // Draw arcs for hour, minute, second — all rotating backwards
+      // Outer ring for hour
+      push();
+      rotate(revHourAngle);
+      fill((revHourAngle + frameCount) % 360, 80, 80);
+      arc(0, 0, 300, 300, 0, 90); // Quarter arc
+      pop();
+
+      // Middle ring for minute
+      push();
+      rotate(revMinuteAngle);
+      fill((revMinuteAngle + frameCount * 2) % 360, 90, 90);
+      arc(0, 0, 200, 200, 0, 90); 
+      pop();
+
+      // Inner ring for second
+      push();
+      rotate(revSecondAngle);
+      fill((revSecondAngle + frameCount * 3) % 360, 100, 100);
+      arc(0, 0, 100, 100, 0, 90);
+      pop();
+
+      pop(); // end translation
+
+      // Show a small text readout for actual time in top-left
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(currentTimeStr, 10, 10);
+
+      // Optionally we can do a text comparing to last time string for effect
+      // but let's keep it simpler for clarity
+      lastTimeStr = currentTimeStr;
+    }
+  </script>
+</body>
+</html>

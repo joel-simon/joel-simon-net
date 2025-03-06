@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Kaleidoscope</title>
+
+  <!-- Required p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <style>
+    /* Reset body margin/padding and center the main container */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Container for the 512x512 canvas and the tooltip */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      border-radius: 4px;
+      padding: 8px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 230px;
+      line-height: 1.4em;
+      z-index: 2;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+
+    /* Enforce the 512x512 size for the p5 canvas */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      • This kaleidoscope changes its slice count based on minutes.<br>
+      • Shift in color is tied to the hour.<br>
+      • The speed of rotation reflects the seconds.<br><br>
+      Enjoy the evolving time-based design!
+    </div>
+  </div>
+
+  <script>
+    let angleOffset = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(20);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Number of slices influenced by current minute
+      // Ensuring a minimum of 3 slices
+      let slices = max(3, floor(map(mn, 0, 59, 3, 16)));
+
+      // Rotation speed linked to seconds
+      angleOffset += map(sc, 0, 60, 0.1, 2);
+
+      // Color shift based on hour
+      let colorHue = map(hr % 24, 0, 24, 0, 360);
+
+      // Draw kaleidoscopic pattern
+      push();
+      translate(width / 2, height / 2);
+
+      for (let i = 0; i < slices; i++) {
+        push();
+        rotate((360 / slices) * i + angleOffset);
+
+        // Each slice is comprised of layered arcs or shapes
+        for (let j = 0; j < 6; j++) {
+          let radius = map(j, 0, 5, 30, 200);
+          fill((colorHue + j * 10) % 360, 80 + j * 3, 90);
+          arc(0, 0, radius, radius, 0, 180);
+        }
+        pop();
+      }
+      pop();
+    }
+  </script>
+</body>
+</html>

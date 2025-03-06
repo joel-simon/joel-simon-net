@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fractal Time Bubbles</title>
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page reset */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+
+    /* Container for our 512x512 sketch */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Instructions overlay appears on hover */
+    #instructions {
+      text-align: center;
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      box-sizing: border-box;
+      pointer-events: none;
+    }
+    #canvas-container:hover #instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 80%;
+      max-width: 400px;
+      transform: translate(-50%, -50%);
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <!-- Hover overlay instructions -->
+    <div id="instructions">
+      <div class="instructions-text">
+        Welcome to "Fractal Time Bubbles"!<br/><br/>
+        • The fractal tree's angle reflects the current hour.<br/>
+        • Its branching depth is set by the minutes.<br/>
+        • Its trunk length is influenced by the seconds.<br/>
+        • Meanwhile, colorful bubbles float upward,<br/>
+          where their size ties to the minutes, color to the hour,<br/>
+          and speed to the seconds.<br/><br/>
+        Hover to see instructions. Move your mouse away to watch the magic!
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Dimensions
+    let w = 512;
+    let h = 512;
+
+    // Bubble data structure
+    class Bubble {
+      constructor(x, dia, col, speed) {
+        this.x = x;
+        this.dia = dia;
+        this.col = col;
+        this.speed = speed;
+        this.y = h + this.dia; // Start below the visible area
+      }
+
+      update() {
+        this.y -= this.speed; // Move upward
+      }
+
+      display() {
+        noStroke();
+        fill(this.col);
+        circle(this.x, this.y, this.dia);
+      }
+
+      offScreen() {
+        return this.y + this.dia/2 < 0;
+      }
+    }
+
+    let bubbles = [];
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(RADIANS);
+      strokeCap(ROUND);
+      frameRate(30);
+    }
+
+    function draw() {
+      background(0, 25, 50);
+
+      // Retrieve current time
+      let hr = hour();       // 0..23
+      let mn = minute();     // 0..59
+      let sc = second();     // 0..59
+
+      // --- Fractal Tree Parameters ---
+      // Convert hour to a fraction of 12 for more dramatic angle shifts
+      let hourAngle = map(hr % 12, 0, 12, 0, PI/2);
+      let depth = floor(map(mn, 0, 59, 4, 10));
+      let trunkLen = map(sc, 0, 59, 50, 150);
+
+      // Draw fractal tree from bottom center
+      push();
+      translate(width / 2, height);
+      drawFractalTree(trunkLen, depth, hourAngle);
+      pop();
+
+      // --- Bubble Parameters ---
+      // Convert hour to hue in HSB
+      colorMode(HSB);
+      let bubbleHue = map(hr, 0, 23, 0, 360);
+      colorMode(RGB);
+
+      let bubbleDiameter = map(mn, 0, 59, 10, 80);
+      let bubbleSpeed = map(sc, 0, 59, 1, 6);
+
+      // Spawn a new bubble once every ~30 frames (1 second at 30 fps)
+      if (frameCount % 30 === 0) {
+        colorMode(HSB);
+        let col = color(bubbleHue, 80, 100, 0.8);
+        colorMode(RGB);
+        let b = new Bubble(random(width), bubbleDiameter, col, bubbleSpeed);
+        bubbles.push(b);
+      }
+
+      // Update and display bubbles, remove if offscreen
+      for (let i = bubbles.length - 1; i >= 0; i--) {
+        bubbles[i].update();
+        bubbles[i].display();
+        if (bubbles[i].offScreen()) {
+          bubbles.splice(i, 1);
+        }
+      }
+
+      // Overlay digital clock
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, BASELINE);
+      text(nf(hr,2) + ':' + nf(mn,2) + ':' + nf(sc,2), 10, height - 10);
+    }
+
+    // Recursive fractal tree drawing
+    function drawFractalTree(len, level, angle) {
+      if (level === 0) return;
+
+      strokeWeight(map(level, 1, 10, 1, 5));
+      stroke(80, 150, 180);
+      line(0, 0, 0, -len);
+
+      // Move to top of the current branch
+      translate(0, -len);
+
+      // Left branch
+      push();
+      rotate(-angle);
+      drawFractalTree(len * 0.7, level - 1, angle);
+      pop();
+
+      // Right branch
+      push();
+      rotate(angle);
+      drawFractalTree(len * 0.7, level - 1, angle);
+      pop();
+    }
+  </script>
+</body>
+</html>

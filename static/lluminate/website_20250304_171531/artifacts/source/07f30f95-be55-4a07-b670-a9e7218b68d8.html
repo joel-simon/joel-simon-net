@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time-Firefly Garden</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the "Time-Firefly Garden"!<br><br>
+        • The sky background shifts color over the hour.<br>
+        • The number of fireflies corresponds to the current hour (plus a base count).<br>
+        • Their color changes with the minute.<br>
+        • Their blinking speed is determined by the second.<br><br>
+        Hover away to watch them glow in the garden of time.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // We'll store our fireflies here
+    let fireflies = [];
+    // A simple structure: each firefly tracks its position, unique offset, etc.
+    // We'll also handle color and blinking in draw().
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      colorMode(HSB, 360, 100, 100);  // For more convenient hue-based coloring
+      
+      // Determine number of fireflies based on hour
+      let h = hour();
+      let numFireflies = h + 5; // Adding a small base so there's always some
+      
+      // Initialize all the fireflies
+      for (let i = 0; i < numFireflies; i++) {
+        fireflies.push({
+          x: random(width),
+          y: random(height),
+          xSpeed: random(-1, 1),
+          ySpeed: random(-1, 1),
+          offset: random(1000) // random offset for blinking
+        });
+      }
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Create a sky gradient that depends on the hour
+      // We'll interpolate from deep green at midday to purplish at midnight
+      let topColor = color(map(h, 0, 23, 250, 120), 80, 40);
+      let bottomColor = color(240, 100, 0);  // near-dark
+      setGradient(0, 0, width, height, topColor, bottomColor);
+
+      // Calculate the blinking frequency based on seconds
+      let freq = map(s, 0, 59, 0.5, 3);
+
+      // The hue for all fireflies is based on the current minute
+      // but each firefly can deviate slightly from this base color
+      let baseHue = map(m, 0, 59, 0, 360);
+
+      // Update and draw each firefly
+      for (let i = 0; i < fireflies.length; i++) {
+        let f = fireflies[i];
+
+        // Update position
+        f.x += f.xSpeed;
+        f.y += f.ySpeed;
+
+        // Wrap around edges
+        if (f.x < 0)  f.x = width;
+        if (f.x > width) f.x = 0;
+        if (f.y < 0)  f.y = height;
+        if (f.y > height) f.y = 0;
+
+        // Create a blinking alpha channel using sine wave
+        let alpha = map(sin(freq * frameCount + f.offset), -1, 1, 10, 100);
+
+        // Firefly color offset from base
+        let hueOffset = map(i, 0, fireflies.length, 0, 30);
+        let finalHue = (baseHue + hueOffset) % 360;
+
+        noStroke();
+        fill(finalHue, 80, alpha);
+        ellipse(f.x, f.y, 8, 8);
+      }
+
+      // Display a digital clock at bottom
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+      pop();
+    }
+
+    // Create gradient background
+    function setGradient(x, y, w, h, c1, c2) {
+      noFill();
+      for (let i = y; i <= y + h; i++) {
+        let inter = map(i, y, y + h, 0, 1);
+        let c = lerpColor(c1, c2, inter);
+        stroke(c);
+        line(x, i, x + w, i);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Origami Bloom</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #origamiContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      border: 1px solid #ccc;
+      background: #fff;
+    }
+
+    /* Instructions overlay, hidden by default. Display on hover. */
+    #instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.85);
+      color: #222;
+      font-family: sans-serif;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    #origamiContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+<div id="origamiContainer">
+  <div id="instructions">
+    <h3>Time Origami Bloom</h3>
+    <p>
+      • Petal count reflects the hour (in 12-hour format).<br/>
+      • The bloom rotates based on minutes.<br/>
+      • Colors swirl according to the seconds.<br/>
+      • Observe the folding and unfolding effect as time passes!
+    </p>
+  </div>
+</div>
+
+<script>
+  let canvasSize = 512;
+
+  function setup() {
+    let c = createCanvas(canvasSize, canvasSize);
+    c.parent("origamiContainer");
+    angleMode(DEGREES);
+    colorMode(HSB, 360, 100, 100);
+    noStroke();
+  }
+
+  function draw() {
+    background(0, 0, 95); // Light background in HSB (h=0, s=0, b=95)
+
+    // Time variables
+    let hr = hour() % 12;   // 0-11
+    let mn = minute();      // 0-59
+    let sc = second();      // 0-59
+
+    translate(width / 2, height / 2);
+    
+    // The base rotation speed: one full revolution every 60 minutes
+    let baseRotation = map(mn + sc / 60, 0, 60, 0, 360);
+    rotate(baseRotation);
+
+    // Decide how many petals: at least 1 even if hr=0
+    let petalCount = max(hr, 1);
+    let angleBetween = 360 / petalCount;
+
+    // Use seconds to control color shift
+    let hueShift = map(sc, 0, 59, 0, 360);
+
+    // Draw each petal
+    for (let i = 0; i < petalCount; i++) {
+      push();
+      rotate(i * angleBetween);
+
+      // Petal color changes slightly for each; saturate more if minutes are large
+      fill((hueShift + i * (360 / petalCount)) % 360, map(mn, 0, 59, 50, 100), 80);
+
+      // Petal shape and size vary with seconds to create a folding effect
+      let scaleFactor = map(sc, 0, 59, 0.7, 1.3);
+      let petalLength = 100 * scaleFactor;
+      let petalWidth = 40 * scaleFactor;
+
+      beginShape();
+      vertex(0, 0);
+      bezierVertex(petalWidth / 2, -petalLength / 4, petalWidth / 2, -petalLength * 3/4, 0, -petalLength);
+      bezierVertex(-petalWidth / 2, -petalLength * 3/4, -petalWidth / 2, -petalLength / 4, 0, 0);
+      endShape(CLOSE);
+
+      pop();
+    }
+
+    // Show digital time in the center for reference
+    fill(0, 0, 20);
+    textAlign(CENTER, CENTER);
+    textSize(20);
+    text(nf(hour(),2) + ":" + nf(mn,2) + ":" + nf(sc,2), 0, 0);
+  }
+</script>
+
+</body>
+</html>

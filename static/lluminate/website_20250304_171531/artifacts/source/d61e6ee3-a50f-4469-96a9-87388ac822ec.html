@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Kaleidoscope</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic page setup: black background, margin reset */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container fixed at 512x512, centered horizontally */
+    #kaleidoscope-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+    }
+
+    /* Instructions overlay, hidden by default */
+    #instructions {
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      display: none;
+      background-color: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      line-height: 1.4;
+      padding: 1.5rem;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #kaleidoscope-container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="kaleidoscope-container">
+    <div id="instructions">
+      <h2>Time Kaleidoscope</h2>
+      <p>
+        • Hour changes background color.<br>
+        • Minute sets the kaleidoscope's slice count.<br>
+        • Second controls rotation speed.<br>
+        Enjoy the shifting patterns!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Kaleidoscope:
+      - The hour (0-23) adjusts the background color.
+      - The minute (0-59) changes how many mirrored slices are drawn.
+      - The second (0-59) influences the overall rotation speed.
+      - A digital clock is displayed at the top-left corner for reference.
+    */
+
+    const CANVAS_SIZE = 512;
+    let rotationOffset = 0;
+    
+    function setup() {
+      let c = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      c.parent("kaleidoscope-container");
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      // Current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Background color changes by hour
+      // Map hour to a hue range (using 24 for max hour)
+      colorMode(HSB);
+      let bgHue = map(h, 0, 23, 0, 360);
+      background(bgHue, 60, 20);
+
+      // Number of kaleidoscope slices depends on the minute (min 3 slices, up to 12)
+      let sliceCount = floor(map(m, 0, 59, 3, 12));
+
+      // Treat second as part of rotation speed. Speed range: 0.5 to ~3.0
+      // Add slight multiplier based on frameCount for continuous motion
+      let rotationSpeed = map(s, 0, 59, 0.5, 3);
+      rotationOffset += rotationSpeed * 0.2;
+
+      // Save state
+      push();
+      // Shift origin to center
+      translate(width / 2, height / 2);
+
+      // We draw a shape, then rotate it sliceCount times to form a kaleidoscope
+      // The shape is drawn in one slice, then mirrored around
+      for (let i = 0; i < sliceCount; i++) {
+        push();
+        rotate(360 / sliceCount * i + rotationOffset);
+
+        // Draw repeating shapes
+        let shapeSize = 100;
+        fill((bgHue + (i * 20)) % 360, 80, 80);
+        ellipse(shapeSize, 0, 50, 50);
+
+        let shapeSize2 = 60;
+        fill((bgHue + 180 + (i * 20)) % 360, 70, 90);
+        rect(shapeSize2, -15, 30, 30);
+
+        // Draw a small line arc
+        stroke((bgHue + (i * 40)) % 360, 100, 100);
+        strokeWeight(3);
+        noFill();
+        arc(0, 0, shapeSize * 2, shapeSize * 2, 0, 25);
+        noStroke();
+        pop();
+      }
+      pop();
+
+      // Switch color mode back to default for text
+      colorMode(RGB);
+
+      // Display digital clock
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(`${h}:${nf(m, 2)}:${nf(s, 2)}`, 5, 5);
+    }
+  </script>
+</body>
+</html>

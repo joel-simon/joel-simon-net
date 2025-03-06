@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Kaleidoscope Mandala</title>
+  <!-- p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Ensure page background is a neutral color */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* Reveal the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Kaleidoscope Mandala<br><br>
+        • Color palette changes with the HOUR.<br>
+        • Number of slices corresponds to the MINUTE.<br>
+        • Swirl speed changes with the SECOND.<br>
+        • Current time is displayed at the center.<br><br>
+        Hover away to see the animation in action.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let swirlRotation = 0;
+
+    function setup() {
+      const canvas = createCanvas(512, 512);
+      canvas.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(20);
+
+      // Gather time components
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // We will create a kaleidoscopic mandala by drawing repeated slices around the center
+      let sliceCount = max(m, 1);  // Ensure at least 1 slice
+      let sliceAngle = 360 / sliceCount;
+
+      // The color palette is based on hour, mapped to a total of 360 degrees in color space
+      let baseHue = map(h, 0, 23, 0, 360);
+
+      // Swirl speed is based on the current second
+      swirlRotation += map(s, 0, 59, 0.1, 1);
+
+      // Translate and rotate for the radial pattern
+      translate(width / 2, height / 2);
+      rotate(swirlRotation);
+
+      // Draw each segment
+      for (let i = 0; i < sliceCount; i++) {
+        push();
+        rotate(i * sliceAngle);
+
+        // We'll pick colors that shift across each slice
+        let hueVariation = baseHue + i * 2;
+        fill((hueVariation) % 360, 80, 80, 0.8);
+
+        // Draw a wedge shape
+        beginShape();
+        vertex(0, 0);
+        // Generate a curved shape in the wedge
+        for (let r = 0; r <= 100; r += 10) {
+          let xPos = r * 3 * cos(r + i * 4);
+          let yPos = r * 3 * sin(r + i * 4);
+          vertex(xPos, yPos);
+        }
+        vertex(0, 0);
+        endShape(CLOSE);
+
+        pop();
+      }
+
+      // Draw the clock text at the center
+      noStroke();
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(18);
+      rotate(-swirlRotation); // Counteract swirl so text doesn't rotate
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, 0, 0);
+    }
+  </script>
+</body>
+</html>

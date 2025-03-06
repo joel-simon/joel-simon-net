@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Hourglass</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center the page content and give a neutral background */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f7f7f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #444;
+      padding: 8px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 220px;
+      z-index: 1;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      This display is an hourglass visualization: 
+      • Top portion fills based on hours. 
+      • Bottom portion fills based on minutes.
+      • The swirling center shows seconds.
+    </div>
+  </div>
+
+  <script>
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      angleMode(RADIANS);
+    }
+
+    function draw() {
+      background(240);
+
+      let hr = hour() % 12;    // 0-11
+      let mn = minute();       // 0-59
+      let sc = second();       // 0-59
+
+      // Fractions of the hour, minute, and second
+      let hourFraction   = (hr + mn/60 + sc/3600) / 12; // 0 to 1
+      let minuteFraction = (mn + sc/60) / 60;          // 0 to 1
+      let secondFraction = sc / 60;                    // 0 to 1
+
+      // Draw the hourglass frame
+      push();
+      translate(w / 2, h / 2);
+
+      // Draw a simple hourglass outline
+      // Top ellipse, narrow waist, bottom ellipse
+      noFill();
+      strokeWeight(4);
+      stroke(80);
+
+      // Top ellipse
+      arc(0, -80, 180, 100, PI, 0);
+
+      // Lines from top ellipse to bottom ellipse
+      line(-90, -80, 0, 50); 
+      line(90,  -80, 0, 50);
+
+      // Bottom ellipse
+      arc(0, 50, 180, 100, 0, PI);
+
+      //----- Fill for the top portion (representing hours) -----
+      // We'll fill a portion of the top ellipse from the center.
+      noStroke();
+      fill(100, 150, 220, 200); 
+      let topMaxHeight = 50; // the max amount of "sand" up top
+      let hourSandHeight = hourFraction * topMaxHeight;
+      rectMode(CENTER);
+      rect(0, -80 + (topMaxHeight - hourSandHeight)/2, 178, hourSandHeight);
+
+      //----- Fill for the bottom portion (representing minutes) -----
+      // We'll fill a portion of the bottom ellipse from the center.
+      fill(220, 100, 150, 200);
+      let bottomMaxHeight = 50; // the max amount of "sand" below
+      let minuteSandHeight = minuteFraction * bottomMaxHeight;
+      rect(0, 50 - (bottomMaxHeight - minuteSandHeight)/2, 178, minuteSandHeight);
+
+      //----- Swirling center representing seconds -----
+      // We'll draw swirling arcs at the "waist" of the hourglass.
+      let swirlSize = map(secondFraction, 0, 1, 10, 40);
+      let swirlColor = lerpColor(color(255, 255, 180), color(255, 128, 0), secondFraction);
+
+      push();
+      translate(0, -15); // position swirl near the waist
+      stroke(swirlColor);
+      strokeWeight(3);
+      noFill();
+      rotate(frameCount * 0.03); // continuous rotation
+      for (let i = 0; i < 5; i++) {
+        rotate(PI / 5);
+        arc(0, 0, swirlSize, swirlSize, 0, PI + secondFraction * PI);
+      }
+      pop();
+
+      pop();
+
+      // Display digital time
+      fill(60);
+      noStroke();
+      textSize(24);
+      textAlign(CENTER, CENTER);
+      text(
+        nf(hour(), 2) + ':' + nf(minute(), 2) + ':' + nf(second(), 2),
+        width / 2,
+        height - 30
+      );
+    }
+  </script>
+</body>
+</html>

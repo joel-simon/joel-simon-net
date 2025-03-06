@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Swirling Particle Time Display</title>
+  <style>
+    /* Make the body fill the screen and center contents */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      height: 100vh;
+      width: 100vw;
+      display: grid;
+      place-items: center;
+    }
+
+    /* Container for tooltip instructions on hover */
+    .info-tip {
+      position: relative;
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      margin-bottom: 0.5em;
+      user-select: none;
+      cursor: pointer;
+    }
+
+    .info-content {
+      visibility: hidden;
+      width: 240px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      bottom: 130%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1;
+      font-size: 0.9em;
+      line-height: 1.4em;
+    }
+
+    .info-tip:hover .info-content {
+      visibility: visible;
+    }
+
+    /* Ensure the canvas is exactly 512x512 and no extra scrollbars appear */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="info-tip">
+    Hover for instructions
+    <div class="info-content">
+      This swirling particle system visualizes the current time: 
+      the hour sets the number of particles, the minute affects 
+      their rotation speed, and the second changes their colors.
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let swirl = [];
+
+    function setup() {
+      createCanvas(512, 512);
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100, 1);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      const h = hour();
+      const m = minute();
+      const s = second();
+
+      // Dynamically set the number of swirl particles based on the hour (24-hr format)
+      // Keep at least 10 particles so there's always something
+      const swirlCount = max((h + 1) * 10, 10);
+
+      // If the array size doesn't match swirlCount, rebuild it
+      if (swirl.length !== swirlCount) {
+        buildSwirl(swirlCount);
+      }
+
+      // Map minute to rotation speed
+      let speed = map(m, 0, 59, 0.5, 6);
+
+      // Use the second to shift color
+      let colorHue = map(s, 0, 59, 0, 360);
+
+      translate(width / 2, height / 2);
+      for (let i = 0; i < swirl.length; i++) {
+        let p = swirl[i];
+        // Each particle rotates around the center
+        let angle = frameCount * speed + p.angleOffset;
+        let x = p.r * cos(angle);
+        let y = p.r * sin(angle);
+
+        // Vary each particle's hue slightly so they don't all have the same color
+        let hueVar = (colorHue + p.hueOffset) % 360;
+        fill(hueVar, 80, 100, 0.8);
+        ellipse(x, y, p.size, p.size);
+      }
+    }
+
+    // Build a new swirl array of given count
+    function buildSwirl(count) {
+      swirl = [];
+      for (let i = 0; i < count; i++) {
+        swirl.push({
+          r: random(40, 200),              // distance from center
+          angleOffset: random(0, 360),     // each starts at a random angle
+          hueOffset: random(0, 100),       // small random shift in hue
+          size: random(5, 10)             // particle size
+        });
+      }
+    }
+  </script>
+</body>
+</html>

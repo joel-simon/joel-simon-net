@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Constellations</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: default;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.8);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to “Time Constellations”!<br><br>
+        • The background gradient shifts with the current hour.<br>
+        • The number and color of stars vary with hour and minute.<br>
+        • A subtle flicker effect corresponds to the passing seconds.<br><br>
+        Hover away to return to the animation.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let stars = [];
+    let totalStars = 50; // will adjust based on hour
+    let flickerAmount = 75; // the range in which stars flicker
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      noStroke();
+      colorMode(HSB);
+
+      // Initialize some default stars
+      for (let i = 0; i < totalStars; i++) {
+        stars.push(new Star());
+      }
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // 1) Background gradient changes based on hour
+      // Map hour to a hue range for top and bottom
+      let topHue = (h * 15) % 360;
+      let bottomHue = (topHue + 40) % 360;
+
+      for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        let c = lerpColor(color(topHue, 100, 25), color(bottomHue, 100, 25), inter);
+        stroke(c);
+        line(0, y, width, y);
+      }
+      noStroke();
+
+      // 2) Adjust total stars based on hour (e.g. hour*4 + 20 ensures a range of stars)
+      let desiredStars = h * 4 + 20;
+      while (stars.length < desiredStars) {
+        stars.push(new Star());
+      }
+      while (stars.length > desiredStars && stars.length > 0) {
+        stars.pop();
+      }
+
+      // 3) Update and draw stars
+      // Star color influenced by minute; flicker by second
+      stars.forEach(star => {
+        star.update(m, s);
+        star.show();
+      });
+
+      // 4) Display a small digital clock
+      fill(0, 0, 100);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hh = nf(h, 2);
+      let mm = nf(m, 2);
+      let ss = nf(s, 2);
+      text(`${hh}:${mm}:${ss}`, width / 2, height - 20);
+    }
+
+    class Star {
+      constructor() {
+        this.x = random(width);
+        this.y = random(height);
+        this.baseSize = random(1, 3);
+        this.size = this.baseSize;
+        this.cHue = random(360); // random hue at start
+      }
+
+      update(m, s) {
+        // Flicker effect changes the star's size slightly
+        // The second influences how strong the flicker can be
+        let flickFactor = map(s, 0, 59, 0, flickerAmount) * 0.01;
+        this.size = this.baseSize + random(-flickFactor, flickFactor);
+
+        // Star color: hue shifts slightly based on the minute
+        this.cHue = (this.cHue + (m * 0.01)) % 360;
+      }
+
+      show() {
+        fill(this.cHue, 80, 100);
+        circle(this.x, this.y, this.size * 2);
+      }
+    }
+  </script>
+</body>
+</html>

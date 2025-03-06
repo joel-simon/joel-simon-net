@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Tapestry Fusion Maze</title>
+  <style>
+    /* Page setup for a 512x512 display */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Canvas container to ensure exact 512x512 area */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: auto;
+      overflow: hidden;
+      background-color: #000;
+    }
+
+    /* Instructions overlay hidden by default, appears on hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: none;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Tapestry Fusion Maze</strong><br><br>
+        • Hour changes the maze layout.<br>
+        • Minute influences the fractal swirl's branching.<br>
+        • Second animates fish color shifts.<br>
+        • Use arrow keys to move the explorer dot.<br>
+        Hover away to see the animation.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    // Canvas dimensions
+    const w = 512;
+    const h = 512;
+
+    // Maze variables
+    let mazeCols = 12;
+    let mazeRows = 12;
+    let cellSize;
+    let mazeGrid = [];
+    
+    // Explorer position
+    let explorer = {col: 0, row: 0};
+    
+    // Wave animation offset
+    let waveOffset = 0;
+
+    // Fish array
+    let fishList = [];
+    let fishCount = 6;
+
+    // For fractal swirl
+    let swirlSegments = 3; // base swirl segments
+    let swirlAngle = 45;   // will be updated by time
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      cellSize = floor(width / mazeCols);
+
+      // Generate initial maze
+      generateMaze();
+
+      // Initialize fishes
+      initFishes();
+    }
+
+    function draw() {
+      background(30);
+
+      // Time-based values
+      let hr = hour();     // 0-23
+      let mn = minute();   // 0-59
+      let sc = second();   // 0-59
+
+      // 1) Wave background
+      drawWave(hr);
+
+      // 2) Maze (regenerate each hour)
+      if (frameCount % 60 === 0 && hour() !== hr) {
+        // Only regenerate if hour changes, but for the example,
+        // we'll check it every second in code here. In a real scenario,
+        // you'd compare stored hour vs current hour.
+        generateMaze();
+      }
+      drawMaze();
+
+      // 3) Explorer movement
+      drawExplorer();
+
+      // 4) Fractal swirl at center (branch angle depends on minute)
+      swirlAngle = map(mn, 0, 59, 20, 90);
+      push();
+      translate(width / 2, height / 2);
+      drawFractalSwirl();
+      pop();
+
+      // 5) Animated fish (color shifts with second)
+      updateFishes(sc);
+      drawFishes();
+
+      // 6) Display digital time in top-left corner
+      displayTime(hr, mn, sc);
+    }
+
+    /* ===================== Maze Section ===================== */
+
+    // Maze cell structure
+    class Cell {
+      constructor(c, r) {
+        this.c = c;
+        this.r = r;
+        // Walls: top, right, bottom, left
+        this.walls = [true, true, true, true];
+        this.visited = false;
+      }
+    }
+
+    function generateMaze() {
+      // Rebuild the grid
+      mazeGrid = [];
+      for (let r = 0; r < mazeRows; r++) {
+        let rowArray = [];
+        for (let c = 0; c < mazeCols; c++) {
+          rowArray.push(new Cell(c, r));
+        }
+        mazeGrid.push(rowArray);
+      }
+
+      // Reset explorer to top-left
+      explorer.col = 0;
+      explorer.row = 0;
+
+      // Simple depth-first search to carve the maze
+      let stack = [];
+      let current = mazeGrid[0][0];
+      current.visited = true;
+      stack.push(current);
+
+      while (stack.length > 0) {
+        let neighbors = getUnvisitedNeighbors(current);
+        if (neighbors.length > 0) {
+          let next = random(neighbors);
+          removeWalls(current, next);
+          next.visited = true;
+          stack.push(current);
+          current = next;
+        } else {
+          current = stack.pop();
+        }
+      }
+    }
+
+    function getUnvisitedNeighbors(cell) {
+      let neighbors = [];
+      let {c, r} = cell;
+
+      if (r > 0 && !mazeGrid[r-1][c].visited) {
+        neighbors.push(mazeGrid[r-1][c]);
+      }
+      if (c < mazeCols - 1 && !mazeGrid[r][c+1].visited) {
+        neighbors.push(mazeGrid[r][c+1]);
+      }
+      if (r < mazeRows - 1 && !mazeGrid[r+1][c].visited) {
+        neighbors.push(mazeGrid[r+1][c]);
+      }
+      if (c > 0 && !mazeGrid[r][c-1].visited) {
+        neighbors.push(mazeGrid[r][c-1]);
+      }
+      return neighbors;
+    }
+
+    function removeWalls(a, b) {
+      let x = a.c - b.c;
+      let y = a.r - b.r;
+
+      // Left or right
+      if (x === 1) {
+        a.walls[3] = false;
+        b.walls[1] = false;
+      } else if (x === -1) {
+        a.walls[1] = false;
+        b.walls[3] = false;
+      }
+      // Up or down
+      if (y === 1) {
+        a.walls[0] = false;
+        b.walls[2] = false;
+      } else if (y === -1) {
+        a.walls[2] = false;
+        b.walls[0] = false;
+      }
+    }
+
+    function drawMaze() {
+      stroke(255);
+      strokeWeight(2);
+      noFill();
+      for (let r = 0; r < mazeRows; r++) {
+        for (let c = 0; c < mazeCols; c++) {
+          let cell = mazeGrid[r][c];
+          let x1 = c * cellSize;
+          let y1 = r * cellSize;
+          // top
+          if (cell.walls[0]) line(x1, y1, x1 + cellSize, y1);
+          // right
+          if (cell.walls[1]) line(x1 + cellSize, y1, x1 + cellSize, y1 + cellSize);
+          // bottom
+          if (cell.walls[2]) line(x1, y1 + cellSize, x1 + cellSize, y1 + cellSize);
+          // left
+          if (cell.walls[3]) line(x1, y1, x1, y1 + cellSize);
+        }
+      }
+    }
+
+    function drawExplorer() {
+      fill(255, 100, 100);
+      noStroke();
+      ellipse(
+        explorer.col * cellSize + cellSize / 2,
+        explorer.row * cellSize + cellSize / 2,
+        cellSize * 0.5
+      );
+    }
+
+    function keyPressed() {
+      if (keyCode === LEFT_ARROW) moveExplorer(-1, 0);
+      else if (keyCode === RIGHT_ARROW) moveExplorer(1, 0);
+      else if (keyCode === UP_ARROW) moveExplorer(0, -1);
+      else if (keyCode === DOWN_ARROW) moveExplorer(0, 1);
+    }
+
+    function moveExplorer(dc, dr) {
+      let currentCell = mazeGrid[explorer.row][explorer.col];
+      // Check walls
+      if (dc === -1 && !currentCell.walls[3]) explorer.col = max(explorer.col - 1, 0); // left
+      if (dc === 1 && !currentCell.walls[1]) explorer.col = min(explorer.col + 1, mazeCols - 1); // right
+      if (dr === -1 && !currentCell.walls[0]) explorer.row = max(explorer.row - 1, 0); // up
+      if (dr === 1 && !currentCell.walls[2]) explorer.row = min(explorer.row + 1, mazeRows - 1); // down
+    }
+
+    /* ===================== Wave Background ===================== */
+
+    function drawWave(hr) {
+      noStroke();
+      fill(60, 80, 130);
+      waveOffset += 0.02;
+
+      // Amplitude changes with hour (0-23 => 0-11 for simpler wave changes)
+      let amplitude = map(hr % 12, 0, 11, 10, 50);
+
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 5) {
+        let y = height - 60 + sin(x * 0.02 + waveOffset) * amplitude;
+        vertex(x, y);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+    }
+
+    /* ===================== Fractal Swirl ===================== */
+
+    function drawFractalSwirl() {
+      for (let i = 0; i < swirlSegments; i++) {
+        push();
+        rotate((frameCount + i * 60) % 360);
+        fractalBranch(40, swirlAngle, 3);
+        pop();
+      }
+    }
+
+    function fractalBranch(length, angle, depth) {
+      if (depth <= 0) return;
+      stroke(220);
+      strokeWeight(1.5);
+      line(0, 0, length, 0);
+
+      push();
+      translate(length, 0);
+      rotate(angle);
+      fractalBranch(length * 0.7, angle, depth - 1);
+      pop();
+
+      push();
+      translate(length, 0);
+      rotate(-angle);
+      fractalBranch(length * 0.7, angle, depth - 1);
+      pop();
+    }
+
+    /* ===================== Fish Section ===================== */
+    
+    function initFishes() {
+      for (let i = 0; i < fishCount; i++) {
+        fishList.push({
+          x: random(0, width),
+          y: random(height * 0.5, height - 40),
+          speed: random(1, 2),
+          size: random(15, 25)
+        });
+      }
+    }
+
+    function updateFishes(sc) {
+      for (let f of fishList) {
+        f.x += f.speed;
+        if (f.x > width + 20) {
+          f.x = -20;
+          f.y = random(height * 0.5, height - 40);
+        }
+      }
+    }
+
+    function drawFishes() {
+      for (let f of fishList) {
+        // Color shifts with second
+        let hueVal = map(second(), 0, 59, 0, 360);
+        push();
+        noStroke();
+        colorMode(HSB);
+        fill(hueVal, 100, 200);
+        ellipse(f.x, f.y, f.size * 2, f.size); // Fish body
+        // Tail
+        triangle(f.x - f.size, f.y, f.x - f.size - 10, f.y - 5, f.x - f.size - 10, f.y + 5);
+        pop();
+      }
+    }
+
+    /* ===================== Display Time ===================== */
+
+    function displayTime(hr, mn, sc) {
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let dispHour = (hr % 12 === 0) ? 12 : hr % 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      text(`${dispHour}:${nf(mn,2)}:${nf(sc,2)} ${ampm}`, 10, 10);
+    }
+  </script>
+</body>
+</html>

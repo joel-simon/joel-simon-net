@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cosmic Wave Time</title>
+  <style>
+    /* Basic reset and layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Tooltip container */
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+
+    /* Tooltip text hidden by default */
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 240px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      z-index: 1;
+      left: 50%;
+      bottom: 110%;
+      transform: translateX(-50%);
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+
+    /* Show tooltip text on hover */
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+    }
+
+    /* Fixed 512x512 region for the p5 canvas */
+    #p5sketch {
+      width: 512px;
+      height: 512px;
+      background: #000; /* fallback background */
+    }
+  </style>
+</head>
+<body>
+  <div class="tooltip">
+    <div id="p5sketch"></div>
+    <div class="tooltiptext">
+      Welcome to Cosmic Wave Time!<br><br>
+      • The wave’s amplitude is linked to the hour<br>
+      • Its frequency is tied to the current minute<br>
+      • Its phase shifts with seconds<br>
+      • Three orbiting circles represent hours, minutes, and seconds
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let canvasSize = 512;
+
+    function setup() {
+      createCanvas(canvasSize, canvasSize).parent('p5sketch');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour() % 12;    // 0-11
+      let m = minute();       // 0-59
+      let s = second();       // 0-59
+
+      // Draw the time wave in background
+      push();
+      strokeWeight(2);
+      noFill();
+      stroke(160, 100, 255);
+      beginShape();
+      for (let x = 0; x < width; x++) {
+        // Wave amplitude scales with hour (up to 11 for 12-hour clock)
+        let amplitude = map(h, 0, 12, 20, 80);
+        // Frequency influenced by minute
+        let freq = map(m, 0, 60, 0.01, 0.1);
+        // Phase shift by seconds
+        let phaseShift = map(s, 0, 60, 0, TWO_PI);
+
+        let y = height / 2 + amplitude * sin(freq * x + phaseShift);
+        vertex(x, y);
+      }
+      endShape();
+      pop();
+
+      // Translate and draw orbiting circles
+      push();
+      translate(width / 2, height / 2);
+      noStroke();
+
+      // Central "star"
+      fill(255, 200, 0);
+      ellipse(0, 0, 30, 30);
+
+      // Hours orbiter
+      push();
+      let hourAngle = map(h, 0, 12, 0, 360);
+      rotate(hourAngle + frameCount * 0.2); // slow rotation
+      translate(100, 0);
+      fill(255, 100, 100);
+      ellipse(0, 0, 20, 20);
+      pop();
+
+      // Minutes orbiter
+      push();
+      let minuteAngle = map(m, 0, 60, 0, 360);
+      rotate(minuteAngle + frameCount * 0.5); // medium rotation
+      translate(150, 0);
+      fill(100, 255, 100);
+      ellipse(0, 0, 14, 14);
+      pop();
+
+      // Seconds orbiter
+      push();
+      let secondAngle = map(s, 0, 60, 0, 360);
+      rotate(secondAngle + frameCount * 2); // faster rotation
+      translate(200, 0);
+      fill(100, 100, 255);
+      ellipse(0, 0, 10, 10);
+      pop();
+
+      pop();
+    }
+  </script>
+</body>
+</html>

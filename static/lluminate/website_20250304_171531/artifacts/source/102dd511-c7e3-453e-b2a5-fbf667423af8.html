@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Ribbon</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center the page content and give a neutral background */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #e8e8e8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #444;
+      padding: 8px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 240px;
+      z-index: 1;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="canvasContainer">
+    <div class="tooltip">
+      A swirling ribbon representing hours, minutes, and seconds. Watch the shape and colors shift as time changes.
+    </div>
+  </div>
+
+  <script>
+    let angleOffset = 0.0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512, WEBGL);
+      cnv.parent('canvasContainer');
+      noStroke();
+    }
+
+    function draw() {
+      // Grab current time
+      let hr = hour();    // 0 - 23
+      let mn = minute();  // 0 - 59
+      let sc = second();  // 0 - 59
+
+      // Map background color to minute
+      let bg = map(mn, 0, 59, 0, 255);
+      background(bg, bg, 255 - bg);
+
+      // Map hour, minute, second for the ribbon
+      // We'll let the radius and color shift with time
+      let ribbonRadius = map(hr, 0, 23, 50, 150) + 20 * sin(frameCount * 0.02);
+      let sections = 120;
+
+      // Ribbon rotation changes with seconds
+      rotateY(radians(sc * 6) + angleOffset);
+      rotateX(radians(mn * 3) * 0.3);
+
+      // Generate the ribbon using triangle strips for 3D effect
+      // We'll loop around a circle (angle from 0..TWO_PI) 
+      // and extrude in the Z direction to form a helical ribbon
+      beginShape(TRIANGLE_STRIP);
+
+      for (let i = 0; i <= sections; i++) {
+        let theta = map(i, 0, sections, 0, TWO_PI);
+        let x = ribbonRadius * cos(theta);
+        let y = ribbonRadius * sin(theta);
+        let zOff = map(i, 0, sections, -100, 100);
+        
+        // Color shifts slightly with the position and time
+        let r = map(hr, 0, 23, 50, 255) + 50 * sin(theta + frameCount * 0.01);
+        let g = map(sc, 0, 59, 50, 255) + 50 * cos(theta + frameCount * 0.01);
+        let b = map(mn, 0, 59, 50, 255);
+
+        fill(r % 256, g % 256, b % 256);
+
+        // One point of the strip
+        vertex(x, y, zOff * 1.2);
+
+        // Slightly smaller radius for the second point,
+        // creating thickness in the ribbon
+        let x2 = (ribbonRadius * 0.8) * cos(theta);
+        let y2 = (ribbonRadius * 0.8) * sin(theta);
+        vertex(x2, y2, zOff * 1.2 + 5);
+      }
+      endShape();
+
+      // Slowly shift angle offset for a continuous swirl
+      angleOffset += 0.01;
+
+      // Show the current time in the lower area
+      push();
+      translate(0, 180, 0);
+      rotateX(-radians(mn * 3) * 0.3);
+      rotateY(-radians(sc * 6) - angleOffset);
+      fill(20);
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      text(nf(hr,2) + ":" + nf(mn,2) + ":" + nf(sc,2), 0, 0);
+      pop();
+    }
+  </script>
+</body>
+</html>

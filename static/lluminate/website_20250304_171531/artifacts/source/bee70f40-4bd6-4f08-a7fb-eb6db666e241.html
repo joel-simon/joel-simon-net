@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Origami</title>
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      overflow: hidden;
+    }
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.75);
+      cursor: default;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Origami<br><br>
+        • The star shape folds and unfolds based on the hour.<br>
+        • It gradually rotates with the minute.<br>
+        • Its color shifts with the seconds.<br><br>
+        Hover away to watch it evolve in real time!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(20);
+      translate(width / 2, height / 2);
+
+      // Get time values
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Map time to parameters
+      // "Fold" scale based on hour
+      let fold = map(h % 12, 0, 12, 0, 100) + 20;
+
+      // Rotation becomes more pronounced with minutes
+      let rot = map(m, 0, 59, 0, 360);
+
+      // Color influenced by seconds
+      let r = map(s, 0, 59, 100, 255);
+      let g = map(s, 0, 59, 200, 50);
+      let b = map(s, 0, 59, 50, 200);
+
+      rotate(rot);
+
+      fill(r, g, b);
+      beginShape();
+      let points = 12; // star-like shape
+      for (let i = 0; i < points; i++) {
+        let angle = map(i, 0, points, 0, 360);
+        // Alternate inner and outer radius to create star-like folds
+        let radius = (i % 2 == 0) ? fold : fold / 2;
+        let x = radius * cos(angle);
+        let y = radius * sin(angle);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+
+      // Optionally, display the time in the corner
+      resetMatrix();
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(16);
+      text(nf(h,2) + ":" + nf(m,2) + ":" + nf(s,2), width / 2, height - 20);
+    }
+  </script>
+</body>
+</html>

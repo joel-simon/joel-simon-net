@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Kaleidoscope</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the “Time Kaleidoscope”!<br><br>
+        • Watch the canvas fill with mirrored shapes.<br>
+        • The number of slices depends on the hour.<br>
+        • Colors shift with minute & second.<br><br>
+        Hover away to return to the animation.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let sliceCount;
+    let lastSecondDrawn = -1;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(RADIANS);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // The number of kaleidoscope slices depends on the hour
+      sliceCount = (h % 12) + 3; // Range: 3..14 slices
+
+      // Update visuals each second
+      // We'll draw some shapes only once per second, then replicate them.
+      if (s !== lastSecondDrawn) {
+        // We draw random designs in a wedge of the screen
+        drawInWedge(h, m, s);
+        lastSecondDrawn = s;
+      }
+
+      // 2) Replicate wedge around center to form kaleidoscope
+      let wedgeAngle = TWO_PI / sliceCount;
+      let wedgeImg = get(0, 0, width / 2, height); // Grab the left half of the canvas
+      push();
+      translate(width / 2, height / 2);
+      for (let i = 0; i < sliceCount; i++) {
+        push();
+        // Place each wedge by rotating around center
+        rotate(i * wedgeAngle);
+        // Mirror every other wedge for a kaleidoscope effect
+        if (i % 2 === 0) {
+          scale(-1, 1);
+        }
+        // Draw the wedge image so that left half is placed in the wedge
+        imageMode(CENTER);
+        image(wedgeImg, 0, 0, width, height);
+        pop();
+      }
+      pop();
+
+      // 3) Small text clock at the bottom
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      text(nf(h,2) + ":" + nf(m,2) + ":" + nf(s,2), width / 2, height - 20);
+    }
+
+    // Draw random shapes into the left half of the canvas
+    function drawInWedge(h, m, s) {
+      // Clip drawing region to the left half
+      push();
+      noStroke();
+      rectMode(CORNER);
+      fill(0);
+      rect(0, 0, width / 2, height); // clear that region
+
+      // We'll generate a few random shapes; color depends on minute/second
+      let shapesCount = 5 + int(random(5)); // vary how many shapes appear
+      for (let i = 0; i < shapesCount; i++) {
+        let x = random(width / 2);
+        let y = random(height);
+        let size = random(10, 80);
+
+        // Color influenced by minute & second
+        colorMode(HSB);
+        fill((m * 6 + s * 2 + i * 10) % 360, 70 + random(30), 90);
+        colorMode(RGB);
+
+        switch(int(random(3))) {
+          case 0:
+            ellipse(x, y, size, size);
+            break;
+          case 1:
+            rect(x, y, size, size);
+            break;
+          case 2:
+            // Triangles
+            triangle(x, y, x + size, y, x + size/2, y - size);
+            break;
+        }
+      }
+      pop();
+    }
+  </script>
+</body>
+</html>

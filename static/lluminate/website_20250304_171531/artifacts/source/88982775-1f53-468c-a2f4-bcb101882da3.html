@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Celestial Lotus Time Bloom</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Base page styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+    /* 512x512 container centered, ensures hover overlay is confined */
+    #combinedTimeDisplay {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+    }
+    /* Hover overlay for instructions */
+    #hoverInstructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background-color: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding: 2rem;
+      box-sizing: border-box;
+    }
+    #combinedTimeDisplay:hover #hoverInstructions {
+      display: block;
+    }
+    /* Center the instructions message */
+    #instructionsText {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+<div id="combinedTimeDisplay">
+  <div id="hoverInstructions">
+    <div id="instructionsText">
+      <strong>Celestial Lotus Time Bloom</strong><br><br>
+      • Each hour unfolds or closes the lotus petals.<br>
+      • The minutes change petal colors.<br>
+      • Seconds animate the cosmic swirl in the background.<br>
+      • Move the mouse to shift the swirling backdrop.<br>
+      • Enjoy the ever-blooming cosmic lotus!
+    </div>
+  </div>
+</div>
+
+<script>
+  /*
+   Celestial Lotus Time Bloom
+   - A visually dynamic lotus whose petal spread changes with the hour.
+   - Petal colors vary with the minute.
+   - A swirling cosmic backdrop expands with the seconds and tracks mouse movement.
+   - A minimal time display in the corner.
+  */
+
+  const CANVAS_SIZE = 512;
+
+  function setup() {
+    let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+    cnv.parent("combinedTimeDisplay");
+    angleMode(DEGREES);
+    noStroke();
+  }
+
+  function draw() {
+    background(0);
+
+    let hr = hour();
+    let mn = minute();
+    let sc = second();
+
+    // Draw swirling cosmic background
+    push();
+    translate(width/2, height/2);
+    let swirlCount = map(sc, 0, 59, 20, 100);
+    for (let i = 0; i < swirlCount; i++) {
+      let swirlAngle = i * (360 / swirlCount) + frameCount * 0.1;
+      let swirlRadius = 150 + (mn * 0.5);
+      let x = swirlRadius * cos(swirlAngle + (mouseX * 0.02));
+      let y = swirlRadius * sin(swirlAngle + (mouseY * 0.02));
+      fill(150 + i, 50, 200, 100);
+      ellipse(x, y, 5, 5);
+    }
+    pop();
+
+    // Draw the lotus
+    drawLotus(hr, mn);
+
+    // Time text
+    fill(255);
+    textSize(18);
+    textAlign(LEFT, TOP);
+    text(`${nf(hr,2)}:${nf(mn,2)}:${nf(sc,2)}`, 10, 10);
+  }
+
+  /*
+    drawLotus:
+    - The number of petals is fixed, but each petal's spread is determined by hour.
+    - Petal colors shift with minute.
+  */
+  function drawLotus(hr, mn) {
+    push();
+    translate(width/2, height/2);
+
+    let petalCount = 12;
+    let maxSpread = 90;  // maximum angle spread for each petal
+    let spread = map(hr % 12, 0, 11, 0, maxSpread); 
+    let petalColor = color(map(mn, 0, 59, 0, 360), 80, 80);
+
+    colorMode(HSB);
+    fill(petalColor);
+    noStroke();
+
+    for (let i = 0; i < petalCount; i++) {
+      push();
+      rotate((360 / petalCount) * i);
+      // Draw a petal as a shape
+      beginShape();
+      vertex(0, 0);
+      quadraticVertex(spread * 0.1, -spread * 1.2, 0, -spread * 2);
+      quadraticVertex(-spread * 0.1, -spread * 1.2, 0, 0);
+      endShape(CLOSE);
+      pop();
+    }
+
+    // Center circle
+    fill(map(mn, 0, 59, 0, 360), 60, 100);
+    circle(0, 0, 20);
+    pop();
+  }
+</script>
+</body>
+</html>

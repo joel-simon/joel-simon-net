@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Orbital Display</title>
+  <style>
+    /* Ensure no scrollbars & no page margin */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #ddd;
+    }
+    /* Container is positioned to hold a 512x512 canvas */
+    #container {
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      position: relative;
+    }
+    /* Overlay for hover instructions */
+    #hover-info {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #container:hover #hover-info {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="hover-info">
+      <p>
+        Each orbit corresponds to hours, minutes, and seconds around the central star. 
+        Watch how the planets and their speeds change to reflect the real time. 
+        Move your mouse away to start the cosmic dance!
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    const canvasSize = 512;
+    let centerX, centerY;
+    
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent('container');
+      angleMode(DEGREES); // Easier for hour/minute angles
+      centerX = width / 2;
+      centerY = height / 2;
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      // Get current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      push();
+      translate(centerX, centerY);
+
+      // Draw the central star
+      fill(255, 204, 0);
+      ellipse(0, 0, 50, 50);
+
+      // Calculate angles for hour, minute, second "planets"
+      // Map hours (0-23) to a full revolution => we use e.g. 0-360
+      // But to add some variety, let's use (h % 12) also
+      let hourAngle = map(h % 12, 0, 12, 0, 360) - 90;
+      let minuteAngle = map(m, 0, 60, 0, 360) - 90;
+      let secondAngle = map(s, 0, 60, 0, 360) - 90;
+
+      // Orbit radius
+      let hourOrbit = 80;
+      let minuteOrbit = 120;
+      let secondOrbit = 160;
+
+      // Hour planet
+      push();
+      rotate(hourAngle);
+      fill(150, 150, 255);
+      ellipse(hourOrbit, 0, 20);
+      pop();
+
+      // Minute planet
+      push();
+      rotate(minuteAngle);
+      fill(150, 255, 150);
+      ellipse(minuteOrbit, 0, 15);
+      pop();
+
+      // Second planet
+      push();
+      rotate(secondAngle);
+      fill(255, 100, 100);
+      ellipse(secondOrbit, 0, 10);
+      pop();
+
+      pop(); // end center translate
+
+      // Draw subtle orbital paths
+      noFill();
+      stroke(80);
+      strokeWeight(1);
+      ellipse(centerX, centerY, hourOrbit * 2);
+      ellipse(centerX, centerY, minuteOrbit * 2);
+      ellipse(centerX, centerY, secondOrbit * 2);
+
+      // Show the numeric time near bottom
+      noStroke();
+      fill(200);
+      textAlign(CENTER);
+      textSize(20);
+      text(
+        nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2),
+        centerX, 
+        height - 20
+      );
+    }
+  </script>
+</body>
+</html>

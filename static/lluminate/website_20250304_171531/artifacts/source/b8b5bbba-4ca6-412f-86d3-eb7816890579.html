@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Combined Interactive Time Display</title>
+  <style>
+    /* Page defaults */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+    }
+
+    /* Container to hold the 512x512 canvas */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    /* Hover overlay for instructions */
+    #hover-instructions {
+      pointer-events: none;
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      box-sizing: border-box;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-size: 16px;
+      padding: 20px;
+    }
+
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      text-align: center;
+      transform: translate(-50%, -50%);
+      line-height: 1.5em;
+    }
+
+    /* Ensure p5 canvas is fixed at 512x512 and centered */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        This creative time display combines multiple concepts: 
+        • A wave in the background changes color and frequency based on minutes. 
+        • A fractal tree grows from the center according to hours. 
+        • A rotating star morphs with the passing seconds. 
+        Hover to see these instructions again!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let myCanvas = createCanvas(w, h);
+      myCanvas.parent('canvas-container');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour() % 12;
+      let mn = minute();
+      let sc = second();
+
+      // Draw a wave that changes with minutes
+      let waveFreq = map(mn, 0, 60, 0.01, 0.2);
+      let waveColor = color(map(mn, 0, 60, 50, 255), map(sc, 0, 60, 50, 150), 200);
+      drawWave(waveFreq, waveColor);
+
+      // Draw a fractal tree that grows based on current hour
+      push();
+      translate(width / 2, height / 2 + 120);
+      stroke(255);
+      fractalTree(map(hr, 0, 12, 1, 5), 80);
+      pop();
+
+      // Draw a rotating star that changes based on seconds
+      push();
+      translate(width / 2, height / 2);
+      let rotationSpeed = map(sc, 0, 60, 0, 360);
+      rotate(rotationSpeed);
+      let starColor = color(255, map(sc, 0, 60, 120, 255), 0);
+      fill(starColor);
+      stroke(starColor);
+      let points = map(hr, 0, 12, 5, 12);
+      drawStar(0, 0, 20, 50, points);
+      pop();
+
+      // Digital time display
+      fill(255);
+      noStroke();
+      textSize(18);
+      textAlign(LEFT, TOP);
+      text(nf(hour(),2) + ":" + nf(mn,2) + ":" + nf(sc,2), 10, 10);
+    }
+
+    // Draw a simple sine wave from left to right
+    function drawWave(freq, col) {
+      fill(col);
+      noStroke();
+      beginShape();
+      vertex(0, h);
+      for (let x = 0; x <= w; x += 5) {
+        let yOff = 40 * sin(freq * (frameCount + x));
+        let y = h/2 + yOff;
+        vertex(x, y);
+      }
+      vertex(w, h);
+      endShape(CLOSE);
+    }
+
+    // Recursive fractal tree
+    function fractalTree(levels, branchLength) {
+      if (levels === 0) {
+        return;
+      }
+      line(0, 0, 0, -branchLength);
+      translate(0, -branchLength);
+      push();
+      rotate(30);
+      fractalTree(levels - 1, branchLength * 0.7);
+      pop();
+      push();
+      rotate(-30);
+      fractalTree(levels - 1, branchLength * 0.7);
+      pop();
+    }
+
+    // Draw a star
+    function drawStar(x, y, radius1, radius2, npoints) {
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2.0;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

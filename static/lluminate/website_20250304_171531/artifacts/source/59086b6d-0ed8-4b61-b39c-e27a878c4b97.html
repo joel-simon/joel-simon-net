@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Tapestry Polygons</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Fixed 512x512 container */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+      cursor: default;
+    }
+
+    /* Show the overlay text on container hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Tapestry Polygons<br><br>
+        • Each rotating shape’s color, size, and position is influenced by hour, minute, second.<br>
+        • Move your mouse inside the canvas to push shapes away from the pointer.<br>
+        • Hover here anytime for instructions. Enjoy!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /* 
+      This sketch creates an evolving "Time Tapestry" of polygons.
+      Each polygon's rotation, color, and size depend on the current time.
+      The user can move the mouse to displace the polygons, creating a swirling effect.
+    */
+
+    let polygons = [];       // Array to store all polygons
+    let maxPolygons = 12;    // Maximum number of polygons on screen
+    let lastTimeCheck = -1;  // For reconfiguring each second
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      noStroke();
+      angleMode(DEGREES);
+      initPolygons();
+    }
+
+    function draw() {
+      background(0);
+
+      // Current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Re-configure polygons if a second has changed
+      if (s !== lastTimeCheck) {
+        updatePolygons(h, m, s);
+        lastTimeCheck = s;
+      }
+
+      // Draw each polygon
+      for (let poly of polygons) {
+        poly.update();
+        poly.display();
+      }
+
+      // Overlay clock text at the bottom
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(16);
+      let timeString = nf(h,2) + ":" + nf(m,2) + ":" + nf(s,2);
+      text(timeString, width / 2, height - 20);
+    }
+
+    // Initialize polygons with random positions
+    function initPolygons() {
+      polygons = [];
+      for (let i = 0; i < maxPolygons; i++) {
+        polygons.push(new TimePolygon(random(width), random(height)));
+      }
+    }
+
+    // Update polygons' time-dependent properties
+    // e.g. number of sides, color, size, rotation speed
+    function updatePolygons(h, m, s) {
+      for (let i = 0; i < polygons.length; i++) {
+        let poly = polygons[i];
+
+        // Base polygon sides on hour (limit 3 to 10 sides)
+        poly.sides = map(h % 12, 0, 11, 3, 10);
+
+        // Size depends on minute
+        poly.size = map(m, 0, 59, 30, 120);
+
+        // Rotation speed depends on second (plus a small random factor)
+        poly.rotationSpeed = map(s, 0, 59, -2, 2) + random(-0.5, 0.5);
+
+        // Color based on current second as well
+        let r = map(s, 0, 59, 100, 255);
+        let g = map(m, 0, 59, 80, 200);
+        let b = map(h, 0, 23, 100, 255);
+        poly.col = color(r, g, b);
+      }
+    }
+
+    // Custom polygon class
+    class TimePolygon {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.sides = 5;
+        this.size = 50;
+        this.rotation = 0;
+        this.rotationSpeed = 1;
+        this.col = color(255);
+      }
+
+      update() {
+        // Rotate
+        this.rotation += this.rotationSpeed;
+
+        // Displacement from mouse
+        let force = 70; // how strongly polygons repel from the mouse
+        let d = dist(mouseX, mouseY, this.x, this.y);
+        if (d < 100) {
+          let angle = atan2(this.y - mouseY, this.x - mouseX);
+          this.x += cos(angle) * force / d;
+          this.y += sin(angle) * force / d;
+        }
+
+        // Slight boundary push to keep polygons mostly in screen
+        if (this.x < 0) this.x = 0;
+        if (this.x > width) this.x = width;
+        if (this.y < 0) this.y = 0;
+        if (this.y > height) this.y = height;
+      }
+
+      display() {
+        push();
+        translate(this.x, this.y);
+        rotate(this.rotation);
+        fill(this.col);
+        beginShape();
+        for (let i = 0; i < this.sides; i++) {
+          let angle = map(i, 0, this.sides, 0, 360);
+          let vx = cos(angle) * this.size;
+          let vy = sin(angle) * this.size;
+          vertex(vx, vy);
+        }
+        endShape(CLOSE);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

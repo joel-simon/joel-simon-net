@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time City Skyline</title>
+  <style>
+    /* Basic resets and layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas */
+    #p5sketch-container {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Instructions overlay, hidden by default */
+    .instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-size: 14px;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 1em;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #p5sketch-container:hover .instructions {
+      display: flex;
+    }
+
+    /* Cursor hint for interactivity */
+    #p5sketch-container:hover {
+      cursor: help;
+    }
+  </style>
+</head>
+<body>
+  <div id="p5sketch-container">
+    <div class="instructions">
+      <strong>HOW THIS DISPLAYS TIME:</strong><br><br>
+      • SKY COLOR changes with the HOUR.<br>
+      • The NUMBER OF LIT WINDOWS is linked to the MINUTE.<br>
+      • WINDOWS randomly FLICKER each SECOND.<br><br>
+      Hover away to hide instructions.
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    const numBuildings = 6;    // Number of buildings
+    let buildings = [];        // Holds building data (x, width, height, window positions)
+    let lastSecond;
+    let litWindowsCount = 0;
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('p5sketch-container');
+      rectMode(CORNER);
+      noStroke();
+
+      // Initialize buildings with randomness
+      // Each building has x position, building width, height, and an array of possible window coordinates
+      let totalWidth = width;
+      let buildingWidth = totalWidth / numBuildings;
+
+      for (let i = 0; i < numBuildings; i++) {
+        const bldX = i * buildingWidth;
+        const bldW = buildingWidth;
+        // Building heights from 150 to 350
+        const bldH = random(150, 350);
+
+        // Prepare an array of window spots (we'll assume small rectangular windows)
+        let windowSpots = [];
+        // Window rows and columns
+        let rows = int(bldH / 20);
+        let cols = int(bldW / 12);
+
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const wx = bldX + c * 12 + 2; // offset to get a gap
+            const wy = height - r * 20 - 5; // slightly up from bottom
+            windowSpots.push({ x: wx, y: wy, lit: false });
+          }
+        }
+
+        buildings.push({ x: bldX, w: bldW, h: bldH, windows: windowSpots });
+      }
+
+      lastSecond = second();
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // SKY COLOR BACKGROUND based on hour
+      // Map hour to a color gradient from late-night blues to daytime sky or any blend
+      // We'll do: 0 hr => dark navy, 12 hr => light blue, 23 hr => dark purple
+      let skyHue = map(hr, 0, 23, 230, 300); // hue range for the sky
+      colorMode(HSB);
+      background(skyHue, 80, 40);
+
+      // If we have a new second, refresh the windows
+      if (sc != lastSecond) {
+        lastSecond = sc;
+        // Calculate how many windows we can light up for the current minute
+        litWindowsCount = mn; 
+        updateWindows();
+      }
+
+      // Draw buildings
+      drawBuildings();
+
+      // Optional digital clock readout
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, TOP);
+      text(nf(hr, 2) + ":" + nf(mn, 2) + ":" + nf(sc, 2), 10, 10);
+    }
+
+    // Randomly light exactly 'litWindowsCount' windows among all buildings
+    function updateWindows() {
+      // First turn off all windows
+      for (let b of buildings) {
+        for (let w of b.windows) {
+          w.lit = false;
+        }
+      }
+
+      // Gather all windows
+      let allWin = [];
+      for (let b of buildings) {
+        allWin = allWin.concat(b.windows);
+      }
+
+      // Shuffle and pick 'litWindowsCount' windows to light
+      shuffle(allWin, true);
+      for (let i = 0; i < min(litWindowsCount, allWin.length); i++) {
+        allWin[i].lit = true;
+      }
+    }
+
+    function drawBuildings() {
+      // Draw each building as a dark silhouette
+      fill(20);
+      for (let b of buildings) {
+        rect(b.x, height - b.h, b.w, b.h);
+
+        // Draw windows
+        for (let w of b.windows) {
+          if (w.lit) {
+            fill(60, 100, 100); // a bright light color
+          } else {
+            fill(0, 0, 0); // unlit (silhouette)
+          }
+          rect(w.x, w.y, 8, 10); // small window
+        }
+      }
+    }
+  </script>
+</body>
+</html>

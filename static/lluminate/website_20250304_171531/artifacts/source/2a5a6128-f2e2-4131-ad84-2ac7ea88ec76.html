@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Constellation Mindscape</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset default margins and background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container exactly 512x512 */
+    #timeConstellationContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    /* Instruction overlay on hover */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #timeConstellationContainer:hover #instructionsOverlay {
+      display: block;
+    }
+    h1, p {
+      margin: 1em 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="timeConstellationContainer">
+    <div id="instructionsOverlay">
+      <h1>Time Constellation Mindscape</h1>
+      <p>• Constellation color shifts with the current hour.<br>
+         • A swirling cosmic gradient evolves based on the minute.<br>
+         • Comets streak in periodically, reflecting the current second.<br>
+         • Hover again to see instructions.</p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      TIME CONSTELLATION MINDSCAPE
+      1. Constellation color changes with the hour of the day.
+      2. A cosmic gradient background swirls according to the current minute.
+      3. Comets appear on intervals related to the second.
+      4. A digital clock in the corner displays the local time.
+    */
+
+    // Star and comet arrays
+    let stars = [];
+    let comets = [];
+
+    // Gradient rotation variables
+    let angleOffset = 0;
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('timeConstellationContainer');
+      // Initialize some star locations
+      for (let i = 0; i < 100; i++) {
+        stars.push({
+          x: random(width),
+          y: random(height),
+          r: random(1, 2)
+        });
+      }
+    }
+
+    function draw() {
+      // Acquire current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Draw swirling gradient based on minute
+      drawCosmicGradient(m);
+      angleOffset += 0.003;
+
+      // Draw stars with color based on hour
+      colorMode(HSL);
+      let starHue = map(h, 0, 23, 0, 360);
+      noStroke();
+      fill(starHue, 100, 80);
+      for (let i = 0; i < stars.length; i++) {
+        let st = stars[i];
+        ellipse(st.x, st.y, st.r * 2, st.r * 2);
+      }
+
+      // Possibly spawn a comet every few seconds
+      if (frameCount % 60 === 0 && s % 5 === 0) {
+        spawnComet();
+      }
+      updateComets();
+
+      // Draw digital clock in the corner
+      drawDigitalClock(h, m, s);
+    }
+
+    // Create a swirling radial gradient background
+    function drawCosmicGradient(m) {
+      // We will rotate through 360 degrees over 60 minutes
+      let angle = map(m, 0, 59, 0, TWO_PI) + angleOffset;
+      colorMode(RGB);
+      push();
+      translate(width / 2, height / 2);
+      rotate(angle);
+
+      for (let r = 0; r < width / 2; r++) {
+        let inter = map(r, 0, width / 2, 0, 1);
+        let c1 = color(10, 10, 30);
+        let c2 = color(0, 0, 0);
+        let col = lerpColor(c1, c2, inter);
+        stroke(col);
+        line(-r, -r, r, -r);
+        line(-r, r, r, r);
+        line(-r, -r, -r, r);
+        line(r, -r, r, r);
+      }
+      pop();
+    }
+
+    // Spawn a new comet at random vertical position
+    function spawnComet() {
+      let cometHue = random(360);
+      comets.push({
+        x: 0,
+        y: random(height * 0.1, height * 0.9),
+        speed: random(5, 8),
+        hue: cometHue
+      });
+    }
+
+    // Update and draw comets
+    function updateComets() {
+      for (let i = comets.length - 1; i >= 0; i--) {
+        let c = comets[i];
+        c.x += c.speed;
+        // Draw comet
+        push();
+        colorMode(HSL);
+        stroke(c.hue, 100, 70);
+        strokeWeight(2);
+        line(c.x - 15, c.y, c.x, c.y);
+        pop();
+        // Remove comet if it goes off screen
+        if (c.x > width + 20) {
+          comets.splice(i, 1);
+        }
+      }
+    }
+
+    // Draw a digital clock in the top-left
+    function drawDigitalClock(h, m, s) {
+      fill(255);
+      noStroke();
+      textSize(24);
+      textAlign(LEFT, TOP);
+
+      let displayHour = h % 12;
+      if (displayHour === 0) displayHour = 12;
+      let ampm = (h >= 12) ? "PM" : "AM";
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      let timeString = displayHour + ":" + minStr + ":" + secStr + " " + ampm;
+      text(timeString, 10, 10);
+    }
+  </script>
+</body>
+</html>

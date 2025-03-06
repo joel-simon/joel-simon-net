@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Flourishing Time Blossom</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #f0f0f0;
+      font-family: sans-serif;
+    }
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+    /* Tooltip text style */
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 220px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 10px;
+      position: absolute;
+      z-index: 1;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    /* Show tooltip text on hover */
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+    }
+    /* Center container and fix size to 512x512 */
+    #p5sketch {
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+    }
+    body, html {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    /* Cursor hint for interactivity */
+    #p5sketch:hover {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="tooltip">
+    <div id="p5sketch"></div>
+    <div class="tooltiptext">
+      This blossoming shape reflects time in real-time!<br>
+      - Flower Size: Current Hour (12hr format)<br>
+      - Petals: Current Second<br>
+      - Color Hue: Current Minute<br>
+      Hover away to hide instructions.
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let canvasSize = 512;
+
+    function setup() {
+      createCanvas(canvasSize, canvasSize).parent('p5sketch');
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100);
+      noStroke();
+    }
+
+    function draw() {
+      background(0, 0, 98); // Soft background
+      translate(width / 2, height / 2);
+
+      let hr = hour() % 12;   // 0 - 11
+      let mn = minute();      // 0 - 59
+      let sc = second();      // 0 - 59
+
+      // The outer "blossom" will have sc petals
+      let petals = max(sc, 1); // Avoid dividing by 0
+      let angleStep = 360 / petals;
+
+      // Scale blossom size by hour
+      let baseRadius = map(hr, 0, 12, 50, 200);
+
+      // Color depends on minute
+      let hueVal = map(mn, 0, 59, 0, 359);
+
+      // Draw flower petals
+      fill(hueVal, 80, 90);
+      for (let i = 0; i < petals; i++) {
+        push();
+        // Move to random position per petal, subtle variation
+        rotate(i * angleStep);
+        let distortion = sin(frameCount + i * 10) * 20;
+        translate(baseRadius + distortion, 0);
+
+        // Each petal is an ellipse
+        ellipse(0, 0, 30, baseRadius * 0.6);
+        pop();
+      }
+
+      // Draw a circular core at the center that pulses slightly
+      fill(hueVal, 80, 60);
+      let pulse = map(sin(frameCount * 2), -1, 1, 0.9, 1.1);
+      ellipse(0, 0, 50 * pulse, 50 * pulse);
+    }
+  </script>
+</body>
+</html>

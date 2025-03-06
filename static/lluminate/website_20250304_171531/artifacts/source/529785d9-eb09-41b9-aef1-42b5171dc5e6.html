@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Ion Storm</title>
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic reset for page */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container for our 512x512 canvas plus hover instructions */
+    #timeIonStormContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      background-color: #000;
+    }
+
+    /* Hover overlay for instructions */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      box-sizing: border-box;
+      padding: 20px;
+    }
+
+    /* Display instructions on hover */
+    #timeIonStormContainer:hover #hoverOverlay {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="timeIonStormContainer">
+    <div id="hoverOverlay">
+      <h2>Time Ion Storm</h2>
+      <p>
+        • Central black hole pulses with the hour.<br>
+        • Pulsing ring color shifts with the minute.<br>
+        • Sparks orbit in tune with the seconds.<br>
+        Hover away to witness the cosmic dance!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const CANVAS_SIZE = 512;
+    const STAR_COUNT = 200;
+    let stars = [];
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('timeIonStormContainer');
+      noStroke();
+      ellipseMode(CENTER);
+      // Generate random starfield
+      for (let i = 0; i < STAR_COUNT; i++) {
+        stars.push({
+          x: random(width),
+          y: random(height),
+          z: random(0, 2),
+          alpha: random(50, 255)
+        });
+      }
+    }
+
+    function draw() {
+      background(0);
+      drawStarfield();
+
+      // Current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Map the hour to black hole size
+      let blackHoleSize = map(hr % 12, 0, 12, 50, 220);
+
+      // Map the minute to ring color
+      let ringColor = map(mn, 0, 59, 0, 255);
+
+      // Map the second to orbital angle
+      let scAngle = map(sc, 0, 59, 0, TWO_PI);
+
+      // Translate to center
+      push();
+        translate(width / 2, height / 2);
+
+        // Draw central black hole
+        fill(0);
+        stroke(255, 30, 100);
+        strokeWeight(2);
+        ellipse(0, 0, blackHoleSize, blackHoleSize);
+        noStroke();
+
+        // Draw pulsing ring
+        fill(ringColor, 100, 200, 50);
+        ellipse(0, 0, blackHoleSize + 50, blackHoleSize + 50);
+
+        // Draw orbiting sparks
+        rotate(scAngle);
+        for (let i = 0; i < 6; i++) {
+          push();
+            rotate((TWO_PI / 6.0) * i);
+            translate(blackHoleSize + 25, 0);
+            fill(255, 200, 50);
+            ellipse(0, 0, 8, 8);
+          pop();
+        }
+      pop();
+
+      // Display digital time top-left
+      push();
+        fill(255);
+        textSize(18);
+        textAlign(LEFT, TOP);
+        text(nf(hr,2) + ":" + nf(mn,2) + ":" + nf(sc,2), 10, 10);
+      pop();
+    }
+
+    // Simple starfield for background
+    function drawStarfield() {
+      for (let i = 0; i < STAR_COUNT; i++) {
+        let s = stars[i];
+        fill(255, s.alpha);
+        rect(s.x, s.y, s.z, s.z);
+      }
+    }
+  </script>
+</body>
+</html>

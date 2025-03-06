@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Blossom Pollination</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the “Time Blossom Pollination”!<br><br>
+        • Each new second spawns a fresh blossom that rises with time.<br>
+        • The color gradient behind reacts to the current hour and minute.<br>
+        • Watch the blossoms drift and check the clock for a hint of time’s flow.<br><br>
+        Hover away to enjoy the animation.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Blossom storage
+    let blossoms = [];
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      backgroundGradient();
+      updateAndDrawBlossoms();
+      spawnBlossomIfNewSecond();
+      displayClock();
+    }
+
+    // Draw a vertical gradient that changes color based on hour & minute
+    function backgroundGradient() {
+      let h = hour();
+      let m = minute();
+      for (let y = 0; y < height; y++) {
+        // top color mapped to hour; bottom color mapped to minute
+        let inter = y / height;
+        let fromCol = color((h * 15) % 360, 100, 50);
+        let toCol = color((m * 4) % 360, 100, 50);
+        // Convert color mode to HSB for transitions
+        colorMode(HSB);
+        let c = lerpColor(fromCol, toCol, inter);
+        colorMode(RGB);
+        stroke(c);
+        line(0, y, width, y);
+      }
+    }
+
+    // Each second, add a new blossom
+    let lastSecond = -1;
+    function spawnBlossomIfNewSecond() {
+      let s = second();
+      if (s !== lastSecond) {
+        lastSecond = s;
+        // Create new blossom at a random x, starting near the bottom
+        let newBlossom = createBlossom();
+        blossoms.push(newBlossom);
+      }
+    }
+
+    // Create a blossom object
+    function createBlossom() {
+      let h = hour();
+      let s = second();
+      // Random petal color mapped to hour and second
+      colorMode(HSB);
+      let petalHue = (h * 15 + s * 4) % 360;
+      let blossomColor = color(petalHue, 90, 90);
+      colorMode(RGB);
+      return {
+        x: random(width),
+        y: height + 20,
+        speed: random(1, 3),
+        size: random(20, 48),
+        c: blossomColor,
+        angleOffset: random(360)
+      };
+    }
+
+    // Update and draw blossoms
+    function updateAndDrawBlossoms() {
+      for (let i = blossoms.length - 1; i >= 0; i--) {
+        let b = blossoms[i];
+        // move blossom up
+        b.y -= b.speed;
+        // remove if off screen
+        if (b.y < -50) {
+          blossoms.splice(i, 1);
+          continue;
+        }
+        drawBlossom(b);
+      }
+    }
+
+    // Draw an individual blossom with petal geometry
+    function drawBlossom(b) {
+      push();
+      translate(b.x, b.y);
+      fill(b.c);
+      let petals = 5;
+      let angle = 360 / petals;
+      for (let i = 0; i < petals; i++) {
+        push();
+        rotate(i * angle + b.angleOffset);
+        ellipse(0, b.size / 2, b.size * 0.7, b.size);
+        pop();
+      }
+      // Center circle
+      fill(255, 220, 0);
+      ellipse(0, 0, b.size * 0.5, b.size * 0.5);
+      pop();
+    }
+
+    // Display a digital clock at the bottom left
+    function displayClock() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, 10, height - 20);
+    }
+  </script>
+</body>
+</html>

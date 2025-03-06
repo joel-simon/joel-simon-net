@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time-Reversed Hourglass</title>
+  <style>
+    /* Page setup for a 512x512 display */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas and overlay */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: auto;
+      overflow: hidden;
+      background-color: #111;
+    }
+
+    /* Instructions overlay hidden by default, appears on hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: none;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.8);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time-Reversed Hourglass</strong><br><br>
+        • Sand flows in the opposite direction every minute.<br>
+        • The hour affects the hourglass color.<br>
+        • Observe the real time in the center as it continues forward.<br><br>
+        Hover away to see the animation.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+    let sandParticles = [];
+    let totalParticles = 200;
+    let flowDir = 1;          // 1 for upward, -1 for downward
+    let prevMinute = -1;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      noStroke();
+      initSand();
+    }
+
+    function draw() {
+      background(0);
+
+      // Fetch current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Update flow direction if new minute
+      if (mn !== prevMinute) {
+        flowDir *= -1; 
+        prevMinute = mn;
+      }
+
+      // Draw outer "hourglass" shape
+      push();
+      stroke(200);
+      noFill();
+      strokeWeight(2);
+      // Top curve
+      arc(w/2, h*0.3, w*0.7, h*0.4, 180, 360);
+      // Bottom curve
+      arc(w/2, h*0.7, w*0.7, h*0.4, 0, 180);
+      // Connect arcs
+      line(w*0.15, h*0.3, w*0.85, h*0.7);
+      line(w*0.85, h*0.3, w*0.15, h*0.7);
+      pop();
+
+      // Move and draw sand
+      moveSand(hr);
+      drawSand(hr);
+
+      // Display time as normal
+      displayTime(hr, mn, sc);
+    }
+
+    function initSand() {
+      sandParticles = [];
+      for (let i = 0; i < totalParticles; i++) {
+        sandParticles.push({
+          x: random(width*0.35, width*0.65),
+          y: random(height*0.4, height*0.6),
+          speed: random(0.5, 2)
+        });
+      }
+    }
+
+    function moveSand(hr) {
+      for (let p of sandParticles) {
+        p.y += flowDir * p.speed;
+        
+        // Confine sand to the hourglass-like region
+        if (p.y < h*0.18) {
+          p.y = h*0.82;
+        } else if (p.y > h*0.82) {
+          p.y = h*0.18;
+        }
+      }
+    }
+
+    function drawSand(hr) {
+      push();
+      colorMode(HSB);
+      fill(map(hr, 0, 23, 0, 360), 90, 100);
+      noStroke();
+      for (let p of sandParticles) {
+        ellipse(p.x, p.y, 5, 5);
+      }
+      pop();
+    }
+
+    function displayTime(hr, mn, sc) {
+      push();
+      textAlign(CENTER, CENTER);
+      textSize(24);
+      fill(255);
+      let dh = (hr % 12) || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      text(dh + ":" + nf(mn, 2) + ":" + nf(sc, 2) + " " + ampm, w/2, h/2);
+      pop();
+    }
+  </script>
+</body>
+</html>

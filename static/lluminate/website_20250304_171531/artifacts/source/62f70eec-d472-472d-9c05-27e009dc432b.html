@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Ribbon Swirl</title>
+  <style>
+    /* Basic resets and layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas */
+    #p5sketch-container {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Instructions overlay, hidden by default */
+    .instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      font-size: 14px;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 1em;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #p5sketch-container:hover .instructions {
+      display: flex;
+    }
+
+    /* Cursor hint for interactivity */
+    #p5sketch-container:hover {
+      cursor: help;
+    }
+  </style>
+</head>
+<body>
+  <div id="p5sketch-container">
+    <div class="instructions">
+      <strong>HOW THIS DISPLAYS TIME:</strong><br><br>
+      • The swirling pattern's color is influenced by the hour.<br>
+      • The ribbon thickness changes with the minute.<br>
+      • The swirling speed adjusts with the second.<br><br>
+      Hover away to hide instructions.
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let swirlAngle = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('p5sketch-container');
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100);
+      noFill();
+      strokeCap(ROUND);
+    }
+
+    function draw() {
+      background(0, 0.07); // Slightly transparent to leave a trailing effect
+
+      let hr = hour();       // 0-23
+      let mn = minute();     // 0-59
+      let sc = second();     // 0-59
+
+      // Map hour to base hue
+      let hueVal = map(hr, 0, 23, 0, 360);
+
+      // Map minute to line thickness
+      let ribbonThickness = map(mn, 0, 59, 1, 10);
+
+      // Map second to swirl rotation speed
+      let rotationSpeed = map(sc, 0, 59, 0.05, 0.5);
+
+      swirlAngle += rotationSpeed; // Increment swirl angle over time
+
+      // Draw the swirling ribbon
+      push();
+      translate(width/2, height/2);
+      strokeWeight(ribbonThickness);
+
+      // Generate a spiral of points from 0 to 720 degrees
+      beginShape();
+      for (let a = 0; a <= 720; a += 6) {
+        // Spiral radius grows slowly with angle
+        let r = a * 0.25;
+        let x = r * cos(a + swirlAngle);
+        let y = r * sin(a + swirlAngle);
+
+        // Gradually shift hue along the spiral
+        let localHue = (hueVal + a / 2) % 360;
+        stroke(localHue, 80, 95);
+        vertex(x, y);
+      }
+      endShape();
+      pop();
+
+      // Small clock display (optional reference)
+      push();
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(nf(hr, 2) + ":" + nf(mn, 2) + ":" + nf(sc, 2), 10, 10);
+      pop();
+    }
+  </script>
+</body>
+</html>

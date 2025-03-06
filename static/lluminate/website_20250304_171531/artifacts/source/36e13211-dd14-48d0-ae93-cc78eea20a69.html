@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Redwood Circus Maze</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Ensure the page is centered, with a 512x512 container for the canvas */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container with hover instructions overlay */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      background: #111;
+      overflow: hidden;
+    }
+
+    /* Hover overlay, hidden until hover */
+    #hover-instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.7);
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: flex;
+    }
+
+    #hover-instructions p {
+      pointer-events: none;
+      margin: 0;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <p>
+        <strong>Time Redwood Circus Maze</strong><br><br>
+        • The sky and redwood trees change based on the current hour and minute.<br>
+        • A playful elephant shape moves every second.<br>
+        • Maze regenerates at each new minute.<br><br>
+        Hover away to see the animation.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /* 
+      Time Redwood Circus Maze
+      - Background shifts color based on the hour
+      - Redwood trees grow with minute
+      - Maze regenerates every new minute
+      - A simple elephant moves with seconds
+    */
+
+    const CANVAS_SIZE = 512;
+    let mazeGrid;
+    let cols = 16;
+    let rows = 16;
+    let cellSize = CANVAS_SIZE / cols;
+    let lastMinute = -1; // track minute changes
+
+    function setup() {
+      let canvas = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      canvas.parent("canvas-container");
+      angleMode(DEGREES);
+      mazeGrid = generateMaze(cols, rows);
+      frameRate(30);
+    }
+
+    function draw() {
+      background(0);
+
+      // Current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Regenerate maze if minute has changed
+      if (mn !== lastMinute) {
+        mazeGrid = generateMaze(cols, rows);
+        lastMinute = mn;
+      }
+
+      // 1) Draw a sky that shifts color based on hour
+      //    We'll map hour in [0..23] to a hue
+      let skyColor = map(hr, 0, 23, 0, 255);
+      noStroke();
+      fill(skyColor, skyColor * 0.7, skyColor * 0.5);
+      rect(0, 0, width, height);
+
+      // 2) Draw Redwood trees in the background
+      //    Tree height depends on minute
+      //    We'll draw multiple trees across the canvas
+      drawRedwoodTrees(hr, mn);
+
+      // 3) Draw the maze in the foreground
+      drawMaze(mazeGrid);
+
+      // 4) Draw a playful circus elephant shape moving with seconds
+      drawElephant(sc);
+    }
+
+    /* Redwood trees: hour can shift color, minute changes scale */
+    function drawRedwoodTrees(hr, mn) {
+      push();
+      // We'll draw a row of trees near the bottom
+      let baseY = height * 0.8;
+      let treeCount = 6;
+      let spacing = width / (treeCount + 1);
+
+      // Tree color: let's shift it slightly with hour
+      let trunkColor = color(90 + hr * 3, 42, 15);
+      let foliageColor = color(10 + hr * 2, 100 + hr, 10 + hr * 3);
+
+      for (let i = 1; i <= treeCount; i++) {
+        let xPos = spacing * i;
+        let treeHeight = map(mn, 0, 59, 100, 200); // Redwood grows with minute
+
+        // Draw trunk
+        stroke(trunkColor);
+        strokeWeight(8);
+        line(xPos, baseY, xPos, baseY - treeHeight);
+
+        // Draw simple foliage (triangle-like shape)
+        fill(foliageColor);
+        noStroke();
+        triangle(
+          xPos - 30, baseY - treeHeight,
+          xPos + 30, baseY - treeHeight,
+          xPos, baseY - treeHeight - 80
+        );
+      }
+      pop();
+    }
+
+    /* Maze generation: each cell has random walls to the right or bottom */
+    function generateMaze(cols, rows) {
+      let grid = [];
+      for (let r = 0; r < rows; r++) {
+        let row = [];
+        for (let c = 0; c < cols; c++) {
+          row.push({
+            right: random() > 0.5,
+            bottom: random() > 0.5
+          });
+        }
+        grid.push(row);
+      }
+      return grid;
+    }
+
+    /* Draw the maze with lines on right/bottom if indicated */
+    function drawMaze(grid) {
+      stroke(255);
+      strokeWeight(2);
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          let x = c * cellSize;
+          let y = r * cellSize;
+          if (grid[r][c].right) {
+            line(x + cellSize, y, x + cellSize, y + cellSize);
+          }
+          if (grid[r][c].bottom) {
+            line(x, y + cellSize, x + cellSize, y + cellSize);
+          }
+        }
+      }
+      // draw outer border
+      line(0, 0, width, 0);
+      line(0, 0, 0, height);
+      line(width, 0, width, height);
+      line(0, height, width, height);
+    }
+
+    /* Draw a playful elephant shape that moves horizontally with seconds */
+    function drawElephant(sc) {
+      push();
+      // Elephant's x-position based on second
+      let moveX = map(sc, 0, 59, 0, width);
+      let baseY = height * 0.9;
+
+      translate(moveX, baseY);
+
+      // Elephant body
+      fill(150);
+      noStroke();
+      ellipse(0, 0, 60, 40); // body
+
+      // Head
+      ellipse(-35, 0, 30, 25);
+
+      // Ear
+      fill(120);
+      ellipse(-40, 0, 20, 20);
+
+      // Trunk
+      stroke(120);
+      strokeWeight(6);
+      noFill();
+      // trunk arcs downward a bit
+      beginShape();
+      vertex(-50, 0);
+      quadraticVertex(-60, 10, -55, 20);
+      endShape();
+
+      pop();
+    }
+  </script>
+</body>
+</html>

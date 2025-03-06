@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Fusion Display</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and page styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.8);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the "Time Fusion Display"!<br><br>
+        • WAVE BACKGROUND: Changes with the minute.<br>
+        • FRACTAL TREE: Branches based on the current hour.<br>
+        • ROTATING STAR: Its size and rotation shift with the seconds.<br>
+        • Enjoy watching time unfold in real-time.<br><br>
+        Hover away to see it in action.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+     Time Fusion Display
+     1) Wave backdrop influenced by minute.
+     2) A fractal tree whose branch depth scales with hour.
+     3) A rotating star in the center whose size is tied to seconds.
+     4) A small digital clock at the bottom.
+    */
+
+    let waveOffset = 0;
+    let waveSpeed = 0.02;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      strokeCap(ROUND);
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // 1) WAVE BACKDROP
+      drawWaveBackground(m);
+
+      // 2) FRACTAL TREE
+      // The hour decides recursion depth
+      let treeDepth = floor(map(h, 0, 23, 4, 10));
+      push();
+      translate(width * 0.2, height - 20);
+      stroke(200, 200, 255);
+      branch(80, treeDepth);
+      pop();
+
+      // 3) ROTATING STAR in center
+      let starRotation = map(s, 0, 59, 0, 360);
+      let starSize = map(s, 0, 59, 40, 100);
+      push();
+      translate(width/2, height/2);
+      rotate(starRotation);
+      drawStar(0, 0, starSize * 0.4, starSize, 7); 
+      pop();
+
+      // 4) SMALL DIGITAL CLOCK
+      fill(255);
+      textSize(14);
+      textAlign(CENTER, CENTER);
+      text(nf(h,2) + ":" + nf(m,2) + ":" + nf(s,2), width/2, height - 15);
+    }
+
+    // Draw wave background, influenced by the current minute
+    function drawWaveBackground(minVal) {
+      noStroke();
+      let waveColor = map(minVal, 0, 59, 50, 200);
+      fill(30, waveColor, 160);
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 5) {
+        let waveY = height/2 + 50 * sin(0.02 * (x + waveOffset));
+        vertex(x, waveY);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+
+      waveOffset += waveSpeed;
+    }
+
+    // Recursive fractal tree function
+    function branch(len, depth) {
+      if (depth === 0) return;
+
+      strokeWeight(map(depth, 1, 10, 1, 5));
+      line(0, 0, 0, -len);
+      translate(0, -len);
+
+      push();
+      rotate(25);
+      branch(len * 0.7, depth - 1);
+      pop();
+
+      push();
+      rotate(-25);
+      branch(len * 0.7, depth - 1);
+      pop();
+    }
+
+    // Star-drawing utility
+    function drawStar(x, y, innerRadius, outerRadius, points) {
+      beginShape();
+      let angle = 360 / points;
+      let halfAngle = angle / 2;
+      fill(255, 180, 0);
+      noStroke();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * outerRadius;
+        let sy = y + sin(a) * outerRadius;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * innerRadius;
+        sy = y + sin(a + halfAngle) * innerRadius;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

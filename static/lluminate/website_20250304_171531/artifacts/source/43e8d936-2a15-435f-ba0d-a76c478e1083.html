@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Flower Garden</title>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* A fixed 512x512 container (for iframe) */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      border: none;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.6);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Flower Garden</strong><br><br>
+        • The grass color shifts with the hour.<br>
+        • Flowers appear based on minutes.<br>
+        • Petals rotate gently with seconds.<br>
+        • Watch the sun or moon traverse the sky.<br><br>
+        Hover here for instructions. Enjoy!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time Flower Garden
+      ------------------
+      A tranquil scene where:
+       1) The background (grass) color shifts with hour.
+       2) The number of flowers depends on the current minute.
+       3) Each flower’s petals rotate gently, keyed to the seconds.
+       4) The sun or moon moves across the top portion, based on hour.
+      All drawn within a 512x512 canvas. 
+    */
+
+    const CANVAS_SIZE = 512;
+
+    // Flowers array
+    let flowers = [];
+    let lastMinute = -1;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      generateFlowers();
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // If minute changes, regenerate flowers
+      if (mn !== lastMinute) {
+        generateFlowers();
+        lastMinute = mn;
+      }
+
+      // 1) Draw grass background, color linked to hour
+      //    We map hour 0-23 to a hue or gradient that varies over the day.
+      drawGrass(hr);
+
+      // 2) Draw the sky gradient (upper portion)
+      drawSky(hr);
+
+      // 3) Draw the sun or moon, position changes over the hour
+      drawSunMoon(hr);
+
+      // 4) Draw flowers according to number of minutes
+      //    Each flower has gently rotating petals keyed to seconds
+      drawFlowers(sc);
+
+      // Optional: Show a small clock in the corner
+      drawDigitalClock(hr, mn, sc);
+    }
+
+    /* Re-generate flowers each minute, the number depends on minute */
+    function generateFlowers() {
+      flowers = [];
+      let numFlowers = minute(); // Up to 59 flowers
+      // Position them randomly in the lower region
+      for (let i = 0; i < numFlowers; i++) {
+        flowers.push({
+          x: random(width),
+          y: random(height * 0.5, height * 0.9),
+          petalSize: random(15, 30),
+          petalCount: floor(random(5, 9)),
+          baseColor: [random(360), random(50, 80), random(70, 100)]
+        });
+      }
+    }
+
+    /* Draw grass background color. Hour modifies hue or brightness. */
+    function drawGrass(hr) {
+      // Map hour to hue range 70 - 150 for a greenish palette
+      let hueVal = map(hr, 0, 23, 70, 150);
+      colorMode(HSB, 360, 100, 100);
+      let grassColor = color(hueVal, 80, 60);
+      noStroke();
+      fill(grassColor);
+      rect(0, height * 0.5, width, height * 0.5);
+      colorMode(RGB, 255);
+    }
+
+    /* Draw a soft sky gradient from the top to the middle. */
+    function drawSky(hr) {
+      // For hours 0-11, let's shift from deep midnight to morning blue,
+      // then for hours 12-23, let's shift toward an evening orange/purple.
+      let topColor, midColor;
+      if (hr < 12) {
+        // Early morning to noon
+        topColor = color(10, 10, 60);  // Dark-ish
+        midColor = color(80, 150, 220); // Light morning sky
+      } else {
+        // Afternoon to midnight
+        topColor = color(20, 0, 80);   // Deeper purple
+        midColor = color(255, 120, 100); // Evening orange
+      }
+
+      noFill();
+      for (let y = 0; y < height * 0.5; y++) {
+        let inter = map(y, 0, height * 0.5, 0, 1);
+        let c = lerpColor(topColor, midColor, inter);
+        stroke(c);
+        line(0, y, width, y);
+      }
+      noStroke();
+    }
+
+    /* Draw the sun or moon, moving in an arc across the sky. */
+    function drawSunMoon(hr) {
+      // The sun is displayed roughly between 6 AM - 18 (6 PM),
+      // otherwise we see the moon.
+      let isDay = (hr >= 6 && hr < 18);
+
+      // x-position arcs from left to right
+      let normalizedHour = (hr + (minute() / 60)) % 24;
+      // Shift the range so 6 AM = 0, 18 (6 PM) = 12 in terms of arc
+      let arcFactor;
+      if (isDay) {
+        arcFactor = map(normalizedHour, 6, 18, 0, 1, true);
+      } else {
+        // For nighttime
+        // from 18 -> 24 and 0 -> 6, we unify them
+        if (hr < 6) {
+          arcFactor = map(normalizedHour, 0, 6, 0.5, 1, true);
+        } else {
+          arcFactor = map(normalizedHour, 18, 24, 0, 0.5, true);
+        }
+      }
+      // Arc across the width
+      let sunMoonX = lerp(50, width - 50, arcFactor);
+      // Arbitrary arc height
+      let sunMoonY = height * 0.5 * (1 - sin(arcFactor * 180));
+
+      push();
+      noStroke();
+      if (isDay) {
+        fill(255, 204, 0); // sun color
+      } else {
+        fill(230); // moon color
+      }
+      ellipse(sunMoonX, sunMoonY, 40, 40);
+      pop();
+    }
+
+    /* Draw the flowers, each with rotating petals influenced by second. */
+    function drawFlowers(sec) {
+      push();
+      colorMode(HSB, 360, 100, 100);
+      for (let f of flowers) {
+        let rotation = map(sec, 0, 59, 0, 360);
+        translate(f.x, f.y);
+        rotate(rotation);
+        // Petals
+        for (let i = 0; i < f.petalCount; i++) {
+          let angle = 360 / f.petalCount;
+          push();
+          rotate(i * angle);
+          fill((f.baseColor[0] + i * 5) % 360, f.baseColor[1], f.baseColor[2]);
+          noStroke();
+          ellipse(0, -f.petalSize / 2, f.petalSize / 2, f.petalSize);
+          pop();
+        }
+        // Center of flower
+        fill(40, 100, 100);
+        noStroke();
+        ellipse(0, 0, f.petalSize / 2);
+        // Reset transform for the next flower
+        rotate(-rotation);
+        translate(-f.x, -f.y);
+      }
+      colorMode(RGB, 255);
+      pop();
+    }
+
+    /* Optional digital clock in top-left corner. */
+    function drawDigitalClock(h, m, s) {
+      push();
+      translate(10, 20);
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 0, 0);
+      pop();
+    }
+  </script>
+</body>
+</html>

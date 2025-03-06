@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Orbit</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.6);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Orbit</strong><br><br>
+        • The central star's size corresponds to the hour.<br>
+        • A planet orbits the star at a radius based on the minute.<br>
+        • A smaller moon orbits the planet, moving in sync with the second.<br>
+        • The current digital time is shown in the center.<br><br>
+        Hover to read instructions as you watch the orbital dance of time.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let stars = [];
+    const w = 512;
+    const h = 512;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      noStroke();
+
+      // Create a static starfield background
+      for (let i = 0; i < 200; i++) {
+        stars.push({
+          x: random(width),
+          y: random(height),
+          brightness: random(100, 255),
+          size: random(1, 2)
+        });
+      }
+    }
+
+    function draw() {
+      // Draw the starfield
+      background(0);
+      fill(255);
+      for (let s of stars) {
+        fill(s.brightness);
+        circle(s.x, s.y, s.size);
+      }
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Translate to canvas center
+      push();
+      translate(width / 2, height / 2);
+
+      // Draw a digital time readout at the center
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(24);
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(`${displayHour}:${minStr}:${secStr} ${ampm}`, 0, 0);
+
+      // Draw central star representing hour
+      // Hour goes 0 to 23, map that to star radius
+      let starRadius = map(hr % 12, 0, 12, 30, 80);
+      fill(255, 200, 0);
+      circle(0, 0, starRadius);
+
+      // Planet orbiting radius for minute: 60 possible values
+      let planetOrbit = map(mn, 0, 59, 80, 150);
+
+      // Compute planet position
+      // Move in a circle around the star, speed tied to minutes
+      push();
+      let planetAngle = map(mn, 0, 60, 0, 360) + frameCount * 0.1;
+      rotate(planetAngle);
+      translate(planetOrbit, 0);
+      fill(0, 150, 255);
+      circle(0, 0, 20); // Planet size
+      pop();
+
+      // Moon orbit radius for seconds
+      // The moon orbits around the planet, so let's track that
+      push();
+      rotate(planetAngle);
+      translate(planetOrbit, 0);
+      let moonOrbit = map(sc, 0, 59, 30, 50);
+      let moonAngle = map(sc, 0, 60, 0, 360) + frameCount * 0.7;
+      rotate(moonAngle);
+      translate(moonOrbit, 0);
+      fill(200);
+      circle(0, 0, 10); // Moon size
+      pop();
+
+      pop();
+    }
+  </script>
+</body>
+</html>

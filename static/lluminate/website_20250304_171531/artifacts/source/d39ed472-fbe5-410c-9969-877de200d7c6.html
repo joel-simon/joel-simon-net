@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Shatter Portal</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the "Time Shatter Portal"!<br><br>
+        • Watch new cracks form with each passing second.<br>
+        • The hue shifts hourly.<br>
+        • All cracks reset at the start of a new minute.<br><br>
+        Hover away to explore!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let cracks = [];
+    let lastSecond = -1;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noSmooth();
+    }
+
+    function draw() {
+      drawBackground();
+      manageCracks();
+      drawCracks();
+      drawTimeDisplay();
+    }
+
+    function drawBackground() {
+      // Simple radial gradient in the background
+      let maxRadius = max(width, height);
+      let centerX = width / 2;
+      let centerY = height / 2;
+      noStroke();
+      for (let r = maxRadius; r >= 0; r -= 5) {
+        let inter = map(r, 0, maxRadius, 1, 0);
+        fill(20 * inter, 20 * inter, 40 * inter);
+        ellipse(centerX, centerY, r, r);
+      }
+    }
+
+    function manageCracks() {
+      // Create a new crack each time the second changes
+      let s = second();
+      let h = hour();
+      if (s !== lastSecond) {
+        // Reset cracks at the start of a new minute
+        if (s === 0) {
+          cracks = [];
+        } else {
+          createNewCrack(h);
+        }
+        lastSecond = s;
+      }
+    }
+
+    function createNewCrack(h) {
+      // Random angle and length for the crack
+      let angle = random(0, 360);
+      let length = random(80, 200);
+      let x1 = width / 2;
+      let y1 = height / 2;
+      let x2 = x1 + length * cos(angle);
+      let y2 = y1 + length * sin(angle);
+
+      // Hue changes with hour
+      let hueVal = map(h, 0, 23, 0, 360);
+      let clr = color(hueVal, 100, 100);
+
+      // Save crack info
+      cracks.push({
+        x1: x1,
+        y1: y1,
+        x2: x2,
+        y2: y2,
+        clr: clr
+      });
+    }
+
+    function drawCracks() {
+      strokeWeight(3);
+      for (let i = 0; i < cracks.length; i++) {
+        stroke(cracks[i].clr);
+        line(cracks[i].x1, cracks[i].y1, cracks[i].x2, cracks[i].y2);
+      }
+    }
+
+    function drawTimeDisplay() {
+      // Show hour:minute:second at the bottom
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, width / 2, height - 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

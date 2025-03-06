@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Samurai Garden</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic reset and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the “Time Samurai Garden”!<br><br>
+        • Hours forge the radius of the samurai arcs.<br>
+        • Minutes shape the sand ripples in the garden.<br>
+        • Every second, a pulse blossoms from the center.<br>
+        • Move your mouse to shift the garden’s color energy.<br><br>
+        Hover away to immerse in the garden.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let sandOffset = 0;   // Offset for the swirling sand lines
+    let pulses = [];      // Array to store pulses spawned each second
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(10);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Mouse controls a global color shift
+      let colorShift = map(mouseX, 0, width, 0, 255);
+
+      // Draw swirling sand lines in the background.
+      // The minute value controls the tightness of ripples.
+      drawSwirlingSand(m, colorShift);
+
+      // Draw arcs that represent swords around the center of the garden.
+      // The number and size of arcs is tied to the hour.
+      drawSamuraiArcs(h, colorShift);
+
+      // Manage pulse objects for each second
+      managePulses(s);
+
+      // Draw pulses
+      drawPulses(colorShift);
+
+      // Digital time readout at the bottom-right corner
+      fill(255);
+      textSize(14);
+      textAlign(RIGHT, BOTTOM);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, width - 10, height - 10);
+    }
+
+    // Function to create animated sand lines in the background
+    function drawSwirlingSand(minVal, colorShift) {
+      push();
+      let rippleCount = 30;
+      let frequency = map(minVal, 0, 59, 0.01, 0.2);
+      sandOffset += frequency;
+
+      // Faint sand color
+      stroke(120 + colorShift / 2, 80, 40, 100);
+      noFill();
+
+      // Concentric-like swirling lines
+      for (let i = 0; i < rippleCount; i++) {
+        strokeWeight((rippleCount - i) * 0.2);
+        beginShape();
+        let rad = map(i, 0, rippleCount, width * 0.8, 20);
+        for (let angle = 0; angle < 360; angle += 5) {
+          let xOff = rad + (noise(i * 0.1, angle * 0.01, sandOffset) * 20);
+          let x = width / 2 + xOff * cos(angle);
+          let y = height / 2 + xOff * sin(angle);
+          vertex(x, y);
+        }
+        endShape(CLOSE);
+      }
+      pop();
+    }
+
+    // Function to draw "samurai arcs" based on the hour
+    function drawSamuraiArcs(h, colorShift) {
+      push();
+      translate(width / 2, height / 2);
+
+      // Each arc is like a stylized sword perimeter
+      let arcCount = h === 0 ? 1 : h; // If h=0, draw at least 1 arc
+      for (let i = 0; i < arcCount; i++) {
+        let angleStep = 360 / arcCount;
+        let arcAngle = angleStep * i + frameCount * 0.05; // slow rotation
+
+        // Base arc radius grows with the hour
+        let radius = map(h, 0, 23, 50, 220);
+
+        push();
+        rotate(arcAngle);
+        stroke((colorShift + i * 20) % 255, 100, 180);
+        strokeWeight(4);
+        noFill();
+        arc(0, 0, radius, radius, 0, 180);
+        pop();
+      }
+      pop();
+    }
+
+    // Spawn pulses when the second changes
+    // They expand outward from the center
+    function managePulses(s) {
+      // Check if a new second just started
+      // (Use frameCount % 60 to keep it simple)
+      if (frameCount % 60 === 0) {
+        pulses.push(new Pulse());
+      }
+    }
+
+    // Each Pulse expands outward over time
+    class Pulse {
+      constructor() {
+        this.radius = 0;
+      }
+      update() {
+        // Expand
+        this.radius += 2;
+      }
+      display(colorShift) {
+        noFill();
+        stroke((colorShift + this.radius * 2) % 255, 200, 200);
+        strokeWeight(3);
+        circle(width / 2, height / 2, this.radius * 2);
+      }
+    }
+
+    // Update and draw pulses, remove if too large
+    function drawPulses(colorShift) {
+      for (let i = pulses.length - 1; i >= 0; i--) {
+        pulses[i].update();
+        pulses[i].display(colorShift);
+        if (pulses[i].radius > width) {
+          pulses.splice(i, 1);
+        }
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Celestial Maze Lightning Tree</title>
+  <style>
+    /* Page setup to ensure only a 512x512 area is visible for the canvas */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas and overlay */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: auto;
+      overflow: hidden;
+      background-color: #111;
+    }
+
+    /* Instructions overlay hidden by default, appears on hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: none;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.8);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Celestial Maze Lightning Tree</strong><br><br>
+        • A fractal tree in the background grows with the hour.<br>
+        • A simple maze regenerates each minute.<br>
+        • Lightning flashes every 10 seconds based on current hour.<br>
+        • Observe the rotating time readout in the center.<br><br>
+        Hover away to return to the animation.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    // Canvas dimensions
+    let w = 512;
+    let h = 512;
+
+    // Maze configuration
+    let mazeCols = 16;  // Basic grid
+    let mazeRows = 16;
+    let cellSize = w / mazeCols;
+    let mazeGrid;
+
+    // Lightning variables
+    let lightningFlashActive = false;
+    let lightningStartFrame = 0;
+    let lightningDuration = 10; // frames
+    let lightningBolts = [];
+
+    // Fractal tree parameters
+    let branchAngle = 25; // default angle
+    let branchLengthFactor = 0.67; // shorter each generation
+
+    // Time-based
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      rectMode(CENTER);
+
+      // Generate initial maze
+      mazeGrid = generateMaze(mazeCols, mazeRows);
+
+      // Preload some random lightning bolts
+      generateLightningBolts();
+    }
+
+    function draw() {
+      background(0);
+
+      // Current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+      let secNow = sc;
+
+      // 1) Regenerate maze each minute
+      if (frameCount % 30 === 0) { // check every 30 frames
+        if (mn !== minute()) {
+          // The minute has changed, but in p5 it doesn't catch partial transitions
+          // So let's generate the maze based on the current minute
+          mazeGrid = generateMaze(mazeCols, mazeRows);
+        }
+      }
+
+      // 2) Draw fractal tree in background (branch depth ~ hour)
+      push();
+      translate(w * 0.5, h); 
+      let maxDepth = (hr % 12) + 4; // vary from 4..15
+      drawFractalTree(maxDepth, 80); 
+      pop();
+
+      // 3) Draw the maze
+      drawMaze(mazeGrid);
+
+      // 4) Lightning effect every 10 seconds
+      if (secNow % 10 === 0 && !lightningFlashActive) {
+        lightningFlashActive = true;
+        lightningStartFrame = frameCount;
+        // Re-generate new set of random bolts each flash
+        generateLightningBolts();
+      }
+      if (lightningFlashActive) {
+        let flashProgress = frameCount - lightningStartFrame;
+        // Hour influences lightning color
+        let hueShift = map(hr, 0, 23, 0, 360);
+        drawLightningBolts(hueShift);
+        if (flashProgress >= lightningDuration) {
+          lightningFlashActive = false;
+        }
+      }
+
+      // 5) Display rotating time readout at center
+      drawRotatingClock(hr, mn, sc);
+    }
+
+    /* Fractal Tree function */
+    function drawFractalTree(depth, length) {
+      if (depth === 0) return;
+
+      stroke(50 + depth * 15, 180, 50);
+      line(0, 0, 0, -length);
+      translate(0, -length);
+
+      push();
+      rotate(branchAngle);
+      drawFractalTree(depth - 1, length * branchLengthFactor);
+      pop();
+
+      push();
+      rotate(-branchAngle);
+      drawFractalTree(depth - 1, length * branchLengthFactor);
+      pop();
+    }
+
+    /* Maze generation (simple prim-like or random walk) */
+    function generateMaze(cols, rows) {
+      // Very basic random "maze," each cell either has a wall to the right or to the bottom
+      let grid = [];
+      for (let r = 0; r < rows; r++) {
+        let row = [];
+        for (let c = 0; c < cols; c++) {
+          // Each cell has edges that can be open or closed
+          // We'll store booleans: {right:false, bottom:false}
+          row.push({
+            right: random() > 0.5,
+            bottom: random() > 0.5
+          });
+        }
+        grid.push(row);
+      }
+      return grid;
+    }
+
+    /* Draw Maze */
+    function drawMaze(grid) {
+      stroke(200);
+      strokeWeight(2);
+
+      for (let r = 0; r < mazeRows; r++) {
+        for (let c = 0; c < mazeCols; c++) {
+          // coordinate of top-left corner
+          let x = c * cellSize;
+          let y = r * cellSize;
+
+          // If right is true, draw the line at the right edge
+          if (grid[r][c].right) {
+            line(x + cellSize, y, x + cellSize, y + cellSize);
+          }
+
+          // If bottom is true, draw the line at the bottom edge
+          if (grid[r][c].bottom) {
+            line(x, y + cellSize, x + cellSize, y + cellSize);
+          }
+        }
+      }
+
+      // Outer border lines
+      // top row
+      line(0, 0, w, 0);
+      // left side
+      line(0, 0, 0, h);
+      // right side
+      line(w, 0, w, h);
+      // bottom
+      line(0, h, w, h);
+    }
+
+    /* Generate an array of random lightning bolt lines */
+    function generateLightningBolts() {
+      lightningBolts = [];
+      // We'll create a random set of line segments
+      // Each bolt has 2-4 segments
+      for (let i = 0; i < 5; i++) {
+        let segments = [];
+        let startX = random(w);
+        let startY = 0;
+        segments.push([startX, startY]);
+        let segCount = floor(random(2, 5));
+        for (let s = 0; s < segCount; s++) {
+          let xOff = random(-50, 50);
+          let yOff = random(30, 60);
+          let prev = segments[segments.length - 1];
+          let newX = prev[0] + xOff;
+          let newY = prev[1] + yOff;
+          segments.push([newX, newY]);
+        }
+        lightningBolts.push(segments);
+      }
+    }
+
+    /* Draw the current lightning bolts */
+    function drawLightningBolts(hueShift) {
+      push();
+      colorMode(HSB);
+      strokeWeight(2);
+      for (let segments of lightningBolts) {
+        stroke((200 + hueShift) % 360, 90, 100);
+        noFill();
+        beginShape();
+        for (let pt of segments) {
+          vertex(pt[0], pt[1]);
+        }
+        endShape();
+      }
+      pop();
+    }
+
+    /* Rotating time readout at center */
+    function drawRotatingClock(hr, mn, sc) {
+      push();
+      translate(w / 2, h / 2);
+      let angleSpeed = map(sc, 0, 60, 0, 360);
+      rotate(frameCount * 0.5 + angleSpeed);
+
+      let displayHour = hr % 12 || 12;
+      let ampm = hr >= 12 ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      fill(255);
+      noStroke();
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 0, 0);
+      pop();
+    }
+  </script>
+</body>
+</html>

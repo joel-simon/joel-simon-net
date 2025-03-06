@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Kaleidoscope</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset default margins and background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container exactly 512x512 */
+    #timeKaleidoscopeContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    /* Instruction overlay on hover */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 30px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #timeKaleidoscopeContainer:hover #instructionsOverlay {
+      display: block;
+    }
+
+    h1, p {
+      margin: 1em 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="timeKaleidoscopeContainer">
+    <div id="instructionsOverlay">
+      <h1>Time Kaleidoscope</h1>
+      <p>
+        • Colors shift each hour of the day.<br>
+        • The number of mirrors changes every minute.<br>
+        • Rotational speed is tied to the seconds.<br>
+        • A digital clock is displayed in the corner.<br>
+        • Hover again for instructions.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      TIME KALEIDOSCOPE
+      - Hour (0..23) influences the color scheme.
+      - Minute (0..59) changes the number of kaleidoscopic slices.
+      - Second (0..59) affects the rotation speed.
+      - A digital clock displays local time (H:M:S).
+    */
+
+    let rotationAngle = 0; // For continuous rotation
+    let baseShape = [];
+    let lastMin = -1; // Track when minute changes
+    let slices = 6;   // Default number of slices
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('timeKaleidoscopeContainer');
+
+      // Create a base shape (random polygon) to be mirrored around the center.
+      for (let i = 0; i < 12; i++) {
+        let angle = map(i, 0, 12, 0, TWO_PI);
+        let r = random(20, 100);
+        let x = cos(angle) * r;
+        let y = sin(angle) * r;
+        baseShape.push(createVector(x, y));
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Update the slices if the minute changed
+      if (m !== lastMin) {
+        // slices range from 4 to 12
+        slices = floor(map(m, 0, 59, 4, 12));
+        lastMin = m;
+      }
+
+      // The hour determines hue, so let's map 0..23 to 0..360
+      colorMode(HSL);
+      let hueVal = map(h, 0, 23, 0, 360);
+
+      // The second determines rotation speed
+      let speed = map(s, 0, 59, 0.01, 0.2);
+      rotationAngle += speed;
+
+      // Draw kaleidoscope
+      // We'll rotate and mirror the base shape around the center
+      push();
+      translate(width / 2, height / 2);
+      for (let i = 0; i < slices; i++) {
+        push();
+        rotate((TWO_PI / slices) * i + rotationAngle);
+        // Fill or stroke with a color based on hour
+        fill((hueVal + i * 10) % 360, 100, 50);
+        noStroke();
+        beginShape();
+        for (let v of baseShape) {
+          vertex(v.x, v.y);
+        }
+        endShape(CLOSE);
+        pop();
+      }
+      pop();
+
+      // Return color mode to default
+      colorMode(RGB);
+
+      // Display digital time at top-left
+      fill(255);
+      noStroke();
+      textSize(24);
+      textAlign(LEFT, TOP);
+      let displayHour = h % 12;
+      if (displayHour === 0) displayHour = 12;
+      let ampm = (h >= 12) ? "PM" : "AM";
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      let timeString = displayHour + ":" + minStr + ":" + secStr + " " + ampm;
+      text(timeString, 10, 10);
+    }
+  </script>
+</body>
+</html>

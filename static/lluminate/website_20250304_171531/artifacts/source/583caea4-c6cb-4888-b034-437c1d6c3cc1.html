@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creative Time Vines</title>
+  <style>
+    /* Basic setup for a black background and no margins */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* Keep everything to 512x512 for the iframe */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (visible on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Creative Time Vines</strong><br><br>
+        • Watch vines grow and sway based on the current hour, minute, and second.<br>
+        • The vine colors change with the hour.<br>
+        • Leaf shapes vary by minute.<br>
+        • The vines gently wave over time, influenced by seconds.<br>
+        • Observe the digital time at the top center.<br><br>
+        Hover to see instructions. Enjoy!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let vines = [];
+    let vineCount = 5;
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      // Create some initial vines
+      for (let i = 0; i < vineCount; i++) {
+        vines.push(new Vine(random(width), height, random(50, 100)));
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Display time at the top center
+      displayDigitalTime(hr, mn, sc);
+
+      // Update and draw each vine
+      for (let v of vines) {
+        v.update(hr, mn, sc);
+        v.display(hr, mn, sc);
+      }
+    }
+
+    function displayDigitalTime(hr, mn, sc) {
+      noStroke();
+      fill(255);
+      textAlign(CENTER, TOP);
+      textSize(18);
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(`${displayHour}:${minStr}:${secStr} ${ampm}`, width / 2, 10);
+    }
+
+    // Vine class
+    class Vine {
+      constructor(x, y, length) {
+        this.x = x;
+        this.y = y;
+        this.segments = [];
+        // Create initial segments upwards
+        for (let i = 0; i < length; i++) {
+          this.segments.push({
+            xOff: 0,
+            yOff: i * -5,
+            angleSeed: random(1000)
+          });
+        }
+      }
+
+      update(hr, mn, sc) {
+        // Slight wave influenced by seconds
+        let waveAmplitude = map(sc, 0, 59, 0.02, 0.2);
+        let mouseInfluence = map(mouseX, 0, width, -1, 1);
+        for (let segment of this.segments) {
+          // Basic wave using noise
+          let wave = noise(segment.angleSeed + frameCount * waveAmplitude) - 0.5;
+          segment.xOff = wave * 30 * mouseInfluence;
+        }
+      }
+
+      display(hr, mn, sc) {
+        push();
+        translate(this.x, this.y);
+
+        // Color changes by hour
+        let hue = map(hr, 0, 23, 0, 255);
+        stroke(hue, 200, 255);
+        strokeWeight(2);
+        noFill();
+
+        beginShape();
+        for (let i = 0; i < this.segments.length; i++) {
+          let seg = this.segments[i];
+          vertex(seg.xOff, seg.yOff);
+
+          // Draw leaves based on minute
+          if (i % 10 === 0 && i !== 0) {
+            push();
+            translate(seg.xOff, seg.yOff);
+            stroke(hue, 200, 255);
+            fill(hue, 150, 200, 60);
+
+            // Leaf shape changes with minute
+            let leafSize = map(mn, 0, 59, 5, 20);
+            let leafAngle = i * 10; 
+            
+            // Rotate leaf slightly
+            rotate(leafAngle);
+            
+            // Different leaf styles
+            if (mn < 20) {
+              ellipse(0, 0, leafSize * 2, leafSize);
+            } else if (mn < 40) {
+              triangle(-leafSize, leafSize, 0, -leafSize, leafSize, leafSize);
+            } else {
+              beginShape();
+              vertex(-leafSize, 0);
+              bezierVertex(-leafSize, -leafSize, leafSize, -leafSize, leafSize, 0);
+              bezierVertex(leafSize, leafSize, -leafSize, leafSize, -leafSize, 0);
+              endShape(CLOSE);
+            }
+            pop();
+          }
+        }
+        endShape();
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

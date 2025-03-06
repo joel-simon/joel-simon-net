@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time-Sand Oracle</title>
+  <style>
+    /* Basic page reset and layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: Arial, sans-serif;
+      color: #fff;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Container for fixed 512x512 sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0,0,0,0.8);
+      cursor: pointer;
+    }
+
+    /* Instructions overlay (appears on hover) */
+    #infoOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    #canvasContainer:hover #infoOverlay {
+      display: flex;
+    }
+
+    /* Exactly 512x512 canvas */
+    #defaultCanvas0 {
+      width: 512px !important;
+      height: 512px !important;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="infoOverlay">
+      <p>
+        Time-Sand Oracle<br><br>
+        • The sky fades through day/night colors based on the hour.<br>
+        • Shifting dunes move with speed influenced by the minute.<br>
+        • The Eye of Horus at center pulses with seconds.<br>
+        • Control the scarab with arrow keys.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time-Sand Oracle
+      - Sky gradient changes each hour.
+      - Background dunes scroll at speed influenced by the current minute.
+      - Central Eye of Horus pulses with the second.
+      - Player moves a scarab with arrow keys.
+    */
+
+    let duneLines = [];    // Store arrays of dune y-coordinates
+    let duneOffset = 0;    // Offset for scrolling dunes
+    let scarab = { x: 256, y: 400, size: 20 };
+    const moveSpeed = 2;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      noStroke();
+
+      // Generate multiple dune lines
+      for (let i = 0; i < 4; i++) {
+        duneLines.push(generateDuneLine(i));
+      }
+    }
+
+    function draw() {
+      let h = hour() % 24;
+      let m = minute();
+      let s = second();
+
+      // Draw sky background
+      drawSky(h);
+
+      // Update and draw dunes
+      duneOffset += (m + 1) * 0.05;  // more minutes -> faster movement
+      drawDunes(h);
+
+      // Eye of Horus in center, pulsing with second
+      push();
+      translate(width / 2, height / 2);
+      let pulse = 0.5 + 0.3 * sin(s * 6 * (PI / 180));
+      scale(pulse);
+      drawEyeOfHorus();
+      pop();
+
+      // Draw and move scarab
+      fill(0, 150, 0);
+      ellipse(scarab.x, scarab.y, scarab.size, scarab.size);
+      handleScarabMovement();
+    }
+
+    // Generate a single dune line as an array of (x,y) points
+    function generateDuneLine(index) {
+      let points = [];
+      let amplitude = 30 + index * 15;
+      let baseHeight = 300 + index * 40;
+      for (let x = 0; x <= width; x += 10) {
+        let y = baseHeight + amplitude * noise(x * 0.01, index);
+        points.push({x, y});
+      }
+      return points;
+    }
+
+    // Draw the dunes with horizontal scrolling
+    function drawDunes(h) {
+      for (let i = 0; i < duneLines.length; i++) {
+        let colorFactor = map(i, 0, duneLines.length - 1, 150, 60); 
+        fill(colorFactor - h * 2, 100 + i * 10, 0); // shift color with hour
+        beginShape();
+        vertex(-9999, height); // Left corner
+        // Shift wave horizontally using duneOffset
+        for (let pt of duneLines[i]) {
+          let shiftedX = pt.x - duneOffset * (0.2 + i * 0.1);
+          vertex(shiftedX, pt.y);
+        }
+        vertex(9999, height); // Right corner
+        endShape(CLOSE);
+      }
+    }
+
+    // Draw a sky gradient that changes with the hour
+    function drawSky(h) {
+      // Map hour to colors
+      let topColor = color(20 + h * 5, 40, 60);
+      let bottomColor = color(5 + h * 5, 10, 30);
+      for (let y = 0; y < height; y++) {
+        let lerpAmt = map(y, 0, height, 0, 1);
+        let c = lerpColor(topColor, bottomColor, lerpAmt);
+        stroke(c);
+        line(0, y, width, y);
+      }
+      noStroke();
+    }
+
+    // Eye of Horus shape
+    function drawEyeOfHorus() {
+      fill(220);
+      // Outer eye arc
+      ellipse(0, 0, 120, 60);
+      fill(0);
+      // Inner region
+      ellipse(0, 0, 30, 30);
+      // Eye styling lines
+      stroke(220);
+      strokeWeight(4);
+      noFill();
+      // Curved lash
+      arc(0, 0, 160, 80, 0, 180);
+      // Lower flourish
+      arc(20, 20, 40, 20, 180, 360);
+      noStroke();
+    }
+
+    // Movement with arrow keys
+    function keyPressed() {
+      if (keyCode === LEFT_ARROW) {
+        scarab.x -= moveSpeed;
+      } else if (keyCode === RIGHT_ARROW) {
+        scarab.x += moveSpeed;
+      } else if (keyCode === UP_ARROW) {
+        scarab.y -= moveSpeed;
+      } else if (keyCode === DOWN_ARROW) {
+        scarab.y += moveSpeed;
+      }
+    }
+
+    // Keep scarab within canvas
+    function handleScarabMovement() {
+      scarab.x = constrain(scarab.x, scarab.size/2, width - scarab.size/2);
+      scarab.y = constrain(scarab.y, scarab.size/2, height - scarab.size/2);
+    }
+  </script>
+</body>
+</html>

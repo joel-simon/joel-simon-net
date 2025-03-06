@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Magical Maze Tapestry</title>
+  <!-- Include p5.js -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <style>
+    /* Basic page setup to center the canvas and remove scrollbars */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      border: none;
+    }
+
+    /* Instructions overlay (hidden by default, appears on hover) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.7);
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      box-sizing: border-box;
+      padding: 20px;
+      pointer-events: none;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Magical Maze Tapestry</strong><br><br>
+        • Background weaving shifts with hour & minute.<br>
+        • A fractal tree grows based on the current second.<br>
+        • The maze regenerates every minute.<br>
+        • Use the digital clock for reference.<br>
+        Hover away to see the animation!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Magical Maze Tapestry
+      ---------------------
+      1) Weaving Background:
+         Lines bend based on the hour and minute.
+      2) Fractal Tree:
+         Branch angle changes with second; color changes every second.
+      3) Timed Maze:
+         Regenerates each time the minute changes using a basic MST approach.
+      4) Digital Clock:
+         Displayed at the bottom-left.
+    */
+
+    const CANVAS_SIZE = 512;
+    let lastMinute = -1;
+    let walls = [];
+    const ROWS = 8;
+    const COLS = 8;
+    let cellSize;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+
+      cellSize = width / COLS;
+      generateMaze(); // Initial maze
+      lastMinute = minute();
+    }
+
+    function draw() {
+      background(20);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // (1) Draw weaving background
+      drawWeavingBackground(h, m);
+
+      // (2) Regenerate the maze if minute has changed
+      if(m !== lastMinute){
+        generateMaze();
+        lastMinute = m;
+      }
+      drawMaze();
+
+      // (3) Draw fractal tree (lower right corner)
+      push();
+      translate(width * 0.8, height * 0.8);
+      drawFractalTree(0, 0, 60, -90, 5, s);
+      pop();
+
+      // (4) Small digital time readout in bottom-left
+      displayClock(h, m, s);
+    }
+
+    // --------------------
+    // (1) Weaving background
+    // --------------------
+    function drawWeavingBackground(h, m) {
+      // Use hour/minute to define wave amplitude and frequency
+      let amplitude = map(h, 0, 23, 15, 80);
+      let frequency = map(m, 0, 59, 0.01, 0.08);
+
+      stroke(200, 50);
+      noFill();
+      strokeWeight(1);
+
+      // Horizontal weaving lines
+      for (let y = 0; y < height; y += 8) {
+        beginShape();
+        for (let x = 0; x <= width; x += 8) {
+          let waveOffset = amplitude * sin((x + frameCount * 0.5) * frequency);
+          vertex(x, y + waveOffset);
+        }
+        endShape();
+      }
+
+      // Vertical weaving lines
+      for (let x = 0; x < width; x += 10) {
+        beginShape();
+        for (let y = 0; y <= height; y += 8) {
+          let waveOffset = amplitude * cos((y + frameCount * 0.35) * frequency);
+          vertex(x + waveOffset, y);
+        }
+        endShape();
+      }
+    }
+
+    // --------------------
+    // (2) Maze generation
+    // --------------------
+    function generateMaze() {
+      walls = [];
+
+      // Build list of disjoint sets for each cell
+      let cells = [];
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          cells.push({ row: r, col: c, parent: r * COLS + c });
+        }
+      }
+
+      // Edges between adjacent cells
+      let edges = [];
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (r < ROWS - 1) {
+            edges.push({ c1: { r, c }, c2: { r: r + 1, c } });
+          }
+          if (c < COLS - 1) {
+            edges.push({ c1: { r, c }, c2: { r, c: c + 1 } });
+          }
+        }
+      }
+      // Shuffle edges
+      edges.sort(() => 0.5 - random());
+
+      // Find function
+      function findSet(i) {
+        if (cells[i].parent !== i) {
+          cells[i].parent = findSet(cells[i].parent);
+        }
+        return cells[i].parent;
+      }
+      // Union function
+      function unionSet(i, j) {
+        let ri = findSet(i);
+        let rj = findSet(j);
+        cells[rj].parent = ri;
+      }
+
+      // Minimum spanning tree
+      let finalEdges = [];
+      for (let e of edges) {
+        let idx1 = e.c1.r * COLS + e.c1.c;
+        let idx2 = e.c2.r * COLS + e.c2.c;
+        if (findSet(idx1) !== findSet(idx2)) {
+          unionSet(idx1, idx2);
+          finalEdges.push(e);
+        }
+      }
+
+      // Remaining edges become walls
+      for (let e of edges) {
+        if (!finalEdges.includes(e)) {
+          let x1 = e.c1.c * cellSize;
+          let y1 = e.c1.r * cellSize;
+          let x2 = e.c2.c * cellSize;
+          let y2 = e.c2.r * cellSize;
+          walls.push({ x1, y1, x2, y2 });
+        }
+      }
+
+      // Border walls
+      for (let r = 0; r <= ROWS; r++) {
+        walls.push({ x1: 0, y1: r*cellSize, x2: width, y2: r*cellSize });
+      }
+      for (let c = 0; c <= COLS; c++) {
+        walls.push({ x1: c*cellSize, y1: 0, x2: c*cellSize, y2: height });
+      }
+    }
+
+    function drawMaze() {
+      stroke(255);
+      strokeWeight(2);
+      walls.forEach(w => line(w.x1, w.y1, w.x2, w.y2));
+    }
+
+    // --------------------
+    // (3) Fractal Tree
+    // --------------------
+    function drawFractalTree(x, y, branchLength, angle, depth, s) {
+      if (depth === 0) return;
+
+      // Change color based on second
+      strokeWeight(map(depth, 1, 6, 1, 3));
+      let hueBase = map(s, 0, 59, 0, 360);
+      stroke(color(`hsl(${(hueBase + depth*15)%360}, 60%, 70%)`));
+
+      // Draw the branch
+      let x2 = x + branchLength * cos(angle);
+      let y2 = y + branchLength * sin(angle);
+      line(x, y, x2, y2);
+
+      // Recursively draw branches
+      let angleVariation = map(s, 0, 59, 15, 45); 
+      drawFractalTree(x2, y2, branchLength * 0.7, angle - angleVariation, depth - 1, s);
+      drawFractalTree(x2, y2, branchLength * 0.7, angle + angleVariation, depth - 1, s);
+    }
+
+    // --------------------
+    // (4) Digital Clock
+    // --------------------
+    function displayClock(h, m, s) {
+      push();
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 10, height - 16);
+      pop();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Wave + Fractal Tree + Rotating Star</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Wave + Fractal Tree + Rotating Star<br><br>
+        • Wave amplitude influenced by the current hour<br>
+        • Fractal tree grows with the current minute<br>
+        • Star rotates and shifts with seconds<br><br>
+        Hover away to see it in action
+      </p>
+    </div>
+  </div>
+
+  <script>
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(0);
+
+      const h = hour();
+      const m = minute();
+      const s = second();
+
+      // 1) Draw a wave in the background whose amplitude depends on hour
+      drawBackgroundWave(h);
+
+      // 2) Fractal tree that grows based on the current minute
+      push();
+      translate(width / 2, height * 0.75); 
+      stroke(255);
+      let branchCount = map(m, 0, 59, 5, 10); 
+      let treeLength = map(m, 0, 59, 50, 120);
+      fractalTree(treeLength, branchCount);
+      pop();
+
+      // 3) Star that rotates with seconds
+      push();
+      translate(width / 2, height / 4);
+      rotate(frameCount + s * 6); 
+      drawRotatingStar(s);
+      pop();
+
+      // Time readout text
+      drawTimeReadout(h, m, s);
+    }
+
+    function drawBackgroundWave(h) {
+      noStroke();
+      fill(30, 144, 255, 50); // translucent wave color
+
+      const amplitude = map(h, 0, 23, 20, 100);  
+      const freq = map(h, 0, 23, 0.01, 0.05);
+
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 5) {
+        let y = height / 2 + sin((frameCount * 0.02) + x * freq) * amplitude;
+        vertex(x, y + 100);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+    }
+
+    // Recursive fractal tree
+    function fractalTree(length, depth) {
+      // Draw main branch
+      line(0, 0, 0, -length);
+      translate(0, -length);
+
+      // If there's still depth left, branch out
+      if (depth > 0) {
+        push();
+        rotate(20);
+        fractalTree(length * 0.7, depth - 1);
+        pop();
+
+        push();
+        rotate(-20);
+        fractalTree(length * 0.7, depth - 1);
+        pop();
+      }
+    }
+
+    function drawRotatingStar(sec) {
+      // Star changes size or points slightly as seconds pass
+      let points = 5 + floor(map(sec, 0, 59, 0, 5));
+      let size = 40 + map(sin(frameCount + sec), -1, 1, -5, 5);
+
+      fill(255, 215, 0);
+      stroke(255, 215, 0);
+      strokeWeight(2);
+
+      beginShape();
+      for (let i = 0; i < points * 2; i++) {
+        let angle = 180 / points * i;
+        let r = i % 2 === 0 ? size : size * 0.4;
+        let x = cos(angle) * r;
+        let y = sin(angle) * r;
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+    }
+
+    function drawTimeReadout(h, m, s) {
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Orbiting Time Rings</title>
+  <style>
+    /* Ensure no scrollbars & no page margin */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      font-family: sans-serif;
+      color: #ddd;
+      overflow: hidden;
+    }
+
+    /* Container is positioned to hold a 512x512 canvas */
+    #container {
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    /* Overlay for hover instructions */
+    #hover-info {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #container:hover #hover-info {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="hover-info">
+      <p>
+        Observe how these three glowing orbs orbit to mark the passing of hours, minutes, and seconds. 
+        The outermost orb is for hours, the middle orb is for minutes, and the innermost orb is for seconds. 
+        Watch them spin in unison to visualize the current time in a cosmic dance.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let canvasSize = 512;
+    let centerX, centerY;
+
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent('container');
+      centerX = width / 2;
+      centerY = height / 2;
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      // Calculate time
+      let h = hour() % 12; // 12-hour format
+      let m = minute();
+      let s = second();
+
+      // A shifting background color to reflect the hour (day to night)
+      // Map hours to a hue range (0-255 for a color shift). 
+      let hueValue = map(hour(), 0, 23, 0, 255);
+      fill(hueValue, 100, 60, 50);
+      rect(0, 0, width, height);
+
+      // Convert from p5's default RGB to HSB for easier color manipulation
+      colorMode(HSB);
+
+      // Outer ring (hours)
+      let hourRadius = map(h, 0, 12, 80, 200);
+      let hourAngle = map(h, 0, 12, 0, TWO_PI) - HALF_PI; // -HALF_PI to start top
+      push();
+      translate(centerX, centerY);
+      fill(hueValue, 200, 200);
+      ellipse( hourRadius * cos(hourAngle),
+               hourRadius * sin(hourAngle),
+               20, 20 );
+      pop();
+
+      // Middle ring (minutes)
+      let minuteRadius = map(m, 0, 59, 50, 150);
+      let minuteAngle = map(m, 0, 59, 0, TWO_PI) - HALF_PI;
+      push();
+      translate(centerX, centerY);
+      fill((hueValue + 80) % 255, 200, 200);
+      ellipse( minuteRadius * cos(minuteAngle),
+               minuteRadius * sin(minuteAngle),
+               15, 15 );
+      pop();
+
+      // Inner ring (seconds)
+      let secondRadius = map(s, 0, 59, 20, 100);
+      let secondAngle = map(s, 0, 59, 0, TWO_PI) - HALF_PI;
+      push();
+      translate(centerX, centerY);
+      fill((hueValue + 160) % 255, 200, 200);
+      ellipse( secondRadius * cos(secondAngle),
+               secondRadius * sin(secondAngle),
+               10, 10 );
+      pop();
+
+      // Reset color mode
+      colorMode(RGB);
+
+      // Draw time text in the center
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(18);
+      text(
+        nf(hour(), 2) + ":" + nf(m, 2) + ":" + nf(s, 2),
+        centerX,
+        centerY + 35
+      );
+    }
+  </script>
+</body>
+</html>

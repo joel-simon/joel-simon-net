@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Combined Time Skyline & Fractal Tree</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the "Combined Skyline & Fractal Tree" time display!<br><br>
+        • A wave in the background changes shape with the hour.<br>
+        • The skyline's building heights reflect the hour.<br>
+        • A fractal tree grows or shrinks based on the minute.<br>
+        • The star in the sky rotates with the seconds.<br><br>
+        Hover away to enjoy the animation.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let waveOffset = 0;
+    let waveSpeed = 0.02;
+    let starRotation = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      rectMode(CORNER);
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // 1) Wave background (based on hour)
+      let amplitude = map(h, 0, 23, 10, 80);
+      let freq = map(h, 0, 23, 0.01, 0.2);
+      waveBackground(amplitude, freq);
+      
+      // 2) Skyline (building heights based on hour)
+      // We'll draw a row of buildings along the bottom of the canvas
+      drawSkyline(h);
+
+      // 3) Fractal tree (branch depth based on minute)
+      push();
+      translate(width * 0.8, height * 0.75);
+      stroke(255);
+      branch(map(m, 0, 59, 3, 9));
+      pop();
+
+      // 4) Rotating star in the sky (based on second)
+      // Placed near top center
+      starRotation += 1 + s * 0.02;
+      push();
+      translate(width / 2, height * 0.3);
+      rotate(starRotation);
+      drawStar(0, 0, 10, 20, 5);
+      pop();
+
+      // Display digital clock near bottom
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+      pop();
+    }
+
+    // Draw wave background
+    function waveBackground(amplitude, freq) {
+      noStroke();
+      fill(20, 80, 140);
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 5) {
+        let waveY = height / 2 + amplitude * sin(freq * (x + waveOffset));
+        vertex(x, waveY);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+      waveOffset += waveSpeed;
+    }
+
+    // Draw skyline (buildings across the bottom)
+    function drawSkyline(h) {
+      push();
+      fill(30);
+      rect(0, height - 80, width, 80); // base ground
+      let numBuildings = 10;
+      let buildingWidth = width / numBuildings;
+      for (let i = 0; i < numBuildings; i++) {
+        let buildingHeight = map(h, 0, 23, 10, 120) + random(5,15);
+        let x = i * buildingWidth;
+        let y = height - buildingHeight - 80;
+        fill(60);
+        rect(x + 2, y, buildingWidth - 4, buildingHeight);
+      }
+      pop();
+    }
+
+    // Simple fractal tree
+    function branch(levels) {
+      if (levels < 1) return;
+      strokeWeight(levels);
+      line(0, 0, 0, -40);
+      translate(0, -40);
+      push();
+      rotate(25);
+      branch(levels - 1);
+      pop();
+      push();
+      rotate(-25);
+      branch(levels - 1);
+      pop();
+    }
+
+    // Utility function to draw a 5-pointed star
+    function drawStar(x, y, radius1, radius2, npoints) {
+      fill(255, 200, 0);
+      noStroke();
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

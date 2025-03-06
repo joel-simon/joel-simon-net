@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bumper Cars Time Arena</title>
+  <!-- Include p5.js -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* A fixed 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Overlay for hover instructions (hidden by default) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.75);
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Bumper Cars Time Arena<br><br>
+        • The central spinner rotates with the hour.<br>
+        • Each car's color depends on the minute.<br>
+        • Car speed is tied to the current second.<br>
+        • Watch them bounce off the edges in style!<br>
+        Hover away to start the ride!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /* 
+      Bumper Cars Time Arena:
+      -----------------------
+      - A central spinner that rotates based on the hour.
+      - Bumper cars that move around the arena, each car's color determined by the minute.
+      - Car speed depends on the second.
+      - Cars bounce off the arena walls for fun collisions.
+    */
+
+    const SIZE = 512;
+    const NUM_CARS = 10;
+    let cars = [];
+    let lastSecond = -1;
+
+    function setup() {
+      let cnv = createCanvas(SIZE, SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+
+      // Initialize bumper cars
+      for (let i = 0; i < NUM_CARS; i++) {
+        cars.push(new BumperCar());
+      }
+    }
+
+    function draw() {
+      background(30, 30, 40);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Draw the central spinner, rotating with the hour
+      drawSpinner(h);
+
+      // Update car speed if second changed
+      if (s !== lastSecond) {
+        updateCarSpeed(s);
+        lastSecond = s;
+      }
+
+      // Update and display cars
+      for (let c of cars) {
+        c.update(m);
+        c.display();
+      }
+    }
+
+    function drawSpinner(h) {
+      push();
+      translate(width / 2, height / 2);
+      // Map hour in [0,23] to a rotation [0,360)
+      let spinnerAngle = map(h % 24, 0, 24, 0, 360);
+      rotate(spinnerAngle);
+      stroke(255);
+      strokeWeight(2);
+      noFill();
+      // Simple spinner arms
+      line(0, 0, 0, -80);
+      line(0, 0, 70, 0);
+
+      // A circle at the center
+      ellipse(0, 0, 30, 30);
+      pop();
+    }
+
+    function updateCarSpeed(sec) {
+      // Increase or decrease car speeds based on second
+      // Map [0,59] to a range [1,4] for speed
+      let newSpeed = map(sec, 0, 59, 1, 4);
+      for (let c of cars) {
+        c.setSpeed(newSpeed);
+      }
+    }
+
+    class BumperCar {
+      constructor() {
+        // Random start
+        this.x = random(SIZE);
+        this.y = random(SIZE);
+        this.diameter = random(20, 40);
+        this.xSpeed = random(-2, 2);
+        this.ySpeed = random(-2, 2);
+        this.colorVal = color(100, 100, 200);
+      }
+
+      setSpeed(s) {
+        // Keep the direction, but scale the magnitude
+        let angle = atan2(this.ySpeed, this.xSpeed);
+        this.xSpeed = s * cos(angle);
+        this.ySpeed = s * sin(angle);
+      }
+
+      update(min) {
+        // Map minute to color range
+        let hueVal = map(min, 0, 59, 0, 255);
+        colorMode(HSB, 255);
+        this.colorVal = color(hueVal, 200, 220);
+        colorMode(RGB, 255);
+
+        this.x += this.xSpeed;
+        this.y += this.ySpeed;
+
+        // Bounce off walls
+        if (this.x < this.diameter / 2 || this.x > width - this.diameter / 2) {
+          this.xSpeed *= -1;
+        }
+        if (this.y < this.diameter / 2 || this.y > height - this.diameter / 2) {
+          this.ySpeed *= -1;
+        }
+      }
+
+      display() {
+        push();
+        noStroke();
+        fill(this.colorVal);
+        ellipse(this.x, this.y, this.diameter, this.diameter);
+
+        // Decorative stripes on the car
+        fill(255, 100);
+        rectMode(CENTER);
+        push();
+        translate(this.x, this.y);
+        rotate(frameCount); // subtle spin on the car
+        rect(0, 0, this.diameter * 0.3, this.diameter * 1.0, 3);
+        pop();
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Ribbons & Tides</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to “Time Ribbons & Tides”!<br><br>
+        • Hour controls ribbon height (amplitude).<br>
+        • Minute sets wave frequency.<br>
+        • Second defines the flow speed.<br>
+        • Horizontal mouse movement shifts colors.<br><br>
+        Hover away to return to the animation.
+      </p>
+    </div>
+  </div>
+  
+  <script>
+    let offset = 0;       // Phase offset for wave animation
+    let waveCount = 5;    // Number of ribbon waves
+    
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      // Current time components
+      let h = hour();    // 0 - 23
+      let m = minute();  // 0 - 59
+      let s = second();  // 0 - 59
+
+      // Map time to wave parameters
+      // Ensure amplitude has a noticeable minimum
+      let amplitude = map(h, 0, 23, 20, 200);
+      // Wave frequency from minute
+      let freq = map(m, 0, 59, 0.5, 5.0);
+      // Speed from second
+      let speed = map(s, 0, 59, 0.01, 0.1);
+
+      // Mouse influences color shift
+      let colorShift = map(mouseX, 0, width, 0, 255);
+
+      // Draw multiple ribbon waves
+      for (let i = 0; i < waveCount; i++) {
+        // Each ribbon has a vertical offset
+        let yOffset = (height / (waveCount + 1)) * (i + 1);
+
+        // Color changes with each ribbon
+        fill((colorShift + i * 50) % 255, 150, 250, 100);
+
+        beginShape();
+        for (let x = 0; x <= width; x += 5) {
+          let y = yOffset + sin(x * freq + offset + i * 50) * amplitude;
+          vertex(x, y);
+        }
+        // Close the shape generously below the canvas
+        vertex(width, height);
+        vertex(0, height);
+        endShape(CLOSE);
+      }
+
+      // Increment offset based on speed
+      offset += speed;
+
+      // Display digital time readout in the corner
+      fill(255);
+      textSize(14);
+      textAlign(RIGHT, BOTTOM);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width - 10, height - 10);
+    }
+  </script>
+</body>
+</html>

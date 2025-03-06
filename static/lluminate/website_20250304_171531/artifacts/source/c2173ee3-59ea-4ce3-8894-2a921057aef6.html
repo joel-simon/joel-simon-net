@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Time Kaleidoscope</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset body margin/padding and use a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container fixed at 512x512, centered */
+    #clock-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+    }
+
+    /* Instructions overlay, hidden by default */
+    #instructions {
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      display: none;
+      background-color: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      line-height: 1.5;
+      padding: 2rem;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #clock-container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="clock-container">
+  <div id="instructions">
+    <h2>Time Kaleidoscope</h2>
+    <p>Observe swirling shapes that form a kaleidoscope pattern tied to the current time.<br>
+       • Colors change with hour<br>
+       • Number of shape clusters reflects the minute<br>
+       • Rotation speed depends on the second<br>
+       Enjoy the hypnotic, ever-shifting display!</p>
+  </div>
+</div>
+
+<script>
+  let canvasSize = 512;
+
+  function setup() {
+    let myCanvas = createCanvas(canvasSize, canvasSize);
+    myCanvas.parent("clock-container");
+    angleMode(DEGREES);
+    noStroke();
+  }
+
+  function draw() {
+    background(0);
+
+    // Current time
+    let hr = hour();
+    let mn = minute();
+    let sc = second();
+
+    // Calculate parameters from time
+    let rotationSpeed = map(sc, 0, 59, 0, 6); 
+    let clusterCount = floor(map(mn, 0, 59, 3, 12));
+    let baseR = (hr * 10) % 255;
+    let baseG = (mn * 4) % 255;
+    let baseB = (sc * 4) % 255;
+
+    // Translate to center
+    translate(width/2, height/2);
+
+    // Rotate canvas slightly each frame based on seconds
+    rotate(frameCount * rotationSpeed);
+
+    // Draw multiple kaleidoscopic segments 
+    for (let i = 0; i < clusterCount; i++) {
+      push();
+      rotate(i * (360 / clusterCount));
+
+      // Color transitions based on hour, minute, second
+      fill(
+        (baseR + i * 20) % 255,
+        (baseG + i * 20) % 255,
+        (baseB + i * 20) % 255,
+        200
+      );
+
+      // Simple shape arrangement (arcs and ellipses)
+      let shapeSize = 50 + (mn % 10) * 5;
+      beginShape();
+      vertex(0, 0);
+      bezierVertex(shapeSize, -shapeSize, shapeSize, shapeSize, 0, shapeSize * 2);
+      endShape(CLOSE);
+
+      ellipse(shapeSize, 0, shapeSize / 1.5, shapeSize / 2);
+
+      pop();
+    }
+
+    // Minimal time display in corner (so it won't disrupt kaleidoscope center)
+    resetMatrix();
+    textAlign(RIGHT, BOTTOM);
+    fill(255);
+    textSize(16);
+    text(`${hr}:${nf(mn, 2)}:${nf(sc, 2)}`, width - 10, height - 10);
+  }
+</script>
+</body>
+</html>

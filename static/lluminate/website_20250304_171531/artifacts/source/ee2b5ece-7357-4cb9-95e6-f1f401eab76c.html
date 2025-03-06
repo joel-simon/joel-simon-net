@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Combined Time Waves, Fish, and Rotating Star</title>
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset and basic style */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222; /* Dark backdrop around the canvas */
+    }
+    /* Container for our 512x512 canvas */
+    #timeContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+    }
+    /* Instructions overlay, hidden initially */
+    #instructionsOverlay {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding: 1.5rem;
+      box-sizing: border-box;
+    }
+    /* Show instructions on hover */
+    #timeContainer:hover #instructionsOverlay {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="timeContainer">
+    <div id="instructionsOverlay">
+      <h2>Time Waves, Fish & Star</h2>
+      <p>
+        Hover to reveal instructions: This display blends waves influenced by the hour, 
+        fish sizes related to minutes and seconds, and a rotating star at the center. 
+        A digital clock is shown at the bottom-left.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /***********************
+     * Globals and helpers *
+     ***********************/
+    let waves = [];
+    let maxWaveCount = 5;    // Number of wave layers
+    let starAngle = 0;       // Rotating star angle
+    let fishGroup = [];      // Array to hold fish objects
+
+    // Helper function to create a gradient background
+    function drawBackground() {
+      noStroke();
+      for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        let col1 = color(0, 0, 30);   // deep blue
+        let col2 = color(0, 50, 60); // lighter teal
+        let c = lerpColor(col1, col2, inter);
+        stroke(c);
+        line(0, y, width, y);
+      }
+    }
+
+    /**********************
+     * Wave class         *
+     **********************/
+    class Wave {
+      constructor(offset, speed, amplitude) {
+        this.offset = offset;     // Horizontal offset
+        this.speed = speed;       // Wave speed
+        this.amplitude = amplitude;  // Wave height
+      }
+
+      update(timeFactor) {
+        // Use timeFactor for dynamic wave changes
+        this.offset += this.speed * (timeFactor / 10);
+      }
+
+      display() {
+        noFill();
+        stroke(255, 100);
+        strokeWeight(2);
+        beginShape();
+        for (let x = 0; x <= width; x += 10) {
+          let y = height / 2 
+                + sin((x + this.offset) * 0.01) * this.amplitude;
+          vertex(x, y);
+        }
+        endShape();
+      }
+    }
+
+    /**********************
+     * Fish class         *
+     **********************/
+    class Fish {
+      constructor(x, y, size, speed, col) {
+        this.x = x;
+        this.y = y;
+        this.size = size;
+        this.speed = speed;
+        this.col = col;
+      }
+
+      update() {
+        this.x += this.speed;
+        // Wrap around
+        if (this.x > width + this.size) {
+          this.x = -this.size;
+          this.y = random(height);
+        }
+      }
+
+      display() {
+        fill(this.col);
+        noStroke();
+        // Simple elliptical fish
+        ellipse(this.x, this.y, this.size * 1.2, this.size);
+        // Tail fin
+        triangle(
+          this.x - this.size / 2, 
+          this.y, 
+          this.x - this.size, 
+          this.y - this.size / 4, 
+          this.x - this.size, 
+          this.y + this.size / 4
+        );
+      }
+    }
+
+    /**********************
+     * Setup & Draw       *
+     **********************/
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent("timeContainer");
+      angleMode(DEGREES);
+
+      // Initialize waves
+      for (let i = 0; i < maxWaveCount; i++) {
+        waves.push(new Wave(i * 100, 0.4 + i * 0.1, 20 + i * 10));
+      }
+
+      // Initialize fish
+      for (let i = 0; i < 5; i++) {
+        fishGroup.push(
+          new Fish(
+            random(width), 
+            random(height), 
+            20, 
+            1 + i * 0.3, 
+            color(random(50, 255), random(50, 200), random(100, 255))
+          )
+        );
+      }
+    }
+
+    function draw() {
+      drawBackground();
+
+      // Gather time data
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Waves update and display
+      // Hour is used to subtly affect wave movement
+      waves.forEach((wave) => {
+        wave.update(hr);
+        wave.display();
+      });
+
+      // Update fish with minute & second influences
+      // Map fish size to minutes, speed to second
+      fishGroup.forEach((f) => {
+        f.size = map(mn, 0, 59, 15, 40);
+        f.speed = map(sc, 0, 59, 0.5, 3);
+        f.update();
+        f.display();
+      });
+
+      // Rotating star in the center influenced by second
+      push();
+      translate(width / 2, height / 2);
+      starAngle += map(sc, 0, 60, 0.5, 1);
+      rotate(starAngle);
+      drawStar(map(hr % 12, 0, 12, 5, 12), map(sc, 0, 59, 40, 80));
+      pop();
+
+      // Digital clock
+      fill(255);
+      noStroke();
+      textSize(20);
+      textAlign(LEFT, CENTER);
+      let displayHour = hr % 12;
+      displayHour = displayHour === 0 ? 12 : displayHour;
+      let ampm = hr >= 12 ? "PM" : "AM";
+      text(
+        displayHour + ":" 
+        + nf(mn, 2) + ":" 
+        + nf(sc, 2) + " " + ampm, 
+        10, height - 20
+      );
+    }
+
+    // Draw a star with a certain number of points
+    // n = number of points, size = outer radius
+    function drawStar(n, size) {
+      fill(255, 255, 0);
+      stroke(255, 200);
+      strokeWeight(2);
+      beginShape();
+      for (let i = 0; i < 2 * n; i++) {
+        let r = i % 2 === 0 ? size : size / 2;
+        let angle = (360 / (2 * n)) * i;
+        let x = r * cos(angle);
+        let y = r * sin(angle);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Creative Time Display - Orbital Galaxies</title>
+  <style>
+    /* Ensure no extra offsets and a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #121212;
+      font-family: sans-serif;
+    }
+
+    /* Canvas container */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Instructions overlay (shown on hover) */
+    #instructions {
+      pointer-events: none;
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-size: 16px;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #canvas-container:hover #instructions {
+      display: block;
+    }
+
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      text-align: center;
+      transform: translate(-50%, -50%);
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <!-- Hover overlay instructions -->
+    <div id="instructions">
+      <div class="instructions-text">
+        Orbital Galaxies Instructions:
+        <br><br>
+        1) Outer Ring Color = Hour
+        <br>
+        2) Middle Ring Rotation = Minute
+        <br>
+        3) Inner Particles = Second
+        <br><br>
+        Watch as the orbits change color, speed, and quantity to represent real-time hours, minutes, and seconds.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      const myCanvas = createCanvas(w, h);
+      myCanvas.parent('canvas-container');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(10);
+
+      // Gather current time
+      let hr = hour() % 12;  // 0-11
+      let mn = minute();     // 0-59
+      let sc = second();     // 0-59
+
+      // Map hour to color (outer ring)
+      // Hour goes from 0 to 11, so let's map it to a hue from 0 to 360
+      let hrHue = map(hr, 0, 11, 0, 360);
+      colorMode(HSB);
+      let hourColor = color(hrHue, 70, 80);
+
+      // Use minute to set orbit rotation speed
+      // Range: 0 to 59 -> mapped to 0.1 to 2.0
+      let orbitSpeed = map(mn, 0, 59, 0.1, 2.0);
+
+      // Use second to set the number of inner particles
+      // Range: 0 to 59 -> mapped to 5 to 60
+      let particleCount = map(sc, 0, 59, 5, 60);
+      
+      // Center
+      translate(width / 2, height / 2);
+
+      // Outer ring: large orbit
+      push();
+      fill(hourColor);
+      rotate(frameCount * orbitSpeed);
+      ellipseMode(CENTER);
+      ellipse(150, 0, 40, 40); 
+      pop();
+
+      // Middle ring: smaller orbit + angle offset
+      push();
+      fill(255, 50);
+      rotate(frameCount * orbitSpeed * 2);
+      ellipse(80, 0, 20, 20);
+      pop();
+
+      // Inner particles: cluster around the center
+      push();
+      for (let i = 0; i < particleCount; i++) {
+        let angle = map(i, 0, particleCount, 0, 360);
+        let r = 30;  // fixed radial distance
+        let x = r * cos(angle + frameCount * 0.5);
+        let y = r * sin(angle + frameCount * 0.5);
+        fill(hrHue, 60, map(i, 0, particleCount, 70, 90));
+        ellipse(x, y, 8, 8);
+      }
+      pop();
+
+      // Restore color mode to default for text
+      colorMode(RGB);
+
+      // Digital time readout at center
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(24);
+      let timeStr = nf(hour(), 2) + ':' + nf(mn, 2) + ':' + nf(sc, 2);
+      text(timeStr, 0, 0);
+    }
+  </script>
+</body>
+</html>

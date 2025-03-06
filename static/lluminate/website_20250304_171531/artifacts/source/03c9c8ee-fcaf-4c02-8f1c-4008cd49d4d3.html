@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Lightning Jellyfish Storm</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset body margin/padding and use a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container fixed at 512x512, centered */
+    #clock-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+    }
+
+    /* Instructions overlay, hidden by default */
+    #instructions {
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      display: none;
+      background-color: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      line-height: 1.5;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #clock-container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="clock-container">
+  <div id="instructions">
+    <h2>Lightning Jellyfish Storm</h2>
+    <p>
+      Enjoy a luminescent seascape with random lightning strikes!<br>
+      • Jellyfish count is based on the current minute.<br>
+      • Jellyfish color shifts with the hour.<br>
+      • Lightning is more frequent as the seconds increase.<br>
+      • Press SPACE to toggle a lightning flash effect.
+    </p>
+  </div>
+</div>
+
+<script>
+  let canvasSize = 512;
+  let jellyfishPopulation = [];
+  let currentMinute = -1;
+  let flashActive = false;
+  let flashAlpha = 0;
+
+  function setup() {
+    let myCanvas = createCanvas(canvasSize, canvasSize);
+    myCanvas.parent("clock-container");
+    noStroke();
+    frameRate(30);
+  }
+
+  function draw() {
+    background(10, 15, 40); // a deep ocean tone
+    
+    let hr = hour();
+    let mn = minute();
+    let sc = second();
+
+    // Rebuild our jellyfish population if the minute changed
+    if (mn !== currentMinute) {
+      currentMinute = mn;
+      initializeJellyfish(mn);
+    }
+
+    // Draw subtle wave lines to mimic ocean
+    drawWaves(sc);
+
+    // Update and display jellyfish
+    for (let j of jellyfishPopulation) {
+      j.update();
+      j.display(hr);
+    }
+
+    // Draw lightning based on seconds
+    if (random(60) < sc) {
+      drawLightning();
+    }
+
+    // Handle optional full-screen flash
+    if (flashActive && flashAlpha > 0) {
+      fill(255, flashAlpha);
+      rect(0, 0, width, height);
+      flashAlpha -= 15; 
+    }
+    
+    // Draw digital clock near bottom
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textSize(24);
+    text(`${hr}:${nf(mn, 2)}:${nf(sc, 2)}`, width / 2, height - 20);
+  }
+
+  // Press SPACE to trigger or toggle a lightning flash effect
+  function keyPressed() {
+    if (key === ' ') {
+      flashActive = !flashActive;
+      if (flashActive) {
+        flashAlpha = 180;
+      }
+    }
+  }
+
+  // Initialize jellyfish array: number depends on current minute
+  function initializeJellyfish(mn) {
+    jellyfishPopulation = [];
+    let count = max(5, mn); // at least 5 jellyfish
+    for (let i = 0; i < count; i++) {
+      let x = random(width);
+      let y = random(height * 0.5, height * 0.9);
+      jellyfishPopulation.push(new Jellyfish(x, y));
+    }
+  }
+
+  // Draw lightning: random bolt from top to a random x
+  function drawLightning() {
+    push();
+    stroke(255, random(100, 255));
+    strokeWeight(2);
+    let startX = random(width);
+    let segments = int(random(3, 7));
+    let x = startX;
+    let y = 0;
+    for (let i = 0; i < segments; i++) {
+      let newX = x + random(-30, 30);
+      let newY = y + height / segments;
+      line(x, y, newX, newY);
+      x = newX;
+      y = newY;
+    }
+    pop();
+
+    // If flash is active, reset alpha for a quick bright flash
+    if (flashActive) {
+      flashAlpha = 255;
+    }
+  }
+
+  // Draw waves: subtle layered arcs
+  function drawWaves(sc) {
+    push();
+    noFill();
+    stroke(180, 220, 255, 40);
+    strokeWeight(2);
+    let waveShift = sc * 0.5;
+    for (let i = 0; i < 6; i++) {
+      beginShape();
+      for (let x = 0; x <= width; x += 10) {
+        let y = 0.7 * height + sin((x + frameCount * 2 + waveShift * i) * 0.02) * (5 + i*3);
+        vertex(x, y);
+      }
+      endShape();
+    }
+    pop();
+  }
+
+  // Jellyfish class
+  class Jellyfish {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.offset = random(1000);
+      this.size = random(20, 40);
+      this.tentacleCount = floor(random(5, 10));
+    }
+
+    update() {
+      // Jellyfish gently bob
+      this.y -= 0.2; // float upward
+      if (this.y < height * 0.3) {
+        // reset to lower part
+        this.y = random(height * 0.5, height * 0.9);
+        this.x = random(width);
+      }
+    }
+
+    display(hr) {
+      // Color shifts with the hour
+      let hue = map(hr, 0, 23, 0, 360) % 360;
+      colorMode(HSB);
+      fill(hue, 80, 255, 0.8);
+      stroke(hue, 150, 255, 0.8);
+      strokeWeight(1);
+
+      // Body
+      ellipse(this.x, this.y, this.size, this.size * 0.7);
+
+      // Tentacles
+      for (let i = 0; i < this.tentacleCount; i++) {
+        let angle = map(i, 0, this.tentacleCount - 1, -PI/4, PI/4);
+        let tx = this.x + sin(frameCount * 0.03 + i) * 3;
+        let ty = this.y + this.size * 0.35;
+        let endX = tx + sin(angle) * this.size * 0.7;
+        let endY = ty + cos(angle) * this.size * 2;
+
+        line(tx, ty, endX, endY);
+      }
+      colorMode(RGB);
+    }
+  }
+</script>
+</body>
+</html>

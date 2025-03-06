@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Time Gravity Well</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the “Time Gravity Well”!<br><br>
+        • Hours orbit backwards. <br>
+        • Minutes orbit forwards. <br>
+        • Seconds flicker unpredictably. <br><br>
+        Hover away to discover the reversed dance of time.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let rotationHour = 0;
+    let rotationMinute = 0;
+    let rotationSecond = 0;
+    let flicker = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+    
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+      
+      // Update rotation angles: 
+      // Hour orbit goes backwards, minute orbit goes forward, 
+      // second orbit flickers unpredictably.
+      rotationHour -= map(h, 0, 23, 0.05, 0.2);   // slow to moderate negative rotation
+      rotationMinute += map(m, 0, 59, 0.1, 0.3);  // slow to faster positive rotation
+      // For seconds, let's add a slight random factor
+      rotationSecond += map(s, 0, 59, 0.1, 0.4) + random(-0.2, 0.2);
+      
+      // Flicker effect for the second orbit color
+      flicker = random(50, 255);
+
+      translate(width / 2, height / 2);
+
+      // Draw the central "gravity well" - a dark circle with a gradient
+      for (let r = 200; r > 0; r -= 2) {
+        fill(0, 0, 0, map(r, 200, 0, 255, 0));
+        circle(0, 0, r);
+      }
+      
+      // Hour orbit
+      push();
+      rotate(rotationHour);
+      let radiusH = 130;
+      let hueH = map(h, 0, 23, 0, 360);
+      colorMode(HSB, 360, 100, 100);
+      fill(hueH, 80, 100);
+      ellipse(radiusH, 0, 30, 30);
+      pop();
+      
+      // Minute orbit
+      push();
+      rotate(rotationMinute);
+      let radiusM = 80;
+      let hueM = map(m, 0, 59, 0, 360);
+      fill(hueM, 80, 100);
+      ellipse(radiusM, 0, 20, 20);
+      pop();
+
+      // Second orbit - flickers in color
+      push();
+      rotate(rotationSecond);
+      let radiusS = 40;
+      colorMode(RGB, 255);
+      fill(flicker, flicker, 255); // bluish flicker
+      ellipse(radiusS, 0, 12, 12);
+      pop();
+
+      // Draw text overlay (small digital clock, top-left corner)
+      resetMatrix();
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, BASELINE);
+      text(
+        nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2),
+        10, 25
+      );
+    }
+  </script>
+</body>
+</html>

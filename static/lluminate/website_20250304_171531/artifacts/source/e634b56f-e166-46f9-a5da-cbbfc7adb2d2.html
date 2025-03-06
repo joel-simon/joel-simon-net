@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Ion Pirate Cove</title>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* 512x512 container for our canvas */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      background-color: #000;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-family: sans-serif;
+      box-sizing: border-box;
+      padding: 20px;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Ion Pirate Cove</strong><br><br>
+        • Swirling vortex arcs shift in color each hour.<br>
+        • Pirate ship sways with the current minute.<br>
+        • Treasure chest sparkles with passing seconds.<br>
+        • A parrot soars across every 30 seconds.<br><br>
+        Hover to view instructions.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time Ion Pirate Cove
+      - Background vortex arcs for the "ion vortex" effect, color changes with hour.
+      - A pirate ship that sways based on current minute.
+      - A treasure chest that sparkles and glitters with seconds.
+      - A parrot that flies across the screen every 30 seconds (0-30).
+    */
+
+    let w = 512;
+    let h = 512;
+
+    // Ship variables
+    let shipX, shipY, shipBaseAngle = 0;
+
+    // Chest sparkle variables
+    let sparkleTimer = 0;
+
+    // Parrot variables
+    let parrotX, parrotY, parrotFly = false;
+
+    function setup() {
+      const canvas = createCanvas(w, h);
+      canvas.parent('canvas-container');
+      angleMode(DEGREES);
+
+      // Initialize pirate ship position
+      shipX = width * 0.5;
+      shipY = height * 0.75;
+
+      // Parrot initial
+      parrotX = -50;
+      parrotY = random(height * 0.2, height * 0.4);
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour();      // 0-23
+      let mn = minute();    // 0-59
+      let sc = second();    // 0-59
+
+      // Draw swirling ion vortex arcs (hour-based hue shift)
+      drawVortex(hr);
+
+      // Pirate ship that sways with minute
+      drawPirateShip(mn);
+
+      // Treasure chest that sparkles with seconds
+      drawTreasureChest(sc);
+
+      // Parrot flight
+      handleParrotFlight(sc);
+      drawParrot();
+
+      // Show digital time in top-left corner
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let dispHour = hr % 12 || 12;
+      let ampm = hr >= 12 ? "PM" : "AM";
+      text(`${dispHour}:${nf(mn,2)}:${nf(sc,2)} ${ampm}`, 10, 10);
+    }
+
+    function drawVortex(hr) {
+      push();
+      translate(width / 2, height / 2);
+
+      let totalSeconds = (hr % 24) * 3600 + minute() * 60 + second();
+      // Map the full day (86400s) to 360 hue
+      let hueVal = map(totalSeconds % 86400, 0, 86400, 0, 360);
+
+      strokeWeight(2);
+      noFill();
+      for (let i = 0; i < 6; i++) {
+        // Create arcs with rotating angles. Hue changes based on hour/time
+        stroke((hueVal + i * 60) % 360, 100, 100);
+        let r = 40 + i * 30;
+        let startAngle = (frameCount + i * 30) % 360;
+        arc(0, 0, r * 2, r * 2, startAngle, startAngle + 180);
+      }
+      pop();
+    }
+
+    function drawPirateShip(mn) {
+      // Sway angle: map minute to range [-10, 10]
+      let swayAngle = map(sin(frameCount * 0.03 + mn), -1, 1, -10, 10);
+
+      push();
+      translate(shipX, shipY);
+      rotate(swayAngle);
+
+      // Ship body
+      noStroke();
+      fill(120, 60, 0);
+      ellipse(0, 0, 100, 30);
+
+      // Mast
+      stroke(60, 40, 20);
+      strokeWeight(4);
+      line(0, -15, 0, -60);
+
+      // Sail
+      noStroke();
+      fill(200);
+      triangle(0, -60, 0, -15, 40, -40);
+
+      // Flag
+      fill(180, 0, 0);
+      rect(-4, -60, 8, -10);
+      pop();
+    }
+
+    function drawTreasureChest(sc) {
+      // Chest position
+      let chestX = width * 0.8;
+      let chestY = height * 0.8;
+
+      // Sparkle every new second briefly
+      if (frameCount % 60 === 0) {
+        sparkleTimer = 15; // sparkle for 15 frames
+      }
+
+      // Chest
+      push();
+      translate(chestX, chestY);
+      noStroke();
+      fill(139, 69, 19); // chest color
+      rectMode(CENTER);
+      rect(0, 0, 60, 30);
+
+      // Lid
+      fill(160, 82, 45);
+      arc(0, -15, 60, 30, 180, 360);
+
+      // Sparkle effect
+      if (sparkleTimer > 0) {
+        sparkleTimer--;
+        let sparkleCount = 5;
+        for (let i = 0; i < sparkleCount; i++) {
+          let angle = random(360);
+          let dist = random(10, 15);
+          let sx = cos(angle) * dist;
+          let sy = sin(angle) * dist - 15; // above chest center
+          fill(255, 255, 0);
+          ellipse(sx, sy, random(3, 6));
+        }
+      }
+      pop();
+    }
+
+    function handleParrotFlight(sc) {
+      // Parrot flies if second < 30
+      if (sc < 30) {
+        parrotFly = true;
+      } else {
+        parrotFly = false;
+        parrotX = -50; // reset
+      }
+
+      if (parrotFly) {
+        parrotX += 2.5; // move right
+      }
+    }
+
+    function drawParrot() {
+      push();
+      translate(parrotX, parrotY);
+      noStroke();
+      fill(0, 200, 0); // parrot's body color
+      ellipse(0, 0, 20, 12);
+
+      // Wing
+      fill(255, 0, 0);
+      let wingFlap = sin(frameCount * 5) * 10;
+      triangle(0, 0, -15, wingFlap, -15, -wingFlap);
+
+      // Head
+      fill(0, 150, 0);
+      ellipse(8, -4, 10, 10);
+
+      // Eye
+      fill(255);
+      ellipse(9, -5, 3);
+      fill(0);
+      ellipse(9, -5, 1.5);
+
+      // Beak
+      fill(255, 200, 0);
+      triangle(13, -4, 8, -2, 8, -6);
+
+      pop();
+    }
+  </script>
+</body>
+</html>

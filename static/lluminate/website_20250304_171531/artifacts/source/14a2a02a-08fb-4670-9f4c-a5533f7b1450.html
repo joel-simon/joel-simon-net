@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Swirling Galaxy Time Display</title>
+    <!-- Include p5.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+    <style>
+      /* Ensure body has no extra margin/padding */
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: #222;
+      }
+
+      /* Center the container and fix its size to 512x512 */
+      #galaxy-container {
+        position: relative;
+        width: 512px;
+        height: 512px;
+        margin: 0 auto;
+      }
+
+      /* Instructions overlay, hidden by default */
+      #instructions {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 512px;
+        height: 512px;
+        background-color: rgba(0, 0, 0, 0.75);
+        color: #fff;
+        font-family: sans-serif;
+        text-align: center;
+        line-height: 1.5;
+        padding: 2rem;
+        box-sizing: border-box;
+      }
+
+      /* Show instructions on hover */
+      #galaxy-container:hover #instructions {
+        display: block;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="galaxy-container">
+      <div id="instructions">
+        <h2>Swirling Galaxy Time</h2>
+        <p>
+          The galaxy's arms reflect the current hour (1-12).<br/>
+          The swirl tightness is tied to minutes, and its spin speed follows the seconds.<br/>
+          Hover over the canvas to see this text.
+        </p>
+      </div>
+    </div>
+
+    <script>
+      let canvasSize = 512;
+      let starPositions = [];
+
+      function setup() {
+        let myCanvas = createCanvas(canvasSize, canvasSize);
+        myCanvas.parent("galaxy-container");
+        angleMode(DEGREES);
+        colorMode(HSB, 360, 100, 100, 1);
+
+        // Initialize random star positions for the background
+        for (let i = 0; i < 200; i++) {
+          starPositions.push({
+            x: random(width),
+            y: random(height),
+            brightness: random(50, 100)
+          });
+        }
+      }
+
+      function draw() {
+        background(0);
+
+        // Draw starry background
+        noStroke();
+        for (let s of starPositions) {
+          fill(60, 0, s.brightness, 1);
+          circle(s.x, s.y, 2);
+        }
+
+        // Get current hour, minute, second
+        let hr = hour();
+        let mn = minute();
+        let sc = second();
+
+        // Number of arms is hour (at least 1)
+        let arms = (hr % 12) === 0 ? 12 : (hr % 12);
+        // Tightness controlled by minutes
+        let swirlFactor = map(mn, 0, 59, 2, 10);
+        // Rotation speed from seconds
+        let spinSpeed = map(sc, 0, 59, 0, 5);
+
+        let centerX = width / 2;
+        let centerY = height / 2;
+
+        // Animate rotation
+        let rotation = frameCount * spinSpeed * 0.1;
+
+        // Draw swirling arms
+        strokeWeight(2);
+        for (let i = 0; i < arms; i++) {
+          let armAngle = i * (360 / arms);
+
+          // Color each arm slightly differently
+          stroke((i * 30) % 360, 90, 100);
+          noFill();
+
+          beginShape();
+          for (let r = 0; r < 200; r++) {
+            let distFromCenter = r; 
+            // Increase swirl with minutes
+            let angle = armAngle + (distFromCenter / swirlFactor) + rotation;
+            let x = centerX + distFromCenter * cos(angle);
+            let y = centerY + distFromCenter * sin(angle);
+            vertex(x, y);
+          }
+          endShape();
+        }
+
+        // Draw a subtle time readout at bottom
+        noStroke();
+        fill(0, 0, 100);
+        textAlign(CENTER, CENTER);
+        textSize(16);
+        text(hr + ":" + nf(mn, 2) + ":" + nf(sc, 2), width / 2, height - 20);
+      }
+    </script>
+  </body>
+</html>

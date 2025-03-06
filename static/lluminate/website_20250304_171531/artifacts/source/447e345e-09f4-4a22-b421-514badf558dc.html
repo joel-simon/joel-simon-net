@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Glitch Matrix</title>
+  <style>
+    /* Ensure no scrollbars & no page margin */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #ddd;
+    }
+    /* Container is sized to hold a 512x512 canvas */
+    #container {
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      position: relative;
+    }
+    /* Overlay for hover instructions */
+    #hover-info {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #container:hover #hover-info {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="hover-info">
+      <p>
+        We’ve thrown out the assumption that time flows smoothly. Instead, it jumps. Each second brings a colorful glitch. Hover away to watch it unfold.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let canvasSize = 512;
+    let gridSize = 8; // 8x8 grid
+    let cellSize = canvasSize / gridSize;
+    let lastSecond;
+
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent('container');
+      noStroke();
+      lastSecond = second();
+    }
+
+    function draw() {
+      background(0);
+
+      // Current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // If the second changed, re-generate glitch patterns
+      if (s !== lastSecond) {
+        generateGlitch();
+        lastSecond = s;
+      }
+
+      // Display random glitch blocks
+      for (let x = 0; x < gridSize; x++) {
+        for (let y = 0; y < gridSize; y++) {
+          fill(blockColors[x][y]);
+          rect(x * cellSize, y * cellSize, cellSize, cellSize);
+        }
+      }
+
+      // Display the time numerically in the bottom center
+      fill(255);
+      textSize(14);
+      textAlign(CENTER, CENTER);
+      text(
+        nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2),
+        width / 2,
+        height - 20
+      );
+    }
+
+    // Store colors for each block
+    let blockColors = [];
+
+    // Initial setup for block colors
+    function generateGlitch() {
+      blockColors = [];
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Create random variations with slight dependence on the current time
+      // to keep it visually interesting (glitchy but time-related).
+      for (let x = 0; x < gridSize; x++) {
+        blockColors[x] = [];
+        for (let y = 0; y < gridSize; y++) {
+          // Introduce random color offset based on time
+          let r = (h * 10 + random(255)) % 256;
+          let g = (m * 4 + random(255)) % 256;
+          let b = (s * 4 + random(255)) % 256;
+          blockColors[x][y] = color(r, g, b);
+        }
+      }
+    }
+
+    // Initialize with an initial glitch pattern
+    function mouseMoved() {
+      // On first move or hover, generate a pattern so we don't see black squares
+      generateGlitch();
+    }
+  </script>
+</body>
+</html>

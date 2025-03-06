@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Cauldron</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center the page content and give a neutral background */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #444;
+      padding: 8px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 220px;
+      z-index: 1;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      Time Cauldron: 
+      • Soup color changes with the hour 
+      • Swirl speed is based on minutes 
+      • Bubble frequency grows with seconds
+    </div>
+  </div>
+
+  <script>
+    let w = 512;
+    let h = 512;
+
+    // We'll store our bubbles here
+    let bubbles = [];
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      angleMode(RADIANS);
+      noStroke();
+    }
+
+    function draw() {
+      background(220);
+
+      let hr = hour() % 12; // 0-11
+      let mn = minute();    // 0-59
+      let sc = second();    // 0-59
+
+      // Map hour to soup color
+      // from brownish to bluish tone 
+      let soupColor = lerpColor(color(180, 90, 40), color(0, 140, 255), hr / 11.0);
+
+      // Swirl speed based on minutes
+      let swirlSpeed = map(mn, 0, 59, 0.01, 0.2);
+
+      // Bubble frequency based on seconds
+      // increase chance of bubble creation with higher second
+      let bubbleProb = map(sc, 0, 59, 0.001, 0.05);
+
+      // Draw the cauldron outline
+      push();
+      translate(width / 2, height / 2 + 20);
+      drawCauldron();
+      pop();
+
+      // Draw the swirling soup
+      push();
+      translate(width / 2, height / 2 + 20);
+      drawSoup(soupColor, swirlSpeed);
+      pop();
+
+      // Possibly create a new bubble
+      if (random() < bubbleProb) {
+        bubbles.push(new Bubble(random(width / 2 - 90, width / 2 + 90), height / 2 + 40));
+      }
+
+      // Update and draw bubbles
+      for (let i = bubbles.length - 1; i >= 0; i--) {
+        bubbles[i].update();
+        bubbles[i].display();
+        if (bubbles[i].finished()) {
+          bubbles.splice(i, 1);
+        }
+      }
+
+      // Display digital time at the bottom
+      fill(50);
+      textSize(24);
+      textAlign(CENTER, CENTER);
+      text(
+        nf(hour(), 2) + ':' + nf(minute(), 2) + ':' + nf(second(), 2),
+        width / 2,
+        height - 20
+      );
+    }
+
+    // Draw the pot/cauldron shape
+    function drawCauldron() {
+      push();
+      // Cauldron body
+      stroke(0);
+      strokeWeight(3);
+      fill(40);
+      ellipse(0, 0, 220, 100); // main body
+      // Pot rim
+      noFill();
+      strokeWeight(6);
+      ellipse(0, 0, 220, 60);
+      //Cauldron legs
+      line(-60, 40, -50, 60);
+      line(60, 40, 50, 60);
+      pop();
+    }
+
+    // Draw the soup with swirling arcs
+    function drawSoup(c, swirlSpeed) {
+      push();
+      // Clip the soup inside the top ellipse
+      // We'll use beginShape with an arc as a mask
+      let steps = 60;
+      let radiusX = 110;
+      let radiusY = 28;
+
+      // Create a custom clipping shape for the soup
+      beginShape();
+      for (let a = PI; a <= TWO_PI; a += PI / steps) {
+        let x = radiusX * cos(a);
+        let y = radiusY * sin(a);
+        vertex(x, y);
+      }
+      for (let a = TWO_PI; a >= PI; a -= PI / steps) {
+        let x = radiusX * cos(a);
+        let y = radiusY * sin(a) + 50; // big offset to form a closed shape
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+
+      // Draw swirling arcs
+      // Use a lightly bigger ellipse to ensure coverage
+      push();
+      blendMode(SOFT_LIGHT);
+      fill(c);
+      rectMode(CENTER);
+      rect(0, 0, 250, 100);
+      pop();
+
+      push();
+      noFill();
+      let swirlCount = 12;
+      strokeWeight(2);
+
+      for (let i = 0; i < swirlCount; i++) {
+        let frac = i / swirlCount;
+        let col = lerpColor(color(255, 255, 255, 70), color(0, 0, 0, 50), frac);
+        stroke(col);
+        push();
+        rotate(frameCount * swirlSpeed + i * 0.5);
+        arc(0, 0, 100, 30, 0, PI + frac * HALF_PI);
+        pop();
+      }
+      pop();
+
+      pop();
+    }
+
+    // Bubble class
+    class Bubble {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.r = random(5, 12);
+        this.speed = random(0.5, 1.5);
+        this.alpha = 255;
+      }
+
+      update() {
+        this.y -= this.speed;
+        this.alpha -= 2;
+      }
+
+      display() {
+        noStroke();
+        fill(255, this.alpha);
+        ellipse(this.x, this.y, this.r, this.r);
+      }
+
+      finished() {
+        return (this.alpha <= 0);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Jellyfish Opera</title>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: sans-serif;
+      overflow: hidden;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container (for iframe) */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      border: none;
+      overflow: hidden;
+      background: #000;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center instructions text */
+    .instructions-text {
+      position: absolute;
+      width: 80%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Jellyfish Opera</strong><br><br>
+        • Background color shifts each hour.<br>
+        • Jellyfish color guided by minute.<br>
+        • Tentacles wave to match the seconds.<br>
+        • Enjoy a drifting, otherworldly performance.<br><br>
+        Hover here for instructions.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time Jellyfish Opera
+      1) Gradient background changes by hour.
+      2) Several jellyfish float around, their color keyed to the current minute.
+      3) Tentacles gently wave according to seconds.
+      4) Displays a digital clock in the bottom-left corner.
+      All within a 512 x 512 canvas.
+    */
+
+    const CANVAS_SIZE = 512;
+    const JELLYFISH_COUNT = 7;
+    let jellyfishGroup = [];
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      noStroke();
+
+      // Initialize Jellyfish
+      for (let i = 0; i < JELLYFISH_COUNT; i++) {
+        jellyfishGroup.push(new Jellyfish());
+      }
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      drawBackground(hr);
+
+      // Update & draw all jellyfish
+      for (let j of jellyfishGroup) {
+        j.update();
+        j.display(mn, sc);
+      }
+
+      drawClock(hr, mn, sc);
+    }
+
+    /* Draw a background gradient that shifts with hour */
+    function drawBackground(hr) {
+      // Simple approach: map hour 0-23 to a color gradient
+      // from deep ocean blues to purplish hues
+      colorMode(RGB);
+      let topColor = color(10, 20, 60);   // midnight tone
+      let midColor = color(60, 90, 150);  // midday tone
+      let botColor = color(40, 20, 70);   // evening purple
+
+      // Blend between top->mid (0-12) and mid->bot (12-24)
+      let c1, c2;
+      if (hr < 12) {
+        let pct = hr / 12;
+        c1 = lerpColor(topColor, midColor, pct);
+        c2 = lerpColor(midColor, botColor, 0); // set up for next range
+      } else {
+        let pct = (hr - 12) / 12;
+        c1 = midColor;
+        c2 = lerpColor(midColor, botColor, pct);
+      }
+
+      for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        let c = lerpColor(c1, c2, inter);
+        stroke(c);
+        line(0, y, width, y);
+      }
+    }
+
+    /* Jellyfish class */
+    class Jellyfish {
+      constructor() {
+        this.x = random(width);
+        this.y = random(height);
+        this.speedX = random(-0.5, 0.5);
+        this.speedY = random(0.3, 1);
+        this.size = random(30, 60); 
+      }
+
+      update() {
+        // Move the jellyfish
+        this.x += this.speedX;
+        this.y += this.speedY;
+        // Wrap around
+        if (this.x < -50) this.x = width + 50;
+        if (this.x > width + 50) this.x = -50;
+        if (this.y > height + 50) this.y = -50;
+      }
+
+      display(mn, sc) {
+        push();
+        translate(this.x, this.y);
+
+        // Color depends on minute
+        colorMode(HSB);
+        let hueVal = map(mn, 0, 59, 160, 320); // from greenish to purple
+        fill(hueVal, 80, 80, 0.8);
+        noStroke();
+
+        // Draw main bell
+        ellipse(0, 0, this.size * 1.4, this.size);
+
+        // Tentacles: wave tied to seconds
+        let waveOffset = map(sc, 0, 59, 0, 360);
+        stroke(hueVal, 80, 80, 0.6);
+        strokeWeight(2);
+        for (let i = 0; i < 5; i++) {
+          let angle = (360 / 5) * i + (waveOffset * 0.5);
+          let tx = cos(angle) * (this.size * 0.3);
+          let ty = (this.size * 0.5) + sin(angle * 2) * 10;
+          line(0, this.size * 0.1, tx, ty + 20);
+        }
+
+        pop();
+      }
+    }
+
+    /* Small digital clock in bottom-left corner */
+    function drawClock(hr, mn, sc) {
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, BASELINE);
+      text(`${nf(hr,2)}:${nf(mn,2)}:${nf(sc,2)}`, 10, height - 10);
+      pop();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Maze Explorer</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+    /* Container exactly 512x512 */
+    #mazeContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    /* Instruction overlay on hover */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      padding: 30px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #mazeContainer:hover #instructionsOverlay {
+      display: block;
+    }
+    h1, p { margin: 1em 0; }
+  </style>
+</head>
+<body>
+  <div id="mazeContainer">
+    <div id="instructionsOverlay">
+      <h1>Time Maze Explorer</h1>
+      <p>
+        Use the arrow keys to guide the player (the moving circle) from the top-left to the bottom-right. 
+        The maze size is determined by the current hour and minute. 
+        The player's color and shape shift with every passing second. 
+        Refresh the page or wait for time changes to see a different maze.
+      </p>
+      <p>Hover over this area to read instructions.</p>
+    </div>
+  </div>
+
+  <script>
+    let cols, rows;    // Maze dimensions
+    let grid = [];     // 2D array for maze
+    let tileW, tileH;  // Tile width and height
+    let playerX = 0, playerY = 0;
+    let goalX, goalY;
+    let prevTimeStr = "";
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('mazeContainer');
+      textAlign(LEFT, TOP);
+      textSize(18);
+      noStroke();
+
+      // Determine columns & rows based on current hour/minute
+      let h = hour();
+      let m = minute();
+      cols = floor(map(h, 0, 23, 8, 16));
+      rows = floor(map(m, 0, 59, 8, 16));
+
+      tileW = width / cols;
+      tileH = height / rows;
+
+      // Initialize maze grid with random walls
+      for (let r = 0; r < rows; r++) {
+        grid[r] = [];
+        for (let c = 0; c < cols; c++) {
+          // 30% chance to be wall, except start & goal
+          let wall = random() < 0.3;
+          grid[r][c] = wall;
+        }
+      }
+
+      // Start at top-left, goal at bottom-right
+      grid[0][0] = false;
+      grid[rows - 1][cols - 1] = false;
+      goalX = cols - 1;
+      goalY = rows - 1;
+    }
+
+    function draw() {
+      background(20);
+      let s = second();
+
+      // Draw the grid
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (grid[r][c]) {
+            fill(80);
+          } else {
+            fill(30);
+          }
+          rect(c * tileW, r * tileH, tileW, tileH);
+        }
+      }
+
+      // Draw the goal
+      fill(0, 150, 0);
+      rect(goalX * tileW, goalY * tileH, tileW, tileH);
+
+      // Player color & shape vary by second
+      let shapeMod = s % 3; // player shape cycles among 3 forms
+      fill(map(s, 0, 59, 0, 255), 120, map(s, 0, 59, 255, 0));
+
+      push();
+      if (shapeMod === 0) {
+        ellipseMode(CENTER);
+        ellipse(playerX * tileW + tileW / 2, playerY * tileH + tileH / 2, tileW * 0.6, tileH * 0.6);
+      } else if (shapeMod === 1) {
+        rectMode(CENTER);
+        rect(playerX * tileW + tileW / 2, playerY * tileH + tileH / 2, tileW * 0.6, tileH * 0.6);
+        rectMode(CORNER);
+      } else {
+        // Triangle
+        triangle(
+          playerX * tileW + tileW * 0.2, playerY * tileH + tileH * 0.8,
+          playerX * tileW + tileW * 0.8, playerY * tileH + tileH * 0.8,
+          playerX * tileW + tileW / 2, playerY * tileH + tileH * 0.2
+        );
+      }
+      pop();
+
+      // Display digital time in top-left
+      fill(255);
+      let dH = hour();
+      let dM = nf(minute(), 2);
+      let dS = nf(s, 2);
+      let ampm = (dH >= 12) ? "PM" : "AM";
+      let displayHour = dH % 12 || 12;
+      let timeStr = displayHour + ":" + dM + ":" + dS + " " + ampm;
+
+      if (timeStr !== prevTimeStr) {
+        prevTimeStr = timeStr;
+      }
+      text(timeStr, 5, 5);
+
+      // Victory check
+      if (playerX === goalX && playerY === goalY) {
+        fill(255, 0, 0);
+        text("GOAL REACHED!", width / 2 - 50, height / 2 - 10);
+      }
+    }
+
+    function keyPressed() {
+      let newX = playerX;
+      let newY = playerY;
+      if (keyCode === LEFT_ARROW)  newX--;
+      if (keyCode === RIGHT_ARROW) newX++;
+      if (keyCode === UP_ARROW)    newY--;
+      if (keyCode === DOWN_ARROW)  newY++;
+
+      // Bounds check and wall check
+      if (newX >= 0 && newX < cols && newY >= 0 && newY < rows) {
+        if (!grid[newY][newX]) {
+          playerX = newX;
+          playerY = newY;
+        }
+      }
+    }
+  </script>
+</body>
+</html>

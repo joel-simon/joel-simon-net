@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cosmic Fusion Time Display</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.8);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Cosmic Fusion Time Display<br><br>
+        • Swirling background color shifts over the hours.<br>
+        • A mosaic pattern reflects hour/minute blocks with pulsing color changes each second.<br>
+        • A fractal tree grows from the center, its branching angle adjusting with the current minute.<br>
+        • Three gears (hour, minute, second) rotate at different speeds in the lower left.<br>
+        • A friendly fish glides across the base of the canvas, its position updated each second.<br>
+        • Current time is displayed at the bottom center.<br><br>
+        Hover away to see the animation.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let swirlAngle = 0;
+    let fishX = 0;
+
+    // Mosaic parameters
+    let mosaicCols = 12; 
+    let mosaicRows = 12;
+    let tileW, tileH;
+
+    // Gear angles
+    let hourGearAngle = 0;
+    let minuteGearAngle = 0;
+    let secondGearAngle = 0;
+
+    // Fractal tree
+    function fractalBranch(len, angle) {
+      line(0, 0, 0, -len);
+      translate(0, -len);
+      if (len > 2) {
+        push();
+        rotate(angle);
+        fractalBranch(len * 0.67, angle);
+        pop();
+
+        push();
+        rotate(-angle);
+        fractalBranch(len * 0.67, angle);
+        pop();
+      }
+    }
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      rectMode(CENTER);
+      tileW = width / mosaicCols;
+      tileH = height / mosaicRows;
+      noStroke();
+    }
+
+    function draw() {
+      backgroundCosmos();
+      drawMosaic();
+      drawFractalTree();
+      drawGears();
+      drawFish();
+      displayTime();
+    }
+
+    // 1) Swirling cosmic background that shifts color based on the hour
+    function backgroundCosmos() {
+      swirlAngle += 0.2;
+      let h = hour();
+      let baseColor = map(h, 0, 23, 0, 255);
+
+      push();
+      translate(width / 2, height / 2);
+      for (let r = 500; r > 0; r -= 15) {
+        let inter = map(r, 0, 500, 1, 0);
+        fill((baseColor * inter) % 256, 80 * inter, 150 * inter);
+        ellipse(0, 0, r * 2, r * 2);
+        rotate(swirlAngle * 0.0005);
+      }
+      pop();
+    }
+
+    // 2) Mosaic pattern reflecting hour/minute with pulsing color for seconds
+    function drawMosaic() {
+      let h = hour() % mosaicCols;  // wrapped to mosaicCols
+      let m = minute() % mosaicRows; // wrapped to mosaicRows
+      let s = second();
+      for (let c = 0; c < mosaicCols; c++) {
+        for (let r = 0; r < mosaicRows; r++) {
+          // If c < h or r < m, fill with pulsing color, else static dark
+          if (c < h || r < m) {
+            fill((s * 4) % 256, 150, 220);
+          } else {
+            fill(60, 60, 60, 120);
+          }
+          rect(c * tileW + tileW / 2, r * tileH + tileH / 2, tileW, tileH);
+        }
+      }
+    }
+
+    // 3) Fractal tree in center, angle depends on the minute
+    function drawFractalTree() {
+      let mAngle = map(minute(), 0, 59, 15, 45);
+      stroke(210, 255, 210);
+      strokeWeight(2);
+
+      push();
+      translate(width / 2, height / 2 + 100);
+      rotate(180);
+      fractalBranch(70, mAngle);
+      pop();
+
+      noStroke();
+    }
+
+    // 4) Three gears (hour, minute, second) rotating in lower left
+    function drawGears() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      hourGearAngle += map(h, 0, 23, 0.1, 0.5);
+      minuteGearAngle += map(m, 0, 59, 0.3, 2);
+      secondGearAngle += map(s, 0, 59, 1, 5);
+
+      push();
+      translate(80, height - 60); // gear cluster near bottom-left
+
+      // Hour gear
+      push();
+      translate(-60, 0);
+      drawGear(20, 12, hourGearAngle, color(160, 120, 60));
+      pop();
+
+      // Minute gear
+      push();
+      drawGear(15, 18, minuteGearAngle, color(200, 180, 100));
+      pop();
+
+      // Second gear
+      push();
+      translate(40, 0);
+      drawGear(10, 10, secondGearAngle, color(180, 90, 90));
+      pop();
+
+      pop();
+    }
+
+    function drawGear(radius, teeth, rotationAngle, gearColor) {
+      push();
+      rotate(rotationAngle);
+      fill(gearColor);
+
+      // Gear body
+      ellipse(0, 0, radius * 2, radius * 2);
+
+      // Gear teeth
+      for (let i = 0; i < 360; i += 360 / teeth) {
+        push();
+        rotate(i);
+        rect(0, -radius, radius * 0.2, radius * 0.4);
+        pop();
+      }
+
+      // Center circle
+      fill(0, 0, 0, 180);
+      ellipse(0, 0, radius * 0.5);
+      pop();
+    }
+
+    // 5) Friendly fish gliding across the bottom of the canvas
+    function drawFish() {
+      let s = second();
+      // Move fish position each second
+      if (frameCount % 60 === 0) {
+        fishX = map(s, 0, 59, 0, width);
+      }
+      push();
+      translate(fishX, height - 30);
+      fill(100, 170, 255);
+      ellipse(0, 0, 40, 20);
+      // Tail
+      fill(80, 150, 220);
+      triangle(-20, 0, -35, -10, -35, 10);
+      // Eye
+      fill(255);
+      ellipse(10, -5, 5, 5);
+      pop();
+    }
+
+    // Display current time at bottom center
+    function displayTime() {
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, width / 2, height - 20);
+    }
+  </script>
+</body>
+</html>

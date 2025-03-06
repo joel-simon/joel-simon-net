@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Wave + Fractal Tree</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the “Time Wave + Fractal Tree”!<br><br>
+        • The wave in the background changes with the hour, minute, and second.<br>
+        • A fractal tree grows from the bottom center, where its depth is the hour, branch length is the minute, and branching angle is the second.<br>
+        • A digital clock at the bottom shows the current time.<br><br>
+        Hover away to return to the animation.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let waveOffset = 0;
+    let waveSpeed = 0.02;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      strokeWeight(1);
+    }
+
+    function draw() {
+      background(0);
+
+      // Current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // 1) Wave background
+      let amplitude = map(h, 0, 23, 20, 100);
+      let freq = map(m, 0, 59, 0.01, 0.2);
+      let phaseShift = map(s, 0, 59, 0, TWO_PI);
+
+      noStroke();
+      fill(20, 90, 160);
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 5) {
+        let waveY = height / 2 + amplitude * sin(freq * (x + waveOffset) + phaseShift);
+        vertex(x, waveY);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+      waveOffset += waveSpeed;
+
+      // 2) Fractal Tree
+      // depth based on hour, min 2, max 8
+      let treeDepth = floor(map(h, 0, 23, 2, 8));
+      // branch length based on minute
+      let branchLength = map(m, 0, 59, 40, 120);
+      // angle based on second
+      let branchAngle = map(s, 0, 59, 15, 75);
+
+      push();
+      stroke(200, 240, 200);
+      translate(width / 2, height);
+      drawTree(branchLength, treeDepth, branchAngle);
+      pop();
+
+      // 3) Digital clock
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+    }
+
+    // Recursive function to draw a fractal tree
+    function drawTree(len, depth, angle) {
+      if (depth === 0) return;
+
+      // Draw a branch
+      line(0, 0, 0, -len);
+      translate(0, -len);
+
+      // Left subtree
+      push();
+      rotate(-angle);
+      drawTree(len * 0.7, depth - 1, angle);
+      pop();
+
+      // Right subtree
+      push();
+      rotate(angle);
+      drawTree(len * 0.7, depth - 1, angle);
+      pop();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Fractal Swirl</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0; 
+      padding: 0; 
+      background: #000;
+    }
+    /* The container at exactly 512x512 */
+    #fractalSwirlContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    /* Instruction overlay on hover */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 30px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #fractalSwirlContainer:hover #instructionsOverlay {
+      display: block;
+    }
+    h1, p {
+      margin: 1em 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="fractalSwirlContainer">
+    <div id="instructionsOverlay">
+      <h1>Time Fractal Swirl</h1>
+      <p>The fractal tree grows and branches based on the hour of the day. The swirling arcs shift color with the minute, and their rotation speed depends on the second.</p>
+      <p>Hover here to read instructions.</p>
+    </div>
+  </div>
+
+  <script>
+    let swirlAngle = 0;
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('fractalSwirlContainer');
+      angleMode(DEGREES);
+      noFill();
+    }
+
+    function draw() {
+      background(0);
+
+      // Gather time info
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Swirl color maps minute to hue [0..360]
+      let swirlHue = map(m, 0, 59, 0, 360);
+      // Swirl rotation speed from seconds [0.5..5]
+      let swirlSpeed = map(s, 0, 59, 0.5, 5);
+      swirlAngle += swirlSpeed;
+
+      // Draw swirling arcs in background
+      push();
+      translate(width / 2, height / 2);
+      strokeWeight(2);
+      colorMode(HSL);
+      stroke(swirlHue, 100, 50);
+      for (let a = 0; a < 360; a += 45) {
+        push();
+        rotate(a + swirlAngle);
+        arc(0, 0, 300, 300, 0, 180);
+        pop();
+      }
+      pop();
+      colorMode(RGB);
+
+      // Fractal tree parameters
+      stroke(255);
+      strokeWeight(1);
+      let branchLen = map(h % 12, 0, 12, 50, 150); // branch length (hour-based)
+      let treeAngle = map(h, 0, 23, 15, 45);       // angle of branching
+      translate(width / 2, height);
+      drawFractal(branchLen, treeAngle);
+
+      // Digital time display
+      let displayHour = h % 12;
+      if (displayHour === 0) displayHour = 12;
+      let ampm = (h >= 12) ? "PM" : "AM";
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      let timeString = displayHour + ":" + minStr + ":" + secStr + " " + ampm;
+      noStroke();
+      fill(255);
+      textSize(24);
+      textAlign(CENTER, BOTTOM);
+      text(timeString, 0, -10);
+    }
+
+    // Recursive fractal tree
+    function drawFractal(len, angle) {
+      line(0, 0, 0, -len);
+      translate(0, -len);
+      if (len > 10) {
+        push();
+        rotate(angle);
+        drawFractal(len * 0.67, angle);
+        pop();
+
+        push();
+        rotate(-angle);
+        drawFractal(len * 0.67, angle);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

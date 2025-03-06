@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creative Time Display</title>
+  <style>
+    /* Make the body fill the screen and center contents */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      height: 100vh;
+      width: 100vw;
+      display: grid;
+      place-items: center;
+    }
+
+    /* Container for tooltip instructions on hover */
+    .info-tip {
+      position: relative;
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      margin-bottom: 0.5em;
+      user-select: none;
+      cursor: pointer;
+    }
+
+    .info-content {
+      visibility: hidden;
+      width: 220px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      bottom: 130%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1;
+      font-size: 0.9em;
+      line-height: 1.4em;
+    }
+
+    .info-tip:hover .info-content {
+      visibility: visible;
+    }
+
+    /* Ensure the canvas is exactly 512x512 and no extra scrollbars appear */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="info-tip">
+    Hover for instructions
+    <div class="info-content">
+      This is a creative clock. Each colored arc represents hours (red), 
+      minutes (green), and seconds (blue). The background color also 
+      changes with the time of day.
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <!-- Sketch code -->
+  <script>
+    function setup() {
+      createCanvas(512, 512);
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      const h = hour();
+      const m = minute();
+      const s = second();
+
+      // Dynamically change the background color
+      background(s * 4, m * 4, (h % 12) * 20);
+
+      // Translate and rotate so arcs start at top
+      push();
+      translate(width/2, height/2);
+      rotate(-90);
+
+      // Common style for arcs
+      strokeWeight(8);
+      noFill();
+
+      // Hour arc (0 to 12)
+      stroke(255, 0, 0);
+      const hourAngle = map(h % 12, 0, 12, 0, 360);
+      arc(0, 0, 220, 220, 0, hourAngle);
+
+      // Minute arc (0 to 60)
+      stroke(0, 255, 0);
+      const minuteAngle = map(m, 0, 60, 0, 360);
+      arc(0, 0, 260, 260, 0, minuteAngle);
+
+      // Second arc (0 to 60)
+      stroke(0, 0, 255);
+      const secondAngle = map(s, 0, 60, 0, 360);
+      arc(0, 0, 300, 300, 0, secondAngle);
+
+      pop();
+    }
+  </script>
+</body>
+</html>

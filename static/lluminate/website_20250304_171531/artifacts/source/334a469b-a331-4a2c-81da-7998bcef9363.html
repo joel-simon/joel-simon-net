@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Creative Time Display</title>
+    <!-- Include p5.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+    <style>
+      /* Ensure body has no extra margin/padding */
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: #222;
+      }
+
+      /* Center the clock container and fix its size to 512x512 */
+      #clock-container {
+        position: relative;
+        width: 512px;
+        height: 512px;
+        margin: 0 auto;
+      }
+
+      /* Instructions overlay, hidden by default */
+      #instructions {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 512px;
+        height: 512px;
+        background-color: rgba(0, 0, 0, 0.65);
+        color: #fff;
+        font-family: sans-serif;
+        text-align: center;
+        line-height: 1.5;
+        padding: 2rem;
+        box-sizing: border-box;
+      }
+
+      /* Show instructions on hover */
+      #clock-container:hover #instructions {
+        display: block;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="clock-container">
+      <!-- Instructions appear when hovering over the canvas area -->
+      <div id="instructions">
+        <h2>Creative Clock</h2>
+        <p>
+          Hours are shown in red, minutes in green, and seconds in blue.<br/>
+          Hover over the clock to see this message.
+        </p>
+      </div>
+    </div>
+
+    <script>
+      let canvasSize = 512;
+
+      function setup() {
+        // Create a 512x512 canvas inside #clock-container
+        let myCanvas = createCanvas(canvasSize, canvasSize);
+        myCanvas.parent("clock-container");
+        angleMode(DEGREES);
+      }
+
+      function draw() {
+        background(0);
+
+        const hr = hour();
+        const mn = minute();
+        const sc = second();
+
+        // Map each time component to an angle between 0 and 360
+        let scAngle = map(sc, 0, 60, 0, 360);
+        let mnAngle = map(mn, 0, 60, 0, 360);
+        let hrAngle = map(hr % 12, 0, 12, 0, 360);
+
+        // Set up drawing characteristics
+        noFill();
+        strokeWeight(8);
+
+        // Draw the seconds arc
+        stroke(0, 0, 255);
+        arc(width / 2, height / 2, 400, 400, 0, scAngle);
+
+        // Draw the minutes arc
+        stroke(0, 255, 0);
+        arc(width / 2, height / 2, 370, 370, 0, mnAngle);
+
+        // Draw the hours arc
+        stroke(255, 0, 0);
+        arc(width / 2, height / 2, 340, 340, 0, hrAngle);
+
+        // Draw digital time in the center
+        noStroke();
+        fill(255);
+        textSize(32);
+        textAlign(CENTER, CENTER);
+        text(hr + ':' + nf(mn, 2) + ':' + nf(sc, 2), width / 2, height / 2);
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Bubbles - A Fresh Take on Time Visualization</title>
+  <!-- Embedded CSS -->
+  <style>
+    /* Reset margins and padding */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      overflow: hidden; /* Hide scroll bars */
+    }
+
+    /* Container for the 512x512 canvas and instructions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Instructions appear only on hover, overlaying the canvas */
+    #instructions {
+      pointer-events: none; /* Let mouse pass through instructions to the canvas */
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-size: 16px;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #canvas-container:hover #instructions {
+      display: block;
+    }
+    /* Style the instructions text */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      text-align: center;
+      transform: translate(-50%, -50%);
+      max-width: 400px;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <!-- Hover overlay instructions -->
+    <div id="instructions">
+      <div class="instructions-text">
+        Welcome to "Time Bubbles"!<br/><br/>
+        • The bubble colors reflect the current hour<br/>
+        • The bubble sizes match the current minute<br/>
+        • The bubbles' vertical speed depends on the seconds<br/>
+        Watch how time creates a unique bubbling effect every moment.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <!-- Embedded p5.js Sketch -->
+  <script>
+    let w = 512;
+    let h = 512;
+    let bubbles = [];
+
+    // Each bubble will track its starting x position,
+    // vertical position, and assigned diameter/color
+    class Bubble {
+      constructor(x, dia, col, speed) {
+        this.x = x;
+        this.y = h + dia;      // Start below the canvas
+        this.dia = dia;
+        this.col = col;
+        this.speed = speed;   // Vertical speed
+      }
+
+      move() {
+        this.y -= this.speed;
+      }
+
+      display() {
+        noStroke();
+        fill(this.col);
+        circle(this.x, this.y, this.dia);
+      }
+    }
+
+    function setup() {
+      let myCanvas = createCanvas(w, h);
+      myCanvas.parent('canvas-container');
+      frameRate(30);
+
+      // Initialize with some random bubbles:
+      for (let i = 0; i < 10; i++) {
+        let x = random(width);
+        // A default placeholder: 
+        bubbles.push(
+          new Bubble(x, 20, color(255, 255, 255, 100), 1)
+        );
+      }
+    }
+
+    function draw() {
+      background(0, 20, 40);
+
+      // Current time:
+      let hr = hour();   // 0..23
+      let mn = minute(); // 0..59
+      let sc = second(); // 0..59
+
+      // Map hour to a color tint (R or some blend)
+      // We'll let hour shift hues
+      let hrMapped = map(hr, 0, 23, 0, 360);
+
+      // Bubble size based on minutes
+      // Provide a min diameter to ensure it's always visible
+      let bubbleDiameter = map(mn, 0, 59, 10, 80);
+
+      // Bubble speed derived from seconds
+      // 1 second -> slower, 59 -> faster
+      let bubbleSpeed = map(sc, 0, 59, 1, 6);
+
+      // Create a new bubble at random intervals, on many frames
+      // We'll create one bubble every second or so
+      // For variety, only create a new bubble if the second just changed
+      if (frameCount % 30 === 0) {
+        let xPos = random(width);
+        // Convert hrMapped (HSL hue) to an (R,G,B) color 
+        // We'll do it by using p5's colorMode
+        colorMode(HSB);
+        let bubbleColor = color(hrMapped, 80, 100, 0.8);
+        colorMode(RGB); // revert to default
+
+        let b = new Bubble(xPos, bubbleDiameter, bubbleColor, bubbleSpeed);
+        bubbles.push(b);
+      }
+
+      // Update and display bubbles
+      for (let i = bubbles.length - 1; i >= 0; i--) {
+        let bubble = bubbles[i];
+        bubble.move();
+        bubble.display();
+
+        // Remove bubbles that go off the top
+        if (bubble.y + bubble.dia/2 < 0) {
+          bubbles.splice(i, 1);
+        }
+      }
+
+      // Overlay text: current time
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, BASELINE);
+      text(
+        nf(hr,2) + ':' + nf(mn,2) + ':' + nf(sc,2),
+        10 - width/2, height/2 - 10
+      );
+
+      // Transform the coordinate system so text remains pinned at top-left
+      resetMatrix();
+    }
+  </script>
+</body>
+</html>

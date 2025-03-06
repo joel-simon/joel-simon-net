@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Redwood & Starry Swirl</title>
+  <!-- Include p5.js -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* 512x512 container for the sketch (playable in an iframe) */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Overlay instructions on hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Redwood & Starry Swirl</strong><br><br>
+        • The sky color changes with the hour.<br>
+        • Redwoods grow taller as minutes pass.<br>
+        • Leaves shift color with the seconds.<br>
+        • A star at the center rotates based on seconds.<br>
+        • Particles swirl around, influenced by the hour.<br><br>
+        Hover away to see it in action!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Redwood & Starry Swirl
+      This sketch merges features:
+       1) A sky color shifting with the hour (radial gradient).
+       2) Redwood trees whose trunk heights vary with minute
+          and foliage color changes with seconds.
+       3) A swirling star in the center, rotating with seconds.
+       4) Particles swirling in a radius determined by the hour.
+       5) Simple sparkles/leaves drifting upwards.
+       6) A digital clock readout in the bottom-right corner.
+    */
+
+    // Redwood definitions
+    const redwoods = [
+      { x: 170, baseWidth: 25, trunkColor: '#5B3E31' },
+      { x: 256, baseWidth: 30, trunkColor: '#6B493B' },
+      { x: 342, baseWidth: 25, trunkColor: '#5B3E31' }
+    ];
+
+    // Particle data for the swirling effect
+    let particles = [];
+    const numParticles = 40;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+
+      // Initialize swirling particles
+      for (let i = 0; i < numParticles; i++) {
+        particles.push({
+          angle: random(360),
+          speed: random(0.5, 2) * (random() < 0.5 ? 1 : -1)
+        });
+      }
+    }
+
+    function draw() {
+      backgroundSky();
+      drawForestFloor();
+      drawRedwoods();
+      drawFloatingLeafSparkles();
+      drawSwirlingParticles();
+      drawCenterStar();
+      displayClock();
+    }
+
+    // (1) Radial sky background that shifts with hour
+    function backgroundSky() {
+      let h = hour();
+      let m = minute();
+      // Interpolate hour with minute fraction
+      let hourFloat = h + m / 60.0;
+
+      // Map ranges for a color gradient
+      let skyColor = color(
+        map(hourFloat, 0, 23, 20, 150),  // R
+        map(hourFloat, 0, 23, 20, 220),  // G
+        map(hourFloat, 0, 23, 60, 200)   // B
+      );
+
+      // Draw radial gradient from center
+      for (let r = 512; r > 0; r -= 8) {
+        let inter = map(r, 0, 512, 1, 0);
+        let c = lerpColor(skyColor, color(0, 0, 0), inter);
+        fill(c);
+        ellipse(width / 2, height / 2, r, r);
+      }
+    }
+
+    // (2) Forest floor
+    function drawForestFloor() {
+      push();
+      fill(40, 80, 40);
+      rect(0, height - 60, width, 60);
+      pop();
+    }
+
+    // (2) Redwood trees (trunk height → minute, leaves color → second)
+    function drawRedwoods() {
+      let m = minute();
+      let trunkHeight = map(m, 0, 59, 80, 200);
+
+      let s = second();
+      let leavesCol = color(30, map(s, 0, 59, 100, 200), 30);
+
+      push();
+      for (let i = 0; i < redwoods.length; i++) {
+        let rw = redwoods[i];
+
+        // Trunk
+        fill(rw.trunkColor);
+        rect(rw.x - rw.baseWidth / 2, height - 60 - trunkHeight,
+             rw.baseWidth, trunkHeight);
+
+        // Conical foliage
+        fill(leavesCol);
+        let canopyWidth = rw.baseWidth * 4;
+        let canopyHeight = trunkHeight / 1.5;
+        triangle(
+          rw.x - canopyWidth / 2, height - 60 - trunkHeight,
+          rw.x + canopyWidth / 2, height - 60 - trunkHeight,
+          rw.x, height - 60 - trunkHeight - canopyHeight
+        );
+      }
+      pop();
+    }
+
+    // (3) Sparkles/leaves drifting upward
+    function drawFloatingLeafSparkles() {
+      let s = second();
+      let leafCount = map(s, 0, 59, 3, 20);
+      push();
+      for (let i = 0; i < leafCount; i++) {
+        let x = noise(frameCount * 0.01 + i * 10) * width;
+        let y = height - 60 - (frameCount % 200) - i * 10;
+        fill(60, 120 + i * 5, 60, 180);
+        ellipse(x, y, 8, 8);
+      }
+      pop();
+    }
+
+    // (4) Particles swirling around center, radius depends on hour
+    function drawSwirlingParticles() {
+      let hr = hour();
+      let swirlRadius = map(hr % 12, 0, 12, 50, 200);
+
+      push();
+      translate(width / 2, height / 2);
+      stroke(255);
+      strokeWeight(2);
+      noFill();
+
+      for (let p of particles) {
+        p.angle += p.speed;
+        let x = swirlRadius * cos(p.angle);
+        let y = swirlRadius * sin(p.angle);
+        point(x, y);
+      }
+      pop();
+    }
+
+    // (5) A star rotating in the center (rotation → seconds)
+    function drawCenterStar() {
+      let sc = second();
+      let rotationSpeed = map(sc, 0, 60, 0, 360);
+
+      push();
+      translate(width / 2, height / 2);
+      rotate(rotationSpeed);
+      fill(255, 100);
+      stroke(255);
+      strokeWeight(2);
+
+      beginShape();
+      for (let i = 0; i < 10; i++) {
+        let angle = i * 36;
+        let r = (i % 2 === 0) ? 30 : 10;
+        let x = r * cos(angle);
+        let y = r * sin(angle);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+      pop();
+    }
+
+    // (6) Digital clock in bottom-right
+    function displayClock() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(RIGHT, BOTTOM);
+      text(nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2), width - 10, height - 10);
+      pop();
+    }
+  </script>
+</body>
+</html>

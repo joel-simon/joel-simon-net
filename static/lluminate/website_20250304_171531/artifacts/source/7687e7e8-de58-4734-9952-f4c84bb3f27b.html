@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Circus Menagerie - New Edition</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Circus Menagerie - New Edition<br><br>
+        • Background hue shifts with the hour.<br>
+        • The elephant's trunk waves with the minute.<br>
+        • The juggling orbs circle around, guided by the seconds.<br><br>
+        Hover away to see it in action!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let trunkAngle = 0;
+    let orbAngle = 0;
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      drawBackground();
+      drawElephant();
+      displayClock();
+    }
+
+    function drawBackground() {
+      const h = hour();
+      const hueVal = map(h, 0, 23, 0, 360);
+      for (let r = 512; r > 0; r -= 6) {
+        let inter = map(r, 0, 512, 1, 0);
+        fill(hueVal, 100 * inter, 180 * inter);
+        ellipse(width / 2, height / 2, r);
+      }
+    }
+
+    function drawElephant() {
+      const m = minute();
+      const s = second();
+
+      const trunkWaveAmplitude = map(m, 0, 59, 0, 25);
+      trunkAngle = trunkWaveAmplitude * sin(frameCount * 2);
+
+      orbAngle += map(s, 0, 59, 1, 5) * 0.05;
+
+      push();
+      translate(width / 2, height / 2 + 60);
+
+      // Elephant body
+      fill(180);
+      ellipse(0, 0, 200, 100);    // main body
+      ellipse(-60, -20, 60, 60);  // rear
+      ellipse(60, -20, 60, 60);   // front
+      rect(-40, 0, 80, 50, 10);   // belly
+
+      // Elephant head
+      ellipse(80, -10, 80, 70);
+
+      // Elephant ear
+      fill(160);
+      ellipse(40, -30, 50, 60);
+
+      // Elephant trunk
+      push();
+      fill(180);
+      translate(110, -10);
+      rotate(trunkAngle);
+      rect(0, 0, 10, 50, 5);
+      pop();
+
+      // Juggling orbs
+      push();
+      translate(80, -10);
+      rotate(orbAngle);
+      for (let i = 0; i < 3; i++) {
+        push();
+        rotate(120 * i);
+        fill(255, 150, 0);
+        ellipse(40, 0, 15, 15);
+        pop();
+      }
+      pop();
+
+      pop();
+    }
+
+    function displayClock() {
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+    }
+  </script>
+</body>
+</html>

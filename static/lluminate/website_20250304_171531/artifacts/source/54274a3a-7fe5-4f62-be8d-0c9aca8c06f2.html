@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Combined Time Fractal Tree with Orbital Swirl</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* 512x512 container */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      background: #111;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay: appears on hover */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      pointer-events: none; /* So the mouse can still interact w/ the canvas */
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Fractal Tree with Orbital Swirl</strong><br><br>
+        • The fractal tree's branching depends on hour and minute.<br>
+        • The swirling orbit's speed and color change each second.<br>
+        • Watch as the display evolves with real time.<br>
+        • Hover here to see this overlay at any time.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Combined Time Fractal Tree with Orbital Swirl
+      - Fractal Tree:
+          * Depth influenced by current hour
+          * Branch angles influenced by current minute
+      - Orbital swirl:
+          * Position and color variations influenced by current second
+    */
+    
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let canvas = createCanvas(w, h);
+      canvas.parent('canvas-container');
+      angleMode(DEGREES);
+      frameRate(30);
+    }
+
+    function draw() {
+      background(20);
+
+      // Retrieve current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Generate a faint background swirl or wave effect
+      // We'll modulate color with second
+      let baseColor = map(sc, 0, 59, 0, 255);
+      noStroke();
+      fill(baseColor, 30, 60, 50);
+      rect(0, 0, width, height);
+
+      // Draw fractal tree, rooted near bottom-center
+      push();
+      translate(width / 2, height);
+      let depth = floor(map(hr, 0, 23, 5, 10));        // fractal depth from 5 to 10
+      let branchAngle = map(mn, 0, 59, 15, 35);        // branch angle from 15 to 35 degrees
+      stroke(255);
+      drawFractalTree(100, depth, branchAngle);
+      pop();
+
+      // Draw swirling orbit around top portion
+      push();
+      translate(width / 2, height / 2);
+      drawOrbitalSwirl(sc);
+      pop();
+
+      // Draw time in the top-left corner for reference
+      drawTime();
+    }
+
+    // Recursive fractal tree function
+    function drawFractalTree(branchLen, depth, angle) {
+      if (depth === 0) return;
+
+      // Draw the branch
+      strokeWeight(map(depth, 1, 10, 1, 4)); 
+      line(0, 0, 0, -branchLen);
+
+      // Move to the end of the branch
+      translate(0, -branchLen);
+
+      // Recursively draw two branches
+      push();
+      rotate(angle);
+      drawFractalTree(branchLen * 0.7, depth - 1, angle);
+      pop();
+
+      push();
+      rotate(-angle);
+      drawFractalTree(branchLen * 0.7, depth - 1, angle);
+      pop();
+    }
+
+    // A swirling orbit of small circles that rotate depending on the second
+    function drawOrbitalSwirl(sc) {
+      // We'll draw multiple rotating rings
+      let rings = 5;
+      let radiusStep = 20;
+      // Angular velocity depends on second
+      let rotSpeed = map(sc, 0, 59, 0, 4);
+
+      for (let r = 1; r <= rings; r++) {
+        push();
+        let angleOffset = (frameCount * rotSpeed + r * 20) % 360;
+        rotate(angleOffset);
+        // Circle radius
+        let swirlRadius = r * radiusStep + 30;
+
+        // Circle color changes with second
+        let col = map(sc + r * 5, 0, 59 + rings * 5, 0, 360) % 360;
+
+        fill(col, 100, 100);  // We'll temporarily switch colorMode
+        // p5 default colorMode is RGB, so let's switch to HSB for a neat glow
+        colorMode(HSB);
+        noStroke();
+        
+        // Draw orbit circles
+        ellipse(swirlRadius, 0, 15, 15);
+
+        pop();
+      }
+
+      // Reset colorMode to default
+      colorMode(RGB);
+    }
+
+    // Overlay the time in the top-left corner
+    function drawTime() {
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      let displayHour = (hr % 12) || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let mnStr = nf(mn, 2);
+      let scStr = nf(sc, 2);
+
+      text(displayHour + ":" + mnStr + ":" + scStr + " " + ampm, 10, 10);
+    }
+  </script>
+</body>
+</html>

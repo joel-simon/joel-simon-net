@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creative Fusion Time Display</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Creative Fusion Time Display<br><br>
+        • Watch a mosaic in the background shift with the current minute.<br>
+        • A fractal tree grows and spreads based on the hour.<br>
+        • A swirling star pulses and rotates along with the seconds.<br>
+        • A digital clock at the bottom shows the exact time.<br><br>
+        Hover away to see it in action!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let cols = 12;  // for the minute mosaic
+    let rows = 5;   // just a few rows for effect
+    let tileW, tileH;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      rectMode(CENTER);
+      noStroke();
+      tileW = width / cols;
+      tileH = height / rows;
+    }
+
+    function draw() {
+      background(34);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // --- 1. Mosaic Background (minute-based) ---
+      // The number of columns lit intensifies with the passing of minutes (0 to 59)
+      // We'll mod the minute down to our "cols" range for color cycling
+      for (let c = 0; c < cols; c++) {
+        for (let r = 0; r < rows; r++) {
+          let cHighlight = map(m % cols, 0, cols, 60, 255);
+          let alphaLevel = map(c, 0, cols - 1, 80, 190);
+          if (c < m % cols) {
+            fill(cHighlight, 120, (s * 4) % 256, alphaLevel);
+          } else {
+            fill(60, alphaLevel);
+          }
+          rect(c * tileW + tileW / 2, r * tileH + tileH / 2, tileW, tileH);
+        }
+      }
+
+      // --- 2. Fractal Tree (hour-based) ---
+      // The length of the trunk depends on the hour,
+      // and the branching angle shifts slightly based on seconds for extra liveliness
+      push();
+      translate(width / 2, height * 0.75);
+      stroke(200);
+      strokeWeight(2);
+      let trunkLength = map(h, 0, 23, 40, 120);
+      drawFractalBranch(trunkLength, 0 + s * 0.1, 6); 
+      pop();
+      noStroke();
+
+      // --- 3. Swirling Star (second-based) ---
+      // A star in the center that rotates and pulses with seconds
+      push();
+      translate(width * 0.5, height * 0.4);
+      rotate(s * 6);
+      fill(map(s, 0, 59, 100, 255), 150, 200);
+      drawStar(0, 0, 10 + s * 0.3, 25 + s * 0.1, 5);
+      pop();
+
+      // --- 4. Digital Time Display ---
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, width / 2, height - 20);
+    }
+
+    // Recursive function to draw a fractal branch
+    function drawFractalBranch(len, angleOffset, depth) {
+      if (depth === 0) return;
+
+      stroke(180, 100 + depth * 25, 100);
+      line(0, 0, 0, -len);
+      translate(0, -len);
+
+      let nextLen = len * 0.7; // shorter branches each time
+      push();
+      rotate(25 + angleOffset);
+      drawFractalBranch(nextLen, angleOffset, depth - 1);
+      pop();
+
+      push();
+      rotate(-25 - angleOffset);
+      drawFractalBranch(nextLen, angleOffset, depth - 1);
+      pop();
+    }
+
+    // Draw a star shape
+    function drawStar(x, y, radius1, radius2, npoints) {
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

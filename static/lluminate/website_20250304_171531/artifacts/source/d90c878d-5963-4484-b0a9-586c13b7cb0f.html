@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Firefly Garden</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for contrast */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Firefly Garden</strong><br><br>
+        • Fireflies appear according to the current hour (24-hour format).<br>
+        • Their glow color is driven by the current minute.<br>
+        • The speed of their flicker is defined by the current second.<br>
+        • Move your mouse to gently attract them. Press any arrow key to make them scatter!<br>
+        • The real time is displayed in the top-left corner.<br><br>
+        Hover to reveal instructions. Enjoy!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let fireflies = [];
+    let lastHr, lastMn;
+    let w = 512;
+    let h = 512;
+    
+    // Firefly class
+    class Firefly {
+      constructor(x, y, hueVal) {
+        // Position and velocity
+        this.pos = createVector(x, y);
+        // Random velocity
+        this.vel = p5.Vector.random2D().mult(random(0.3, 1.2));
+        // Assign a hue color from minute-based hue
+        this.hue = hueVal;
+        // Flicker offset
+        this.offset = random(1000);
+      }
+
+      update(flickerFreq) {
+        // Slight push towards or away from mouse
+        let mouse = createVector(mouseX, mouseY);
+        let dir = p5.Vector.sub(mouse, this.pos);
+        let distToMouse = dir.mag();
+        
+        // If close, slow down; otherwise slightly attract
+        if (distToMouse < 50) {
+          dir.setMag(-0.5);
+        } else {
+          dir.setMag(0.01);
+        }
+        this.vel.add(dir);
+        
+        // Limit velocity
+        this.vel.limit(2);
+        
+        // Update position
+        this.pos.add(this.vel);
+        
+        // Wrap around edges
+        if (this.pos.x < 0) this.pos.x = w;
+        if (this.pos.x > w) this.pos.x = 0;
+        if (this.pos.y < 0) this.pos.y = h;
+        if (this.pos.y > h) this.pos.y = 0;
+        
+        // Flicker offset changes over time
+        this.offset += flickerFreq;
+      }
+
+      display() {
+        colorMode(HSB, 360, 100, 100, 100);
+        let alphaVal = map(sin(this.offset), -1, 1, 30, 100);
+        noStroke();
+        fill(this.hue, 100, 100, alphaVal);
+        ellipse(this.pos.x, this.pos.y, 8, 8);
+      }
+    }
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      colorMode(RGB);
+      noStroke();
+      frameRate(30);
+      generateFireflies();
+    }
+
+    function draw() {
+      // Draw a translucent background to give a slight trail
+      background(0, 50);
+
+      // Get current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // If hour or minute changed, regenerate
+      if (hr !== lastHr || mn !== lastMn) {
+        generateFireflies();
+      }
+
+      // Flicker frequency based on second
+      let flickerFreq = map(sc, 0, 59, 0.02, 0.2);
+
+      // Update and display all fireflies
+      for (let f of fireflies) {
+        f.update(flickerFreq);
+        f.display();
+      }
+
+      drawTime();
+    }
+
+    function generateFireflies() {
+      fireflies = [];
+      let hr = hour();
+      let mn = minute();
+      
+      // Number of fireflies depends on hour; ensure at least some
+      let count = map(hr, 0, 23, 10, 120);
+      count = floor(count);
+
+      // Hue based on minute
+      // We'll map 0-59 min to a 0-360 hue
+      let hueVal = map(mn, 0, 59, 0, 360);
+
+      for (let i = 0; i < count; i++) {
+        // Random position
+        let x = random(w);
+        let y = random(h);
+        fireflies.push(new Firefly(x, y, hueVal));
+      }
+      
+      lastHr = hr;
+      lastMn = mn;
+    }
+
+    // Display formatted time in corner
+    function drawTime() {
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+      let displayHour = hr % 12 || 12;
+      let ampm = hr >= 12 ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 10, 10);
+    }
+
+    // Scatter fireflies when any arrow key is pressed
+    function keyPressed() {
+      if (
+        keyCode === LEFT_ARROW ||
+        keyCode === RIGHT_ARROW ||
+        keyCode === UP_ARROW ||
+        keyCode === DOWN_ARROW
+      ) {
+        // Give them a random velocity boost away from mouseX, mouseY
+        for (let f of fireflies) {
+          let dir = p5.Vector.sub(f.pos, createVector(mouseX, mouseY));
+          dir.setMag(random(2, 5));
+          f.vel.add(dir);
+        }
+      }
+    }
+  </script>
+</body>
+</html>

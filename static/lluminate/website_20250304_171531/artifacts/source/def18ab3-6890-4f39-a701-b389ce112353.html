@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Egyptian Time Temple</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+<div id="canvasContainer">
+  <div id="hoverOverlay">
+    <p>
+      Welcome to the Egyptian Time Temple!<br><br>
+      • The shifting sand dunes reflect the passing seconds.<br>
+      • A shining pyramid in the center rotates according to the hour.<br>
+      • An ankh at the top pulses with the minute changes.<br><br>
+      Hover away to see it in action.
+    </p>
+  </div>
+</div>
+
+<script>
+  // Variables for sand dunes
+  let duneOffset = 0;
+  let duneSpeed = 1.5;
+
+  // Rotation for the pyramid
+  let pyramidRotation = 0;
+
+  // Pulsing effect for the ankh
+  let ankhPulse = 0;
+
+  function setup() {
+    let cnv = createCanvas(512, 512);
+    cnv.parent('canvasContainer');
+    angleMode(DEGREES);
+    rectMode(CENTER);
+    noStroke();
+  }
+
+  function draw() {
+    background(0);
+
+    // Get current time
+    let h = hour();
+    let m = minute();
+    let s = second();
+
+    // 1) Create a desert gradient background
+    setDesertSky(h);
+    
+    // 2) Moving sand dunes that shift with seconds
+    drawSandDunes(s);
+
+    // 3) Rotating pyramid in the center (rotate by hour-based value)
+    pyramidRotation = map(h, 0, 23, 0, 360);
+    push();
+      translate(width / 2, height / 2 + 60);
+      rotate(pyramidRotation);
+      drawPyramid(100, color(192, 180, 70));
+    pop();
+
+    // 4) Pulsing ankh at the top, size changes with minute
+    ankhPulse = map(m, 0, 59, 0.8, 1.4);
+    push();
+      translate(width / 2, 70);
+      scale(ankhPulse);
+      drawAnkh(40, color(255, 215, 0));
+    pop();
+
+    // 5) Digital clock (bottom-right corner)
+    fill(255);
+    textSize(14);
+    textAlign(RIGHT, BOTTOM);
+    let timeString = nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2);
+    text(timeString, width - 10, height - 10);
+  }
+
+  // Function to set the desert-like sky color
+  function setDesertSky(h) {
+    // Gradually shift sky color through the day
+    let topColor = color(20, 30, 100);  // Night
+    let bottomColor = color(255, 100, 0); // Day/Evening
+    let blendAmt = map(h, 0, 23, 0, 1);
+
+    for (let y = 0; y < height; y++) {
+      let inter = map(y, 0, height, 0, 1);
+      let c = lerpColor(topColor, bottomColor, blendAmt*inter);
+      stroke(c);
+      line(0, y, width, y);
+    }
+  }
+
+  // Draw moving sand dunes
+  function drawSandDunes(secondVal) {
+    let duneHeight = 80;
+    fill(194, 178, 128);
+
+    // Move dunes with time
+    duneOffset += duneSpeed * 0.02;
+    let startX = -duneOffset % width;
+
+    // Simple wave-like dunes
+    beginShape();
+    vertex(startX, height);
+    for (let x = startX; x <= startX + width + 10; x += 10) {
+      let duneY = height - duneHeight + sin((x + secondVal * 10) * 0.02) * 20;
+      vertex(x, duneY);
+    }
+    vertex(startX + width + 10, height);
+    endShape(CLOSE);
+  }
+
+  // Function to draw a pyramid shape
+  function drawPyramid(size, col) {
+    fill(col);
+    // A simple side-view triangle
+    // Base at bottom, pointed top
+    beginShape();
+      vertex(-size/2, 0);
+      vertex(size/2, 0);
+      vertex(0, -size);
+    endShape(CLOSE);
+  }
+
+  // Function to draw an ankh shape
+  function drawAnkh(size, col) {
+    // The ankh is like a loop with arms and a stem
+    fill(col);
+
+    // Draw loop (ellipse)
+    ellipse(0, -size/2, size * 0.7, size);
+
+    // Draw arms (rectangle)
+    rect(0, 0, size, size*0.2);
+
+    // Draw stem (rectangle)
+    rect(0, size*0.4, size*0.2, size*0.8);
+  }
+</script>
+</body>
+</html>

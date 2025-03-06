@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Candy Shop</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the "Time Candy Shop"!<br><br>
+        • The pastel background color changes with the hour.<br>
+        • The giant candy jar alternates in height with the minute.<br>
+        • New candies pop into the shop each second.<br>
+        • Watch them float around until they vanish.<br><br>
+        Hover away to explore the sugary realm!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let candies = [];       // array to store candy objects
+    let candyJarHeight = 0; // dynamic candy jar height
+    let lastSecond = -1;    // track changes in second
+    let jarBaseY;           // for positioning candy jar
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      jarBaseY = height - 50;
+    }
+
+    function draw() {
+      drawPastelBackground();
+      drawCandyJar();
+      handleCandies();
+      drawCandies();
+      displayClock();
+    }
+
+    // Create a pastel gradient background that shifts with the hour
+    function drawPastelBackground() {
+      let h = hour();
+      // Map the hour to a hue-like range [0..360]
+      let hueVal = map(h, 0, 23, 0, 360);
+      // We'll draw a gentle vertical gradient by interpolating the hue
+      for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        let c = color(hueVal, 80 + 80 * inter, 200 - 50 * inter);
+        stroke(c);
+        line(0, y, width, y);
+      }
+    }
+
+    // The candy jar height changes with the current minute
+    function drawCandyJar() {
+      let m = minute();
+      // Create a subtle oscillation effect
+      let oscillation = map(sin(frameCount + m * 6), -1, 1, -30, 30);
+      candyJarHeight = 100 + oscillation;
+      
+      // Draw candy jar at the bottom
+      push();
+      translate(width * 0.5, jarBaseY);
+      noStroke();
+      fill(255, 192, 203, 150); // a light pinkish jar
+      rectMode(CENTER);
+      rect(0, -candyJarHeight / 2, 100, candyJarHeight, 20);
+      pop();
+    }
+
+    // Create candies each time the second updates
+    function handleCandies() {
+      let s = second();
+      if (s !== lastSecond) {
+        // create a new candy
+        candies.push({
+          x: random(width),
+          y: random(height - 200, height - 100),
+          size: random(10, 30),
+          xSpeed: random(-1, 1),
+          ySpeed: random(-1, -3),
+          c: color(random(255), random(255), random(255))
+        });
+        lastSecond = s;
+      }
+    }
+
+    // Update and draw candies
+    function drawCandies() {
+      for (let i = candies.length - 1; i >= 0; i--) {
+        let candy = candies[i];
+        fill(candy.c);
+        noStroke();
+
+        // A candy shape: could be an ellipse or any playful shape
+        push();
+        translate(candy.x, candy.y);
+        ellipse(0, 0, candy.size, candy.size);
+        pop();
+
+        // Move candy
+        candy.x += candy.xSpeed;
+        candy.y += candy.ySpeed;
+
+        // Remove if candy drifts beyond canvas
+        if (candy.x < -50 || candy.x > width + 50 || candy.y < -50 || candy.y > height + 50) {
+          candies.splice(i, 1);
+        }
+      }
+    }
+
+    // Display a simple digital clock in the bottom left corner
+    function displayClock() {
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, CENTER);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, 10, height - 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

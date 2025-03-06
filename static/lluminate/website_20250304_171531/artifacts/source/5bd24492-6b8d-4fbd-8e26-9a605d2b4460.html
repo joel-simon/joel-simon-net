@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Celestial Maze Time Diver</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      color: #fff;
+      font-family: sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(0,0,0,0.8);
+      box-sizing: border-box;
+      padding: 20px;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    p {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        CELESTIAL MAZE TIME DIVER<br><br>
+        • Maze regenerates every minute<br>
+        • Hour influences fractal tree branching<br>
+        • Second drives lightning pulses and swirl rotation<br>
+        • Explore and watch the visuals evolve<br>
+        Hover away to begin!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Celestial Maze Time Diver:
+      - Maze regenerates on each new minute.
+      - Draw a fractal tree whose depth depends on the hour.
+      - Periodic lightning pulses triggered by every 10 seconds.
+      - A swirling effect rotates with the current second.
+      - Move in the maze with arrow keys (if desired).
+    */
+
+    const CANVAS_SIZE = 512;
+    const TILE_SIZE = 16; // Maze cell size
+    let cols, rows;
+    let mazeGrid = [];
+    let visited = [];
+    let stack = [];
+    let currentCell;
+    let lastMinute = -1;
+
+    // Player position
+    let playerX = 0;
+    let playerY = 0;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      colorMode(HSB, 360, 100, 100);
+      angleMode(DEGREES);
+      
+      // Maze setup
+      cols = width / TILE_SIZE;
+      rows = height / TILE_SIZE;
+      generateMaze();
+    }
+
+    function draw() {
+      background(0);
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Maze regenerates each new minute
+      if (m !== lastMinute) {
+        generateMaze();
+        lastMinute = m;
+      }
+
+      // Draw Maze
+      drawMaze();
+
+      // Draw fractal tree in top-left corner
+      push();
+      translate(100, height - 50);
+      let depth = map(h % 12, 0, 11, 3, 8);
+      stroke(60, 80, 100);
+      drawFractalTree(50, depth);
+      pop();
+
+      // Lightning pulse every 10 seconds
+      if (s % 10 === 0) {
+        drawLightning();
+      }
+
+      // Swirling effect rotates with second
+      push();
+      translate(width * 0.75, height * 0.25);
+      rotate(s * 6);
+      drawSwirl();
+      pop();
+
+      // Draw the player
+      drawPlayer();
+
+      // Optional clock display
+      push();
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 10, height - 10);
+      pop();
+    }
+
+    // ---------------- MAZE GENERATION ----------------
+
+    function generateMaze() {
+      // Create cells
+      mazeGrid = [];
+      visited = [];
+      stack = [];
+      for (let row = 0; row < rows; row++) {
+        let rowArray = [];
+        for (let col = 0; col < cols; col++) {
+          let cell = {
+            x: col,
+            y: row,
+            walls: [true, true, true, true], // top, right, bottom, left
+            visited: false
+          };
+          rowArray.push(cell);
+        }
+        mazeGrid.push(rowArray);
+      }
+
+      // Maze creation using Depth-First Search
+      currentCell = mazeGrid[0][0];
+      currentCell.visited = true;
+      stack.push(currentCell);
+
+      while (stack.length > 0) {
+        let next = checkNeighbors(currentCell);
+        if (next) {
+          next.visited = true;
+          stack.push(next);
+          removeWalls(currentCell, next);
+          currentCell = next;
+        } else if (stack.length > 0) {
+          currentCell = stack.pop();
+        }
+      }
+
+      // Reset player position to top-left
+      playerX = 0;
+      playerY = 0;
+    }
+
+    function checkNeighbors(cell) {
+      let neighbors = [];
+      let x = cell.x;
+      let y = cell.y;
+
+      if (y > 0) {
+        let top = mazeGrid[y - 1][x];
+        if (!top.visited) neighbors.push(top);
+      }
+      if (x < cols - 1) {
+        let right = mazeGrid[y][x + 1];
+        if (!right.visited) neighbors.push(right);
+      }
+      if (y < rows - 1) {
+        let bottom = mazeGrid[y + 1][x];
+        if (!bottom.visited) neighbors.push(bottom);
+      }
+      if (x > 0) {
+        let left = mazeGrid[y][x - 1];
+        if (!left.visited) neighbors.push(left);
+      }
+
+      if (neighbors.length > 0) {
+        let r = floor(random(neighbors.length));
+        return neighbors[r];
+      } else {
+        return undefined;
+      }
+    }
+
+    function removeWalls(a, b) {
+      let dx = a.x - b.x;
+      if (dx === 1) {
+        a.walls[3] = false; // remove left
+        b.walls[1] = false; // remove right
+      } else if (dx === -1) {
+        a.walls[1] = false; // remove right
+        b.walls[3] = false; // remove left
+      }
+      let dy = a.y - b.y;
+      if (dy === 1) {
+        a.walls[0] = false; // remove top
+        b.walls[2] = false; // remove bottom
+      } else if (dy === -1) {
+        a.walls[2] = false; // remove bottom
+        b.walls[0] = false; // remove top
+      }
+    }
+
+    function drawMaze() {
+      stroke(255);
+      strokeWeight(2);
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          let cell = mazeGrid[row][col];
+          let x = cell.x * TILE_SIZE;
+          let y = cell.y * TILE_SIZE;
+          if (cell.walls[0]) line(x, y, x + TILE_SIZE, y);         // top
+          if (cell.walls[1]) line(x + TILE_SIZE, y, x + TILE_SIZE, y + TILE_SIZE); // right
+          if (cell.walls[2]) line(x, y + TILE_SIZE, x + TILE_SIZE, y + TILE_SIZE); // bottom
+          if (cell.walls[3]) line(x, y, x, y + TILE_SIZE);         // left
+        }
+      }
+    }
+
+    // ---------------- FRACTAL TREE ----------------
+
+    function drawFractalTree(len, depth) {
+      line(0, 0, 0, -len);
+      translate(0, -len);
+      if (depth > 0) {
+        push();
+        rotate(30);
+        drawFractalTree(len * 0.7, depth - 1);
+        pop();
+        push();
+        rotate(-30);
+        drawFractalTree(len * 0.7, depth - 1);
+        pop();
+      }
+    }
+
+    // ---------------- LIGHTNING ----------------
+
+    function drawLightning() {
+      push();
+      stroke(60, 100, 100);
+      strokeWeight(3);
+      let segments = 20;
+      let startX = random(width);
+      let startY = 0;
+      for (let i = 0; i < segments; i++) {
+        let endX = startX + random(-20, 20);
+        let endY = startY + random(10, 30);
+        line(startX, startY, endX, endY);
+        startX = endX;
+        startY = endY;
+      }
+      pop();
+    }
+
+    // ---------------- SWIRL ----------------
+
+    function drawSwirl() {
+      noFill();
+      stroke(200, 60, 100);
+      strokeWeight(2);
+
+      let arms = 10;
+      let radiusBase = 30;
+      let radiusMax = 80;
+
+      for (let i = 0; i < arms; i++) {
+        let angleOffset = (360 / arms) * i;
+        beginShape();
+        for (let a = 0; a < 360; a += 15) {
+          let r = map(noise(i, a * 0.01, frameCount * 0.001), 0, 1, radiusBase, radiusMax);
+          let x = r * cos(a + angleOffset);
+          let y = r * sin(a + angleOffset);
+          vertex(x, y);
+        }
+        endShape(CLOSE);
+      }
+    }
+
+    // ---------------- PLAYER ----------------
+
+    function drawPlayer() {
+      fill(120, 100, 100);
+      noStroke();
+      let px = playerX * TILE_SIZE + TILE_SIZE/2;
+      let py = playerY * TILE_SIZE + TILE_SIZE/2;
+      circle(px, py, TILE_SIZE * 0.6);
+    }
+
+    function keyPressed() {
+      let cell = mazeGrid[playerY][playerX];
+      if (keyCode === UP_ARROW && !cell.walls[0]) {
+        playerY--;
+      } else if (keyCode === RIGHT_ARROW && !cell.walls[1]) {
+        playerX++;
+      } else if (keyCode === DOWN_ARROW && !cell.walls[2]) {
+        playerY++;
+      } else if (keyCode === LEFT_ARROW && !cell.walls[3]) {
+        playerX--;
+      }
+      playerX = constrain(playerX, 0, cols - 1);
+      playerY = constrain(playerY, 0, rows - 1);
+    }
+  </script>
+</body>
+</html>

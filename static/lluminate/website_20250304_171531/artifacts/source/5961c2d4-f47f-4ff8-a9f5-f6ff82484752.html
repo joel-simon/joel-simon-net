@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Confluence</title>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      /* Provide a black background in case the canvas doesn't cover everything */
+      background: #000;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      box-sizing: border-box;
+      padding: 20px;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Confluence</strong><br><br>
+        • The lower waves shift with the hour.<br>
+        • The fractal tree adjusts angles with the minute.<br>
+        • The rotating gear's speed follows the seconds.<br>
+        • Mosaic squares along the edges change color every second.<br><br>
+        Hover to view instructions.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    // Wave variables
+    let waveOffset = 0;
+
+    // Gear variables
+    let gearSize = 60;  // radius of gear
+    let gearTeeth = 8;  // number of gear teeth
+    let gearRotation = 0;
+
+    function setup() {
+      const canvas = createCanvas(w, h);
+      canvas.parent('canvas-container');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(30);
+
+      let hr = hour();      // 0-23
+      let mn = minute();    // 0-59
+      let sc = second();    // 0-59
+
+      // 1) Draw wave at bottom (affected by hour)
+      drawWave(hr);
+
+      // 2) Draw fractal tree in the center (affected by minute)
+      push();
+      translate(width / 2, height * 0.55);
+      drawFractalTree(70, mn, 4);
+      pop();
+
+      // 3) Draw rotating gear in top-left corner (affected by second)
+      drawRotatingGear(sc);
+
+      // 4) Mosaic squares around edges (affected by second)
+      drawMosaic(sc);
+
+      // 5) Display time
+      displayTime(hr, mn, sc);
+    }
+
+    // Wave across the bottom
+    function drawWave(hr) {
+      noStroke();
+      fill(40, 90, 150);
+      waveOffset += 0.02;
+
+      // Amplitude changes with hour (hour mod 12 for simpler shift)
+      let amplitude = map(hr % 12, 0, 11, 10, 50);
+
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 5) {
+        let y = height - 20 + sin(x * 0.02 + waveOffset) * amplitude;
+        vertex(x, y);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+    }
+
+    // Fractal tree
+    function drawFractalTree(len, mn, level) {
+      stroke(200);
+      strokeWeight(2);
+      line(0, 0, 0, -len);
+
+      translate(0, -len);
+
+      if (level > 0) {
+        // Angle depends on minute
+        let angle = map(mn, 0, 59, 15, 60);
+
+        push();
+        rotate(angle);
+        drawFractalTree(len * 0.7, mn, level - 1);
+        pop();
+
+        push();
+        rotate(-angle);
+        drawFractalTree(len * 0.7, mn, level - 1);
+        pop();
+      }
+    }
+
+    // Rotating gear
+    function drawRotatingGear(sc) {
+      // Gear's rotation speed depends on seconds
+      gearRotation += map(sc, 0, 59, 0.5, 3);
+
+      push();
+      translate(gearSize + 20, gearSize + 20);
+      rotate(gearRotation);
+      fill(200);
+      noStroke();
+
+      // Draw gear body
+      ellipse(0, 0, gearSize * 2, gearSize * 2);
+
+      // Draw gear teeth
+      let angleStep = 360 / gearTeeth;
+      for (let i = 0; i < gearTeeth; i++) {
+        push();
+        rotate(i * angleStep);
+        rect(gearSize, -5, 10, 10); // small rectangle as a tooth
+        pop();
+      }
+
+      // Center circle
+      fill(100);
+      ellipse(0, 0, gearSize * 0.5, gearSize * 0.5);
+      pop();
+    }
+
+    // Mosaic squares around edges
+    function drawMosaic(sc) {
+      let rows = 6;
+      let cols = 6;
+      let sizeW = width / cols;
+      let sizeH = height / rows;
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          // Skip center area (2x2 squares at center)
+          if (r >= 2 && r <= 3 && c >= 2 && c <= 3) continue;
+
+          // Color shifts with second
+          let colVal = map((sc + r + c) % 60, 0, 59, 60, 220);
+          fill(colVal);
+          noStroke();
+          rect(c * sizeW, r * sizeH, sizeW, sizeH);
+        }
+      }
+    }
+
+    // Digital time display in bottom-left corner
+    function displayTime(hr, mn, sc) {
+      let dispHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      fill(255);
+      textSize(16);
+      noStroke();
+      textAlign(LEFT, BOTTOM);
+      text(`${dispHour}:${nf(mn, 2)}:${nf(sc, 2)} ${ampm}`, 10, height - 10);
+    }
+  </script>
+</body>
+</html>

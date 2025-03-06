@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Carnival</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the “Time Carnival”!<br><br>
+        • Ferris wheel rotates according to the hour.<br>
+        • Background hue shifts with minutes.<br>
+        • Rollercoaster speed depends on the seconds.<br><br>
+        Hover away to enter the carnival!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Global animation parameters
+    let rollercoasterParam = 0; // tracks cart position
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      // Obtain current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      backgroundColor(m);
+      drawFerrisWheel(h, m, s);
+      drawRollercoaster(s);
+      drawClock(h, m, s);
+    }
+
+    function backgroundColor(minuteValue) {
+      // Shift color from dark to light throughout the hour
+      let skyVal = map(minuteValue, 0, 59, 20, 220);
+      background(skyVal, skyVal, skyVal * 1.2);
+    }
+
+    function drawFerrisWheel(h, m, s) {
+      push();
+      // Move to top-right for the Ferris wheel base
+      translate(width - 120, 120);
+
+      // Calculate hour hand style rotation 
+      // (each hour is 30 degrees in a 12-hour cycle, plus some fraction for minutes/seconds)
+      let hourAngle = (h % 12) * 30 + m * 0.5 + s * (0.5 / 60);
+      rotate(hourAngle);
+
+      // Draw Ferris wheel circle
+      stroke(0);
+      fill(200, 100, 0);
+      circle(0, 0, 160);
+
+      // Draw seats
+      noStroke();
+      fill(255, 200, 100);
+      let seatCount = 8;
+      for (let i = 0; i < seatCount; i++) {
+        let angle = 360 / seatCount * i;
+        let x = 80 * cos(angle);
+        let y = 80 * sin(angle);
+        push();
+        translate(x, y);
+        circle(0, 0, 20);
+        pop();
+      }
+      pop();
+    }
+
+    function drawRollercoaster(s) {
+      // Determine the speed of the rollercoaster based on seconds
+      let speed = map(s, 0, 59, 0.5, 5);
+      rollercoasterParam += speed;
+
+      push();
+      // Draw track as a simple wave near bottom
+      stroke(50);
+      strokeWeight(2);
+      noFill();
+      beginShape();
+      for (let x = 0; x <= width; x += 10) {
+        let y = 400 + 30 * sin((x + rollercoasterParam) * 0.02);
+        vertex(x, y);
+      }
+      endShape();
+
+      // Cart position
+      let cartX = (rollercoasterParam % width);
+      let cartY = 400 + 30 * sin((cartX + rollercoasterParam) * 0.02);
+
+      // Draw cart
+      fill(150, 0, 0);
+      noStroke();
+      rectMode(CENTER);
+      rect(cartX, cartY - 10, 30, 20, 5);
+      pop();
+    }
+
+    function drawClock(h, m, s) {
+      // Simple 2D clock in corner
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2), 10, 10);
+      pop();
+    }
+  </script>
+</body>
+</html>

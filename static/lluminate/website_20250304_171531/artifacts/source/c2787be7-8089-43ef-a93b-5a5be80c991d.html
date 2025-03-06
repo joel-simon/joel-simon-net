@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Kaleidoscope</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center the page content and give a neutral background */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f7f7f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #444;
+      padding: 8px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 220px;
+      z-index: 1;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      This Time Kaleidoscope has: 
+      • Symmetry count controlled by the hour. 
+      • Colors morph with the minute value. 
+      • Rotation speed tied to seconds.
+    </div>
+  </div>
+
+  <script>
+    const w = 512;
+    const h = 512;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      angleMode(RADIANS);
+      noStroke();
+    }
+
+    function draw() {
+      background(255);
+
+      let hr = hour() % 12; // 0-11
+      let mn = minute();    // 0-59
+      let sc = second();    // 0-59
+
+      // Never allow 0 symmetrical segments; ensure at least 1
+      let segments = max(1, hr);
+      // Color pulsation factor for minutes
+      let colorFactor = map(mn, 0, 59, 0, 1);
+      // Spin speed depends on seconds
+      let spinSpeed = map(sc, 0, 59, 0.0, 0.1);
+
+      // Move to center
+      translate(w / 2, h / 2);
+
+      // Draw symmetrical patterns
+      for (let i = 0; i < segments; i++) {
+        push();
+        rotate(((TWO_PI) / segments) * i + frameCount * spinSpeed);
+
+        // Calculate a color blend from minute data
+        // We'll blend between two hues
+        let col1 = color(160, 100, 200);
+        let col2 = color(255, 150, 50);
+        let blendedCol = lerpColor(col1, col2, colorFactor);
+
+        fill(blendedCol);
+        // Draw some shape or pattern
+        // We'll draw layered arcs and circles to form a kaleidoscopic feel
+        circle(60, 0, 80);
+        arc(120, 0, 100, 100, PI / 2, PI + HALF_PI, CHORD);
+        pop();
+      }
+
+      // Digital clock at bottom
+      push();
+      resetMatrix();
+      textSize(24);
+      fill(60);
+      textAlign(CENTER, CENTER);
+      text(
+        nf(hour(), 2) + ':' + nf(minute(), 2) + ':' + nf(second(), 2),
+        width / 2,
+        height - 30
+      );
+      pop();
+    }
+  </script>
+</body>
+</html>

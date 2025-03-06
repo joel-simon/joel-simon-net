@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Redwood Grove</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the "Time Redwood Grove"!<br><br>
+        • The sky color shifts gradually with the hour (day-night cycle).<br>
+        • The redwoods' height changes with the minutes.<br>
+        • The foliage color pulses with the seconds.<br><br>
+        Hover away to enjoy the scenery!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // We'll store some parameters for our redwoods
+    // to give them positions and small variations.
+    const redwoods = [
+      { x: 180, baseWidth: 25, trunkColor: '#5B3E31' },
+      { x: 256, baseWidth: 30, trunkColor: '#6B493B' },
+      { x: 332, baseWidth: 25, trunkColor: '#5B3E31' }
+    ];
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      backgroundGrad();
+      drawForestFloor();
+      drawRedwoods();
+      drawFloatingLeafSparkles();
+      displayClock();
+    }
+
+    // Background changes from midnight to dawn to noon and so forth
+    // as hour changes from 0..23
+    function backgroundGrad() {
+      let h = hour();
+      // We'll map the hour to a gradient:
+      // midnight = dark blue, noon = lighter blue, evening = purple
+      // For a smoother effect, let's also incorporate minute fraction
+      let m = minute();
+      let hourFloat = h + m/60.0;
+      let skyColor = color( map(hourFloat, 0, 23, 20, 150), // r
+                            map(hourFloat, 0, 23, 20, 220), // g
+                            map(hourFloat, 0, 23, 60, 200)  // b
+                          );
+
+      // Radial gradient
+      for (let r = 512; r > 0; r -= 8) {
+        let inter = map(r, 0, 512, 1, 0);
+        let c = lerpColor(skyColor, color(0, 0, 0), inter);
+        fill(c);
+        ellipse(width/2, height/2, r, r);
+      }
+    }
+
+    // Draw a simple forest floor
+    function drawForestFloor() {
+      push();
+      fill(40, 80, 40);
+      rect(0, height - 60, width, 60);
+      pop();
+    }
+
+    // Draw redwoods that respond to the current time
+    function drawRedwoods() {
+      // The trunk height is based on the current minute
+      let m = minute();
+      // We'll map it from something small to quite tall
+      let trunkHeight = map(m, 0, 59, 80, 200);
+
+      // The leaves color will shift with the seconds
+      let s = second();
+      // We'll vary the green component with seconds
+      let leavesCol = color(30, map(s, 0, 59, 100, 200), 30);
+
+      push();
+      for (let i = 0; i < redwoods.length; i++) {
+        let rw = redwoods[i];
+
+        // Draw trunk
+        fill(rw.trunkColor);
+        rect(rw.x - rw.baseWidth/2, height - 60 - trunkHeight, rw.baseWidth, trunkHeight);
+
+        // Draw a simple conical "foliage" cluster at the top
+        fill(leavesCol);
+        let canopyWidth = rw.baseWidth * 4; 
+        let canopyHeight = trunkHeight / 1.5;
+        triangle(
+          rw.x - canopyWidth / 2, height - 60 - trunkHeight,
+          rw.x + canopyWidth / 2, height - 60 - trunkHeight,
+          rw.x, height - 60 - trunkHeight - canopyHeight
+        );
+      }
+      pop();
+    }
+
+    // A small effect to show sparkles/leaves drifting upward
+    // We'll base it on the second so it changes in a subtle way
+    function drawFloatingLeafSparkles() {
+      let s = second();
+      let leafCount = map(s, 0, 59, 3, 20);
+      push();
+      for (let i = 0; i < leafCount; i++) {
+        let x = noise(frameCount * 0.01 + i * 10) * width;
+        let y = height - 60 - (frameCount % 200) - i * 10;
+        fill(60, 120 + i * 5, 60, 180);
+        ellipse(x, y, 8, 8);
+      }
+      pop();
+    }
+
+    // Small clock display in the corner
+    function displayClock() {
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(RIGHT, BOTTOM);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width - 10, height - 10);
+      pop();
+    }
+
+  </script>
+</body>
+</html>

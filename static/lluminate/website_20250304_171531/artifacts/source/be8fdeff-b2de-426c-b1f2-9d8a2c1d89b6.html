@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Bonsai Garden</title>
+  <style>
+    /* Basic reset and dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #0a0a0a; 
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+    /* 512x512 container for the canvas */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.65);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Bonsai Garden</strong><br><br>
+        • The bonsai branches scale with the hour.<br>
+        • A koi fish moves back and forth at a speed tied to the minute.<br>
+        • An orb in the sky changes color with each second.<br>
+        • Current time is displayed in the top-left corner.<br><br>
+        Hover to read instructions and enjoy the serenity of this time-linked garden.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    // Canvas dimensions
+    let w = 512;
+    let h = 512;
+
+    // Position of the koi fish
+    let koiX = 0;
+
+    function setup() {
+      const cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      textFont('sans-serif');
+    }
+
+    function draw() {
+      background(10);
+
+      // Get current hour, minute, second
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Subtle background gradient
+      drawBackgroundGradient();
+
+      // Draw an orb in the sky that changes color with seconds
+      drawOrb(sc);
+
+      // Draw the bonsai in center, scale depends on hour
+      push();
+      translate(width / 2, height * 0.65);
+      scale(map(hr % 12, 0, 12, 0.8, 1.3));
+      drawBonsai();
+      pop();
+
+      // Animate a koi fish near bottom, speed depends on minute
+      drawKoiFish(mn);
+
+      // Display the current time
+      displayTime(hr, mn, sc);
+    }
+
+    function drawBackgroundGradient() {
+      // Vertical gradient background: top (darker) to bottom (slightly lighter)
+      for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        let c = lerpColor(color(0, 0, 20), color(30, 30, 60), inter);
+        stroke(c);
+        line(0, y, width, y);
+      }
+    }
+
+    function drawOrb(sc) {
+      // Orb color pulses with seconds
+      push();
+      let orbSize = 80 + sin(frameCount * 2) * 5;
+      let orbColor = color((sc * 4) % 256, 90, 200);
+      fill(orbColor);
+      noStroke();
+      ellipse(width * 0.8, height * 0.2, orbSize, orbSize);
+      pop();
+    }
+
+    function drawBonsai() {
+      // Trunk
+      stroke(100, 60, 20);
+      strokeWeight(8);
+      line(0, 0, 0, -50);
+
+      // Branches
+      push();
+      translate(0, -50);
+      strokeWeight(6);
+      drawBranch(40);
+      pop();
+    }
+
+    // Recursive branch drawing to mimic a small bonsai style
+    function drawBranch(length) {
+      if (length < 10) return;
+
+      line(0, 0, 0, -length);
+      translate(0, -length);
+
+      // Left branch
+      push();
+      rotate(-25);
+      strokeWeight(max(1, (length / 12)));
+      drawBranch(length * 0.7);
+      pop();
+
+      // Right branch
+      push();
+      rotate(25);
+      strokeWeight(max(1, (length / 12)));
+      drawBranch(length * 0.7);
+      pop();
+
+      // Leaves near ends
+      if (length < 25) {
+        strokeWeight(0);
+        fill(34, 139, 34);
+        ellipse(0, 0, 10, 10);
+      }
+    }
+
+    function drawKoiFish(mn) {
+      // Move the koi fish in horizontal direction
+      let speed = map(mn, 0, 59, 0.5, 5);
+      koiX += speed;
+      // Wrap around
+      if (koiX > width + 50) {
+        koiX = -50;
+      }
+
+      push();
+      translate(koiX, height * 0.85);
+      noStroke();
+      
+      // Body
+      fill(255, 120, 70);
+      ellipse(0, 0, 50, 20);
+
+      // Tail
+      push();
+      fill(255, 80, 50);
+      translate(25, 0);
+      rotate(sin(frameCount * 5) * 10);
+      triangle(0, -10, 0, 10, 15, 0);
+      pop();
+
+      // Eye
+      fill(0);
+      ellipse(-10, -5, 4, 4);
+
+      pop();
+    }
+
+    function displayTime(hr, mn, sc) {
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 10, 10);
+    }
+  </script>
+</body>
+</html>

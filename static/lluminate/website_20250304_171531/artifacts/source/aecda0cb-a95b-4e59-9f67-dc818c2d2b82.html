@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Fusion Display</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic page and canvasContainer setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (hidden by default, appears on hover) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.7);
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      box-sizing: border-box;
+      padding: 20px;
+      pointer-events: none;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Fusion Display</strong><br><br>
+        • The background waves shift according to the hour & minute.<br>
+        • A fractal tree in the center branches based on minutes & changes size over time.<br>
+        • A fish swims across, growing with the hour and adjusting color by seconds.<br>
+        • Bubbles rise each second.<br>
+        Hover away to explore!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Fusion Display
+      -------------------
+      1) Wave background controlled by hour + minute.
+      2) Fractal tree in the center whose angle & branch length respond to time.
+      3) A fish that swims across, size changes with hour, color changes with second.
+      4) Bubbles appear each second, rising upward.
+      5) A small clock shown in the corner for reference.
+    */
+
+    const SIZE = 512;
+    // Bubbles
+    let bubbles = [];
+    let lastSecond = -1;
+
+    // Fish
+    let fish;
+
+    // Fractal tree settings
+    let branchLengthBase = 80; // base length for main branch
+    let angleOffset = 0;       // will be modified based on minute
+
+    function setup() {
+      let cnv = createCanvas(SIZE, SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+
+      // Initialize fish
+      fish = new Fish();
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // 1) Draw wave background
+      drawWaveBackground(h, m);
+
+      // 2) Draw fractal tree in the center
+      angleOffset = map(m, 0, 59, 10, 40); // angle changes with minute
+      push();
+      translate(width / 2, height);
+      stroke(255);
+      drawFractalTree(branchLengthBase + map(h, 0, 23, -20, 20), 0);
+      pop();
+
+      // 3) Update & draw fish
+      fish.update(h, s);
+      fish.display();
+
+      // 4) Bubbles each second
+      if (s !== lastSecond) {
+        bubbles.push(new Bubble());
+        lastSecond = s;
+      }
+      for (let b of bubbles) {
+        b.update();
+        b.display();
+      }
+      bubbles = bubbles.filter(b => !b.popped);
+
+      // 5) Optional small clock
+      drawClock(h, m, s);
+    }
+
+    // Wave background function
+    function drawWaveBackground(h, m) {
+      push();
+      noStroke();
+      colorMode(HSB, 360, 100, 100);
+      // Base color mapped by hour
+      let hueVal = map(h, 0, 23, 0, 360);
+      fill(hueVal, 60, 20);
+      rect(0, 0, width, height);
+
+      stroke(255, 80);
+      strokeWeight(1);
+      noFill();
+      let amplitude = map(h, 0, 23, 10, 60);
+      let frequency = map(m, 0, 59, 0.02, 0.2);
+
+      for (let y = 0; y < height; y += 20) {
+        beginShape();
+        for (let x = 0; x <= width; x += 10) {
+          let waveOffset = amplitude * sin((x + frameCount) * frequency);
+          vertex(x, y + waveOffset);
+        }
+        endShape();
+      }
+      pop();
+    }
+
+    // Recursive Fractal Tree
+    function drawFractalTree(len, depth) {
+      if (len < 2) return;
+
+      line(0, 0, 0, -len);
+      translate(0, -len);
+
+      // angle changes with time-based offset
+      let angleVal = angleOffset;
+
+      push();
+      rotate(angleVal);
+      drawFractalTree(len * 0.7, depth + 1);
+      pop();
+
+      push();
+      rotate(-angleVal);
+      drawFractalTree(len * 0.7, depth + 1);
+      pop();
+    }
+
+    // Fish class
+    class Fish {
+      constructor() {
+        this.x = random(width);
+        this.y = height * 0.5;
+        this.baseSize = 40;
+        this.xSpeed = 2;
+      }
+      update(h, s) {
+        // Hour influences size
+        let dayHour = h % 12 || 12;
+        this.currentSize = this.baseSize + dayHour * 4;
+
+        // Seconds influence color shift
+        this.colorPhase = map(s, 0, 59, 0, 255);
+
+        // Movement
+        this.x += this.xSpeed;
+        if (this.x > width + this.currentSize * 2) {
+          this.x = -this.currentSize * 2;
+          this.y = random(height * 0.3, height * 0.7);
+        }
+      }
+      display() {
+        push();
+        translate(this.x, this.y);
+        noStroke();
+        fill(this.colorPhase, 150, 200); // fill with dynamic color
+        ellipse(0, 0, this.currentSize * 2, this.currentSize);
+
+        // Tail
+        fill(this.colorPhase, 120, 180);
+        triangle(
+          -this.currentSize, 0,
+          -this.currentSize - this.currentSize * 0.5, -this.currentSize * 0.3,
+          -this.currentSize - this.currentSize * 0.5, this.currentSize * 0.3
+        );
+
+        // Eye
+        fill(255);
+        ellipse(this.currentSize * 0.4, -this.currentSize * 0.15, this.currentSize * 0.25, this.currentSize * 0.25);
+        fill(0);
+        ellipse(this.currentSize * 0.4, -this.currentSize * 0.15, this.currentSize * 0.1, this.currentSize * 0.1);
+        pop();
+      }
+    }
+
+    // Bubble class
+    class Bubble {
+      constructor() {
+        this.x = random(width);
+        this.y = height + 20;
+        this.size = random(8, 16);
+        this.speed = random(1, 2);
+        this.popped = false;
+      }
+      update() {
+        this.y -= this.speed;
+        if (this.y < -this.size) {
+          this.popped = true;
+        }
+      }
+      display() {
+        push();
+        translate(this.x, this.y);
+        stroke(255);
+        strokeWeight(1);
+        noFill();
+        ellipse(0, 0, this.size, this.size);
+        pop();
+      }
+    }
+
+    // Draws a small digital clock in the bottom-left corner
+    function drawClock(h, m, s) {
+      push();
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 10, height - 16);
+      pop();
+    }
+  </script>
+</body>
+</html>

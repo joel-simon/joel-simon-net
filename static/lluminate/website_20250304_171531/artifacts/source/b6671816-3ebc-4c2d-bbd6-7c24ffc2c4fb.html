@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Combined Creative Time Display</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Ensure the body takes up the full screen, centered */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #eee;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* A container for the 512x512 canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Tooltip styling, hidden by default */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 220px;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #444;
+      font-family: sans-serif;
+      font-size: 14px;
+      color: #333;
+      z-index: 10;
+    }
+
+    /* Show tooltip only on hover */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+
+    /* Force canvas to be exactly 512x512, no resizing */
+    canvas {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      border: 1px solid #ccc;
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      Hover to see this combined time display in action:
+      <ul style="margin-top: 5px; padding-left: 20px;">
+        <li>A gently shifting wave in the background adapts to the hour.</li>
+        <li>Particles swirl around the center, adjusting their count based on the hour.</li>
+        <li>A star in the center rotates by the minute and changes size by the second.</li>
+        <li>Digital clock in the center shows current time.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // Global arrays and variables for wave and particles
+    let particleArray = [];
+    let waveOffset = 0; 
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100, 1);
+      noStroke();
+    }
+
+    function draw() {
+      background(240);
+
+      let h = hour();          // 0 - 23
+      let m = minute();        // 0 - 59
+      let s = second();        // 0 - 59
+      let h12 = h % 12;        // 0 - 11 for star points
+
+      // 1) Draw wave background that changes with the hour
+      drawWave(h);
+
+      // 2) Generate or adjust swirling particles based on hour
+      let swirlCount = max((h + 1) * 5, 10); 
+      manageParticles(swirlCount, m, s);
+
+      // 3) Draw rotating star in center
+      push();
+      translate(width / 2, height / 2);
+      let starPoints = h12 + 3;                     // star points based on hour (12-hour format)
+      let rotAngle = map(m, 0, 59, 0, 360);         // rotate by minute
+      let outerRadius = map(s, 0, 59, 30, 110);     // change star size by second
+      rotate(rotAngle);
+      drawStar(0, 0, outerRadius, outerRadius * 0.5, starPoints);
+      pop();
+
+      // 4) Overlay a digital time display in the center
+      fill(20);
+      textSize(24);
+      textAlign(CENTER, CENTER);
+      text(
+        nf(h, 2) + ':' + nf(m, 2) + ':' + nf(s, 2),
+        width / 2, height / 2
+      );
+    }
+
+    function drawWave(h) {
+      // Slightly tinted background wave
+      push();
+      noStroke();
+      fill(200, 20, 90, 0.2); // subtle color with alpha
+      let waveAmp = map(h, 0, 23, 10, 50); // wave amplitude changes with hour
+      waveOffset += 0.02;
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 10) {
+        let y = map(
+          noise(x * 0.01, waveOffset),
+          0, 1,
+          height / 2 - waveAmp,
+          height / 2 + waveAmp
+        );
+        vertex(x, y);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+      pop();
+    }
+
+    function manageParticles(count, m, s) {
+      // If needed, rebuild particle array
+      if (particleArray.length !== count) {
+        rebuildParticles(count);
+      }
+
+      // Let minute control swirl speed, second control color
+      let speed = map(m, 0, 59, 0.2, 4);
+      let baseHue = map(s, 0, 59, 0, 360);
+
+      push();
+      translate(width / 2, height / 2);
+      for (let i = 0; i < particleArray.length; i++) {
+        let p = particleArray[i];
+        let angle = frameCount * speed + p.angleOffset;
+        let x = p.radius * cos(angle);
+        let y = p.radius * sin(angle);
+
+        let hueVal = (baseHue + p.hueOffset) % 360;
+        fill(hueVal, 80, 90, 0.8);
+        ellipse(x, y, p.size, p.size);
+      }
+      pop();
+    }
+
+    function rebuildParticles(count) {
+      particleArray = [];
+      for (let i = 0; i < count; i++) {
+        particleArray.push({
+          radius: random(40, 200),
+          angleOffset: random(0, 360),
+          hueOffset: random(0, 60),
+          size: random(5, 10)
+        });
+      }
+    }
+
+    // Function adapted from p5.js star example
+    function drawStar(x, y, radius1, radius2, npoints) {
+      stroke(200, 20, 90);
+      strokeWeight(2);
+      fill(200, 50, 100, 0.5);
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2.0;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius1;
+        let sy = y + sin(a) * radius1;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius2;
+        sy = y + sin(a + halfAngle) * radius2;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

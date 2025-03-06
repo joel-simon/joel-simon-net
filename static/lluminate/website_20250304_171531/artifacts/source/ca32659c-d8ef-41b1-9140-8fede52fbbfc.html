@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Combined Time Display</title>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      box-sizing: border-box;
+      padding: 20px;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Combined Time Display</strong><br><br>
+        • The wave's amplitude changes each hour.<br>
+        • The central fractal swirl adjusts angles based on the minute.<br>
+        • The mosaic squares shift color with the seconds.<br>
+        • Current time is displayed in the top-left corner.<br><br>
+        Hover to view instructions.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    // Wave animation offset
+    let waveOffset = 0;
+
+    function setup() {
+      const canvas = createCanvas(w, h);
+      canvas.parent('canvas-container');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(20);
+
+      let hr = hour();      // 0-23
+      let mn = minute();    // 0-59
+      let sc = second();    // 0-59
+
+      // 1) Wave Background (affected by hour)
+      drawWave(hr);
+
+      // 2) Fractal Swirl at Center (affected by minute)
+      push();
+      translate(width / 2, height / 2);
+      drawFractalSwirl(mn);
+      pop();
+
+      // 3) Mosaic Squares (affected by second)
+      drawMosaic(sc);
+
+      // 4) Display Time in top-left corner
+      displayTime(hr, mn, sc);
+    }
+
+    // Wave across the bottom
+    function drawWave(hr) {
+      noStroke();
+      fill(40, 90, 150);
+      waveOffset += 0.02;
+
+      // Amplitude changes with hour (0-23 => 0-11 for simpler wave changes)
+      let amplitude = map(hr % 12, 0, 11, 10, 50);
+
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 5) {
+        let y = height - 50 + sin(x * 0.02 + waveOffset) * amplitude;
+        vertex(x, y);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+    }
+
+    // Recursive fractal swirl
+    function drawFractalSwirl(mn) {
+      let swirlSegments = 5;
+      let angleStep = map(mn, 0, 59, 20, 90); // branch angle depends on minute
+
+      for (let i = 0; i < swirlSegments; i++) {
+        push();
+        rotate((frameCount + i * 20) % 360);
+        fractalBranch(60, angleStep, 3);
+        pop();
+      }
+    }
+
+    function fractalBranch(len, angle, depth) {
+      if (depth <= 0) return;
+      stroke(220);
+      strokeWeight(1.5);
+      line(0, 0, len, 0);
+
+      push();
+      translate(len, 0);
+      rotate(angle);
+      fractalBranch(len * 0.7, angle, depth - 1);
+      pop();
+
+      push();
+      translate(len, 0);
+      rotate(-angle);
+      fractalBranch(len * 0.7, angle, depth - 1);
+      pop();
+    }
+
+    // Mosaic squares around edges
+    function drawMosaic(sc) {
+      let rows = 5;
+      let cols = 5;
+      let sizeW = width / cols;
+      let sizeH = height / rows;
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          // Skip center area to create an "edge" mosaic
+          if (r > 0 && r < rows - 1 && c > 0 && c < cols - 1) continue;
+
+          // Color shifts with second
+          let colVal = map((sc + r + c) % 60, 0, 59, 0, 255);
+          fill(colVal, 100, 180);
+          noStroke();
+          rect(c * sizeW, r * sizeH, sizeW, sizeH);
+        }
+      }
+    }
+
+    // Display digital time
+    function displayTime(hr, mn, sc) {
+      let dispHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(
+        `${dispHour}:${nf(mn, 2)}:${nf(sc, 2)} ${ampm}`,
+        10, 10
+      );
+    }
+  </script>
+</body>
+</html>

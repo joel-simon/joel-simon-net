@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Rube Goldberg Contraption</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the "Time Rube Goldberg Contraption"!<br><br>
+        • The gear's position shifts with the hour.<br>
+        • The ball speed changes with the minute.<br>
+        • The gear's rotation speeds up with the second.<br><br>
+        Observe how time crafts each domino effect!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Ball properties
+    let ballX, ballY;
+    let ballSpeed;
+    let ballRadius = 15;
+    let gravity = 0.3;
+    let yVelocity = 0;
+
+    // Gear properties
+    let gearAngle = 0;
+    let gearTeeth = 12;
+    let gearRadius = 40;
+
+    // Ramp properties
+    let rampX1 = 40;
+    let rampY1 = 300;
+    let rampX2 = 250;
+    let rampY2 = 220;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      resetBall();
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      drawBackground();
+      moveGear();
+      drawRamp();
+      updateBall();
+      drawBall();
+      drawGear();
+      displayTime();
+    }
+
+    // Color changes subtly over time
+    function drawBackground() {
+      let h = hour();
+      // Map hour to a sweeping hue
+      let hueVal = map(h, 0, 23, 0, 360);
+      noStroke();
+      for (let r = 512; r > 0; r -= 8) {
+        let inter = map(r, 0, 512, 1, 0);
+        let c = color(hueVal, 100 * inter, 180 * inter);
+        fill(c);
+        ellipse(width / 2, height / 2, r, r);
+      }
+    }
+
+    // Determines gear rotation and position
+    function moveGear() {
+      let s = second();
+      // Rotate faster with seconds
+      gearAngle += map(s, 0, 59, 1, 5);
+    }
+
+    // Draws a simple ramp line
+    function drawRamp() {
+      stroke(255);
+      strokeWeight(4);
+      line(rampX1, rampY1, rampX2, rampY2);
+    }
+
+    // Handles the ball's physics on the ramp
+    function updateBall() {
+      let m = minute();
+      // Speed changes with minute
+      let baseSpeed = map(m, 0, 59, 1, 5);
+
+      // Ball moves horizontally until it hits the ramp's slope
+      ballX += baseSpeed;
+      
+      // If ball is on the ramp line segment, move with slope
+      let rampSlope = (rampY2 - rampY1) / (rampX2 - rampX1);
+      // We'll approximate contact by checking if ball is above ramp
+      if (ballX >= rampX1 && ballX <= rampX2) {
+        let expectedY = rampY1 + rampSlope * (ballX - rampX1);
+        if (ballY >= expectedY - ballRadius && ballY <= expectedY + 10) {
+          // Align ball on ramp
+          ballY = expectedY - ballRadius;
+          yVelocity = 0;
+        } else {
+          // Gravity effect
+          yVelocity += gravity;
+          ballY += yVelocity;
+        }
+      } else {
+        // Off ramp: normal free fall
+        yVelocity += gravity;
+        ballY += yVelocity;
+      }
+
+      // If ball leaves screen, reset
+      if (ballY > height + ballRadius) {
+        resetBall();
+      }
+    }
+
+    // Draw the ball
+    function drawBall() {
+      fill(255);
+      noStroke();
+      ellipse(ballX, ballY, ballRadius * 2, ballRadius * 2);
+    }
+
+    // Draw a simple gear that intersects with the ramp
+    function drawGear() {
+      push();
+      let h = hour();
+      // The gear's x-position changes with hour
+      let gearX = map(h, 0, 23, 50, width - 50);
+      let gearY = 380;
+      translate(gearX, gearY);
+      rotate(gearAngle);
+      fill(0);
+      stroke(255);
+      strokeWeight(2);
+
+      // Draw gear circle
+      ellipse(0, 0, gearRadius * 2, gearRadius * 2);
+
+      // Draw gear teeth
+      for (let i = 0; i < gearTeeth; i++) {
+        push();
+        rotate(360 / gearTeeth * i);
+        rect(gearRadius, -5, 10, 10);
+        pop();
+      }
+      pop();
+    }
+
+    // Render text time display
+    function displayTime() {
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+      pop();
+    }
+
+    // Reset the ball to the left side of the canvas
+    function resetBall() {
+      ballX = 10;
+      ballY = 200;
+      yVelocity = 0;
+    }
+  </script>
+</body>
+</html>

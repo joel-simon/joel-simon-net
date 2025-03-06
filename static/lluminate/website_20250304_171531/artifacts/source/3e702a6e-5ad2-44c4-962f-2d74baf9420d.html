@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Aurora Fractal</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Show the overlay on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Aurora Fractal<br><br>
+        • Hour changes the shifting sky colors.<br>
+        • Minute rotates the fractal branches.<br>
+        • Second influences the fractal detail.<br>
+        • Hover away to watch time shape the scene!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Variables for wave background
+    let waveCount = 8;
+    let waveHeight = 40;
+
+    // Variables for fractal tree
+    let branchAngle = 0;
+    let maxDepth = 6;  // max recursion depth for the fractal
+    let branchLength = 80;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      colorMode(HSB);
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Background color changes with the hour
+      let hueVal = map(h, 0, 23, 0, 360);
+      background(hueVal, 40, 20);
+
+      // Draw wave background
+      drawWaves(h, m, s);
+
+      // Update branch angle and detail based on time
+      branchAngle = map(m, 0, 59, 15, 75);
+      let fractalDetail = floor(map(s, 0, 59, 3, 7));
+
+      // Draw fractal tree
+      push();
+      translate(width / 2, height - 70);
+      stroke(200);
+      strokeWeight(2);
+      branch(0, fractalDetail);
+      pop();
+
+      // Small clock display
+      push();
+      fill(255);
+      noStroke();
+      textSize(14);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+      pop();
+    }
+
+    function drawWaves(h, m, s) {
+      noStroke();
+      for (let i = 0; i < waveCount; i++) {
+        let waveHue = (frameCount * 0.2 + i * 10 + h * 15) % 360;
+        fill(waveHue, 80, 60, 0.2);
+
+        beginShape();
+        for (let x = 0; x <= width; x += 10) {
+          let angle = (frameCount * 0.5 + x * 0.5 + i * 30 + m * 20) % 360;
+          let yOffset = sin(angle) * waveHeight;
+          vertex(x, height - i * 20 - 60 + yOffset);
+        }
+        vertex(width, height);
+        vertex(0, height);
+        endShape(CLOSE);
+      }
+    }
+
+    function branch(depth, detail) {
+      if (depth === detail) return;
+
+      line(0, 0, 0, -branchLength);
+      translate(0, -branchLength);
+      push();
+      rotate(branchAngle);
+      branch(depth + 1, detail);
+      pop();
+      push();
+      rotate(-branchAngle);
+      branch(depth + 1, detail);
+      pop();
+    }
+  </script>
+</body>
+</html>

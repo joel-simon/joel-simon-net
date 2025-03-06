@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creative Time Display</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset and basic styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container exactly 512x512 */
+    #creativeTimeCanvas {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Instruction overlay on hover */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+      display: none;
+    }
+    #creativeTimeCanvas:hover #instructionsOverlay {
+      display: block;
+    }
+    #instructionsOverlay h1,
+    #instructionsOverlay p {
+      margin: 0.5em 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="creativeTimeCanvas">
+    <div id="instructionsOverlay">
+      <h1>Creative Time Display</h1>
+      <p>
+        • Wave patterns reflect the current hour.<br>
+        • Fractal kaleidoscope shapes react to the minute and second.<br>
+        • A fractal tree grows based on the minute tick.<br>
+        • Hover elsewhere to hide instructions.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      This sketch combines several ideas:
+      1) Wave background color & movement based on the hour.
+      2) A kaleidoscopic pattern that reacts to the current minute & second.
+      3) A fractal tree that grows or shrinks based on the minute.
+      4) A digital clock for reference.
+    */
+
+    let angleOffset = 0;           // For wave motion
+    let kaleidoShapes = [];        // Array to hold kaleidoscope shapes
+    let segments = 0;             // Number of kaleidoscope segments
+    let lastMinute = -1;          // Track minute changes for fractal tree
+    let fractalDepth = 3;         // Min fractal depth
+    let fractalAngle;             // Angle used in fractal tree
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('creativeTimeCanvas');
+      colorMode(HSL, 360, 100, 100);
+      angleMode(DEGREES);
+      noStroke();
+      fractalAngle = 25;
+    }
+
+    function draw() {
+      background(0);
+
+      const h = hour();
+      const m = minute();
+      const s = second();
+
+      // Wave color and wave shape driven by hour
+      // map hour [0..23] to a hue range [0..360]
+      let waveHue = map(h, 0, 23, 0, 360);
+      fill(waveHue, 80, 30);
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 10) {
+        let waveY = map(
+          sin(x * 0.02 + angleOffset),
+          -1, 1,
+          height * 0.3,
+          height * 0.5
+        );
+        vertex(x, waveY);
+      }
+      vertex(width, height);
+      endShape();
+      angleOffset += 0.02;
+
+      // Adjust kaleidoscope segments according to current minute (1..12, so it won't be 0)
+      segments = (m % 12) + 1;
+
+      // If a new second, create a new shape for the kaleidoscope
+      if (frameCount % 60 === 0) {
+        let kaleidoSize = map(s, 0, 59, 15, 80);
+        kaleidoShapes.push({
+          size: kaleidoSize,
+          hue: map(s, 0, 59, 0, 359),
+          xOff: random(-100, 100),
+          yOff: random(-100, 100)
+        });
+        // Limit stored shapes
+        if (kaleidoShapes.length > 12) kaleidoShapes.shift();
+      }
+
+      // Draw kaleidoscope shapes in center portion
+      push();
+      translate(width / 2, height / 2);
+      let angleStep = 360 / segments;
+      kaleidoShapes.forEach(shp => {
+        fill(shp.hue, 90, 70);
+        for (let i = 0; i < segments; i++) {
+          push();
+          rotate(i * angleStep);
+          ellipse(shp.xOff, shp.yOff, shp.size, shp.size);
+          pop();
+        }
+      });
+      pop();
+
+      // Adjust fractal tree depth when minute changes
+      if (m !== lastMinute) {
+        lastMinute = m;
+        fractalDepth = floor(map(m, 0, 59, 3, 7));
+      }
+
+      // Draw a fractal tree near the right side
+      push();
+      stroke(200);
+      strokeWeight(2);
+      translate(width * 0.8, height * 0.35);
+      drawFractalTree(50, fractalAngle, fractalDepth);
+      pop();
+      noStroke();
+
+      // Display digital time in top-left
+      drawClock(h, m, s);
+    }
+
+    // Recursive fractal tree
+    function drawFractalTree(branchLen, angle, depth) {
+      line(0, 0, 0, -branchLen);
+      translate(0, -branchLen);
+      if (depth > 0) {
+        push();
+        rotate(angle);
+        drawFractalTree(branchLen * 0.7, angle, depth - 1);
+        pop();
+        push();
+        rotate(-angle);
+        drawFractalTree(branchLen * 0.7, angle, depth - 1);
+        pop();
+      }
+    }
+
+    // Simple digital clock
+    function drawClock(h, m, s) {
+      let displayHour = h % 12;
+      if (displayHour === 0) displayHour = 12;
+      let ampm = (h >= 12) ? "PM" : "AM";
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      let timeStr = `${displayHour}:${minStr}:${secStr} ${ampm}`;
+      fill(255);
+      textSize(20);
+      textAlign(LEFT, TOP);
+      text(timeStr, 10, 10);
+    }
+  </script>
+</body>
+</html>

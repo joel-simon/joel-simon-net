@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Combined Creative Time Display</title>
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page reset and layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      top: 50%;
+      transform: translateY(50%);
+    }
+
+    /* Overlay instructions, shown on hover */
+    #instructions {
+      pointer-events: none;
+      position: absolute;
+      display: none;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 16px;
+    }
+    #canvas-container:hover #instructions {
+      display: block;
+    }
+
+    /* Center instructions text */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+      max-width: 400px;
+    }
+
+    /* Force the canvas to remain 512x512 with no scaling */
+    canvas {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="instructions">
+      <div class="instructions-text">
+        <strong>Combined Time Display</strong><br><br>
+        • A wave in the background shifts based on the hour.<br>
+        • A spirograph pattern evolves with the minute and second.<br>
+        • A rotating star changes rotation speed and size over time.<br>
+        • The current time is displayed at the center.<br><br>
+        Watch how all elements adapt with each passing second!
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let w = 512;
+    let h = 512;
+
+    // Particles or points for a wave
+    const wavePoints = [];
+    let waveTime = 0;
+
+    function setup() {
+      let myCanvas = createCanvas(w, h);
+      myCanvas.parent("canvas-container");
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100, 1);
+
+      // Initialize wave points
+      for (let x = 0; x < width; x += 10) {
+        wavePoints.push({ x: x, y: height / 2 });
+      }
+    }
+
+    function draw() {
+      background(15); // dark background
+
+      let hr = hour();      // 0 - 23
+      let mn = minute();    // 0 - 59
+      let sc = second();    // 0 - 59
+
+      drawWave(hr);
+      drawSpirograph(mn, sc);
+      drawRotatingStar(hr, mn, sc);
+
+      // Display digital time in the center
+      fill(255);
+      noStroke();
+      textSize(24);
+      textAlign(CENTER, CENTER);
+      text(
+        nf(hr, 2) + ":" + nf(mn, 2) + ":" + nf(sc, 2),
+        width / 2, height / 2
+      );
+    }
+
+    function drawWave(hh) {
+      // Wave amplitude influenced by the current hour
+      let waveAmp = map(hh, 0, 23, 10, 70);
+      waveTime += 0.01;
+
+      noFill();
+      strokeWeight(2);
+      stroke(200, 70, 90, 0.8);
+
+      beginShape();
+      for (let i = 0; i < wavePoints.length; i++) {
+        let p = wavePoints[i];
+        let waveY = map(
+          noise(p.x * 0.01, waveTime),
+          0, 1,
+          height / 2 - waveAmp,
+          height / 2 + waveAmp
+        );
+        vertex(p.x, waveY);
+      }
+      endShape();
+    }
+
+    function drawSpirograph(mn, sc) {
+      // Spirograph pattern changing with minute/second
+      // Convert minute and second into spiral parameters
+      push();
+      translate(width / 2, height / 2);
+
+      let r1 = map(mn, 0, 59, 50, 150);
+      let r2 = map(sc, 0, 59, 20, 80);
+      let d = map(sc, 0, 59, 10, 40);
+
+      stroke(color((mn * 6) % 360, 90, 90, 0.7));
+      strokeWeight(1);
+      noFill();
+      beginShape();
+      for (let a = 0; a <= 360; a += 1) {
+        let x = (r1 - r2) * cos(a) + d * cos(((r1 - r2) / r2) * a);
+        let y = (r1 - r2) * sin(a) - d * sin(((r1 - r2) / r2) * a);
+        vertex(x, y);
+      }
+      endShape();
+      pop();
+    }
+
+    function drawRotatingStar(hr, mn, sc) {
+      // Rotating star: hour -> star points, minute -> rotation speed, second -> star size
+      push();
+      translate(width / 2, height / 2);
+
+      let starPoints = (hr % 12) + 5; // star points tied to hour
+      let rotationSpeed = map(mn, 0, 59, 0, 360); // minute controls rotation
+      let starSize = map(sc, 0, 59, 30, 100);     // second changes size
+
+      rotate(frameCount + rotationSpeed);
+      drawStar(0, 0, starSize, starSize * 0.5, starPoints);
+      pop();
+    }
+
+    function drawStar(x, y, radius1, radius2, npoints) {
+      stroke(60, 100, 100, 0.8);
+      strokeWeight(2);
+      fill(60, 100, 100, 0.3);
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2.0;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius1;
+        let sy = y + sin(a) * radius1;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius2;
+        sy = y + sin(a + halfAngle) * radius2;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creative Time Display - Wave, Orchard & Star</title>
+  <style>
+    /* Basic resets and layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #f0f0f0;
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    /* Center container and fix size to 512x512 */
+    .tooltip {
+      position: relative;
+      display: inline-block;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Tooltip text style */
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 260px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 10px;
+      position: absolute;
+      z-index: 1;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    /* Show tooltip text on hover */
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+    }
+
+    /* p5.js sketch area */
+    #p5sketch {
+      width: 512px;
+      height: 512px;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    /* Cursor hint for interactivity */
+    #p5sketch:hover {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div class="tooltip">
+  <div id="p5sketch"></div>
+  <div class="tooltiptext">
+    <strong>How This Visual Reflects Time:</strong><br><br>
+    • The wave in the background changes shape with the hour and minute.<br>
+    • Three "fruits" display hour, minute, and second.<br>
+    • A star in the center rotates with the seconds.<br>
+    • Refreshes ways to see time each second!<br>
+    Hover away to hide these instructions.
+  </div>
+</div>
+
+<!-- Include p5.js -->
+<script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+<script>
+let starRotation = 0;
+let hourFruitSize, minuteFruitSize, secondFruitSize;
+
+function setup() {
+  createCanvas(512, 512).parent('p5sketch');
+  angleMode(DEGREES);
+  noStroke();
+}
+
+function draw() {
+  let h = hour();
+  let m = minute();
+  let s = second();
+
+  background(240);
+
+  // Draw wave background (affected by hour & minute)
+  let waveAmplitude = map(h % 12, 0, 11, 20, 60);
+  let waveFrequency = map(m, 0, 59, 0.05, 0.3);
+  fill(170, 200, 255, 100);
+  beginShape();
+  vertex(0, height);
+  for (let x = 0; x <= width; x += 10) {
+    let waveY = map(sin(x * waveFrequency + frameCount * 2), -1, 1, height/2 - waveAmplitude, height/2 + waveAmplitude);
+    vertex(x, waveY);
+  }
+  vertex(width, height);
+  endShape(CLOSE);
+
+  // Draw orchard fruits (three circles for hour, minute, second)
+  // Calculate sizes based on time
+  hourFruitSize = map(h % 12, 0, 11, 30, 70);
+  minuteFruitSize = map(m, 0, 59, 10, 60);
+  secondFruitSize = map(s, 0, 59, 5, 40);
+
+  // Position orchard fruits in a line near bottom
+  let baseY = height - 60;
+  let spacing = width / 4;
+  
+  // Hour fruit
+  fill(100, 150, 100);
+  circle(spacing, baseY, hourFruitSize);
+
+  // Minute fruit
+  fill(150, 100, 200);
+  circle(spacing * 2, baseY, minuteFruitSize);
+
+  // Second fruit
+  fill(200, 100, 100);
+  circle(spacing * 3, baseY, secondFruitSize);
+
+  // Draw rotating star in center (rotation = function of seconds)
+  let centerX = width / 2;
+  let centerY = height / 2;
+  starRotation += map(s, 0, 59, 1, 6)/10; // subtle to moderate rotation speed
+
+  push();
+  translate(centerX, centerY);
+  rotate(starRotation);
+  drawStar(0, 0, 30, 60, 5); // star shape
+  pop();
+}
+
+/**
+ * Utility function to draw a star at a given position
+ * x, y - center coordinates
+ * radius1 - inner radius
+ * radius2 - outer radius
+ * npoints - number of points
+ */
+function drawStar(x, y, radius1, radius2, npoints) {
+  fill(255, 215, 0);
+  beginShape();
+  let angle = 360 / npoints;
+  let halfAngle = angle / 2;
+  for (let a = 0; a < 360; a += angle) {
+    let sx = x + cos(a) * radius2;
+    let sy = y + sin(a) * radius2;
+    vertex(sx, sy);
+    sx = x + cos(a + halfAngle) * radius1;
+    sy = y + sin(a + halfAngle) * radius1;
+    vertex(sx, sy);
+  }
+  endShape(CLOSE);
+}
+</script>
+
+</body>
+</html>

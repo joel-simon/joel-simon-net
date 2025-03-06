@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Maze Constellation Aquarium</title>
+  <!-- Include p5.js -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      font-family: sans-serif;
+      color: white;
+    }
+
+    /* A fixed 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Overlay for hover instructions (hidden by default) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.75);
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Maze Constellation Aquarium<br><br>
+        • Maze regenerates each minute.<br>
+        • Maze color changes with the hour.<br>
+        • Fish color shifts with the minute.<br>
+        • Comets streak every 5 seconds.<br>
+        • Use arrow keys to move in the maze.<br>
+        Hover away to begin!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      TIME MAZE CONSTELLATION AQUARIUM
+      - A maze regenerates each minute.
+      - Maze wall color depends on the hour.
+      - Fish swirl in the background with color depending on the minute.
+      - Comets appear every 5 seconds from left to right.
+      - Use arrow keys to navigate the maze with a simple circle "player."
+    */
+
+    const CANVAS_SIZE = 512;
+    const GRID_SIZE = 20;
+    let cellSize;
+    let cells = [];
+    let stack = [];
+    let mazeGenerated = false;
+    let currentCell;
+    let player;
+    let lastMinute = -1;
+
+    // Fish and comets
+    let fishGroup = [];
+    let comets = [];
+    let lastCometFrame = 0;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+
+      cellSize = width / GRID_SIZE;
+      initMaze();
+      generateMaze();
+
+      // Initialize player
+      player = {
+        x: 0,
+        y: 0,
+        radius: cellSize * 0.3
+      };
+
+      // Initialize fish
+      for (let i = 0; i < 8; i++) {
+        fishGroup.push(new Fish());
+      }
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Regenerate maze if minute changes
+      if (m !== lastMinute) {
+        initMaze();
+        generateMaze();
+        lastMinute = m;
+      }
+
+      drawBackground(h, m);
+      drawMaze(h);
+
+      // Update and draw fish
+      for (let fish of fishGroup) {
+        fish.update(m);
+        fish.display();
+      }
+
+      // Comets every 5 seconds
+      if (s % 5 === 0 && frameCount - lastCometFrame > 10) {
+        spawnComet();
+        lastCometFrame = frameCount;
+      }
+      updateComets();
+
+      // Draw player
+      fill(255, 255, 0);
+      noStroke();
+      ellipse(
+        player.x * cellSize + cellSize / 2,
+        player.y * cellSize + cellSize / 2,
+        player.radius * 2,
+        player.radius * 2
+      );
+    }
+
+    // Maze initialization
+    function initMaze() {
+      cells = [];
+      stack = [];
+      for (let j = 0; j < GRID_SIZE; j++) {
+        for (let i = 0; i < GRID_SIZE; i++) {
+          cells.push(new Cell(i, j));
+        }
+      }
+      currentCell = cells[0];
+      currentCell.visited = true;
+      mazeGenerated = false;
+    }
+
+    // Maze generation using depth-first search
+    function generateMaze() {
+      while (!mazeGenerated) {
+        let nextCell = currentCell.checkNeighbors();
+        if (nextCell) {
+          nextCell.visited = true;
+          stack.push(currentCell);
+          removeWalls(currentCell, nextCell);
+          currentCell = nextCell;
+        } else if (stack.length > 0) {
+          currentCell = stack.pop();
+        } else {
+          mazeGenerated = true;
+        }
+      }
+    }
+
+    // Maze drawing
+    function drawMaze(h) {
+      // Maze color based on hour
+      let cVal = map(h % 12, 0, 11, 50, 255);
+      stroke(cVal, 100, 200);
+      strokeWeight(2);
+
+      for (let cell of cells) {
+        cell.showWalls();
+      }
+    }
+
+    // Maze cell object
+    class Cell {
+      constructor(i, j) {
+        this.i = i;
+        this.j = j;
+        this.walls = [true, true, true, true]; // top, right, bottom, left
+        this.visited = false;
+      }
+
+      index(i, j) {
+        if (i < 0 || j < 0 || i >= GRID_SIZE || j >= GRID_SIZE) {
+          return -1;
+        }
+        return i + j * GRID_SIZE;
+      }
+
+      checkNeighbors() {
+        let neighbors = [];
+        let top    = cells[this.index(this.i, this.j - 1)];
+        let right  = cells[this.index(this.i + 1, this.j)];
+        let bottom = cells[this.index(this.i, this.j + 1)];
+        let left   = cells[this.index(this.i - 1, this.j)];
+
+        if (top && !top.visited)    neighbors.push(top);
+        if (right && !right.visited)  neighbors.push(right);
+        if (bottom && !bottom.visited) neighbors.push(bottom);
+        if (left && !left.visited)   neighbors.push(left);
+
+        if (neighbors.length > 0) {
+          let r = floor(random(neighbors.length));
+          return neighbors[r];
+        } else {
+          return undefined;
+        }
+      }
+
+      showWalls() {
+        let x = this.i * cellSize;
+        let y = this.j * cellSize;
+        // top
+        if (this.walls[0]) line(x, y, x + cellSize, y);
+        // right
+        if (this.walls[1]) line(x + cellSize, y, x + cellSize, y + cellSize);
+        // bottom
+        if (this.walls[2]) line(x, y + cellSize, x + cellSize, y + cellSize);
+        // left
+        if (this.walls[3]) line(x, y, x, y + cellSize);
+      }
+    }
+
+    // Remove walls between two adjacent cells
+    function removeWalls(a, b) {
+      let x = a.i - b.i;
+      if (x === 1) {
+        a.walls[3] = false;
+        b.walls[1] = false;
+      } else if (x === -1) {
+        a.walls[1] = false;
+        b.walls[3] = false;
+      }
+      let y = a.j - b.j;
+      if (y === 1) {
+        a.walls[0] = false;
+        b.walls[2] = false;
+      } else if (y === -1) {
+        a.walls[2] = false;
+        b.walls[0] = false;
+      }
+    }
+
+    // Background swirl or starfield
+    function drawBackground(h, m) {
+      colorMode(RGB);
+      let hueVal = map(h * 60 + m, 0, 1440, 0, 255);
+      background(hueVal * 0.5, hueVal * 0.3, 80);
+
+      // Light star-like sparkles
+      noStroke();
+      fill(255, 100);
+      for (let i = 0; i < 30; i++) {
+        let x = random(width);
+        let y = random(height);
+        ellipse(x, y, 2, 2);
+      }
+    }
+
+    // Handle player movement within the maze
+    function keyPressed() {
+      let myCell = cells[player.y * GRID_SIZE + player.x];
+      if (!myCell) return;
+
+      // Up
+      if (keyCode === UP_ARROW && !myCell.walls[0]) {
+        player.y = max(0, player.y - 1);
+      }
+      // Right
+      else if (keyCode === RIGHT_ARROW && !myCell.walls[1]) {
+        player.x = min(GRID_SIZE - 1, player.x + 1);
+      }
+      // Down
+      else if (keyCode === DOWN_ARROW && !myCell.walls[2]) {
+        player.y = min(GRID_SIZE - 1, player.y + 1);
+      }
+      // Left
+      else if (keyCode === LEFT_ARROW && !myCell.walls[3]) {
+        player.x = max(0, player.x - 1);
+      }
+    }
+
+    // Fish class
+    class Fish {
+      constructor() {
+        this.reset();
+      }
+
+      reset() {
+        this.x = random(width);
+        this.y = random(height);
+        this.size = random(10, 25);
+        this.speed = random(0.5, 2);
+      }
+
+      update(minuteVal) {
+        // Color changes with minute
+        this.c = color(
+          map(minuteVal, 0, 59, 0, 255),
+          random(100, 200),
+          random(100, 255)
+        );
+
+        this.x += this.speed;
+        if (this.x > width + this.size) {
+          this.x = -this.size;
+          this.y = random(height);
+        }
+      }
+
+      display() {
+        push();
+        translate(this.x, this.y);
+        fill(this.c);
+        noStroke();
+        ellipse(0, 0, this.size * 2, this.size);
+        // Tail
+        triangle(
+          -this.size, 0,
+          -this.size - this.size * 0.6, -this.size * 0.3,
+          -this.size - this.size * 0.6, this.size * 0.3
+        );
+        pop();
+      }
+    }
+
+    // Comet logic
+    function spawnComet() {
+      let c = {
+        x: 0,
+        y: random(height * 0.2, height * 0.8),
+        speed: random(3, 6),
+        cHue: random(255)
+      };
+      comets.push(c);
+    }
+
+    function updateComets() {
+      for (let i = comets.length - 1; i >= 0; i--) {
+        let c = comets[i];
+        c.x += c.speed;
+        push();
+        stroke(c.cHue, 200, 200);
+        strokeWeight(2);
+        line(c.x - 20, c.y, c.x, c.y);
+        pop();
+
+        if (c.x > width + 40) {
+          comets.splice(i, 1);
+        }
+      }
+    }
+  </script>
+</body>
+</html>

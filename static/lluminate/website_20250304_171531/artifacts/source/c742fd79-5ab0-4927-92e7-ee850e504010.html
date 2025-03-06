@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Time Ripple Sphere</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset body margin/padding and use a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container fixed at 512x512, centered */
+    #clock-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+    }
+
+    /* Instructions overlay, hidden by default */
+    #instructions {
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      display: none;
+      background-color: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      line-height: 1.5;
+      padding: 2rem;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #clock-container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="clock-container">
+  <div id="instructions">
+    <h2>Time Ripple Sphere</h2>
+    <p>
+      Each passing second launches a new ripple from the center.<br>
+      Hour and minute influence the ripple color.<br>
+      Watch them expand, overlap, and fade in a continuous flow of time.
+    </p>
+  </div>
+</div>
+
+<script>
+  let canvasSize = 512;
+  let ripples = [];
+  let lastSecond;
+
+  function setup() {
+    let myCanvas = createCanvas(canvasSize, canvasSize);
+    myCanvas.parent("clock-container");
+    angleMode(DEGREES);
+    noFill();
+    lastSecond = second();
+  }
+
+  function draw() {
+    background(0);
+
+    // Get current time
+    let hr = hour();
+    let mn = minute();
+    let sc = second();
+
+    // If second has changed, create a new ripple
+    if (sc !== lastSecond) {
+      ripples.push(new Ripple(hr, mn));
+      lastSecond = sc;
+    }
+
+    // Update & display existing ripples
+    for (let i = ripples.length - 1; i >= 0; i--) {
+      ripples[i].update();
+      ripples[i].display();
+      if (ripples[i].isFinished()) {
+        ripples.splice(i, 1);
+      }
+    }
+
+    // Display digital time in the center
+    textAlign(CENTER, CENTER);
+    textSize(24);
+    fill(255);
+    text(`${hr}:${nf(mn, 2)}:${nf(sc, 2)}`, width / 2, height / 2);
+    noFill();
+  }
+
+  // Ripple class
+  class Ripple {
+    constructor(hr, mn) {
+      this.radius = 0;
+      this.growth = 2.5; // speed of radius growth
+      this.maxAlpha = 255;
+      // Color influenced by hour and minute
+      this.r = (hr * 11) % 256;
+      this.g = (mn * 4) % 256;
+      this.b = 200;
+      this.a = this.maxAlpha;
+    }
+
+    update() {
+      this.radius += this.growth;
+      // Fade out as radius grows
+      this.a = map(this.radius, 0, width, this.maxAlpha, 0);
+    }
+
+    display() {
+      stroke(this.r, this.g, this.b, this.a);
+      strokeWeight(2);
+      ellipse(width / 2, height / 2, this.radius * 2);
+    }
+
+    isFinished() {
+      // Consider finished once alpha is near zero
+      return (this.a <= 0);
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Orbital Cauldron Maze</title>
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic reset/centering */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      color: #fff;
+      font-family: sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Container to hold the 512 x 512 canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      border: none;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay, appears on hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      box-sizing: border-box;
+      padding: 20px;
+      pointer-events: none;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Orbital Cauldron Maze</strong><br><br>
+        • Maze regenerates every new minute<br>
+        • Star & Cauldron color shift with hour<br>
+        • Planet orbits with radius based on minutes & speed by seconds<br>
+        • Bubbles float from the Cauldron, speed tied to seconds<br>
+        • Use arrow keys to navigate the small explorer<br>
+        Hover away to explore!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Orbital Cauldron Maze - Combined dynamic display:
+        1) Maze: Regenerates every minute, explorer can move with arrow keys.
+        2) Star (center): Color changes with current hour.
+        3) Planet orbit: Orbit radius depends on minute, rotation speed on second.
+        4) Cauldron (bottom): Color changes with hour, bubbles float upward at speeds tied to seconds.
+    */
+
+    // Canvas & Maze constants
+    const CANVAS_SIZE = 512;
+    const COLS = 16;
+    const ROWS = 16;
+    const CELL_SIZE = CANVAS_SIZE / COLS;
+
+    // Maze variables
+    let maze = [];
+    let stack = [];
+    let currentCell;
+    let lastMinute = -1;
+    let playerPos;
+
+    // Orbits
+    let planetAngle = 0;
+
+    // Bubbles
+    let bubbles = [];
+    const NUM_BUBBLES = 20;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      noStroke();
+
+      // Generate the initial maze
+      regenerateMaze();
+      playerPos = createVector(CELL_SIZE / 2, CELL_SIZE / 2);
+
+      // Create bubbles
+      for (let i = 0; i < NUM_BUBBLES; i++) {
+        bubbles.push(new Bubble());
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Regenerate maze if minute has changed
+      if (mn !== lastMinute) {
+        regenerateMaze();
+        lastMinute = mn;
+      }
+
+      // Draw the maze
+      stroke(255);
+      strokeWeight(2);
+      for (let c of maze) {
+        c.show();
+      }
+
+      // Player movement
+      handlePlayerMovement();
+      drawPlayer();
+
+      // Draw central star (hour-dependent color)
+      drawStar(hr);
+
+      // Draw orbiting planet (radius = minute-based, speed = second-based)
+      drawPlanet(mn, sc);
+
+      // Draw Cauldron at bottom
+      drawCauldron(hr);
+
+      // Update and display bubbles
+      for (let b of bubbles) {
+        b.update(sc);
+        b.display();
+      }
+      // Recycle bubbles that float above the canvas
+      for (let b of bubbles) {
+        if (b.pos.y < 0) {
+          b.reset();
+        }
+      }
+
+      // Small time text in top-left
+      fill(255);
+      noStroke();
+      textSize(14);
+      textAlign(LEFT, TOP);
+      text(nf(hr,2) + ":" + nf(mn,2) + ":" + nf(sc,2), 10, 10);
+    }
+
+    // Maze generation (Recursive Backtracking)
+    function regenerateMaze() {
+      maze = [];
+      stack = [];
+
+      // Create cells
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          maze.push(new Cell(c, r));
+        }
+      }
+      currentCell = maze[0];
+      currentCell.visited = true;
+      // Generate the path
+      while (true) {
+        let next = currentCell.checkNeighbors();
+        if (next) {
+          next.visited = true;
+          stack.push(currentCell);
+          removeWalls(currentCell, next);
+          currentCell = next;
+        } else if (stack.length > 0) {
+          currentCell = stack.pop();
+        } else {
+          break;
+        }
+      }
+      // Reset player to top-left cell center
+      playerPos = createVector(CELL_SIZE / 2, CELL_SIZE / 2);
+    }
+
+    // Maze Cell class
+    class Cell {
+      constructor(col, row) {
+        this.col = col;
+        this.row = row;
+        this.visited = false;
+        this.walls = [true, true, true, true]; // top, right, bottom, left
+      }
+
+      checkNeighbors() {
+        let neighbors = [];
+        let top    = getCell(this.col, this.row - 1);
+        let right  = getCell(this.col + 1, this.row);
+        let bottom = getCell(this.col, this.row + 1);
+        let left   = getCell(this.col - 1, this.row);
+
+        if (top && !top.visited)    neighbors.push(top);
+        if (right && !right.visited)  neighbors.push(right);
+        if (bottom && !bottom.visited) neighbors.push(bottom);
+        if (left && !left.visited)   neighbors.push(left);
+
+        if (neighbors.length > 0) {
+          return random(neighbors);
+        } else {
+          return undefined;
+        }
+      }
+
+      show() {
+        let x = this.col * CELL_SIZE;
+        let y = this.row * CELL_SIZE;
+        // top
+        if (this.walls[0]) line(x, y, x + CELL_SIZE, y);
+        // right
+        if (this.walls[1]) line(x + CELL_SIZE, y, x + CELL_SIZE, y + CELL_SIZE);
+        // bottom
+        if (this.walls[2]) line(x + CELL_SIZE, y + CELL_SIZE, x, y + CELL_SIZE);
+        // left
+        if (this.walls[3]) line(x, y + CELL_SIZE, x, y);
+      }
+    }
+
+    function getCell(c, r) {
+      if (c < 0 || c >= COLS || r < 0 || r >= ROWS) {
+        return undefined;
+      }
+      return maze[r * COLS + c];
+    }
+
+    function removeWalls(a, b) {
+      let x = a.col - b.col;
+      // horizontally adjacent
+      if (x === 1) {
+        a.walls[3] = false; // left
+        b.walls[1] = false; // right
+      } else if (x === -1) {
+        a.walls[1] = false; // right
+        b.walls[3] = false; // left
+      }
+      let y = a.row - b.row;
+      // vertically adjacent
+      if (y === 1) {
+        a.walls[0] = false; // top
+        b.walls[2] = false; // bottom
+      } else if (y === -1) {
+        a.walls[2] = false; // bottom
+        b.walls[0] = false; // top
+      }
+    }
+
+    // Player movement with arrow keys (WASD or arrow keys)
+    function handlePlayerMovement() {
+      let speed = 2;
+      if (keyIsDown(LEFT_ARROW) || keyIsDown(65)) {
+        playerPos.x -= speed;
+      }
+      if (keyIsDown(RIGHT_ARROW) || keyIsDown(68)) {
+        playerPos.x += speed;
+      }
+      if (keyIsDown(UP_ARROW) || keyIsDown(87)) {
+        playerPos.y -= speed;
+      }
+      if (keyIsDown(DOWN_ARROW) || keyIsDown(83)) {
+        playerPos.y += speed;
+      }
+    }
+
+    function drawPlayer() {
+      // Simple ellipse for player
+      push();
+      fill(255, 100, 100);
+      noStroke();
+      ellipse(playerPos.x, playerPos.y, CELL_SIZE * 0.5);
+      pop();
+    }
+
+    // Draw a star at center, color keyed to hour
+    function drawStar(hr) {
+      push();
+      translate(width / 2, height / 2);
+      colorMode(HSB, 360, 100, 100);
+      let hueVal = map(hr, 0, 23, 0, 360);
+      fill(hueVal, 70, 100);
+      noStroke();
+      ellipse(0, 0, 50, 50);
+      pop();
+      colorMode(RGB, 255);
+    }
+
+    // Draw an orbiting planet: radius = minute-based, speed = second-based
+    function drawPlanet(mn, sc) {
+      let orbitRadius = map(mn, 0, 59, 50, 200);
+      let orbitSpeed = map(sc, 0, 59, 0.5, 5);
+      planetAngle += orbitSpeed;
+      push();
+      translate(width / 2, height / 2);
+      let px = orbitRadius * cos(planetAngle);
+      let py = orbitRadius * sin(planetAngle);
+      fill(70, 130, 180);
+      ellipse(px, py, 30, 30);
+      pop();
+    }
+
+    // Draw a Cauldron at bottom center
+    function drawCauldron(hr) {
+      push();
+      translate(width / 2, height - 40);
+      // Color changes with hour
+      colorMode(HSB, 360, 100, 100);
+      let cHue = map(hr, 0, 23, 0, 360);
+      fill(cHue, 70, 100);
+      noStroke();
+      ellipse(0, 0, 100, 40);
+
+      // Cauldron base
+      fill(50);
+      ellipse(0, 10, 120, 20);
+      pop();
+      colorMode(RGB, 255);
+    }
+
+    // Bubble class
+    class Bubble {
+      constructor() {
+        this.reset();
+      }
+      reset() {
+        // Start near the cauldron
+        this.pos = createVector(width / 2 + random(-25, 25), height - 40);
+        this.r = random(5, 10);
+      }
+      update(sc) {
+        let floatSpeed = map(sc, 0, 59, 0.5, 3);
+        this.pos.y -= floatSpeed * 0.7;
+        // Slight horizontal sway
+        this.pos.x += sin(frameCount * 0.03) * 0.5;
+      }
+      display() {
+        push();
+        fill(150, 180);
+        ellipse(this.pos.x, this.pos.y, this.r * 2);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

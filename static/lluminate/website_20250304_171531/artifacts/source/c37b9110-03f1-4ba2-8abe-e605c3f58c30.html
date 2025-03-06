@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creative Time Display</title>
+  <style>
+    /* Make sure there are no scrollbars & body has no margin */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #ccc;
+      font-family: sans-serif;
+    }
+    /* Center a fixed-size container for the canvas */
+    #container {
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      position: relative;
+      /* Optional to push container away from edges if desired:
+         margin-top: 50px; 
+      */
+    }
+    /* Hidden overlay that appears on hover to show instructions */
+    #hover-info {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #container:hover #hover-info {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="hover-info">
+      <p>This is a creative time display made with arcs indicating hours (blue), minutes (green), and seconds (red). Hover over the canvas to view instructions.</p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  
+  <script>
+    let cnv;
+
+    function setup() {
+      // Create the canvas inside the container
+      cnv = createCanvas(512, 512);
+      cnv.parent('container');
+      angleMode(DEGREES);
+      textAlign(CENTER, CENTER);
+      textSize(24);
+    }
+
+    function draw() {
+      background(255);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Map the current time to angles
+      let hourAngle = map(h % 12, 0, 12, 0, 360);
+      let minuteAngle = map(m, 0, 60, 0, 360);
+      let secondAngle = map(s, 0, 60, 0, 360);
+
+      // Move origin to the center
+      translate(width / 2, height / 2);
+
+      // Draw second arc
+      strokeWeight(8);
+      noFill();
+      stroke(255, 0, 0);
+      arc(0, 0, 300, 300, 0, secondAngle);
+
+      // Draw minute arc
+      stroke(0, 255, 0);
+      arc(0, 0, 280, 280, 0, minuteAngle);
+
+      // Draw hour arc
+      stroke(0, 0, 255);
+      arc(0, 0, 260, 260, 0, hourAngle);
+
+      // Display digital time
+      rotate(90); // rotate so text is upright
+      noStroke();
+      fill(50);
+      text(
+        nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2),
+        0,
+        0
+      );
+    }
+  </script>
+</body>
+</html>

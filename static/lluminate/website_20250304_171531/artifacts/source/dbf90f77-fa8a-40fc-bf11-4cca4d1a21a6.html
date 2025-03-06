@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Skyline</title>
+  <style>
+    /* Basic resets and layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas */
+    #p5sketch-container {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Instructions overlay, hidden by default */
+    .instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      font-size: 14px;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 1em;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #p5sketch-container:hover .instructions {
+      display: flex;
+    }
+
+    /* Cursor hint for interactivity */
+    #p5sketch-container:hover {
+      cursor: help;
+    }
+  </style>
+</head>
+<body>
+  <div id="p5sketch-container">
+    <div class="instructions">
+      <strong>HOW THIS DISPLAYS TIME:</strong><br><br>
+      • Each of the 12 buildings corresponds to an hour, and the current hour's building is highlighted.<br>
+      • Building heights adjust based on the current minute.<br>
+      • Watch the background's color shift as minutes pass.<br>
+      • A small plane moves across the sky for each second, returning to the left on a new minute.<br><br>
+      Hover away to hide instructions.
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let planeX = 0;
+    const totalBuildings = 12;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('p5sketch-container');
+      rectMode(CORNERS);
+      noStroke();
+    }
+
+    function draw() {
+      let hr = hour() % 12;         // 0-11
+      let mn = minute();            // 0-59
+      let sc = second();            // 0-59
+      
+      // Background shifts color as minutes pass
+      // smoothly blend between two hues over 60 minutes
+      let bgColor = lerpColor(color(10, 8, 50), color(100, 20, 100), mn / 60.0);
+      background(bgColor);
+
+      // Draw buildings
+      // Each building corresponds to one of the 12 hours
+      // The current hour building is highlighted
+      let buildingWidth = width / (totalBuildings + 2); 
+      let baseY = height * 0.85;  // bottom line for buildings
+      let maxHeight = 300;        // tallest building possible
+
+      for (let i = 0; i < totalBuildings; i++) {
+        let x1 = (i + 1) * buildingWidth;
+        let x2 = x1 + buildingWidth * 0.8;  // some gap between buildings
+        // Building height is mapped from minutes
+        let h = map(mn, 0, 59, 20, maxHeight);
+        let y1 = baseY - h;
+
+        // Highlight color if it's the current hour
+        let col = (i === hr) ? color(255, 100, 0) : color(60, 60, 60);
+        fill(col);
+        rect(x1, baseY, x2, y1);
+      }
+
+      // Plane movement: moves left to right each second
+      // Restart from left on new minute
+      planeX = map(sc, 0, 59, 0, width + 40); 
+
+      // Draw a simple plane shape
+      push();
+      fill(200);
+      let planeY = height * 0.2;
+      ellipse(planeX, planeY, 30, 15);   // body
+      triangle(planeX - 15, planeY, planeX - 25, planeY - 5, planeX - 25, planeY + 5); // tail
+      pop();
+
+      // Optional digital clock readout for reference
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(nf(hour(),2) + ":" + nf(mn,2) + ":" + nf(sc,2), 10, 10);
+      pop();
+    }
+  </script>
+</body>
+</html>

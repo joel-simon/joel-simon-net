@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Inside-Out Time Vortex</title>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      font-family: sans-serif;
+      color: #fff;
+    }
+    /* A fixed 512x512 container (for iframe) */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+    /* Center the instructions text */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Inside-Out Time Vortex</strong><br><br>
+        • Hours, minutes, and seconds are reversed for a topsy-turvy time dimension.<br>
+        • A central black hole grows as reversed hours approach 0.<br>
+        • Radiating swirl lines flicker with reversed minutes.<br>
+        • A spinning ring pulses with reversed seconds.<br>
+        • Watch stars drift for a sense of cosmic disorientation.<br>
+        Hover here for tips. Enjoy!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Inside-Out Time Vortex
+
+      Concept:
+      - We flip the usual assumption of time's forward flow.
+      - Reversed hour = 23 - hour(), reversed minute = 59 - minute(), reversed second = 59 - second()
+      - A black hole in the center grows in size when reversed hour is small (i.e. real hour is large).
+      - Colorful swirling arcs flicker at a rate tied to reversed minutes.
+      - A ring swirls proportionally to reversed seconds.
+      - A drifting star field emphasizes the disorientation.
+    */
+
+    const CANVAS_SIZE = 512;
+
+    let stars = [];
+    let numStars = 200;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+
+      // Create star field
+      for (let i = 0; i < numStars; i++) {
+        stars.push({
+          x: random(-width, width),
+          y: random(-height, height),
+          z: random(width),
+          brightness: random(100, 255)
+        });
+      }
+    }
+
+    function draw() {
+      // Reversed time
+      let realH = hour();
+      let realM = minute();
+      let realS = second();
+      let revH = 23 - realH;  // ranges from 23 down to 0
+      let revM = 59 - realM;  // ranges from 59 down to 0
+      let revS = 59 - realS;  // ranges from 59 down to 0
+
+      // Draw star field background
+      background(0);
+      drawStarField();
+
+      // Draw swirling arcs that flicker with reversed minutes
+      push();
+      translate(width / 2, height / 2);
+      drawSwirls(revM);
+      pop();
+
+      // Draw the central black hole based on reversed hours
+      push();
+      translate(width / 2, height / 2);
+      drawBlackHole(revH);
+      pop();
+
+      // Draw a spinning ring based on reversed seconds
+      push();
+      translate(width / 2, height / 2);
+      drawTimeRing(revS);
+      pop();
+    }
+
+    function drawStarField() {
+      // Move and re-draw stars to give a drifting effect
+      push();
+      translate(width/2, height/2);
+      for (let i = 0; i < stars.length; i++) {
+        let star = stars[i];
+        star.z = star.z - 1; // drift speed
+        if (star.z < 1) {
+          star.z = width;
+          star.x = random(-width, width);
+          star.y = random(-height, height);
+        }
+        let sx = map(star.x / star.z, 0, 1, 0, width);
+        let sy = map(star.y / star.z, 0, 1, 0, height);
+        fill(star.brightness);
+        noStroke();
+        circle(sx - width/2, sy - height/2, 2);
+      }
+      pop();
+    }
+
+    function drawBlackHole(rHour) {
+      // The black hole size grows when reversed hour is small
+      // i.e. at real hour 23, reversed hour=0 => biggest black hole
+      let maxDiameter = 200;
+      let holeDiameter = map(rHour, 23, 0, 50, maxDiameter, true);
+      noStroke();
+      fill(0);
+      circle(0, 0, holeDiameter);
+      // Subtle glow around the black hole
+      stroke(80);
+      noFill();
+      circle(0, 0, holeDiameter + 10);
+    }
+
+    function drawSwirls(rMinute) {
+      // Flicker swirl arcs based on reversed minutes
+      // The arcs become more visible as reversed minutes approach 0
+      let swirlCount = 8;
+      let maxArcSize = 220;
+      let flickerFactor = map(rMinute, 59, 0, 0, 255, true);
+      strokeWeight(1.5);
+      for (let i = 0; i < swirlCount; i++) {
+        let angleStart = map(i, 0, swirlCount, 0, 360);
+        // color flickers with reversed minutes
+        stroke((angleStart + flickerFactor) % 255, 100, 200);
+        noFill();
+        arc(0, 0, maxArcSize, maxArcSize, angleStart, angleStart + 40);
+      }
+    }
+
+    function drawTimeRing(rSecond) {
+      // ring rotates based on reversed seconds
+      let rotation = map(rSecond, 59, 0, 0, 360);
+      rotate(rotation);
+      stroke(255, 150, 0);
+      noFill();
+      circle(0, 0, 300);
+    }
+  </script>
+</body>
+</html>

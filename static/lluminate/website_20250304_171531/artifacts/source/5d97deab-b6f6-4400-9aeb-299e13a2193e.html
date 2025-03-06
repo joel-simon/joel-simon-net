@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Oasis Aquarium</title>
+  <style>
+    /* Reset margins and full-view body */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: Arial, sans-serif;
+      color: #fff;
+    }
+
+    /* 512x512 container for the p5.js canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.8);
+      overflow: hidden;
+    }
+
+    /* Overlay for instructions (hidden until hovered) */
+    #infoOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #canvasContainer:hover #infoOverlay {
+      display: flex;
+    }
+
+    /* Force the canvas to be 512x512 */
+    #defaultCanvas0 {
+      width: 512px !important;
+      height: 512px !important;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="infoOverlay">
+      <p>
+        Time Oasis Aquarium<br><br>
+        • Sky & dunes shift with the hour and minute.<br>
+        • Fish size follows the hour; color follows the minute.<br>
+        • Bubbles appear each second.<br>
+        • Eye of Horus pulses in the center with seconds.<br>
+        Hover away to explore!
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time Oasis Aquarium:
+      1) A dynamic sky that changes based on hour.
+      2) Dunes scrolling horizontally, influenced by the current minute.
+      3) Large fish whose hour-based size glides across.
+      4) A second-based bubble system rising upwards.
+      5) An Eye of Horus at the center pulsing with seconds.
+    */
+
+    const CANVAS_SIZE = 512;
+
+    // Dune data
+    let duneLayers = [];
+    let duneOffset = 0;
+
+    // Bubbles
+    let bubbles = [];
+    let lastSecond = -1;
+
+    // Fish
+    let bigFish;
+
+    // Eye of Horus
+    function drawEyeOfHorus(scaleFactor) {
+      push();
+      translate(width / 2, height / 2);
+      scale(scaleFactor);
+      fill(220);
+      // Outer eye arc
+      ellipse(0, 0, 120, 60);
+      fill(0);
+      // Inner region
+      ellipse(0, 0, 30, 30);
+      // Stylized lash lines
+      stroke(220);
+      strokeWeight(4);
+      noFill();
+      arc(0, 0, 160, 80, 0, 180);
+      arc(20, 20, 40, 20, 180, 360);
+      pop();
+    }
+
+    // Fish class
+    class BigFish {
+      constructor() {
+        this.x = CANVAS_SIZE * 0.2;
+        this.y = CANVAS_SIZE * 0.5;
+        this.baseSize = 40;
+        this.xSpeed = 1;
+      }
+
+      update(h) {
+        // Hour-based sizing (use 12-hour cycle for variety)
+        let dayHour = h % 12 || 12;
+        this.currentSize = this.baseSize + dayHour * 4;
+        this.x += this.xSpeed;
+        if (this.x > width + this.currentSize * 2) {
+          this.x = -this.currentSize * 2;
+        }
+      }
+
+      display(m) {
+        // Map minute to a color range for the fish
+        colorMode(HSB, 255);
+        let fishColor = map(m, 0, 59, 0, 255);
+        colorMode(RGB, 255);
+
+        push();
+        translate(this.x, this.y);
+        noStroke();
+        fill(200, 100, 100); // Body (base fish color)
+        // Shift hue slightly with the minute-based fishColor
+        // We'll blend two colors
+        let fishHue = lerpColor(color(200, 100, 100), color(fishColor, 200, 200), 0.5);
+        fill(fishHue);
+
+        // Body
+        ellipse(0, 0, this.currentSize * 2, this.currentSize);
+
+        // Tail
+        triangle(
+          -this.currentSize, 0,
+          -this.currentSize - this.currentSize * 0.6, -this.currentSize * 0.3,
+          -this.currentSize - this.currentSize * 0.6, this.currentSize * 0.3
+        );
+
+        // Eye
+        fill(255);
+        ellipse(this.currentSize * 0.4, -this.currentSize * 0.15, this.currentSize * 0.3, this.currentSize * 0.3);
+        fill(0);
+        ellipse(this.currentSize * 0.4, -this.currentSize * 0.15, this.currentSize * 0.15, this.currentSize * 0.15);
+
+        pop();
+      }
+    }
+
+    // Bubble class
+    class Bubble {
+      constructor() {
+        this.x = random(width);
+        this.y = height + 10;
+        this.size = random(5, 10);
+        this.speed = random(1, 2);
+        this.popped = false;
+      }
+
+      update() {
+        this.y -= this.speed;
+        if (this.y < -this.size) {
+          this.popped = true;
+        }
+      }
+
+      display() {
+        push();
+        translate(this.x, this.y);
+        noFill();
+        stroke(255);
+        ellipse(0, 0, this.size, this.size);
+        pop();
+      }
+    }
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+
+      // Create multiple tracing lines for dunes
+      for (let i = 0; i < 4; i++) {
+        duneLayers.push(generateDune(i));
+      }
+
+      // Initialize big fish
+      bigFish = new BigFish();
+    }
+
+    function draw() {
+      let h = hour() % 24;
+      let m = minute();
+      let s = second();
+
+      // Draw sky
+      drawSky(h);
+
+      // Move dunes horizontally (faster with minutes)
+      duneOffset += (m + 1) * 0.05;
+      drawDunes(h);
+
+      // Update & draw fish
+      bigFish.update(h);
+      bigFish.display(m);
+
+      // Bubbles appear with each new second
+      if (s !== lastSecond) {
+        bubbles.push(new Bubble());
+        lastSecond = s;
+      }
+      // Update and draw bubbles
+      for (let b of bubbles) {
+        b.update();
+        b.display();
+      }
+      // Filter out popped bubbles
+      bubbles = bubbles.filter((b) => !b.popped);
+
+      // Draw Eye of Horus in center, pulsing with second
+      let pulse = 0.5 + 0.3 * sin(s * 6 * (PI / 180));
+      drawEyeOfHorus(pulse);
+    }
+
+    // Generate dune lines using noise
+    function generateDune(index) {
+      let points = [];
+      let amplitude = 30 + index * 15;
+      let baseHeight = 300 + index * 40;
+      for (let x = 0; x <= width; x += 10) {
+        let y = baseHeight + amplitude * noise(x * 0.01, index * 10);
+        points.push({ x, y });
+      }
+      return points;
+    }
+
+    function drawDunes(h) {
+      for (let i = 0; i < duneLayers.length; i++) {
+        let colorFactor = map(i, 0, duneLayers.length - 1, 150, 60);
+        fill(colorFactor - h * 2, 100 + i * 10, 0);
+        beginShape();
+        vertex(-9999, height); 
+        // Shift wave horizontally using duneOffset
+        for (let pt of duneLayers[i]) {
+          let shiftedX = pt.x - duneOffset * (0.2 + i * 0.1);
+          vertex(shiftedX, pt.y);
+        }
+        vertex(9999, height);
+        endShape(CLOSE);
+      }
+    }
+
+    // Sky gradient based on hour
+    function drawSky(h) {
+      let topC = color(20 + h * 5, 40, 60);
+      let bottomC = color(5 + h * 5, 10, 30);
+      for (let y = 0; y < height; y++) {
+        let t = map(y, 0, height, 0, 1);
+        let c = lerpColor(topC, bottomC, t);
+        stroke(c);
+        line(0, y, width, y);
+      }
+      noStroke();
+    }
+  </script>
+</body>
+</html>

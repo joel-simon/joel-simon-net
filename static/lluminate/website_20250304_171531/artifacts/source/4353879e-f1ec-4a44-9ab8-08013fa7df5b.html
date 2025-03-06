@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Circus Nebula Maze</title>
+  <!-- p5.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* Fixed 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Overlay for hover instructions (hidden by default) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.8);
+      box-sizing: border-box;
+      padding: 20px;
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Circus Nebula Maze<br><br>
+        • Nebula color changes with the hour.<br>
+        • Maze regenerates each minute.<br>
+        • Trapeze clown swings with the seconds.<br>
+        Hover away to explore!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Circus Nebula Maze
+      1) The nebulous background changes color based on the hour.
+      2) A procedural maze is regenerated whenever the minute changes.
+      3) A trapeze clown swings from a pivot, with its angle guided by seconds.
+    */
+
+    const CANVAS_SIZE = 512;
+    const ROWS = 8;
+    const COLS = 8;
+    let cellSize;
+    let mazeWalls = [];
+    let lastMinute = -1;
+
+    function setup() {
+      const cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+
+      cellSize = width / COLS;
+      generateMaze();
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Regenerate maze if the minute changed
+      if (m !== lastMinute) {
+        generateMaze();
+        lastMinute = m;
+      }
+
+      // Draw background nebula using hour
+      drawNebula(h);
+
+      // Draw the maze walls
+      stroke(255);
+      strokeWeight(3);
+      for (let w of mazeWalls) {
+        line(w.x1, w.y1, w.x2, w.y2);
+      }
+
+      // Draw trapeze clown that swings with seconds
+      drawTrapezeClown(s);
+
+      // Optional digital clock for reference
+      showClock(h, m, s);
+    }
+
+    /*
+     * Draw a shifting nebula background whose color depends on the hour.
+     * We'll use a radial gradient approximation with multiple circles.
+     */
+    function drawNebula(h) {
+      push();
+      noStroke();
+      colorMode(HSB, 360, 100, 100);
+      // Map hour to a color range
+      let baseHue = map(h % 12, 0, 12, 0, 360);
+      for (let r = 400; r > 0; r -= 20) {
+        fill((baseHue + r * 0.5) % 360, 80, 40, 0.5);
+        ellipse(width / 2, height / 2, r, r);
+      }
+      pop();
+    }
+
+    /*
+     * Draw a trapeze clown at the top center, swinging by second value.
+     */
+    function drawTrapezeClown(secVal) {
+      push();
+      translate(width / 2, 40); // pivot near top center
+      let swingAngle = map(secVal, 0, 59, -45, 45);
+      rotate(swingAngle);
+      stroke(255);
+      strokeWeight(2);
+
+      // Trapeze bar
+      line(-40, 0, 40, 0);
+
+      // Clown "body"
+      noStroke();
+      fill(200, 0, 0);
+      ellipse(0, 50, 20, 30);
+
+      // Clown "head"
+      fill(255, 200, 200);
+      ellipse(0, 30, 15, 15);
+
+      // Clown's arms (holding bar)
+      stroke(255);
+      strokeWeight(2);
+      line(0, 40, -30, 0);
+      line(0, 40, 30, 0);
+
+      // Clown's legs
+      line(0, 60, -10, 80);
+      line(0, 60, 10, 80);
+      pop();
+    }
+
+    /*
+     * Generate the maze using a union-find MST approach.
+     */
+    function generateMaze() {
+      mazeWalls = [];
+
+      // Each cell is an object with .parent for union-find
+      let cells = [];
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          cells.push({ row: r, col: c, parent: r * COLS + c });
+        }
+      }
+
+      // Build all edges between adjacent cells
+      let edges = [];
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (r < ROWS - 1) {
+            edges.push({ c1: { r, c }, c2: { r: r + 1, c } });
+          }
+          if (c < COLS - 1) {
+            edges.push({ c1: { r, c }, c2: { r, c: c + 1 } });
+          }
+        }
+      }
+
+      // Shuffle edges randomly
+      edges.sort(() => random() - 0.5);
+
+      function findParent(i) {
+        if (cells[i].parent !== i) {
+          cells[i].parent = findParent(cells[i].parent);
+        }
+        return cells[i].parent;
+      }
+
+      function unionCells(i, j) {
+        let rootA = findParent(i);
+        let rootB = findParent(j);
+        cells[rootB].parent = rootA;
+      }
+
+      let finalEdges = [];
+      for (let e of edges) {
+        let idx1 = e.c1.r * COLS + e.c1.c;
+        let idx2 = e.c2.r * COLS + e.c2.c;
+        if (findParent(idx1) !== findParent(idx2)) {
+          unionCells(idx1, idx2);
+          finalEdges.push(e);
+        }
+      }
+
+      // Edges not in the final MST become walls
+      for (let e of edges) {
+        if (!finalEdges.includes(e)) {
+          let x1 = e.c1.c * cellSize;
+          let y1 = e.c1.r * cellSize;
+          let x2 = e.c2.c * cellSize;
+          let y2 = e.c2.r * cellSize;
+          mazeWalls.push({ x1, y1, x2, y2 });
+        }
+      }
+
+      // Outer border walls
+      for (let r = 0; r <= ROWS; r++) {
+        mazeWalls.push({ x1: 0, y1: r * cellSize, x2: 0, y2: r * cellSize });
+        mazeWalls.push({ x1: COLS * cellSize, y1: r * cellSize, x2: COLS * cellSize, y2: r * cellSize });
+      }
+      for (let c = 0; c <= COLS; c++) {
+        mazeWalls.push({ x1: c * cellSize, y1: 0, x2: c * cellSize, y2: 0 });
+        mazeWalls.push({ x1: c * cellSize, y1: ROWS * cellSize, x2: c * cellSize, y2: ROWS * cellSize });
+      }
+    }
+
+    /*
+     * A simple digital clock at the bottom-left corner (optional).
+     */
+    function showClock(h, m, s) {
+      push();
+      resetMatrix();
+      translate(10, height - 20);
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 0, 0);
+      pop();
+    }
+  </script>
+</body>
+</html>

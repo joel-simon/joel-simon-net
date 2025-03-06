@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Fractal Kaleidoscope</title>
+  <style>
+    /* Reset and center page */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      color: #fff;
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* 512x512 container for our canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      background: #111;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Instructions appear on hover */
+    #hoverInstructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      pointer-events: none;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #canvasContainer:hover #hoverInstructions {
+      display: block;
+    }
+
+    .instructionsText {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverInstructions">
+      <div class="instructionsText">
+        <strong>Time Fractal Kaleidoscope</strong><br><br>
+        • Background color changes by the hour.<br>
+        • Fractal angle shifts with minutes.<br>
+        • Fractal depth scales with seconds.<br>
+        • Mouse position adds a subtle sway.<br>
+        • Enjoy the mesmerizing fusion of time and fractals!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time Fractal Kaleidoscope
+      - Background hue based on the current hour.
+      - Fractal branching angle based on current minute.
+      - Fractal depth/length based on current second.
+      - Multiple mirrored segments for a kaleidoscope effect.
+      - Mouse movement adds a slight sway to branches.
+    */
+
+    const SIZE = 512;
+    const SEGMENTS = 6; // For creating mirrored segments
+
+    function setup() {
+      let cnv = createCanvas(SIZE, SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100);
+      stroke(255);
+      noSmooth();
+    }
+
+    function draw() {
+      const hr = hour();
+      const mn = minute();
+      const sc = second();
+
+      // Map hour to background hue
+      const bgHue = map(hr, 0, 23, 0, 360);
+      background(bgHue, 40, 20);
+
+      // Calculate fractal parameters
+      let fractalAngle = map(mn, 0, 59, 0, 90);     // how far branches split
+      let branchLength = map(sc, 0, 59, 50, 180);   // trunk length
+      let maxLevels = 6; // limit recursive calls
+
+      translate(width / 2, height / 2);
+
+      // Repeat fractal in mirrored segments around center
+      let angleStep = 360 / SEGMENTS;
+      for (let i = 0; i < SEGMENTS; i++) {
+        push();
+        rotate(i * angleStep);
+        // Draw fractal from the center outward
+        push();
+        rotate(-90); // so fractal grows upwards
+        drawFractal(branchLength, fractalAngle, 0, maxLevels);
+        pop();
+        pop();
+      }
+
+      // Optionally show numeric time at top-left of the canvas
+      resetMatrix();
+      fill(255);
+      noStroke();
+      textSize(14);
+      textAlign(LEFT, TOP);
+      text(nf(hr,2) + ":" + nf(mn,2) + ":" + nf(sc,2), 10, 10);
+    }
+
+    // Recursive fractal drawing
+    function drawFractal(len, angle, level, maxLevels) {
+      // Slight sway with mouse
+      let sway = map(mouseX, 0, width, -5, 5);
+
+      // Line up the trunk
+      strokeWeight(map(level, 0, maxLevels, 4, 1));
+      line(0, 0, 0, -len);
+      translate(0, -len);
+
+      // Base case
+      if (level >= maxLevels) return;
+
+      // Left branch
+      push();
+      rotate(angle + sway);
+      drawFractal(len * 0.67, angle, level + 1, maxLevels);
+      pop();
+
+      // Right branch
+      push();
+      rotate(-angle + sway);
+      drawFractal(len * 0.67, angle, level + 1, maxLevels);
+      pop();
+    }
+  </script>
+</body>
+</html>

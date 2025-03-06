@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Combined Interactive Time Display</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset body styles and center a 512x512 container */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    /* Container for the 512x512 canvas */
+    #display-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+    /* The p5 canvas */
+    canvas {
+      display: block;
+      width: 512px;
+      height: 512px;
+    }
+    /* Instructions overlay (displayed on hover) */
+    #instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background-color: rgba(0, 0, 0, 0.65);
+      color: #fff;
+      display: none;
+      font-family: sans-serif;
+      padding: 1.5rem;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #display-container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="display-container">
+    <!-- Instructions pop up on hover -->
+    <div id="instructions">
+      <h3>Combined Interactive Time Display</h3>
+      <p>
+        • Branch-like fractal structure for the hour (longer branches = later hour).<br>
+        • Fish swimming across the screen, each representing hour (red), minute (green), second (blue).<br>
+        • Mosaic in corners driven by minutes.<br>
+        • Rotating star in the center influenced by time.<br>
+        • Digital clock displayed over everything.<br><br>
+        Hover away to see it in motion!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let canvasSize = 512;
+    let fishArray = [];
+
+    function setup() {
+      let myCanvas = createCanvas(canvasSize, canvasSize);
+      myCanvas.parent("display-container");
+      angleMode(RADIANS);
+      // Initialize fish objects
+      for (let i = 0; i < 3; i++) {
+        fishArray.push(new Fish(random(width), random(height), i));
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      // Grab current time components
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // 1. Mosaic corners (based on minute)
+      drawMosaicCorners(mn);
+
+      // 2. Fractal tree in background (based on hour) - limit recursion depth for performance
+      push();
+      translate(width / 2, height);
+      stroke(139, 69, 19);
+      fractalTree(map(hr, 0, 23, 2, 6));
+      pop();
+
+      // 3. Fish animation (hour, minute, second fish)
+      for (let f of fishArray) {
+        f.update();
+        f.display();
+      }
+
+      // 4. Rotating star in the center
+      push();
+      translate(width / 2, height / 2);
+      let starAngle = map(hr + mn / 60.0 + sc / 3600.0, 0, 24, 0, TWO_PI);
+      rotate(starAngle);
+      drawStar(30, 70, 6);
+      pop();
+
+      // 5. Digital clock at the center-top
+      textAlign(CENTER, CENTER);
+      fill(255);
+      textSize(24);
+      text(nf(hr, 2) + ":" + nf(mn, 2) + ":" + nf(sc, 2), width / 2, 30);
+    }
+
+    // Draw a simple fractal tree
+    function fractalTree(levels) {
+      // Base length of the branch depends on the current hour
+      let hrLen = map(hour(), 0, 23, 50, 150);
+      branch(hrLen, levels);
+    }
+
+    function branch(len, levels) {
+      line(0, 0, 0, -len);
+      translate(0, -len);
+      if (levels > 0) {
+        push();
+        rotate(radians(25));
+        branch(len * 0.7, levels - 1);
+        pop();
+        push();
+        rotate(radians(-25));
+        branch(len * 0.7, levels - 1);
+        pop();
+      }
+    }
+
+    // Draw a star with the given min/max radius and point count
+    function drawStar(innerRadius, outerRadius, points) {
+      stroke(255);
+      fill(0);
+      beginShape();
+      for (let i = 0; i < points * 2; i++) {
+        let angle = (PI * i) / points;
+        let r = i % 2 === 0 ? outerRadius : innerRadius;
+        vertex(r * cos(angle), r * sin(angle));
+      }
+      endShape(CLOSE);
+    }
+
+    // Mosaic in the corners (based on minute)
+    function drawMosaicCorners(mn) {
+      let tileSize = 16;
+      let offset = map(mn, 0, 59, 0, 255);
+
+      noStroke();
+      for (let y = 0; y < tileSize * 8; y += tileSize) {
+        for (let x = 0; x < tileSize * 8; x += tileSize) {
+          fill((x + y + offset) % 256, (offset + 100) % 256, 200);
+          // Top-left
+          rect(x, y, tileSize, tileSize);
+          // Top-right
+          rect(width - x - tileSize, y, tileSize, tileSize);
+          // Bottom-left
+          rect(x, height - y - tileSize, tileSize, tileSize);
+          // Bottom-right
+          rect(width - x - tileSize, height - y - tileSize, tileSize, tileSize);
+        }
+      }
+    }
+
+    // Fish class to represent hour, minute, second
+    class Fish {
+      constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.type = type; // 0=hour, 1=minute, 2=second
+        this.speed = random(1, 3);
+      }
+
+      update() {
+        // Swim across the screen horizontally
+        this.x += this.speed;
+        if (this.x > width + 50) {
+          this.x = -50;
+          this.y = random(height);
+        }
+      }
+
+      display() {
+        noStroke();
+        let timeVal;
+        if (this.type === 0) {
+          timeVal = hour();
+          fill(255, 80, 80); // Red style fish
+        } else if (this.type === 1) {
+          timeVal = minute();
+          fill(80, 255, 80); // Green style fish
+        } else {
+          timeVal = second();
+          fill(80, 80, 255); // Blue style fish
+        }
+
+        // Fish body
+        ellipse(this.x, this.y, 30, 15);
+
+        // Tail
+        push();
+        translate(this.x - 15, this.y);
+        rotate(sin(frameCount * 0.1 + timeVal) * 0.3);
+        triangle(0, -8, -10, 0, 0, 8);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Combined Creative Time Display</title>
+  <!-- Include p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic reset and fullscreen design, but our display is in a 512x512 container */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    /* 512x512 container where we'll place the canvas with instructions overlay */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      background: #111;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hoverInstructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.75);
+      box-sizing: border-box;
+      pointer-events: none; /* allow mouse events to pass through to canvas */
+      text-align: center;
+      padding: 20px;
+    }
+    #canvasContainer:hover #hoverInstructions {
+      display: block;
+    }
+
+    /* Center instructions text */
+    .instructionsText {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverInstructions">
+      <div class="instructionsText">
+        <strong>Combined Creative Time Display</strong><br><br>
+        • The wave background shifts with the hour.<br>
+        • Fractal trees grow with the current minute.<br>
+        • A fish swims across, colored by the current second.<br>
+        • Hover to see these instructions at any time.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Canvas dimensions
+    let w = 512;
+    let h = 512;
+    
+    // Parameters for fractal trees
+    let maxDepth = 5; // maximum recursion depth
+    // Fish properties
+    let fishX = -50;
+    let fishY;
+    let fishSpeed = 1;
+
+    function setup() {
+      const canvas = createCanvas(w, h);
+      canvas.parent('canvasContainer');
+      angleMode(DEGREES);
+      fishY = height * 0.75;
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Draw a wavy background that shifts based on the current hour
+      drawWaveBackground(hr);
+
+      // Draw mirrored fractal trees, size changes with minute
+      push();
+      // Left side tree
+      translate(width * 0.25, height * 0.95);
+      drawFractalTree(mn);
+      pop();
+      
+      push();
+      // Right side tree (mirrored horizontally)
+      translate(width * 0.75, height * 0.95);
+      scale(-1, 1);
+      drawFractalTree(mn);
+      pop();
+
+      // Animate a fish crossing the screen. Color changes with seconds.
+      drawFish(sc);
+
+      // Show the current time in the top-left corner
+      fill(255);
+      noStroke();
+      textSize(14);
+      textAlign(LEFT, TOP);
+      text(nf(hr,2) + ":" + nf(mn,2) + ":" + nf(sc,2), 10, 10);
+    }
+
+    // Wavy background influenced by hour
+    function drawWaveBackground(hr) {
+      // Create a color range from dark to brighter based on hour
+      let baseColor = map(hr, 0, 23, 10, 80);
+      noStroke();
+      for (let y = 0; y < height; y++) {
+        let wave = sin((frameCount + y) * 0.02 + hr) * 10;
+        fill(baseColor + wave, baseColor + wave * 0.5, baseColor * 2 + wave);
+        rect(0, y, width, 1);
+      }
+    }
+
+    // Recursive fractal tree
+    function drawFractalTree(minuteVal, depth = 0, branchLength = 60) {
+      // Branch length grows with minute
+      let len = branchLength + map(minuteVal, 0, 59, 0, 70);
+
+      // Base segment
+      stroke(180);
+      strokeWeight(map(maxDepth - depth, 0, maxDepth, 1, 4));
+      line(0, 0, 0, -len);
+      translate(0, -len);
+
+      if (depth < maxDepth) {
+        // Left branch
+        push();
+        rotate(-25);
+        drawFractalTree(minuteVal, depth + 1, len * 0.6);
+        pop();
+        // Right branch
+        push();
+        rotate(25);
+        drawFractalTree(minuteVal, depth + 1, len * 0.6);
+        pop();
+      }
+    }
+
+    // Draw a fish that swims across the screen
+    function drawFish(sc) {
+      // Color the fish based on seconds
+      let fishR = map(sc, 0, 59, 50, 255);
+      let fishG = map(sc, 0, 59, 200, 80);
+      let fishB = map(sin(frameCount * 0.05), -1, 1, 50, 150);
+
+      // Update fish position
+      fishX += fishSpeed;
+      if (fishX > width + 50) {
+        fishX = -50;
+        fishY = random(height * 0.4, height * 0.9);
+      }
+
+      // Draw fish shape
+      push();
+      fill(fishR, fishG, fishB);
+      stroke(0);
+      translate(fishX, fishY);
+      // Body
+      ellipse(0, 0, 40, 20);
+      // Tail
+      triangle(-20, 0, -30, -10, -30, 10);
+      // Eye
+      fill(255);
+      ellipse(10, -5, 5, 5);
+      pop();
+    }
+  </script>
+</body>
+</html>

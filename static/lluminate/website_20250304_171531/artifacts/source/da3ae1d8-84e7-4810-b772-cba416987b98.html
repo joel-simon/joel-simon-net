@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Shattered Glass</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset default margins and background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container exactly 512x512 */
+    #timeShatteredGlassContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    /* Instruction overlay on hover */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #timeShatteredGlassContainer:hover #instructionsOverlay {
+      display: block;
+    }
+    h1, p {
+      margin: 1em 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="timeShatteredGlassContainer">
+    <div id="instructionsOverlay">
+      <h1>Time Shattered Glass</h1>
+      <p>• Glowing glass shards spin based on the current second.<br>
+         • Each shard’s color changes with the current hour.<br>
+         • Pulse intensity scales with the current minute.<br>
+         • Hover again to see instructions.</p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      TIME SHATTERED GLASS
+      1. Shards rotate around the center, their color shifting with the hour.
+      2. A pulsing effect grows stronger with the current minute.
+      3. Spin speed increases with the passing seconds.
+      4. A digital display shows the local time in the top-left corner.
+    */
+
+    let shards = [];
+    let numShards = 12; // Number of "shards" or wedge-like polygons
+    let baseAngle = 0;
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('timeShatteredGlassContainer');
+      angleMode(DEGREES);
+      // Create shard data
+      for (let i = 0; i < numShards; i++) {
+        shards.push(createShard(i));
+      }
+    }
+
+    function draw() {
+      background(0);
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Calculate rotation speed from seconds
+      let rotationSpeed = map(s, 0, 59, 0.2, 3);
+      baseAngle += rotationSpeed;
+
+      // Draw swirling shards
+      push();
+      translate(width / 2, height / 2);
+      for (let i = 0; i < shards.length; i++) {
+        drawShard(shards[i], h, m, s);
+      }
+      pop();
+
+      // Draw digital time
+      drawDigitalTime(h, m, s);
+    }
+
+    // Create a shard object
+    function createShard(index) {
+      // Each shard is a polygon wedge with random outer radius
+      let radius = random(80, 200);
+      let angleStart = (360 / numShards) * index;
+      let angleSize = 360 / (2 * numShards); 
+      let points = [];
+      // Create a wedge shape
+      for (let a = angleStart - angleSize; a < angleStart + angleSize; a += 10) {
+        let x = radius * cos(a);
+        let y = radius * sin(a);
+        points.push({ x: x, y: y });
+      }
+      return { index, points, radius };
+    }
+
+    // Draw a shard, coloring it based on hour, rotating it, pulsating on minute
+    function drawShard(shard, h, m, s) {
+      push();
+      let hourHue = map(h, 0, 23, 0, 360);
+      // Each shard has an offset
+      let angleOffset = (360 / numShards) * shard.index + baseAngle;
+      rotate(angleOffset);
+
+      // Pulse scale from minute
+      let scaleFactor = 1 + 0.1 * sin((frameCount * 0.03) + m);
+      scale(scaleFactor);
+
+      beginShape();
+      colorMode(HSL);
+      fill(hourHue, 100, 50, 0.7);
+      noStroke();
+      vertex(0, 0);
+      for (let pt of shard.points) {
+        vertex(pt.x, pt.y);
+      }
+      endShape(CLOSE);
+      pop();
+    }
+
+    // Display the digital clock
+    function drawDigitalTime(h, m, s) {
+      fill(255);
+      noStroke();
+      textSize(24);
+      textAlign(LEFT, TOP);
+      let displayHour = h % 12;
+      displayHour = displayHour ? displayHour : 12;
+      let ampm = (h >= 12) ? "PM" : "AM";
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      let timeString = displayHour + ":" + minStr + ":" + secStr + " " + ampm;
+      text(timeString, 10, 10);
+    }
+  </script>
+</body>
+</html>

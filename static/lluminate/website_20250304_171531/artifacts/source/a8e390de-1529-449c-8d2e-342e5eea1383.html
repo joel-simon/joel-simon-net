@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Candle Maze Explorer</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Make the page full screen and center the canvas */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0,0,0,0.7);
+      padding: 20px;
+      box-sizing: border-box;
+      font-size: 14px;
+      z-index: 1;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      HOW IT WORKS:<br>
+      • The maze is regenerated every minute, using that minute as part of its random seed.<br>
+      • The candle’s wax level lowers with the hour.<br>
+      • The flame flickers with the seconds.<br>
+      • Use arrow keys to explore the maze. Avoid walls and watch the clock beneath the candle!
+    </div>
+  </div>
+
+  <script>
+    // Maze variables
+    let cols = 10;
+    let rows = 10;
+    let cellSize = 40; // Maze portion will occupy 400x400 px
+    let grid = [];
+    let currentCell;
+    let stack = [];
+    let mazeMinute = -1;
+
+    // Player variables
+    let playerX = 0, playerY = 0;
+
+    // Candle meltdown
+    let meltdownHeight = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      frameRate(30);
+      createMaze(); // Initialize the maze
+    }
+
+    function draw() {
+      background(30);
+
+      let hr = hour();    // 0 - 23
+      let mn = minute();  // 0 - 59
+      let sc = second();  // 0 - 59
+
+      // Regenerate maze if minute changed
+      if(mn !== mazeMinute) {
+        mazeMinute = mn;
+        createMaze();
+      }
+
+      // Maze draws in the top 400x400 region
+      push();
+      translate(56, 56); // leave some padding around
+      drawMaze();
+      // Draw the player in the maze
+      noStroke();
+      fill(255, 200, 0);
+      ellipse(playerX*cellSize + cellSize*0.5, playerY*cellSize + cellSize*0.5, cellSize*0.5);
+      pop();
+
+      // Candle meltdown region at bottom
+      drawCandle(hr, mn, sc);
+
+      // Draw time text
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(18);
+      text(nf(hr,2) + ':' + nf(mn,2) + ':' + nf(sc,2), width/2, height - 24);
+    }
+
+
+    // CANDLE DRAW
+    function drawCandle(hr, mn, sc) {
+      let candleX = width / 2;
+      let candleY = 400;   // just above the bottom for meltdown base
+      let candleWidth = 60;
+      let candleMaxHeight = 100;
+
+      // Candle meltdown from top based on hour
+      meltdownHeight = map(hr, 0, 23, 0, candleMaxHeight); 
+      let visibleHeight = candleMaxHeight - meltdownHeight; 
+
+      // Flicker offset for flame
+      let flickerOffset = map(noise(sc * 0.5 + frameCount * 0.02), 0, 1, -3, 3);
+
+      // Candle "body" color depends on minute
+      let candleR = map(mn, 0, 59, 180, 250);
+      let candleG = map(mn, 0, 59, 180, 150);
+      let candleB = map(mn, 0, 59, 200, 100);
+
+      push();
+      rectMode(CENTER);
+      // Candle body
+      fill(candleR, candleG, candleB);
+      rect(candleX, candleY - visibleHeight/2, candleWidth, visibleHeight);
+      // Melt line
+      fill(230, 180, 140);
+      rect(candleX, candleY - visibleHeight, candleWidth + 4, 4);
+      // Flame
+      push();
+      translate(candleX + flickerOffset, candleY - visibleHeight);
+      fill(255, 100, 0);
+      ellipse(0, -20, 20, 40);
+      fill(255, 200, 0);
+      ellipse(0, -25, 12, 25);
+      pop();
+
+      pop();
+    }
+
+    // MAZE LOGIC
+    function createMaze() {
+      // Setup random seed based on minute so maze changes each minute
+      randomSeed(minute());
+
+      // Create a new grid
+      grid = [];
+      for (let j = 0; j < rows; j++) {
+        for (let i = 0; i < cols; i++) {
+          grid.push(new Cell(i, j));
+        }
+      }
+
+      // Pick starting cell and DFS
+      currentCell = grid[0];
+      stack = [];
+
+      // Generate the maze by DFS backtracking
+      while(true) {
+        currentCell.visited = true;
+        let next = currentCell.checkNeighbors();
+        if(next) {
+          next.visited = true;
+          stack.push(currentCell);
+          removeWalls(currentCell, next);
+          currentCell = next;
+        } else if(stack.length > 0) {
+          currentCell = stack.pop();
+        } else {
+          break;
+        }
+      }
+
+      // Reset player position
+      playerX = 0;
+      playerY = 0;
+    }
+
+    function drawMaze() {
+      // Render each cell
+      for (let i = 0; i < grid.length; i++) {
+        grid[i].show();
+      }
+    }
+
+    function index(i, j) {
+      if(i < 0 || j < 0 || i >= cols || j >= rows) {
+        return -1;
+      }
+      return i + j * cols;
+    }
+
+    function removeWalls(a, b) {
+      let x = a.i - b.i;
+      if(x === 1) {
+        a.walls.left = false;
+        b.walls.right = false;
+      } else if(x === -1) {
+        a.walls.right = false;
+        b.walls.left = false;
+      }
+
+      let y = a.j - b.j;
+      if(y === 1) {
+        a.walls.top = false;
+        b.walls.bottom = false;
+      } else if(y === -1) {
+        a.walls.bottom = false;
+        b.walls.top = false;
+      }
+    }
+
+    // Cell object for the maze
+    function Cell(i, j) {
+      this.i = i;
+      this.j = j;
+      // top, right, bottom, left
+      this.walls = {top:true, right:true, bottom:true, left:true};
+      this.visited = false;
+
+      this.checkNeighbors = function() {
+        let neighbors = [];
+
+        let top    = grid[index(i, j-1)];
+        let right  = grid[index(i+1, j)];
+        let bottom = grid[index(i, j+1)];
+        let left   = grid[index(i-1, j)];
+
+        if(top && !top.visited)    neighbors.push(top);
+        if(right && !right.visited)  neighbors.push(right);
+        if(bottom && !bottom.visited) neighbors.push(bottom);
+        if(left && !left.visited)   neighbors.push(left);
+
+        if(neighbors.length > 0) {
+          let r = floor(random(0, neighbors.length));
+          return neighbors[r];
+        } else {
+          return undefined;
+        }
+      };
+
+      this.show = function() {
+        let x = this.i * cellSize;
+        let y = this.j * cellSize;
+        stroke(255);
+        if(this.walls.top)    line(x, y, x+cellSize, y);
+        if(this.walls.right)  line(x+cellSize, y, x+cellSize, y+cellSize);
+        if(this.walls.bottom) line(x+cellSize, y+cellSize, x, y+cellSize);
+        if(this.walls.left)   line(x, y+cellSize, x, y);
+      };
+    }
+
+    // PLAYER MOVEMENT
+    function keyPressed() {
+      let currentIndex = index(playerX, playerY);
+      let cell = grid[currentIndex];
+      if(!cell) return;
+
+      // Move up
+      if(keyCode === UP_ARROW) {
+        if(!cell.walls.top) {
+          playerY--;
+        }
+      }
+      // Move right
+      else if(keyCode === RIGHT_ARROW) {
+        if(!cell.walls.right) {
+          playerX++;
+        }
+      }
+      // Move down
+      else if(keyCode === DOWN_ARROW) {
+        if(!cell.walls.bottom) {
+          playerY++;
+        }
+      }
+      // Move left
+      else if(keyCode === LEFT_ARROW) {
+        if(!cell.walls.left) {
+          playerX--;
+        }
+      }
+
+      // Constrain player coords
+      playerX = constrain(playerX, 0, cols-1);
+      playerY = constrain(playerY, 0, rows-1);
+    }
+  </script>
+</body>
+</html>

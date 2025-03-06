@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Firefly Swarm</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the "Time Firefly Swarm"!<br><br>
+        • The swarm size shifts with the hour.<br>
+        • Fireflies flicker and change brightness with the minute.<br>
+        • Move your mouse to gently guide them.<br><br>
+        Hover away to see them dance in time!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let fireflies = [];
+    let maxFireflies;
+    let lastHour;
+    
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      noStroke();
+      // Initialize with the current hour
+      lastHour = hour();
+      refreshSwarm();
+    }
+
+    function draw() {
+      background(20, 20, 30);
+      let currentHour = hour();
+
+      // If the hour changes, refresh the swarm based on new hour
+      if (currentHour !== lastHour) {
+        lastHour = currentHour;
+        refreshSwarm();
+      }
+
+      // Update and draw fireflies
+      let flickerFactor = map(minute(), 0, 59, 0.4, 1.2);
+      fireflies.forEach(f => {
+        f.update();
+        f.display(flickerFactor);
+      });
+
+      displayClock();
+    }
+
+    function refreshSwarm() {
+      // Dynamically determine the number of fireflies based on hour
+      let h = hour();
+      // Map hours 0..23 to a range of 5..60 fireflies
+      maxFireflies = int(map(h, 0, 23, 5, 60));
+      fireflies = [];
+      for (let i = 0; i < maxFireflies; i++) {
+        fireflies.push(new Firefly(random(width), random(height)));
+      }
+    }
+
+    class Firefly {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = random(-1, 1);
+        this.vy = random(-1, 1);
+        this.size = random(3, 7);
+        this.baseColor = color(random(100, 255), random(190, 255), 0);
+      }
+
+      update() {
+        // Simple wandering movement
+        this.x += this.vx * 0.5;
+        this.y += this.vy * 0.5;
+
+        // Mouse attraction
+        let d = dist(mouseX, mouseY, this.x, this.y);
+        if (d < 100) {
+          let angle = atan2(this.y - mouseY, this.x - mouseX);
+          this.x += cos(angle);
+          this.y += sin(angle);
+        }
+
+        // Wrap around edges
+        if (this.x < 0) this.x = width;
+        if (this.x > width) this.x = 0;
+        if (this.y < 0) this.y = height;
+        if (this.y > height) this.y = 0;
+      }
+
+      display(flickerFactor) {
+        // Flicker brightness based on minute factor
+        let flicker = sin(frameCount * 0.05) * 0.5 + 0.5;
+        let alphaVal = 200 * flicker * flickerFactor;
+        fill(red(this.baseColor), green(this.baseColor), blue(this.baseColor), alphaVal);
+        ellipse(this.x, this.y, this.size, this.size);
+      }
+    }
+
+    function displayClock() {
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+    }
+  </script>
+</body>
+</html>

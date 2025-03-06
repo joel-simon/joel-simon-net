@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Underwater Time Gears</title>
+  <style>
+    /* Overall page styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100vh;
+      width: 100vw;
+      display: grid;
+      place-items: center;
+    }
+
+    /* Tooltip container */
+    .info-tip {
+      position: relative;
+      font-family: sans-serif;
+      user-select: none;
+      cursor: pointer;
+      color: #fff;
+      margin-bottom: 0.5em;
+    }
+    /* Tooltip content (hidden by default) */
+    .info-content {
+      visibility: hidden;
+      width: 220px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.9em;
+      line-height: 1.4em;
+      z-index: 1;
+    }
+    /* Show the text when hovering over the container */
+    .info-tip:hover .info-content {
+      visibility: visible;
+    }
+
+    /* Ensure the canvas is exactly 512x512 with no extra scrollbars */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="info-tip">
+    Hover for instructions
+    <div class="info-content">
+      Welcome to Underwater Time Gears! Three gears at the center represent 
+      hours, minutes, and seconds. Their rotation speeds differ based on 
+      current time. Meanwhile, fish freely swim around them. Enjoy!
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <script>
+    let gears = [];
+    let fishArray = [];
+
+    /* 
+      Gear class:
+      - x, y: center position
+      - radius: gear size
+      - toothCount: how many "teeth" each gear has
+      - timeUnit: "hour"/"minute"/"second" used to modulate rotation speed
+    */
+    class Gear {
+      constructor(x, y, radius, toothCount, timeUnit, baseColor) {
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.toothCount = toothCount;
+        this.timeUnit = timeUnit;
+        this.baseColor = baseColor;
+      }
+
+      display() {
+        let h = hour();
+        let m = minute();
+        let s = second();
+
+        // Convert hour to 12-hour format for more visible rotation
+        let hourIn12h = h % 12;
+
+        /* Each gear's rotation depends on time unit:
+           hour gear: rotates a fraction proportional to hourIn12h plus minute fraction
+           minute gear: rotates with minutes plus second fraction
+           second gear: rotates with seconds
+        */
+        let angle = 0;
+        if (this.timeUnit === "hour") {
+          angle = map(hourIn12h + m/60, 0, 12, 0, TWO_PI);
+        } else if (this.timeUnit === "minute") {
+          angle = map(m + s/60, 0, 60, 0, TWO_PI);
+        } else {
+          angle = map(s, 0, 60, 0, TWO_PI);
+        }
+
+        push();
+        translate(this.x, this.y);
+        rotate(angle);
+
+        noStroke();
+        fill(this.baseColor);
+
+        // Draw gear's circular body
+        ellipse(0, 0, this.radius * 2);
+
+        // Draw gear "teeth"
+        let toothAngleStep = TWO_PI / this.toothCount;
+        for (let i = 0; i < this.toothCount; i++) {
+          push();
+          rotate(i * toothAngleStep);
+          rect(this.radius - 5, -4, 10, 8, 2);
+          pop();
+        }
+        pop();
+      }
+    }
+
+    /*
+      Fish class:
+      - x, y: position
+      - sx, sy: speed along x and y
+      - size: fish scale
+      - color: fish color
+    */
+    class Fish {
+      constructor() {
+        this.x = random(width);
+        this.y = random(height);
+        this.sx = random(0.5, 1.5);
+        this.sy = random(-0.2, 0.2);
+        this.size = random(0.7, 1.3);
+        this.baseColor = color(random(50, 150), random(100, 200), random(150,255));
+      }
+
+      update() {
+        this.x += this.sx;
+        this.y += this.sy;
+        // wrap around screen
+        if (this.x > width + 50) this.x = -50;
+        if (this.y > height + 50) this.y = -50;
+        if (this.y < -50) this.y = height + 50;
+      }
+
+      display() {
+        push();
+        translate(this.x, this.y);
+        scale(this.size);
+        noStroke();
+        fill(this.baseColor);
+
+        // fish body
+        ellipse(0, 0, 40, 20);
+        // fish tail
+        fill(red(this.baseColor)*0.8, green(this.baseColor)*0.8, blue(this.baseColor)*0.8);
+        triangle(-20, 0, -30, -10, -30, 10);
+        // fish eye
+        fill(255);
+        ellipse(10, -5, 4, 4);
+        pop();
+      }
+    }
+
+    function setup() {
+      createCanvas(512, 512);
+
+      // Create 3 gears in the center
+      gears.push(new Gear(width/2, height/2, 60, 12, "hour", color(200,100,100)));
+      gears.push(new Gear(width/2, height/2, 40, 10, "minute", color(100,200,150)));
+      gears.push(new Gear(width/2, height/2, 25, 8, "second", color(100,150,255)));
+
+      // Create multiple fish
+      for (let i = 0; i < 8; i++) {
+        fishArray.push(new Fish());
+      }
+    }
+
+    function draw() {
+      // Subtle watery background
+      background(0, 60, 80);
+
+      // Gentle wave overlay effect
+      noStroke();
+      fill(255, 255, 255, 15);
+      for (let x = 0; x <= width; x += 10) {
+        let wave = map(sin(frameCount * 0.02 + x * 0.1), -1, 1, -5, 5);
+        rect(x, height * 0.05 + wave, 10, height);
+      }
+
+      // Update and display gears
+      for (let g of gears) {
+        g.display();
+      }
+
+      // Update and display fish
+      for (let f of fishArray) {
+        f.update();
+        f.display();
+      }
+    }
+  </script>
+</body>
+</html>

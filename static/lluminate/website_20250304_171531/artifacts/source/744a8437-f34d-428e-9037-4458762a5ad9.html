@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cosmic Maze Helix Time Display</title>
+  <style>
+    /* Reset margin and padding for a clean slate */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0e0e0e;
+      font-family: sans-serif;
+      color: #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    /* Container for our fixed 512x512 canvas */
+    #canvas-container {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+    /* Overlay instructions, shown only on hover */
+    #hover-info {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #canvas-container:hover #hover-info {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-info">
+      <p>
+        This display combines a time-based mosaic in the background, 
+        a fractal tree at center, and a swirling helix star. 
+        Each element changes based on the current hour, minute, and second. 
+        Move your mouse away to see it all in action!
+      </p>
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    // Canvas size
+    const CANVAS_SIZE = 512;
+
+    // Mosaic background: 24 columns (hours in a day), 60 rows (minutes)
+    const COLS = 24;
+    const ROWS = 60;
+    let tileW, tileH;
+
+    // Fractal tree settings
+    let maxDepth = 6;
+    let baseBranchLen = 60; // Will be scaled by hour/minute
+
+    // Helix star settings
+    let starPoints = [];
+    let starRadius = 40;
+    let starDetail = 6;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvas-container');
+
+      colorMode(HSB, 360, 100, 100);
+      angleMode(DEGREES);
+      noStroke();
+
+      tileW = width / COLS;
+      tileH = height / ROWS;
+
+      // Precompute star points for a simple spiky shape
+      for (let i = 0; i < starDetail; i++) {
+        let angle = map(i, 0, starDetail, 0, 360);
+        starPoints.push({ 
+          x: cos(angle) * starRadius, 
+          y: sin(angle) * starRadius 
+        });
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Step 1: Draw mosaic background (colorful for cells < h and < m)
+      drawMosaic(h, m, s);
+
+      // Step 2: Draw fractal tree in center, with branches scaled by hour/minute
+      push();
+      translate(width / 2, height * 0.8);
+      stroke(120, 80, 80);
+      strokeWeight(2);
+      fractalTree(h, m, maxDepth);
+      pop();
+
+      // Step 3: Draw swirling helix star that rotates with seconds
+      push();
+      translate(width / 2, height / 2);
+      let helixAngle = map(s, 0, 59, 0, 360) + frameCount; 
+      rotate(helixAngle);
+      fill((frameCount * 2) % 360, 80, 80);
+      drawStar();
+      pop();
+
+      // Step 4: Digital clock display
+      noStroke();
+      fill(255);
+      textSize(20);
+      textAlign(LEFT, TOP);
+      text(
+        nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2),
+        10,
+        10
+      );
+    }
+
+    function drawMosaic(h, m, s) {
+      noStroke();
+      for (let col = 0; col < COLS; col++) {
+        for (let row = 0; row < ROWS; row++) {
+          // If current cell is within hour & minute range, make it glow with second-based color
+          if (col < h && row < m) {
+            fill((s * 5) % 360, 80, 80);
+          } else {
+            fill(0, 0, 15);
+          }
+          rect(col * tileW, row * tileH, tileW, tileH);
+        }
+      }
+    }
+
+    function fractalTree(hr, mn, depth) {
+      if (depth === 0) return;
+
+      // Branch length influenced by hour and minute
+      let branchLen = map(hr + mn / 60, 0, 24, baseBranchLen * 0.5, baseBranchLen * 1.5);
+      line(0, 0, 0, -branchLen);
+      translate(0, -branchLen);
+
+      let angle = map(second(), 0, 59, 15, 45);
+
+      // Left branch
+      push();
+      rotate(angle);
+      fractalTree(hr, mn, depth - 1);
+      pop();
+
+      // Right branch
+      push();
+      rotate(-angle);
+      fractalTree(hr, mn, depth - 1);
+      pop();
+    }
+
+    function drawStar() {
+      beginShape();
+      for (let pt of starPoints) {
+        vertex(pt.x, pt.y);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Kaleidoscope</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* A fixed 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Overlay for hover instructions (hidden by default) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.75);
+    }
+
+    /* Show the overlay on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Kaleidoscope<br><br>
+        • Number of arms based on hour.<br>
+        • Colors shift with minute.<br>
+        • Rotation speeds change with second.<br>
+        • Watch patterns evolve in real time.<br>
+        Hover away to explore!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Kaleidoscope:
+      - A symmetrical kaleidoscope that changes with the current time.
+      - Hour determines the number of arms.
+      - Minute drives overall color themes.
+      - Second affects rotation speed.
+    */
+
+    const CANVAS_SIZE = 512;
+
+    function setup() {
+      const cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(20);
+
+      const h = hour();    // 0-23
+      const m = minute();  // 0-59
+      const s = second();  // 0-59
+
+      // Number of kaleidoscope arms based on hour (using 12-hour style to vary)
+      const arms = (h % 12) + 3; 
+      // Basic rotation speed influenced by seconds
+      const rotationSpeed = (frameCount + s * 5) * 0.5;
+
+      // Color theme shifts with minute (converted into a hue)
+      colorMode(HSB, 360, 100, 100);
+      const baseHue = map(m, 0, 59, 0, 360);
+
+      push();
+      translate(width / 2, height / 2); // Center
+
+      // Draw rotating background discs for a subtle layered effect
+      drawBackgroundDiscs(baseHue);
+
+      // Draw repeated shapes around the center
+      for (let i = 0; i < arms; i++) {
+        push();
+        rotate((360 / arms) * i + rotationSpeed);
+        fill((baseHue + i * 15) % 360, 80, 80);
+        drawKaleidoscopeShape();
+        pop();
+      }
+
+      pop();
+
+      // Overlay a digital clock
+      drawClock(h, m, s);
+    }
+
+    /* Subtle rotating discs behind shapes */
+    function drawBackgroundDiscs(hueBase) {
+      push();
+      for (let r = 200; r > 20; r -= 30) {
+        fill((hueBase + r) % 360, 40, 20, 0.3 * 100);
+        ellipse(0, 0, r, r);
+      }
+      pop();
+    }
+
+    /* A custom shape to repeat around the center */
+    function drawKaleidoscopeShape() {
+      beginShape();
+      vertex(10, 0);
+      vertex(40, -20);
+      vertex(50, -10);
+      vertex(60, 0);
+      vertex(50, 10);
+      vertex(40, 20);
+      endShape(CLOSE);
+    }
+
+    /* Simple digital clock overlay in the bottom-left of the canvas */
+    function drawClock(h, m, s) {
+      push();
+      resetMatrix();
+      translate(10, height - 20);
+      colorMode(RGB, 255);
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, CENTER);
+      // Format hours in 24-hour or 12-hour style as preferred:
+      text(`${nf(h, 2)}:${nf(m, 2)}:${nf(s, 2)}`, 0, 0);
+      pop();
+    }
+  </script>
+</body>
+</html>

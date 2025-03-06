@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Fusion: Waves, Candle & Tree</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Fusion: Waves, Candle & Tree<br><br>
+        • The wavy background shifts with each hour.<br>
+        • The candle resets color on each new hour; its wax drips grow over the hour.<br>
+        • A fractal tree in the corner adds a new branch each minute.<br>
+        • The flame flickers in sync with current seconds.<br>
+        • Hover away to see it all in motion!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /************************************************************
+     * Global variables
+     ************************************************************/
+    let candleColor;
+    let resetHour;
+    let dripGrowth = 0.0;
+    let flameBaseRadius = 20;
+    let dripPoints = [];
+
+    // Fractal tree variables
+    let maxBranches = 0;  // Will depend on minute()
+
+    // Wave variables
+    // We'll create a simple wave in the background using sin
+    let waveOffset = 0;
+
+    /************************************************************
+     * p5 Setup
+     ************************************************************/
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      colorMode(HSB);
+      noStroke();
+
+      // Initialize hour tracking and candle color
+      resetHour = hour();
+      candleColor = random(0, 360);
+
+      // Initialize random drip points for candle
+      for (let i = 0; i < 30; i++) {
+        dripPoints.push({
+          x: random(-6, 6),
+          y: random(0, 100),
+          sway: random(0.01, 0.03),
+          offset: random(TWO_PI)
+        });
+      }
+    }
+
+    /************************************************************
+     * p5 Draw (called every frame)
+     ************************************************************/
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // If the hour has changed, reset candle color and drips
+      if (h !== resetHour) {
+        resetHour = h;
+        candleColor = random(0, 360);
+        dripGrowth = 0;
+      }
+
+      // Update wave offset (background animation speed influenced by hour)
+      waveOffset += 0.01 + (h * 0.0005);
+
+      // Calculate background with wave
+      drawWaves(h, m);
+
+      // Update fractal tree based on the current minute
+      maxBranches = m;  // allows up to minute() branches
+
+      // Draw the time-fused elements (candle + fractal tree + clock)
+      drawFractalTree();
+      drawCandle(h, m, s);
+      drawTimeDisplay(h, m, s);
+    }
+
+    /************************************************************
+     * Draw wave background
+     ************************************************************/
+    function drawWaves(currentHour, currentMinute) {
+      // We'll do a simple horizontal wave
+      // The color changes gradually with the hour
+      let hueBase = map(currentHour, 0, 23, 0, 360);
+      let amplitude = map(currentMinute, 0, 59, 10, 60);
+
+      for (let y = 0; y < height; y += 5) {
+        fill(hueBase, 40, 20 + (y * 0.05));
+        beginShape();
+        for (let x = 0; x <= width; x += 10) {
+          let waveY = sin(waveOffset + x * 0.02 + y * 0.01) * amplitude;
+          vertex(x, y + waveY);
+        }
+        vertex(width, height);
+        vertex(0, height);
+        endShape(CLOSE);
+      }
+    }
+
+    /************************************************************
+     * Draw fractal tree in top-left corner
+     ************************************************************/
+    function drawFractalTree() {
+      push();
+      translate(80, height - 50);
+      stroke(120, 60, 80);
+      strokeWeight(2);
+      branch(50, 0); // Start with length 50
+      pop();
+      noStroke();
+    }
+
+    function branch(len, depth) {
+      line(0, 0, 0, -len);
+      translate(0, -len);
+
+      let angle = radians(20);  // Some base angle
+      if (depth < maxBranches) {
+        // Draw the left branch
+        push();
+        rotate(-angle);
+        branch(len * 0.7, depth + 1);
+        pop();
+
+        // Draw the right branch
+        push();
+        rotate(angle);
+        branch(len * 0.7, depth + 1);
+        pop();
+      }
+    }
+
+    /************************************************************
+     * Draw Candle
+     ************************************************************/
+    function drawCandle(h, m, s) {
+      push();
+      translate(width / 2, height / 2 + 50);
+
+      // Candle body
+      fill(candleColor, 60, 90);
+      rectMode(CENTER);
+      rect(0, 0, 40, 120);
+
+      // Drip growth over each hour
+      dripGrowth = map(m + s / 60, 0, 60, 0, 100);
+
+      // Draw the dripping wax at the base
+      push();
+      translate(0, 60);
+      noStroke();
+      fill(candleColor, 60, 80);
+      for (let i = 0; i < dripPoints.length; i++) {
+        let p = dripPoints[i];
+        let xOff = sin((frameCount * p.sway) + p.offset) * 2;
+        let yOff = min(p.y + dripGrowth, 150);
+        ellipse(p.x + xOff, yOff, 10, 5);
+      }
+      pop();
+
+      // Flame flicker with seconds
+      let flicker = sin(frameCount * 0.2 + s) * 5;
+      fill(50, 90, 100);
+      ellipse(0, -80 + flicker, flameBaseRadius, flameBaseRadius * 1.8);
+
+      pop();
+    }
+
+    /************************************************************
+     * Draw Clock
+     ************************************************************/
+    function drawTimeDisplay(h, m, s) {
+      push();
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(16);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

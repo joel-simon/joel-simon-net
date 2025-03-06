@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Swirl Bloom</title>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      box-sizing: border-box;
+      padding: 20px;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Swirl Bloom</strong><br><br>
+        • The background color palette shifts each hour.<br>
+        • Radiating swirls grow and shift based on minutes.<br>
+        • Sparkles bloom each second around the edges.<br>
+        • Current time is displayed in the top-left corner.<br><br>
+        Hover to view instructions.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    // Track swirling arcs and sparkle positions
+    let maxArcs = 24; 
+    let sparkles = [];
+
+    function setup() {
+      const canvas = createCanvas(w, h);
+      canvas.parent('canvas-container');
+      angleMode(DEGREES);
+      // Initialize sparkle positions
+      for(let i = 0; i < 60; i++){
+        sparkles.push({
+          x: random(width),
+          y: random(height),
+          size: random(2,5)
+        });
+      }
+    }
+
+    function draw() {
+      backgroundGradient();
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Draw swirling arcs in center
+      push();
+      translate(width / 2, height / 2);
+      drawSwirls(hr, mn, sc);
+      pop();
+      
+      // Draw sparkles around edges
+      drawSparkles(sc);
+      
+      // Display time in top-left corner
+      displayTime(hr, mn, sc);
+    }
+
+    // Create a subtle background gradient influenced by hour
+    function backgroundGradient() {
+      let topColor = color((hour() * 15) % 360, 100, 100, 0.4);
+      let bottomColor = color(((hour() + 6) * 15) % 360, 80, 80, 0.6);
+
+      // We can do a simple vertical gradient
+      for (let y = 0; y < height; y++) {
+        let lerpAmt = map(y, 0, height, 0, 1);
+        let col = lerpColor(topColor, bottomColor, lerpAmt);
+        stroke(col);
+        line(0, y, width, y);
+      }
+    }
+
+    // Swirls that rotate and change size with time
+    function drawSwirls(hr, mn, sc) {
+      noFill();
+      strokeWeight(2);
+
+      // The swirl angle changes over time 
+      let baseAngle = frameCount * 0.3 + mn * 6; 
+      // The swirl radius changes with minute
+      let swirlRadius = map(mn, 0, 59, 40, 200);
+      
+      for (let i = 0; i < maxArcs; i++) {
+        let angleOffset = i * (360 / maxArcs);
+        let currentAngle = baseAngle + angleOffset;
+        // Color transitions by hour
+        stroke((hr * 15 + angleOffset) % 360, 100, 100);
+
+        // Arc start and end
+        let arcStart = currentAngle;
+        let arcEnd = arcStart + (45 + mn / 2); // arc length grows with minute
+
+        arc(0, 0, swirlRadius, swirlRadius, arcStart, arcEnd);
+      }
+    }
+
+    // Sparkles that appear in random positions, pulsing each second
+    function drawSparkles(sc) {
+      noStroke();
+      fill(255);
+
+      // Each second, re-randomize positions for half of them
+      if (frameCount % 60 === 0) {
+        for (let i = 0; i < sparkles.length / 2; i++) {
+          sparkles[i].x = random(width);
+          sparkles[i].y = random(height);
+          sparkles[i].size = random(2,5);
+        }
+      }
+
+      // Sparkle color brightens at the second
+      let brightness = map(sin(sc * 6), -1, 1, 100, 255);
+      fill(brightness);
+
+      for (let s of sparkles) {
+        ellipse(s.x, s.y, s.size);
+      }
+    }
+
+    // Display digital time
+    function displayTime(hr, mn, sc) {
+      let dispHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(`${dispHour}:${nf(mn, 2)}:${nf(sc, 2)} ${ampm}`, 10, 10);
+    }
+  </script>
+</body>
+</html>

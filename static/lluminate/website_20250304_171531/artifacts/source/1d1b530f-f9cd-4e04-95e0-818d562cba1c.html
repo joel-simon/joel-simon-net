@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Kitchen Maze</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* A fixed 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Overlay for hover instructions (hidden by default) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 20px;
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Kitchen Maze<br><br>
+        • Maze regenerates each minute.<br>
+        • Chef's hat grows with the hour.<br>
+        • Rolling pin rotates with seconds.<br>
+        • Tiled background reflects time.<br>
+        Hover away to explore!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Kitchen Maze:
+      1) A tile-like background changes with the minute.
+      2) A procedural maze resets each minute.
+      3) The hour is visualized by a growing chef's hat.
+      4) A rolling pin rotates with the passing seconds.
+    */
+
+    const CANVAS_SIZE = 512;
+    let tileRows = 8;
+    let tileCols = 8;
+    let tileCellSize;
+    let kitchenWalls = [];
+    let lastMinute = -1;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      tileCellSize = width / tileCols;
+
+      // Generate initial maze
+      generateKitchenMaze();
+    }
+
+    function draw() {
+      background(50);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // If minute changed, regenerate the maze
+      if (m !== lastMinute) {
+        generateKitchenMaze();
+        lastMinute = m;
+      }
+
+      // Draw background tiles
+      drawKitchenTiles(m);
+
+      // Draw the maze lines
+      stroke(255);
+      strokeWeight(3);
+      for (let w of kitchenWalls) {
+        line(w.x1, w.y1, w.x2, w.y2);
+      }
+
+      // Draw a growing chef's hat (hour-based)
+      drawChefsHat(h);
+
+      // Draw a rolling pin at the center (seconds-based)
+      drawRollingPin(s);
+
+      // Optional digital clock for reference
+      showClock(h, m, s);
+    }
+
+    /* Generate labyrinth-like maze using a union-find MST approach */
+    function generateKitchenMaze() {
+      kitchenWalls = [];
+
+      // Prepare a set for each cell
+      let mazeCells = [];
+      for (let r = 0; r < tileRows; r++) {
+        for (let c = 0; c < tileCols; c++) {
+          mazeCells.push({ row: r, col: c, parent: r * tileCols + c });
+        }
+      }
+
+      // Potential edges between adjacent cells
+      let edges = [];
+      for (let r = 0; r < tileRows; r++) {
+        for (let c = 0; c < tileCols; c++) {
+          // Down
+          if (r < tileRows - 1) {
+            edges.push({ c1: {r, c}, c2: {r: r+1, c} });
+          }
+          // Right
+          if (c < tileCols - 1) {
+            edges.push({ c1: {r, c}, c2: {r, c: c+1} });
+          }
+        }
+      }
+
+      // Shuffle edges randomly
+      edges.sort(() => random() - 0.5);
+
+      // Find function
+      function findParent(i) {
+        if (mazeCells[i].parent !== i) {
+          mazeCells[i].parent = findParent(mazeCells[i].parent);
+        }
+        return mazeCells[i].parent;
+      }
+
+      // Union function
+      function unionCells(i, j) {
+        let rootA = findParent(i);
+        let rootB = findParent(j);
+        mazeCells[rootB].parent = rootA;
+      }
+
+      // Minimum spanning tree of edges
+      let finalEdges = [];
+      for (let e of edges) {
+        let idx1 = e.c1.r * tileCols + e.c1.c;
+        let idx2 = e.c2.r * tileCols + e.c2.c;
+        if (findParent(idx1) !== findParent(idx2)) {
+          unionCells(idx1, idx2);
+          finalEdges.push(e);
+        }
+      }
+
+      // Edges not in the final MST become walls
+      for (let e of edges) {
+        if (!finalEdges.includes(e)) {
+          let x1 = e.c1.c * tileCellSize;
+          let y1 = e.c1.r * tileCellSize;
+          let x2 = e.c2.c * tileCellSize;
+          let y2 = e.c2.r * tileCellSize;
+          kitchenWalls.push({ x1, y1, x2, y2 });
+        }
+      }
+
+      // Add border walls
+      for (let r = 0; r <= tileRows; r++) {
+        kitchenWalls.push({ x1: 0, y1: r*tileCellSize, x2: 0, y2: r*tileCellSize });
+        kitchenWalls.push({ x1: tileCols*tileCellSize, y1: r*tileCellSize, x2: tileCols*tileCellSize, y2: r*tileCellSize });
+      }
+      for (let c = 0; c <= tileCols; c++) {
+        kitchenWalls.push({ x1: c*tileCellSize, y1: 0, x2: c*tileCellSize, y2: 0 });
+        kitchenWalls.push({ x1: c*tileCellSize, y1: tileRows*tileCellSize, x2: c*tileCellSize, y2: tileRows*tileCellSize });
+      }
+    }
+
+    /* Background tiles that shift color slightly with time */
+    function drawKitchenTiles(minuteVal) {
+      push();
+      noStroke();
+      colorMode(HSB, 360, 100, 100);
+      let baseHue = map(minuteVal, 0, 59, 0, 360);
+      let tileSize = 32;
+
+      for (let y = 0; y < height; y += tileSize) {
+        for (let x = 0; x < width; x += tileSize) {
+          let hueOffset = (x + y) * 0.05;
+          fill((baseHue + hueOffset) % 360, 40, 35);
+          rect(x, y, tileSize, tileSize);
+        }
+      }
+      pop();
+    }
+
+    /* Chef's hat representing the hour (size scales with hour mod 12) */
+    function drawChefsHat(hourVal) {
+      push();
+      translate(width * 0.8, height * 0.8);
+      let scaleFactor = map(hourVal % 12, 0, 11, 0.5, 2.0);
+      scale(scaleFactor);
+      noStroke();
+      fill(230);
+      // Hat base
+      rect(-15, 0, 30, 20, 5);
+      // Hat top
+      arc(0, 0, 60, 50, 180, 360);
+      pop();
+    }
+
+    /* Rotating rolling pin in the center, based on seconds */
+    function drawRollingPin(secVal) {
+      push();
+      translate(width / 2, height / 2);
+      rotate(secVal * 6 + frameCount * 0.3);
+      noStroke();
+      fill(200, 150, 100);
+
+      // Main body of the rolling pin
+      rectMode(CENTER);
+      rect(0, 0, 100, 15, 4);
+
+      // Handles
+      fill(160, 100, 60);
+      rect(-60, 0, 20, 15, 3);
+      rect(60, 0, 20, 15, 3);
+      pop();
+    }
+
+    /* Digital clock in bottom-left corner (optional) */
+    function showClock(h, m, s) {
+      push();
+      resetMatrix();
+      translate(10, height - 25);
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 0, 0);
+      pop();
+    }
+  </script>
+</body>
+</html>

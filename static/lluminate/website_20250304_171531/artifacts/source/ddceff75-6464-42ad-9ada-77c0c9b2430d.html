@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Creative Time Display</title>
+  <!-- Embedded CSS -->
+  <style>
+    /* Center the page and define background */
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #e09, #d0e);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    /* Container for the canvas and hover instructions */
+    #container {
+      width: 512px;
+      height: 512px;
+      position: relative;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Instructions hidden by default; appear on hover */
+    #instructions {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 10px;
+      font-size: 14px;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    /* Show instructions on hover */
+    #container:hover #instructions {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="instructions">
+      The outer ring shows seconds, the middle ring shows minutes, and the inner ring shows hours. Hover to see instructions.
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <!-- Embedded JavaScript/p5.js sketch -->
+  <script>
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent("container");
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(20);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Re-center and rotate canvas so 0 degrees is at the top
+      translate(width / 2, height / 2);
+      rotate(-90);
+
+      strokeWeight(8);
+      noFill();
+
+      // Map the current seconds, minutes, and hours to angles
+      let secondAngle = map(sc, 0, 60, 0, 360);
+      let minuteAngle = map(mn, 0, 60, 0, 360);
+      let hourAngle   = map(hr % 12, 0, 12, 0, 360);
+
+      // Draw arcs
+      stroke(255, 100, 150); // seconds
+      arc(0, 0, 300, 300, 0, secondAngle);
+
+      stroke(150, 100, 255); // minutes
+      arc(0, 0, 280, 280, 0, minuteAngle);
+
+      stroke(150, 255, 100); // hours
+      arc(0, 0, 260, 260, 0, hourAngle);
+
+      // Draw second hand
+      push();
+      rotate(secondAngle);
+      stroke(255, 100, 150);
+      line(0, 0, 100, 0);
+      pop();
+
+      // Draw minute hand
+      push();
+      rotate(minuteAngle);
+      stroke(150, 100, 255);
+      line(0, 0, 75, 0);
+      pop();
+
+      // Draw hour hand
+      push();
+      rotate(hourAngle);
+      stroke(150, 255, 100);
+      line(0, 0, 50, 0);
+      pop();
+    }
+  </script>
+</body>
+</html>

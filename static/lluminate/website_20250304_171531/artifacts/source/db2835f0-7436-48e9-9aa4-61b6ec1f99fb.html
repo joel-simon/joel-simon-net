@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Reverse Time Spiral</title>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      box-sizing: border-box;
+      padding: 20px;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+    /* Center text within the overlay */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Reverse Time Spiral</strong><br><br>
+        • The spiral rotates clockwise, symbolizing "reverse" time flow.<br>
+        • The color shifts with reversed hour, minute, and second.<br>
+        • Numeric display at top-left shows actual vs. reversed time.<br><br>
+        Hover to view instructions.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      const canvas = createCanvas(w, h);
+      canvas.parent('canvas-container');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(0);
+
+      // Current actual time
+      let hr = hour();      // 0-23
+      let mn = minute();    // 0-59
+      let sc = second();    // 0-59
+
+      // "Reversed" time components
+      let revHr = (23 - hr) < 0 ? 0 : (23 - hr);  // simplistic inversion for demonstration
+      let revMn = 59 - mn;
+      let revSc = 59 - sc;
+
+      // Center the spiral and rotate in the negative direction over time
+      push();
+      translate(width / 2, height / 2);
+      rotate(-frameCount * 0.5); 
+      drawReverseSpiral(revHr, revMn, revSc);
+      pop();
+
+      // Display both actual and reversed time in top-left corner
+      displayTimes(hr, mn, sc, revHr, revMn, revSc);
+    }
+
+    function drawReverseSpiral(revHr, revMn, revSc) {
+      strokeWeight(2);
+      noFill();
+
+      // Color derived from reversed hour, minute, second
+      let cR = map(revHr, 0, 23, 0, 255);
+      let cG = map(revMn, 0, 59, 255, 0);
+      let cB = map(revSc, 0, 59, 100, 255);
+      stroke(cR, cG, cB);
+
+      // Use reversed second to influence spiral radius
+      let maxRadius = map(revSc, 0, 59, 20, 200);
+
+      beginShape();
+      // Create a clockwise swirl from center outward
+      for (let a = 0; a <= 720; a += 5) {
+        let spiralFraction = a / 720; 
+        let r = maxRadius * spiralFraction;
+        let x = r * cos(a);
+        let y = r * sin(a);
+        vertex(x, y);
+      }
+      endShape();
+    }
+
+    function displayTimes(hr, mn, sc, revHr, revMn, revSc) {
+      fill(255);
+      noStroke();
+      textSize(14);
+      textAlign(LEFT, TOP);
+
+      // Format actual time
+      let dispHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let actualTime = `${dispHour}:${nf(mn, 2)}:${nf(sc, 2)} ${ampm}`;
+
+      // Simple reversed representation
+      let dispRevHour = revHr % 12 || 12;
+      let ampmRev = (revHr >= 12) ? "PM" : "AM";
+      let reversedTime = `${dispRevHour}:${nf(revMn, 2)}:${nf(revSc, 2)} ${ampmRev}`;
+
+      text("Actual Time: " + actualTime, 10, 10);
+      text("Reverse Time: " + reversedTime, 10, 28);
+    }
+  </script>
+</body>
+</html>

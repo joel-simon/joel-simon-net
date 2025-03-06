@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Aurora</title>
+  <style>
+    /* Basic reset and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay, only visible on hover */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      pointer-events: none;
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+      max-width: 80%;
+      margin: auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Aurora</strong><br><br>
+        • Hour adjusts the aurora's color spectrum.<br>
+        • Minute distorts the shapes of the lights.<br>
+        • Second alters the wave speed.<br>
+        Hover for instructions and watch the aurora respond to the passing time.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    // Multiple strips for the aurora
+    let auroraStrips = [];
+    const stripCount = 6;
+    let noiseOffsets = [];
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      noStroke();
+      angleMode(DEGREES);
+
+      // Initialize strips and noise offsets
+      for (let i = 0; i < stripCount; i++) {
+        auroraStrips.push([]);
+        noiseOffsets.push(random(1000));
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Create a faint starry background
+      drawStars();
+
+      // Convert hour to a color hue
+      let hueVal = map(hr, 0, 23, 0, 360);
+
+      // Control amplitude and speed with time
+      let waveSpeed = map(sc, 0, 59, 0.001, 0.02);
+      let shapeDistortion = map(mn, 0, 59, 20, 200);
+
+      push();
+      translate(width / 2, height);
+      for (let i = 0; i < stripCount; i++) {
+        let layerOffset = i * 15;
+        drawAuroraStrip(auroraStrips[i], hueVal + i * 30, noiseOffsets[i], waveSpeed, shapeDistortion, layerOffset);
+      }
+      pop();
+
+      // Display the time
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      let displayHour = (hr % 12) || 12;
+      let ampm = hr >= 12 ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, width / 2, height - 25);
+    }
+
+    // Draw a single aurora strip
+    function drawAuroraStrip(strip, baseHue, offset, speed, distortion, layerOffset) {
+      colorMode(HSB, 360, 100, 100, 100);
+
+      beginShape();
+      let totalPoints = 20;
+      let stripWidth = 450;
+
+      // Move the strip shape upward a bit for layering
+      translate(0, -layerOffset);
+
+      // Starting point at bottom-left
+      vertex(-stripWidth / 2, 0);
+
+      // Main curve
+      for (let i = 0; i <= totalPoints; i++) {
+        let x = map(i, 0, totalPoints, -stripWidth / 2, stripWidth / 2);
+        let n = noise(offset + i * 0.1);
+        let y = -n * distortion;
+        // A little extra wave based on time
+        y += sin(frameCount * speed + i * 10) * 10;
+        curveVertex(x, y);
+      }
+
+      // Ending point at bottom-right
+      vertex(stripWidth / 2, 0);
+      
+      endShape(CLOSE);
+
+      // Glow effect overlay
+      let c = color((baseHue + frameCount * 0.1) % 360, 80, 100, 60);
+      fill(c);
+      // Redraw same shape with fill
+      beginShape();
+      vertex(-stripWidth / 2, 0);
+      for (let i = 0; i <= totalPoints; i++) {
+        let x = map(i, 0, totalPoints, -stripWidth / 2, stripWidth / 2);
+        let n = noise(offset + i * 0.1);
+        let y = -n * distortion;
+        y += sin(frameCount * speed + i * 10) * 10;
+        curveVertex(x, y - 20);
+      }
+      vertex(stripWidth / 2, 0);
+      endShape(CLOSE);
+
+      noiseOffsets[auroraStrips.indexOf(strip)] += speed * 0.5;
+      colorMode(RGB, 255);
+    }
+
+    // Simple starry background
+    function drawStars() {
+      let starCount = 100;
+      randomSeed(10); // Keep consistent star field each frame
+      fill(255);
+      for (let i = 0; i < starCount; i++) {
+        let x = random(width);
+        let y = random(height);
+        let size = random(0.5, 2);
+        rect(x, y, size, size);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Kaleidoscope</title>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* A fixed 512x512 container (for iframe) */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      border: none;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Kaleidoscope of Time</strong><br><br>
+        • The kaleidoscope rotates with the seconds.<br>
+        • Colors shift every minute.<br>
+        • Overall size adjusts each hour.<br>
+        • Click to randomize shapes.<br>
+        • Press 'S' to save the canvas as an image.<br><br>
+        Hover here for instructions. Enjoy!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time Kaleidoscope
+      Key Features:
+        - Rotates with current second (0 - 59).
+        - Colors shift every minute (0 - 59).
+        - Grows/Shrinks based on hour (0 - 23).
+        - Click to randomly re-generate mirrored geometry.
+        - Press 'S' to save an image of the canvas.
+    */
+
+    const CANVAS_SIZE = 512;
+    const NUM_SHAPES = 12;  // Fixed number of geometry slices
+    let shapes = [];
+    let baseAngle = 0;
+    let lastSecond = -1;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      noStroke();
+      generateNewShapes();
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // The kaleidoscope angle changes based on seconds
+      let rotationSpeed = map(sc, 0, 59, 0, 360);
+      // The color range for each minute
+      let hueShift = map(mn, 0, 59, 0, 360);
+      // The scale factor changes gradually with hour
+      let scaleFactor = map(hr % 12, 0, 11, 0.5, 2);
+
+      translate(width / 2, height / 2);
+      rotate(rotationSpeed);
+      scale(scaleFactor);
+
+      // Draw shapes in kaleidoscopic layout
+      for (let i = 0; i < NUM_SHAPES; i++) {
+        push();
+        rotate((360 / NUM_SHAPES) * i + baseAngle);
+        drawOneSlice(hueShift);
+        pop();
+      }
+
+      // Subtle incremental rotation to vary scene
+      baseAngle += 0.05;  
+    }
+
+    function drawOneSlice(hueShift) {
+      // We can mirror or replicate the shape array
+      // using multiple triangles, arcs, or custom polygons
+      colorMode(HSB, 360, 100, 100);
+      for (let s of shapes) {
+        fill((s.hue + hueShift) % 360, s.sat, 100);
+        beginShape();
+        for (let v of s.vertices) {
+          vertex(v.x, v.y);
+        }
+        endShape(CLOSE);
+      }
+    }
+
+    function generateNewShapes() {
+      // Create a random set of polygons / shapes
+      shapes = [];
+      for (let i = 0; i < 5; i++) {
+        let poly = {
+          hue: random(360),
+          sat: random(50, 100),
+          vertices: createRandomPolygon()
+        };
+        shapes.push(poly);
+      }
+    }
+
+    function createRandomPolygon() {
+      let numVerts = floor(random(3, 6));
+      let verts = [];
+      for (let i = 0; i < numVerts; i++) {
+        let r = random(10, 100);
+        let theta = map(i, 0, numVerts, 0, 360);
+        let x = r * cos(theta);
+        let y = r * sin(theta);
+        verts.push({ x, y });
+      }
+      return verts;
+    }
+
+    // Click to randomize shapes
+    function mousePressed() {
+      generateNewShapes();
+    }
+
+    // Press 'S' to save the canvas
+    function keyPressed() {
+      if (key === 's' || key === 'S') {
+        saveCanvas("TimeKaleidoscope", "png");
+      }
+    }
+  </script>
+</body>
+</html>

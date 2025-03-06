@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Time Pulse Mandala</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset body margin/padding and use a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container fixed at 512x512, centered */
+    #clock-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+    }
+
+    /* Instructions overlay, hidden by default */
+    #instructions {
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      display: none;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      line-height: 1.5;
+      padding: 2rem;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #clock-container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="clock-container">
+  <div id="instructions">
+    <h2>Time Pulse Mandala</h2>
+    <p>Observe the swirling mandala shift its size and color as the seconds pass.<br>
+       The color palette updates each minute, and the background glows based on the hour.<br>
+       Enjoy the rhythmic dance of shapes in time.</p>
+  </div>
+</div>
+
+<script>
+  const CANVAS_SIZE = 512;
+
+  function setup() {
+    let myCanvas = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+    myCanvas.parent("clock-container");
+    angleMode(DEGREES);
+    noStroke();
+  }
+
+  function draw() {
+    let hr = hour();
+    let mn = minute();
+    let sc = second();
+    
+    // Background that changes with the hour, creating a gentle glow
+    // Convert hour (0-23) roughly to a hue on HSB color mode
+    colorMode(HSB, 360, 100, 100);
+    let bgHue = map(hr, 0, 23, 0, 360);
+    background(bgHue, 50, 20);
+
+    // Adorn with subtle rotating star trails
+    push();
+    fill(50, 10, 90, 0.1);
+    translate(width / 2, height / 2);
+    rotate(frameCount * 0.05);
+    for (let i = 0; i < 12; i++) {
+      ellipse(0, 0, CANVAS_SIZE * 1.3, 2);
+      rotate(30);
+    }
+    pop();
+
+    // Mandala pulses: size modulates with seconds, color changes each minute
+    // Using multiple rings or arcs of shapes
+    let rings = 6; // number of rings in the mandala
+    let ringSpacing = 25;
+    let baseSize = map(sc, 0, 59, 2, 60);
+    let colorShift = map(mn, 0, 59, 0, 360);
+
+    for (let r = 0; r < rings; r++) {
+      push();
+      translate(width / 2, height / 2);
+      let ringRadius = (r + 1) * ringSpacing + baseSize;
+      let shapeCount = 12; // number of shapes each ring
+      rotate(frameCount * 0.2 * (r % 2 === 0 ? 1 : -1)); // alternate rotation direction
+      for (let i = 0; i < shapeCount; i++) {
+        let angle = 360 / shapeCount * i;
+        push();
+        rotate(angle);
+        translate(ringRadius, 0);
+
+        // Color depends on minute-based shift + ring index
+        let hueValue = (colorShift + r * 30) % 360;
+        fill(hueValue, 90, 90);
+        
+        // Each circle’s size modulates slightly with second-based offset
+        let shapeSize = (5 + baseSize / 3) + r * 2;
+        ellipse(0, 0, shapeSize, shapeSize);
+        pop();
+      }
+      pop();
+    }
+
+    // Digital time readout near the bottom
+    colorMode(RGB, 255, 255, 255);
+    fill(255);
+    textSize(24);
+    textAlign(CENTER, CENTER);
+    text(`${hr}:${nf(mn, 2)}:${nf(sc, 2)}`, width / 2, height - 30);
+  }
+</script>
+</body>
+</html>

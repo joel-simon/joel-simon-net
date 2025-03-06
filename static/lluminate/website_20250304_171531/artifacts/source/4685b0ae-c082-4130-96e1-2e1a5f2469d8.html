@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Snow Globe</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Snow Globe<br><br>
+        • Observe a swirling snow globe that reacts to current time.<br>
+        • The hour changes the globe's hue.<br>
+        • The minute influences the swirl angle of snowflakes.<br>
+        • The second determines the snowflake speed.<br>
+        • Enjoy the time inside the globe!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Number of snowflakes in the globe
+    const NUM_FLAKES = 200;
+    let flakes = [];
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      // Create an initial set of snowflakes
+      for (let i = 0; i < NUM_FLAKES; i++) {
+        let angle = random(TWO_PI);
+        let radius = random(10, 220);
+        flakes.push({
+          angle: angle,
+          radius: radius,
+          size: random(3, 6)
+        });
+      }
+      noStroke();
+      angleMode(DEGREES);
+      colorMode(HSB);
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Background changes slightly every minute
+      let bgHue = map(m, 0, 59, 0, 360);
+      background(bgHue, 30, 15);
+
+      // Draw "snow globe" outer circle
+      push();
+      translate(width / 2, height / 2);
+      let globeColor = map(h, 0, 23, 0, 360);
+      fill(globeColor, 40, 90, 0.2);
+      ellipse(0, 0, 400, 400);
+      pop();
+
+      drawSnowflakes(h, m, s);
+      drawScene(h, m, s);
+      drawTimeDisplay(h, m, s);
+    }
+
+    function drawSnowflakes(h, m, s) {
+      push();
+      translate(width / 2, height / 2);
+
+      // Swirl factor depends on the minute
+      let swirl = map(m, 0, 59, 0, 3);
+      // Speed depends on the second
+      let speed = map(s, 0, 59, 0.5, 2.5);
+
+      fill(255);
+      for (let i = 0; i < flakes.length; i++) {
+        let flake = flakes[i];
+        // Update angle based on swirl + speed
+        flake.angle += swirl * speed * 0.1;
+        // Convert polar to cartesian
+        let x = flake.radius * cos(flake.angle);
+        let y = flake.radius * sin(flake.angle);
+
+        // Bound snow within circle
+        let distanceFromCenter = dist(0, 0, x, y);
+        if (distanceFromCenter > 200) {
+          // Reset flake
+          flake.angle = random(TWO_PI);
+          flake.radius = random(10, 220);
+        }
+
+        ellipse(x, y, flake.size);
+      }
+      pop();
+    }
+
+    // Draw a small scene inside the snow globe
+    function drawScene(h, m, s) {
+      push();
+      translate(width / 2, height / 2);
+      // Only draw items fully within the globe's radius
+      // A simple house
+      let baseHue = map(h, 0, 23, 0, 360);
+      fill(baseHue, 60, 80);
+      rectMode(CENTER);
+      rect(0, 40, 60, 40); // House base
+      fill(baseHue, 60, 55);
+      triangle(-30, 20, 30, 20, 0, -10); // Roof
+
+      // A snowy ground
+      fill(0, 0, 100);
+      arc(0, 75, 200, 120, 0, 180); // Semicircle
+      pop();
+    }
+
+    function drawTimeDisplay(h, m, s) {
+      // Digital clock at bottom
+      push();
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(16);
+      let hh = nf(h, 2);
+      let mm = nf(m, 2);
+      let ss = nf(s, 2);
+      text(`${hh}:${mm}:${ss}`, width / 2, height - 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

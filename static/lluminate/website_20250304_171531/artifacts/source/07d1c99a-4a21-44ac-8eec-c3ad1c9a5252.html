@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Spiral Safari</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the “Time Spiral Safari”!<br><br>
+        • The swirling fractal hue changes with the current hour.<br>
+        • Different safari animals appear based on the minute.<br>
+        • The spiral’s geometry evolves as seconds pass.<br><br>
+        Hover away to watch the scene in action.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let angleOffset = 0;   // Spiral rotation offset
+    let spiralDensity = 2; // Controls spacing of spiral arms
+    
+    // Safari animals that will appear based on minute range
+    let safariAnimals = ["Zebra", "Lion", "Giraffe", "Elephant", "Rhino"];
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      textAlign(CENTER, CENTER);
+      textSize(14);
+    }
+
+    function draw() {
+      background(0);
+
+      // Access time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // 1) Background color transitions with hour
+      drawDynamicBackground(h);
+
+      // 2) Draw swirling fractal spiral:
+      //    - Spiral color changes with hour
+      //    - Spiral shape evolves with seconds
+      let baseColor = color(map(h, 0, 23, 0, 255), 100, map(h, 0, 23, 255, 0));
+      drawSpiral(baseColor, s);
+
+      // 3) Choose safari animal based on the current minute
+      //    We can pick from an array in a patterned way
+      let animalIndex = m % safariAnimals.length;
+      let currentAnimal = safariAnimals[animalIndex];
+
+      // 4) Draw the chosen safari animal’s label with a slight motion
+      drawSafariAnimalLabel(currentAnimal, s);
+
+      // 5) Slowly rotate the entire scene
+      angleOffset += 0.05;
+    }
+
+    // Utility: draws swirling background gradient based on hour
+    function drawDynamicBackground(h) {
+      // Map hour to two distinct color extremes
+      let topColor = color(20, 20, 70 + h * 8);
+      let bottomColor = color(5 + h * 5, 10, 15);
+
+      // Create vertical gradient
+      for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        let c = lerpColor(topColor, bottomColor, inter);
+        stroke(c);
+        line(0, y, width, y);
+      }
+    }
+
+    // Utility: draws the spiral by placing small circles in a polar pattern
+    function drawSpiral(baseCol, secondVal) {
+      push();
+      translate(width / 2, height / 2);
+      rotate(angleOffset);
+      noStroke();
+
+      let maxRadius = 220; // maximum radius for spiral
+      // Spiral shape changes with seconds
+      let layers = map(secondVal, 0, 59, 100, 200);
+
+      for (let i = 0; i < layers; i++) {
+        let angle = i * spiralDensity;
+        let r = map(i, 0, layers, 0, maxRadius);
+
+        push();
+        rotate(angle);
+        translate(r, 0);
+        fill(red(baseCol), green(baseCol), blue(baseCol), 180 - i * 0.5);
+        ellipse(0, 0, 10, 10);
+        pop();
+      }
+      pop();
+    }
+
+    // Utility: draws the text label of the safari animal with sine-based float
+    function drawSafariAnimalLabel(animal, secondVal) {
+      push();
+      fill(255);
+      // Make the label float up and down
+      let floatY = sin(frameCount * 0.05) * 10;
+      text(animal, width / 2, height / 2 + 100 + floatY);
+
+      // Also show the current digital time below
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(secondVal, 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, width / 2, height - 30);
+      pop();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Kaleidoscope</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+    /* Instructions overlay (hidden by default) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.8);
+      box-sizing: border-box;
+      color: #111;
+      font-family: sans-serif;
+      padding: 1rem;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Kaleidoscope</strong><br><br>
+        • Observe how shapes form a kaleidoscope pattern based on the current hour, minute, and second.<br>
+        • The background color shifts gradually through the day.<br>
+        • Shape size and rotation speed respond to time values.<br>
+        • The digital clock shows the current time below the kaleidoscope.
+      </div>
+    </div>
+  </div>
+  <script>
+    let w = 512;
+    let h = 512;
+    let angleOffset = 0;
+
+    function setup() {
+      let c = createCanvas(w, h);
+      c.parent("canvas-container");
+      angleMode(DEGREES);
+      noStroke();
+      frameRate(30);
+    }
+
+    function draw() {
+      backgroundColorShift();
+      
+      let hr = hour() % 24;   // 0-23
+      let mn = minute();      // 0-59
+      let sc = second();      // 0-59
+
+      // Determine kaleidoscope parameters based on time
+      let baseSize = map(mn, 0, 59, 10, 70);
+      let rotationSpeed = map(sc, 0, 59, 0.5, 5);
+      let sliceCount = 6;
+      let shapeType = hr % 3;  // Cycle among a few shape types
+
+      // Increment rotation
+      angleOffset += rotationSpeed;
+      
+      // Draw kaleidoscope from center
+      push();
+      translate(width/2, height/2);
+      for (let i = 0; i < sliceCount; i++) {
+        push();
+        rotate((360 / sliceCount) * i + angleOffset);
+        drawTimeShape(baseSize, shapeType);
+        pop();
+      }
+      pop();
+
+      // Display digital time
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      text(nf(hour(),2) + ':' + nf(mn,2) + ':' + nf(sc,2), width/2, height - 30);
+    }
+
+    // Draw a shape that will be repeated in kaleidoscope slices
+    function drawTimeShape(sizeParam, shapeVariant) {
+      // Change fill based on minute to create subtle color shifts
+      let col = color(map(minute(), 0, 59, 0, 255), 150, map(minute(), 0, 59, 255, 100));
+      fill(col);
+
+      // Move away from center to create a radial effect
+      translate(100, 0);
+
+      // Draw shapes depending on hour mod 3
+      if (shapeVariant === 0) {
+        rectMode(CENTER);
+        rect(0, 0, sizeParam, sizeParam);
+      } else if (shapeVariant === 1) {
+        ellipse(0, 0, sizeParam, sizeParam);
+      } else {
+        beginShape();
+        for (let angle = 0; angle < 360; angle += 45) {
+          let x = cos(angle) * sizeParam * 0.5;
+          let y = sin(angle) * sizeParam * 0.5;
+          vertex(x, y);
+        }
+        endShape(CLOSE);
+      }
+    }
+
+    // Shift background color with time for a day-night cycle
+    function backgroundColorShift() {
+      let hr = hour() % 24;
+      let minuteFrac = (minute() + second()/60) / 60;
+      let progress = (hr + minuteFrac) / 24; // range 0 to 1 over 24 hours
+
+      let dayColor = color(158, 222, 255);
+      let nightColor = color(15, 15, 50);
+      let bg = lerpColor(dayColor, nightColor, progress);
+      background(bg);
+    }
+  </script>
+</body>
+</html>

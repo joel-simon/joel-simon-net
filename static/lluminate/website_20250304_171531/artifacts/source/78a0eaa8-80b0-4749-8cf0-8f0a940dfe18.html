@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Multiverse Time Display</title>
+  <style>
+    /* Ensure page has no margins and is centered with a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* 512x512 canvas container */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      background-color: #000;
+    }
+
+    /* Instructions overlay hidden by default, appears on hover */
+    #hover-instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: flex;
+    }
+    #hover-instructions div {
+      pointer-events: none; 
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <!-- Hover Instructions -->
+    <div id="hover-instructions">
+      <div>
+        <strong>Multiverse Time Display</strong><br><br>
+        • Wave amplitude changes with the hour.<br>
+        • Maze is rebuilt on every new hour change.<br>
+        • Fractal swirl grows with the minute.<br>
+        • Fish color shifts with the second.<br>
+        • Use arrow keys to move the explorer dot through the maze.<br>
+        Hover away to explore.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    const CANVAS_SIZE = 512;
+
+    // Maze parameters
+    let mazeCols = 12;
+    let mazeRows = 12;
+    let cellSize;
+    let mazeGrid = [];
+    let explorer = { col: 0, row: 0 };
+    let lastHour = -1; // track to regenerate maze on hour change
+
+    // Wave background
+    let waveOffset = 0;
+
+    // Fractal swirl
+    let swirlSegments = 4; // base swirl segments
+    let swirlAngle = 45;   // will be modified by minutes
+
+    // Fish
+    let fishList = [];
+    let fishCount = 5;
+
+    function setup() {
+      let canvas = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      canvas.parent('canvas-container');
+      angleMode(DEGREES);
+
+      cellSize = floor(width / mazeCols);
+      generateMaze();    // initial maze
+      initFishes();      // initial fish
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // 1) Wave background changes with hour
+      drawWave(hr);
+
+      // 2) Maze regenerates on hour change
+      if (hr !== lastHour) {
+        generateMaze();
+        lastHour = hr;
+      }
+      drawMaze();
+
+      // 3) Explorer dot
+      drawExplorer();
+
+      // 4) Fractal swirl in the center changes with minute
+      swirlAngle = map(mn, 0, 59, 20, 100);
+      push();
+      translate(width / 2, height / 2);
+      drawFractalSwirl(swirlAngle);
+      pop();
+
+      // 5) Fish color shifts with second
+      updateFishes();
+      drawFishes(sc);
+
+      // 6) Digital time
+      displayTime(hr, mn, sc);
+    }
+
+    /* ========================== WAVE BACKGROUND ========================== */
+    function drawWave(hr) {
+      noStroke();
+      fill(20, 60, 120);
+      waveOffset += 0.02;
+      let amplitude = map(hr % 12, 0, 11, 10, 50);
+
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 5) {
+        let y = height - 60 + sin(x * 0.02 + waveOffset) * amplitude;
+        vertex(x, y);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+    }
+
+    /* ========================== MAZE SECTION ========================== */
+    class Cell {
+      constructor(c, r) {
+        this.c = c;
+        this.r = r;
+        // top, right, bottom, left
+        this.walls = [true, true, true, true];
+        this.visited = false;
+      }
+    }
+
+    function generateMaze() {
+      // build grid
+      mazeGrid = [];
+      for (let r = 0; r < mazeRows; r++) {
+        let rowData = [];
+        for (let c = 0; c < mazeCols; c++) {
+          rowData.push(new Cell(c, r));
+        }
+        mazeGrid.push(rowData);
+      }
+
+      // reset explorer
+      explorer.col = 0;
+      explorer.row = 0;
+
+      // carve with depth-first search
+      let stack = [];
+      let current = mazeGrid[0][0];
+      current.visited = true;
+      stack.push(current);
+
+      while (stack.length > 0) {
+        let neighbors = getUnvisitedNeighbors(current);
+        if (neighbors.length > 0) {
+          let next = random(neighbors);
+          removeWalls(current, next);
+          next.visited = true;
+          stack.push(current);
+          current = next;
+        } else {
+          current = stack.pop();
+        }
+      }
+    }
+
+    function getUnvisitedNeighbors(cell) {
+      let list = [];
+      let {c, r} = cell;
+      // top
+      if (r > 0 && !mazeGrid[r-1][c].visited) list.push(mazeGrid[r-1][c]);
+      // right
+      if (c < mazeCols-1 && !mazeGrid[r][c+1].visited) list.push(mazeGrid[r][c+1]);
+      // bottom
+      if (r < mazeRows-1 && !mazeGrid[r+1][c].visited) list.push(mazeGrid[r+1][c]);
+      // left
+      if (c > 0 && !mazeGrid[r][c-1].visited) list.push(mazeGrid[r][c-1]);
+      return list;
+    }
+
+    function removeWalls(a, b) {
+      let x = a.c - b.c;
+      let y = a.r - b.r;
+
+      // left or right
+      if (x === 1) {
+        a.walls[3] = false;
+        b.walls[1] = false;
+      } else if (x === -1) {
+        a.walls[1] = false;
+        b.walls[3] = false;
+      }
+      // up or down
+      if (y === 1) {
+        a.walls[0] = false;
+        b.walls[2] = false;
+      } else if (y === -1) {
+        a.walls[2] = false;
+        b.walls[0] = false;
+      }
+    }
+
+    function drawMaze() {
+      stroke(255);
+      strokeWeight(2);
+      noFill();
+      for (let r = 0; r < mazeRows; r++) {
+        for (let c = 0; c < mazeCols; c++) {
+          let cell = mazeGrid[r][c];
+          let x = c * cellSize;
+          let y = r * cellSize;
+          // top
+          if (cell.walls[0]) line(x, y, x + cellSize, y);
+          // right
+          if (cell.walls[1]) line(x + cellSize, y, x + cellSize, y + cellSize);
+          // bottom
+          if (cell.walls[2]) line(x, y + cellSize, x + cellSize, y + cellSize);
+          // left
+          if (cell.walls[3]) line(x, y, x, y + cellSize);
+        }
+      }
+    }
+
+    function drawExplorer() {
+      fill(255, 100, 100);
+      noStroke();
+      ellipse(
+        explorer.col * cellSize + cellSize/2,
+        explorer.row * cellSize + cellSize/2,
+        cellSize * 0.5
+      );
+    }
+
+    function keyPressed() {
+      let currentCell = mazeGrid[explorer.row][explorer.col];
+      // LEFT
+      if (keyCode === LEFT_ARROW && !currentCell.walls[3]) {
+        explorer.col = max(0, explorer.col - 1);
+      }
+      // RIGHT
+      else if (keyCode === RIGHT_ARROW && !currentCell.walls[1]) {
+        explorer.col = min(mazeCols - 1, explorer.col + 1);
+      }
+      // UP
+      else if (keyCode === UP_ARROW && !currentCell.walls[0]) {
+        explorer.row = max(0, explorer.row - 1);
+      }
+      // DOWN
+      else if (keyCode === DOWN_ARROW && !currentCell.walls[2]) {
+        explorer.row = min(mazeRows - 1, explorer.row + 1);
+      }
+    }
+
+    /* ========================== FRACTAL SWIRL ========================== */
+    function drawFractalSwirl(angleVal) {
+      for (let i = 0; i < swirlSegments; i++) {
+        push();
+        rotate((frameCount + i * 30) % 360);
+        fractalBranch(45, angleVal, 3);
+        pop();
+      }
+    }
+
+    function fractalBranch(length, angleVal, depth) {
+      if (depth <= 0) return;
+      stroke(220);
+      strokeWeight(1.5);
+      line(0, 0, length, 0);
+
+      push();
+      translate(length, 0);
+      rotate(angleVal);
+      fractalBranch(length * 0.7, angleVal, depth - 1);
+      pop();
+
+      push();
+      translate(length, 0);
+      rotate(-angleVal);
+      fractalBranch(length * 0.7, angleVal, depth - 1);
+      pop();
+    }
+
+    /* ========================== FISH SECTION ========================== */
+    function initFishes() {
+      fishList = [];
+      for (let i = 0; i < fishCount; i++) {
+        fishList.push({
+          x: random(0, width),
+          y: random(height * 0.5, height - 40),
+          speed: random(1, 2),
+          size: random(15, 25)
+        });
+      }
+    }
+
+    function updateFishes() {
+      for (let fish of fishList) {
+        fish.x += fish.speed;
+        if (fish.x > width + fish.size) {
+          fish.x = -fish.size;
+          fish.y = random(height * 0.5, height - 40);
+        }
+      }
+    }
+
+    function drawFishes(sc) {
+      for (let fish of fishList) {
+        let hueVal = map(sc, 0, 59, 0, 360);
+        push();
+        noStroke();
+        colorMode(HSB);
+        fill(hueVal, 100, 200);
+        ellipse(fish.x, fish.y, fish.size * 2, fish.size); 
+        // Tail
+        triangle(
+          fish.x - fish.size, fish.y,
+          fish.x - fish.size - 10, fish.y - 5,
+          fish.x - fish.size - 10, fish.y + 5
+        );
+        pop();
+      }
+    }
+
+    /* ========================== DISPLAY TIME ========================== */
+    function displayTime(hr, mn, sc) {
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+
+      let dispHour = hr % 12;
+      if (dispHour === 0) dispHour = 12; 
+      let ampm = (hr >= 12) ? "PM" : "AM";
+
+      text(`${dispHour}:${nf(mn,2)}:${nf(sc,2)} ${ampm}`, 10, 10);
+    }
+  </script>
+</body>
+</html>

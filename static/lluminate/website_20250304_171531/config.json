@@ -1,0 +1,16 @@
+{
+  "random_seed": 42,
+  "prompt": "a creative time display. Only show a 512px canvas and any instructions should appear on hover.",
+  "initial_population_size": 20,
+  "population_size": 20,
+  "children_per_generation": 10,
+  "num_generations": 60,
+  "k_neighbors": 3,
+  "max_workers": 10,
+  "artifact_class": "website",
+  "evolution_mode": "variation",
+  "reasoning_effort": "medium",
+  "use_creative_strategies": true,
+  "use_summary": true,
+  "crossover_rate": 0.3
+}

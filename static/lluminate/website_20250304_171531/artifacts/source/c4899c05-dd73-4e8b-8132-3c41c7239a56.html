@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Kaleidoscope</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the "Time Kaleidoscope"!<br><br>
+        • The background hue flows with the hour.<br>
+        • The number of repeating shapes depends on the minute.<br>
+        • Rotation speed increases with the second.<br><br>
+        Hover away to enjoy the immersive display.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Draw a dynamic background color based on hour
+      let bgHue = map(h, 0, 23, 0, 360);
+      colorMode(HSB);
+      background(bgHue, 50, 30);
+      
+      // Set up center for kaleidoscope
+      translate(width / 2, height / 2);
+
+      // Number of slices determined by current minute
+      let slices = floor(map(m, 0, 59, 4, 12));
+      let angleGap = 360 / slices;
+      
+      // Rotation speed depends on second
+      let rotationSpeed = map(s, 0, 59, 0.1, 2.5);
+
+      // Draw slices
+      for (let i = 0; i < slices; i++) {
+        push();
+        rotate(i * angleGap + frameCount * rotationSpeed);
+        
+        // Color for the shape depends on hour, minute, second
+        let shapeColor = color(
+          map(h, 0, 23, 0, 360),
+          map(m, 0, 59, 100, 255),
+          map(s, 0, 59, 180, 255)
+        );
+        fill(shapeColor);
+
+        // Draw shape offset from the center
+        ellipse(100, 0, 60, 60);
+        pop();
+      }
+
+      // Display current time near bottom
+      resetMatrix();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let timeStr = nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2);
+      text(timeStr, width / 2, height - 20);
+    }
+  </script>
+</body>
+</html>

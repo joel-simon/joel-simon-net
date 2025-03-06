@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creative Time Display - Time Candle</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center the page content and give a neutral background */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f7f7f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #444;
+      padding: 8px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 220px;
+      z-index: 1;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      This candle’s wax level lowers based on the hour of the day. 
+      The flame flickers with the seconds, and the background changes with the minute.
+    </div>
+  </div>
+
+  <script>
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(RADIANS);
+      noStroke();
+    }
+
+    function draw() {
+      let hr = hour();    // 0 - 23
+      let mn = minute();  // 0 - 59
+      let sc = second();  // 0 - 59
+
+      // Map minutes (0-59) to a color range
+      // We'll use minute to change background from blue to pink
+      let bgR = map(mn, 0, 59, 80, 255);
+      let bgG = map(mn, 0, 59, 150, 100);
+      let bgB = map(mn, 0, 59, 255, 200);
+      background(bgR, bgG, bgB);
+
+      // Candle meltdown level: hour 0..23 => meltdown 0..200
+      // Candle will be 200 px tall total. We'll fill from bottom up.
+      let meltdown = map(hr, 0, 23, 0, 200);
+
+      // Draw the candle body
+      // Candle is centered at width/2, bottom is at 400, top is at 200
+      fill(255);
+      rectMode(CENTER);
+      let candleBodyHeight = 200;
+      let candleBaseY = 400; 
+      let candleWidth = 60;
+
+      // Candle wax is partially melted from the top down
+      // We'll show the visible candle portion as candleBodyHeight - meltdown
+      let visibleCandleHeight = candleBodyHeight - meltdown;
+
+      // Candle body
+      rect(width/2, candleBaseY - (visibleCandleHeight/2), candleWidth, visibleCandleHeight);
+
+      // Candle top edge (melt line)
+      fill(230, 180, 140);
+      rect(width/2, candleBaseY - visibleCandleHeight, candleWidth + 4, 4);
+
+      // Flickering flame based on seconds
+      // We'll adjust the flame's shape horizontally with a slight random offset
+      let flickerOffset = map(noise(sc * 0.2 + frameCount * 0.02), 0, 1, -3, 3);
+
+      push();
+      translate(width/2 + flickerOffset, candleBaseY - visibleCandleHeight);
+      fill(255, 100, 0, 200);
+      ellipse(0, -20, 20, 40);    // flame shape
+      fill(255, 200, 0, 200);
+      ellipse(0, -25, 12, 25);    // inner flame
+      pop();
+
+      // Digital time readout at the bottom
+      fill(50);
+      textSize(20);
+      textAlign(CENTER, CENTER);
+      text(nf(hr,2) + ':' + nf(mn,2) + ':' + nf(sc,2), width/2, height - 20);
+    }
+  </script>
+</body>
+</html>

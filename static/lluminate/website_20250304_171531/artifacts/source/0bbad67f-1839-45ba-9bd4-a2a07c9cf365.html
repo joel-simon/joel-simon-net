@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Creative Time Display - Waves & Star</title>
+  <style>
+    /* Page defaults */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+    }
+
+    /* Container to hold the 512x512 canvas */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    /* Hover overlay for instructions */
+    #hover-instructions {
+      pointer-events: none;
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      box-sizing: border-box;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-size: 16px;
+      padding: 20px;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      text-align: center;
+      transform: translate(-50%, -50%);
+      line-height: 1.5em;
+    }
+
+    /* Ensure P5 canvas is fixed at 512x512 and centered */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <!-- Hover instructions -->
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        Welcome! This display uses waves to represent the passage of time and a star to reflect the hour, minute, and second. 
+        • Wave peaks shift with the hour. 
+        • Wave frequency changes with the minute. 
+        • Wave color adjusts with the second. 
+        • The star rotates and changes points based on time. 
+        Hover to see these instructions again!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512, h = 512;
+
+    function setup() {
+      let myCanvas = createCanvas(w, h);
+      myCanvas.parent('canvas-container');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      // Retrieve current time values
+      let hr = hour() % 12;
+      let mn = minute();
+      let sc = second();
+
+      // Map wave parameters:
+      // - wave amplitude grows with hour
+      // - wave frequency changes with minute
+      // - wave color changes with second
+      let amplitude = map(hr, 0, 12, 10, 60);
+      let freq = map(mn, 0, 60, 0.02, 0.2);
+      let waveColor = color(map(sc, 0, 60, 50, 255), 100, 200);
+
+      drawWaves(amplitude, freq, waveColor);
+
+      // Draw rotating star that changes shape with time
+      push();
+      translate(width / 2, height / 2);
+      let starRotation = map(mn + sc / 60, 0, 60, 0, 360); 
+      rotate(starRotation);
+      let starPoints = map(hr, 0, 12, 4, 12);  // more points for a later hour
+      fill(255, 200, 0, 150);
+      stroke(255, 200, 0);
+      strokeWeight(2);
+      drawStar(0, 0, 20, 60, starPoints);
+      pop();
+
+      // Digital time display in the corner
+      fill(255);
+      noStroke();
+      textSize(20);
+      textAlign(LEFT, TOP);
+      text(nf(hour(),2) + ":" + nf(mn,2) + ":" + nf(sc,2), 10, 10);
+    }
+
+    // Function to draw sine waves across the canvas
+    function drawWaves(amp, frequency, col) {
+      fill(col);
+      noStroke();
+      beginShape();
+      vertex(0, h);
+      for (let x = 0; x <= w; x += 5) {
+        let yOff = amp * sin(frequency * (frameCount + x));
+        let y = h/2 + yOff;
+        vertex(x, y);
+      }
+      vertex(w, h);
+      endShape(CLOSE);
+    }
+
+    // Function to draw a star
+    function drawStar(x, y, radius1, radius2, npoints) {
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2.0;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

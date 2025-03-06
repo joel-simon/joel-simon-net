@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Orbit</title>
+  <style>
+    /* Basic reset */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* Container to hold the 512x512 canvas */
+    .canvas-container {
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    /* Canvas styling to ensure it is displayed at 512x512 */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Instructions overlay, hidden by default */
+    .instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background-color: rgba(0,0,0,0.6);
+      display: none;
+      color: #fff;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    .canvas-container:hover .instructions {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div class="canvas-container">
+    <!-- Hover instructions -->
+    <div class="instructions">
+      <p>
+        Welcome to "Time Orbit." Three circles represent the hour, minute, and second. <br><br>
+        • The largest circle indicates the hour, changing color with the hour's value.<br>
+        • The medium circle tracks the minute, shifting color as minutes pass.<br>
+        • The smallest circle shows the seconds, orbiting swiftly in real time.<br><br>
+        Hover away to watch the orbits in action!
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let stars = [];
+
+    function setup() {
+      let canvas = createCanvas(512, 512);
+      canvas.parent(document.querySelector('.canvas-container'));
+      angleMode(RADIANS);
+
+      // Generate some random star positions for the background
+      for (let i = 0; i < 100; i++) {
+        stars.push({
+          x: random(width),
+          y: random(height),
+          brightness: random(100, 255),
+          size: random(1, 3)
+        });
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      // Draw starry background
+      noStroke();
+      for (let s of stars) {
+        fill(s.brightness);
+        circle(s.x, s.y, s.size);
+      }
+
+      // Fetch current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // We'll interpret hour in a 12-hour cycle for orbital angle
+      let angleHour = ((hr % 12) + mn / 60 + sc / 3600) / 12 * TWO_PI;
+      let angleMin = (mn + sc / 60) / 60 * TWO_PI;
+      let angleSec = sc / 60 * TWO_PI;
+
+      // Translate to center for orbits
+      push();
+      translate(width / 2, height / 2);
+
+      // Draw the hour orbit
+      strokeWeight(2);
+      stroke(120, 60, 150);
+      noFill();
+      circle(0, 0, 240);
+
+      // Position of hour circle
+      let hourX = 120 * cos(angleHour);
+      let hourY = 120 * sin(angleHour);
+      fill(map(hr, 0, 23, 50, 255), 50, 150);
+      noStroke();
+      circle(hourX, hourY, 30);
+
+      // Draw the minute orbit
+      stroke(60, 150, 180);
+      noFill();
+      circle(0, 0, 160);
+
+      // Position of minute circle
+      let minX = 80 * cos(angleMin);
+      let minY = 80 * sin(angleMin);
+      fill(60, map(mn, 0, 59, 50, 255), 180);
+      noStroke();
+      circle(minX, minY, 20);
+
+      // Draw the second orbit
+      stroke(200, 100, 100);
+      noFill();
+      circle(0, 0, 80);
+
+      // Position of second circle
+      let secX = 40 * cos(angleSec);
+      let secY = 40 * sin(angleSec);
+      fill(200, 100, map(sc, 0, 59, 50, 255));
+      noStroke();
+      circle(secX, secY, 10);
+
+      // Digital readout at center
+      fill(255);
+      textSize(20);
+      textAlign(CENTER, CENTER);
+      text(nf(hr, 2) + ":" + nf(mn, 2) + ":" + nf(sc, 2), 0, 0);
+
+      pop();
+    }
+  </script>
+</body>
+</html>

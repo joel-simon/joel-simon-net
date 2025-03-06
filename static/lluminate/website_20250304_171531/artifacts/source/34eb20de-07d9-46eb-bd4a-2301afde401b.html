@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Creative Combined Time Display</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Make page background black to frame our 512x512 display */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #ffffff;
+    }
+
+    /* 512x512 container to match the iframe dimensions */
+    #timeDisplayContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instruction overlay, displayed on hover */
+    #hoverInfo {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      display: none;
+    }
+    #timeDisplayContainer:hover #hoverInfo {
+      display: block;
+    }
+
+    /* Center content vertically and horizontally within the overlay */
+    #hoverInfo .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="timeDisplayContainer">
+    <!-- Instructions overlay -->
+    <div id="hoverInfo">
+      <div class="instructions-text">
+        <strong>Creative Combined Time Display</strong><br><br>
+        • Background waves shift color based on the hour.<br>
+        • A fractal tree in the corner grows or shrinks with the minutes.<br>
+        • A swirling star at the center rotates with the seconds.<br>
+        • Time is shown in the center of the star.<br><br>
+        Hover to see instructions; observe how the display evolves each moment.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let angleOffset = 0;    // For wave animation
+    let treeDepth = 4;      // Fractal tree recursion depth
+    let starRotation = 0;   // Star rotation angle
+    let starSpinSpeed = 0;  // Speed derived from seconds
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('timeDisplayContainer');
+      angleMode(DEGREES);
+      rectMode(CENTER);
+    }
+
+    function draw() {
+      background(0);
+
+      // Current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Use hour to define wave color in HSL
+      colorMode(HSL);
+      let waveHue = map(h, 0, 23, 0, 360);
+      drawWaves(waveHue);
+      colorMode(RGB);  // revert to RGB for shapes
+
+      // Use minute to define fractal tree depth
+      treeDepth = floor(map(m, 0, 59, 3, 7));
+      drawFractalTree();
+
+      // Use seconds to define star rotation speed
+      starSpinSpeed = map(s, 0, 59, 0, 5);
+      // Rotate star
+      starRotation += starSpinSpeed;
+      drawRotatingStar(h, m, s);
+    }
+
+    // Draw wave background with a sin function
+    function drawWaves(hueVal) {
+      noStroke();
+      fill(hueVal, 100, 20);
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 8) {
+        // shift wave amplitude with time
+        let waveHeight = map(sin(x * 0.02 + angleOffset), -1, 1, height * 0.3, height * 0.5);
+        vertex(x, waveHeight);
+      }
+      vertex(width, height);
+      endShape();
+      angleOffset += 0.02; // wave animation speed
+    }
+
+    // Draw fractal tree on left side of canvas
+    function drawFractalTree() {
+      push();
+      translate(width * 0.2, height * 0.7);
+      stroke(255);
+      strokeWeight(2);
+      branch(60, 25, treeDepth);
+      pop();
+    }
+
+    // Recursive branching function
+    function branch(len, angle, depth) {
+      line(0, 0, 0, -len);
+      translate(0, -len);
+      if (depth > 0) {
+        push();
+        rotate(angle);
+        branch(len * 0.7, angle, depth - 1);
+        pop();
+        push();
+        rotate(-angle);
+        branch(len * 0.7, angle, depth - 1);
+        pop();
+      }
+    }
+
+    // Draw a rotating star at center, with time text
+    function drawRotatingStar(h, m, s) {
+      push();
+      translate(width / 2, height / 2);
+      rotate(starRotation);
+
+      // Star shape
+      stroke(255);
+      strokeWeight(1);
+      fill(255, 80);
+      beginShape();
+      let points = 10;
+      for (let i = 0; i < points; i++) {
+        let r = i % 2 === 0 ? 40 : 15;
+        let a = (360 / points) * i;
+        vertex(r * cos(a), r * sin(a));
+      }
+      endShape(CLOSE);
+
+      // Time in center (unrotated)
+      rotate(-starRotation);
+      noStroke();
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(18);
+      let displayHour = h % 12;
+      if (displayHour === 0) displayHour = 12;
+      let ampm = (h >= 12) ? "PM" : "AM";
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      let timeStr = displayHour + ":" + minStr + ":" + secStr + " " + ampm;
+      text(timeStr, 0, 5);
+
+      pop();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Bloom Garden</title>
+  <!-- Include p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset and center body content */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* 512x512 container with relative positioning to hold canvas + hover instructions */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      background: #111;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Instructions panel appears on hover */
+    #hoverInstructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.75);
+      box-sizing: border-box;
+      pointer-events: none; /* so the mouse can still interact with the canvas */
+      text-align: center;
+      padding: 20px;
+    }
+    #canvasContainer:hover #hoverInstructions {
+      display: block;
+    }
+
+    /* Center the instructions text inside the overlay */
+    .instructionsText {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverInstructions">
+      <div class="instructionsText">
+        <strong>Time Bloom Garden</strong><br><br>
+        • Sky transitions from day to night with the hour<br>
+        • Flowers change color each minute<br>
+        • Petals sway with each passing second<br>
+        • Use arrow keys to blow a breeze and sway the flowers<br>
+        • Hover here any time for details
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Bloom Garden
+      - The sky hue changes based on the hour (day-to-night cycle).
+      - Each minute, the flowers adjust their color.
+      - The second hand subtly affects petal sway.
+      - Use arrow keys to blow a breeze that influences the flowers.
+    */
+
+    const CANVAS_SIZE = 512;
+    let flowers = [];
+    const FLOWER_COUNT = 8;
+    let windX = 0; // Tracks horizontal wind offset
+    let windY = 0; // Tracks vertical wind offset
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+
+      // Create an array of flowers in random positions
+      for (let i = 0; i < FLOWER_COUNT; i++) {
+        flowers.push(new Flower(random(width), random(height * 0.4, height - 50)));
+      }
+    }
+
+    function draw() {
+      backgroundGradient();
+      updateWind();
+      
+      // Draw each flower
+      for (let f of flowers) {
+        f.update();
+        f.display();
+      }
+
+      // Text clock in top-left
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+      fill(255);
+      textSize(16);
+      noStroke();
+      textAlign(LEFT, TOP);
+      text(nf(hr,2) + ":" + nf(mn,2) + ":" + nf(sc,2), 10, 10);
+    }
+
+    // Smooth day-to-night gradient background based on hour
+    function backgroundGradient() {
+      // Hour cycles from 0..23
+      let hr = hour();
+      // Map hour to a color range: 
+      //   day color around midday (hr=12: bright blue top), 
+      //   night color around midnight (hr=0 or 24: dark)
+      let topColor = lerpColor(color(20, 20, 120), color(135, 205, 255), map(hr, 0, 23, 0, 1));
+      let bottomColor = color(30, 30, 60);
+
+      for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        let c = lerpColor(topColor, bottomColor, inter);
+        stroke(c);
+        line(0, y, width, y);
+      }
+    }
+
+    // Use arrow keys to track wind offset
+    function updateWind() {
+      // Slow approach to zero if no key is pressed
+      windX *= 0.95;
+      windY *= 0.95;
+
+      if (keyIsDown(LEFT_ARROW))  windX -= 0.1;
+      if (keyIsDown(RIGHT_ARROW)) windX += 0.1;
+      if (keyIsDown(UP_ARROW))    windY -= 0.1;
+      if (keyIsDown(DOWN_ARROW))  windY += 0.1;
+    }
+
+    // Flower class
+    class Flower {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        // Random petal count & size
+        this.petalCount = floor(random(5, 8));
+        this.size = random(20, 30);
+      }
+
+      update() {
+        // Sway the flowers horizontally with second + wind influence
+        let s = second();
+        this.sway = sin(frameCount * 0.03 + this.x) * (1 + windX * 2) * 5;
+        this.sway += cos(s * 0.3 + this.x) * 5;
+      }
+
+      display() {
+        push();
+        translate(this.x + this.sway, this.y);
+
+        // Color changes based on minute
+        let mn = minute();
+        let hueVal = map(mn, 0, 59, 0, 360);
+        colorMode(HSB);
+        fill(hueVal, 80, 90);
+        noStroke();
+
+        // Draw petals
+        let angleStep = TWO_PI / this.petalCount;
+        for (let i = 0; i < this.petalCount; i++) {
+          push();
+          rotate(i * angleStep);
+          ellipse(this.size, 0, this.size * 1.5, this.size);
+          pop();
+        }
+        
+        // Draw center
+        fill(40, 100, 100);
+        ellipse(0, 0, this.size * 1.25);
+
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

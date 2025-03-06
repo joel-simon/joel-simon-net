@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Time Origami Maze</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for better contrast */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Origami Maze</strong><br><br>
+        • Maze: Regenerates each time the hour or minute changes.<br>
+        • Arrow keys: Move the square from the top-left to the bottom-right.<br>
+        • Background color: Shifts with seconds.<br>
+        • Origami Bloom in center: Petals represent hours, color is tied to minutes, folding oscillates with seconds.<br>
+        • Real-time clock in top-left corner.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /* Maze Variables */
+    let maze = [];
+    let stack = [];
+    let rows, cols;
+    let cellSize;
+    let playerRow = 0;
+    let playerCol = 0;
+    let lastHr, lastMn;
+
+    /* Canvas Size */
+    const w = 512;
+    const h = 512;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      generateMaze();
+    }
+
+    function draw() {
+      let sc = second();
+      /* Background changes with seconds */
+      let bgCol = map(sc, 0, 59, 0, 255);
+      background(bgCol, 50, 100);
+
+      /* Check if hour or minute changed => regenerate maze */
+      let currentHr = hour();
+      let currentMn = minute();
+      if (currentHr !== lastHr || currentMn !== lastMn) {
+        generateMaze();
+      }
+
+      /* Draw Maze & Player */
+      drawMaze();
+      drawPlayer();
+      drawTime();
+
+      /* Draw Origami Bloom in center */
+      push();
+      translate(width / 2, height / 2);
+      drawOrigamiBloom();
+      pop();
+    }
+
+    /* Maze Generation (DFS) */
+    function generateMaze() {
+      let hr = hour();
+      let mn = minute();
+
+      // Determine maze dimensions within a reasonable range
+      cols = floor(map(hr, 0, 23, 5, 20));
+      rows = floor(map(mn, 0, 59, 5, 30));
+      cellSize = floor(min(width / cols, height / rows));
+
+      // Initialize empty maze
+      maze = [];
+      for (let r = 0; r < rows; r++) {
+        let rowCells = [];
+        for (let c = 0; c < cols; c++) {
+          rowCells.push({
+            visited: false,
+            walls: { top: true, right: true, bottom: true, left: true }
+          });
+        }
+        maze.push(rowCells);
+      }
+
+      // DFS to carve out maze
+      stack = [{ r: 0, c: 0 }];
+      maze[0][0].visited = true;
+      while (stack.length > 0) {
+        let current = stack[stack.length - 1];
+        let next = getUnvisitedNeighbor(current.r, current.c);
+        if (next) {
+          maze[next.r][next.c].visited = true;
+          stack.push(next);
+          removeWalls(current, next);
+        } else {
+          stack.pop();
+        }
+      }
+
+      playerRow = 0;
+      playerCol = 0;
+
+      lastHr = hr;
+      lastMn = mn;
+    }
+
+    function drawMaze() {
+      stroke(255);
+      noFill();
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          let x = c * cellSize;
+          let y = r * cellSize;
+          let cell = maze[r][c];
+          if (cell.walls.top) {
+            line(x, y, x + cellSize, y);
+          }
+          if (cell.walls.right) {
+            line(x + cellSize, y, x + cellSize, y + cellSize);
+          }
+          if (cell.walls.bottom) {
+            line(x, y + cellSize, x + cellSize, y + cellSize);
+          }
+          if (cell.walls.left) {
+            line(x, y, x, y + cellSize);
+          }
+        }
+      }
+    }
+
+    function drawPlayer() {
+      fill(255);
+      noStroke();
+      let px = playerCol * cellSize + cellSize / 4;
+      let py = playerRow * cellSize + cellSize / 4;
+      rect(px, py, cellSize / 2, cellSize / 2);
+    }
+
+    function getUnvisitedNeighbor(r, c) {
+      let neighbors = [];
+      if (r > 0 && !maze[r - 1][c].visited) {
+        neighbors.push({ r: r - 1, c: c });
+      }
+      if (r < rows - 1 && !maze[r + 1][c].visited) {
+        neighbors.push({ r: r + 1, c: c });
+      }
+      if (c > 0 && !maze[r][c - 1].visited) {
+        neighbors.push({ r: r, c: c - 1 });
+      }
+      if (c < cols - 1 && !maze[r][c + 1].visited) {
+        neighbors.push({ r: r, c: c + 1 });
+      }
+      if (neighbors.length === 0) return null;
+      return random(neighbors);
+    }
+
+    function removeWalls(a, b) {
+      let dr = b.r - a.r;
+      let dc = b.c - a.c;
+      if (dr === 1 && dc === 0) {
+        // b is below a
+        maze[a.r][a.c].walls.bottom = false;
+        maze[b.r][b.c].walls.top = false;
+      } else if (dr === -1 && dc === 0) {
+        // b is above a
+        maze[a.r][a.c].walls.top = false;
+        maze[b.r][b.c].walls.bottom = false;
+      } else if (dr === 0 && dc === 1) {
+        // b is right of a
+        maze[a.r][a.c].walls.right = false;
+        maze[b.r][b.c].walls.left = false;
+      } else if (dr === 0 && dc === -1) {
+        // b is left of a
+        maze[a.r][a.c].walls.left = false;
+        maze[b.r][b.c].walls.right = false;
+      }
+    }
+
+    function drawTime() {
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(`${displayHour}:${minStr}:${secStr} ${ampm}`, 10, 10);
+    }
+
+    /* Combine Origami Bloom from "Time Origami Bloom" concept */
+    function drawOrigamiBloom() {
+      let hr = hour() % 12;
+      let mn = minute();
+      let sc = second();
+
+      let petals = max(hr, 1);
+      let petalColor = map(mn, 0, 59, 0, 255);
+      let foldAngle = map(sc, 0, 59, 0, 180);
+
+      noStroke();
+      // Draw each petal with partial alpha so maze is still visible
+      for (let i = 0; i < petals; i++) {
+        let angle = i * (360 / petals);
+        push();
+        rotate(angle);
+        fill((petalColor + angle) % 255, 200, 180, 180); // RGBA
+
+        beginShape();
+        vertex(0, 0);
+        let midRadius = 100 + 10 * sin(foldAngle);
+        let tipRadius = 150 + 20 * sin(foldAngle / 2);
+        bezierVertex(
+          midRadius, -midRadius,
+          midRadius, -midRadius,
+          0, -tipRadius
+        );
+        endShape(CLOSE);
+        pop();
+      }
+    }
+
+    function keyPressed() {
+      if (!maze[playerRow] || !maze[playerRow][playerCol]) return;
+      let walls = maze[playerRow][playerCol].walls;
+      if (keyCode === LEFT_ARROW && !walls.left) {
+        playerCol = max(playerCol - 1, 0);
+      }
+      else if (keyCode === RIGHT_ARROW && !walls.right) {
+        playerCol = min(playerCol + 1, cols - 1);
+      }
+      else if (keyCode === UP_ARROW && !walls.top) {
+        playerRow = max(playerRow - 1, 0);
+      }
+      else if (keyCode === DOWN_ARROW && !walls.bottom) {
+        playerRow = min(playerRow + 1, rows - 1);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Magical Time Maze Fractal Aquarium</title>
+  <!-- Include the p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset and center body */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #1f1f1f;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* Container to hold the 512x512 canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      background: #111;
+      box-shadow: 0 0 8px rgba(0,0,0,0.3);
+    }
+
+    /* Instructions overlay, shown on hover */
+    #hoverInstructions {
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      pointer-events: none;
+    }
+
+    #canvasContainer:hover #hoverInstructions {
+      display: block;
+    }
+
+    .instructionsText {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.5em;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverInstructions">
+      <div class="instructionsText">
+        <strong>Magical Time Maze Fractal Aquarium</strong><br><br>
+        • Flowing wave background (hour & minute)<br>
+        • Maze regenerates each minute<br>
+        • Rising bubbles tied to seconds<br>
+        • Fractal tree branches change with hour<br>
+        • Move the explorer with arrow keys<br>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Magical Time Maze Fractal Aquarium
+      -----------------------------------
+      1) Wave background: hour & minute affect wave properties
+      2) Maze (recursive backtracking) regenerates every minute
+      3) Bubbles appear and float upward, influenced by seconds
+      4) Fractal tree in the top-right changes its angles with hour
+      5) Simple explorer ellipse moves with arrow keys
+    */
+
+    const CANVAS_SIZE = 512;
+
+    // Maze settings
+    const COLS = 16;
+    const ROWS = 16;
+    const CELL_SIZE = CANVAS_SIZE / COLS;
+    let maze = [];
+    let visitedStack = [];
+    let stack = [];
+    let currentCell;
+    let lastMazeMinute = -1;
+
+    // Player
+    let playerPos;
+
+    // Bubble array
+    let bubbles = [];
+    const BUBBLE_COUNT = 20;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      frameRate(30);
+      
+      // Maze
+      generateMaze();
+
+      // Set initial player position
+      playerPos = createVector(CELL_SIZE / 2, CELL_SIZE / 2);
+
+      // Initialize bubbles
+      for (let i = 0; i < BUBBLE_COUNT; i++) {
+        bubbles.push(new Bubble());
+      }
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Draw wave background
+      drawWaveBackground(hr, mn);
+
+      // Regenerate maze if minute changed
+      if (mn !== lastMazeMinute) {
+        generateMaze();
+        lastMazeMinute = mn;
+      }
+
+      // Draw maze
+      stroke(255);
+      for (let c of maze) {
+        c.show();
+      }
+      
+      // Player movement
+      handlePlayerMovement();
+      drawPlayer();
+
+      // Bubbles
+      for (let b of bubbles) {
+        b.update(sc);
+        b.display();
+      }
+      // Reset bubbles that go off the top
+      for (let b of bubbles) {
+        if (b.pos.y < 0) {
+          b.reset();
+        }
+      }
+
+      // Draw fractal tree in top-right corner
+      push();
+      translate(width - 80, 100);
+      stroke(200);
+      drawFractalTree(0, 0, 50, -90, 0, hr);
+      pop();
+
+      // Show time as text
+      fill(255);
+      noStroke();
+      textSize(14);
+      textAlign(LEFT, TOP);
+      text(nf(hr,2) + ":" + nf(mn,2) + ":" + nf(sc,2), 10, 10);
+    }
+
+    /* ----------------------
+       Maze (Backtracking)
+    ---------------------- */
+    function generateMaze() {
+      maze = [];
+      visitedStack = [];
+      stack = [];
+
+      // Create cells
+      for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+          maze.push(new Cell(col, row));
+        }
+      }
+
+      // Start from top-left cell
+      currentCell = maze[0];
+      currentCell.visited = true;
+      visitedStack.push(currentCell);
+      
+      // Build the entire maze
+      while (true) {
+        let next = currentCell.checkNeighbors();
+        if (next) {
+          next.visited = true;
+          visitedStack.push(next);
+          stack.push(currentCell);
+          removeWalls(currentCell, next);
+          currentCell = next;
+        } else if (stack.length > 0) {
+          currentCell = stack.pop();
+        } else {
+          break;
+        }
+      }
+    }
+
+    class Cell {
+      constructor(col, row) {
+        this.col = col;
+        this.row = row;
+        this.visited = false;
+        // top, right, bottom, left
+        this.walls = [true,true,true,true];
+      }
+      
+      checkNeighbors() {
+        let neighbors = [];
+        let top    = getCell(this.col, this.row-1);
+        let right  = getCell(this.col+1, this.row);
+        let bottom = getCell(this.col, this.row+1);
+        let left   = getCell(this.col-1, this.row);
+
+        if (top && !top.visited)    neighbors.push(top);
+        if (right && !right.visited)  neighbors.push(right);
+        if (bottom && !bottom.visited) neighbors.push(bottom);
+        if (left && !left.visited)   neighbors.push(left);
+
+        if (neighbors.length > 0) {
+          let r = floor(random(neighbors.length));
+          return neighbors[r];
+        } else {
+          return undefined;
+        }
+      }
+      
+      show() {
+        stroke(255);
+        strokeWeight(2);
+        let x = this.col * CELL_SIZE;
+        let y = this.row * CELL_SIZE;
+        if (this.walls[0]) line(x, y, x + CELL_SIZE, y);
+        if (this.walls[1]) line(x + CELL_SIZE, y, x + CELL_SIZE, y + CELL_SIZE);
+        if (this.walls[2]) line(x + CELL_SIZE, y + CELL_SIZE, x, y + CELL_SIZE);
+        if (this.walls[3]) line(x, y + CELL_SIZE, x, y);
+      }
+    }
+
+    function getCell(c, r) {
+      if (c < 0 || c >= COLS || r < 0 || r >= ROWS) {
+        return undefined;
+      }
+      return maze[r * COLS + c];
+    }
+
+    function removeWalls(a, b) {
+      let x = a.col - b.col;
+      if (x == 1) {
+        a.walls[3] = false;
+        b.walls[1] = false;
+      } else if (x == -1) {
+        a.walls[1] = false;
+        b.walls[3] = false;
+      }
+      let y = a.row - b.row;
+      if (y == 1) {
+        a.walls[0] = false;
+        b.walls[2] = false;
+      } else if (y == -1) {
+        a.walls[2] = false;
+        b.walls[0] = false;
+      }
+    }
+
+    /* -----------------------
+       Player movement
+    ------------------------ */
+    function handlePlayerMovement() {
+      if (keyIsDown(LEFT_ARROW) || keyIsDown(65)) {
+        movePlayer(-2, 0);
+      }
+      if (keyIsDown(RIGHT_ARROW) || keyIsDown(68)) {
+        movePlayer(2, 0);
+      }
+      if (keyIsDown(UP_ARROW) || keyIsDown(87)) {
+        movePlayer(0, -2);
+      }
+      if (keyIsDown(DOWN_ARROW) || keyIsDown(83)) {
+        movePlayer(0, 2);
+      }
+    }
+
+    function movePlayer(dx, dy) {
+      let newX = playerPos.x + dx;
+      let newY = playerPos.y + dy;
+      if (newX >= 0 && newX <= width && newY >= 0 && newY <= height) {
+        playerPos.x = newX;
+        playerPos.y = newY;
+      }
+    }
+
+    function drawPlayer() {
+      push();
+      noStroke();
+      fill(255, 100, 100);
+      ellipse(playerPos.x, playerPos.y, CELL_SIZE * 0.5);
+      pop();
+    }
+
+    /* -----------------------
+       Bubbles
+    ------------------------ */
+    class Bubble {
+      constructor() {
+        this.reset();
+      }
+      reset() {
+        this.pos = createVector(width/2, height-40);
+        this.r = random(5, 10);
+        this.xOff = random(-30, 30);
+      }
+      update(sc) {
+        let speed = map(sc, 0, 59, 1, 3);
+        this.pos.y -= speed * 0.5;
+        this.pos.x += sin(frameCount * 0.05) * 0.5;
+      }
+      display() {
+        push();
+        fill(180, 180);
+        noStroke();
+        ellipse(this.pos.x + this.xOff, this.pos.y, this.r * 2);
+        pop();
+      }
+    }
+
+    /* -----------------------
+       Fractal Tree
+    ------------------------ */
+    function drawFractalTree(x, y, length, angle, depth, hr) {
+      // Angle influenced by hour
+      let maxAngle = map(hr, 0, 23, 15, 45);
+      line(x, y, x, y + length);
+      // Move origin to draw next branch
+      translate(0, length);
+      if (depth < 5) {
+        push();
+        rotate(maxAngle);
+        drawFractalTree(0, 0, length * 0.67, angle, depth + 1, hr);
+        pop();
+
+        push();
+        rotate(-maxAngle);
+        drawFractalTree(0, 0, length * 0.67, angle, depth + 1, hr);
+        pop();
+      }
+    }
+
+    /* -----------------------
+       Wave Background
+    ------------------------ */
+    function drawWaveBackground(h, m) {
+      push();
+      noStroke();
+      colorMode(HSB, 360, 100, 100);
+      let baseHue = map(h, 0, 23, 0, 360);
+      fill(baseHue, 70, 20);
+      rect(0, 0, width, height);
+
+      stroke(255, 80);
+      noFill();
+      let amplitude = map(h, 0, 23, 10, 60);
+      let frequency = map(m, 0, 59, 0.02, 0.2);
+      for (let y = 0; y < height; y += 20) {
+        beginShape();
+        for (let x = 0; x <= width; x += 10) {
+          let waveOffset = amplitude * sin((x + frameCount) * frequency);
+          vertex(x, y + waveOffset);
+        }
+        endShape();
+      }
+      pop();
+    }
+  </script>
+</body>
+</html>

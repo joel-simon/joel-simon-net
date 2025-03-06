@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TimeFusion Kaleidoscope</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic reset for page margins and background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Main container fixed to 512x512 */
+    #timeFusionContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Hover overlay with instructions */
+    #overlayInstructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 30px;
+      font-family: sans-serif;
+    }
+
+    /* Show overlay on hover */
+    #timeFusionContainer:hover #overlayInstructions {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="timeFusionContainer">
+    <div id="overlayInstructions">
+      <p>
+        TimeFusion Kaleidoscope<br><br>
+        • The fractal tree in the center grows branches based on the current hour.<br>
+        • Colorful gears in the corners rotate at speeds tied to minutes.<br>
+        • The swirling mosaic background shifts hue in response to seconds.<br><br>
+        Hover away to explore the evolving animation!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /* 
+      TIMEFUSION KALEIDOSCOPE
+      1. Fractal Tree (hour-based):
+         - Branching depth changes with the hour (0-23).
+      2. Colorful Gears (minute-based):
+         - Gears in corners rotate according to the current minute.
+      3. Swirling Mosaic (second-based):
+         - The canvas background shifts colors or "tiles" with each second.
+      4. A small, unobtrusive time display is shown at the bottom.
+    */
+
+    // Parameters to store gear rotation angles
+    let gearAngle = 0;
+
+    // For swirling mosaic background
+    let mosaicOffset = 0;
+
+    // Setup p5.js
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('timeFusionContainer');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      const h = hour();
+      const m = minute();
+      const s = second();
+
+      // 1. Swirling Mosaic Background (second-based)
+      drawSwirlingMosaic(s);
+
+      // 2. Fractal Tree (hour-based)
+      push();
+      // Translate to center to draw the fractal tree
+      translate(width / 2, height * 0.75);
+      let branchDepth = floor(map(h, 0, 23, 6, 12)); 
+      drawFractalTree(60, branchDepth);
+      pop();
+
+      // 3. Colorful Gears in corners (minute-based)
+      gearAngle += map(m, 0, 59, 0.5, 3); 
+      drawCornerGears(gearAngle);
+
+      // 4. Display time at the bottom
+      displayTime(h, m, s);
+    }
+
+    // Draw a swirling mosaic background using perlin-like flows or layered arcs
+    function drawSwirlingMosaic(sec) {
+      // We can swirl the background in horizontal stripes, with color shifting each second
+      mosaicOffset = map(sec, 0, 59, 0, 360);
+      noStroke();
+      for (let y = 0; y < height; y += 8) {
+        let inter = map(y, 0, height, 0, 1);
+        let hueVal = mosaicOffset + 360 * inter;
+        fill(colorFromHSB(hueVal % 360, 80, 30 + 70 * inter));
+        rect(0, y, width, 8);
+      }
+    }
+
+    // Convert HSB to RGB color object
+    function colorFromHSB(h, s, b) {
+      colorMode(HSB);
+      let c = color(h, s, b);
+      colorMode(RGB);
+      return c;
+    }
+
+    // Recursive fractal tree: length is the branch length, depth is how many recursions
+    function drawFractalTree(length, depth) {
+      if (depth === 0) return;
+
+      // Draw the trunk
+      stroke(139,69,19);
+      strokeWeight(map(depth, 0, 12, 1, 5));
+      line(0, 0, 0, -length);
+
+      // Move to the end of first branch
+      translate(0, -length);
+
+      push();
+      rotate(25);
+      drawFractalTree(length * 0.7, depth - 1);
+      pop();
+
+      push();
+      rotate(-25);
+      drawFractalTree(length * 0.7, depth - 1);
+      pop();
+    }
+
+    // Draw four gears in each corner, rotated by gearAngle
+    function drawCornerGears(angleVal) {
+      const gearSize = 50;
+      // Corners: top-left, top-right, bottom-left, bottom-right
+      let corners = [
+        { x: gearSize / 2, y: gearSize / 2 },
+        { x: width - gearSize / 2, y: gearSize / 2 },
+        { x: gearSize / 2, y: height - gearSize / 2 },
+        { x: width - gearSize / 2, y: height - gearSize / 2 }
+      ];
+      let gearColors = [
+        [255, 100, 100],
+        [100, 255, 100],
+        [100, 100, 255],
+        [255, 220, 100]
+      ];
+
+      corners.forEach((corner, index) => {
+        push();
+        translate(corner.x, corner.y);
+        rotate(angleVal + index * 45);
+        fill(gearColors[index]);
+        noStroke();
+        gearShape(gearSize, 10);
+        pop();
+      });
+    }
+
+    // Simple gear by drawing multiple triangles in a circular arrangement
+    function gearShape(diameter, toothCount) {
+      let angleStep = 360 / toothCount;
+      let radius = diameter / 2;
+      beginShape();
+      for (let i = 0; i < toothCount; i++) {
+        let a1 = i * angleStep;
+        let a2 = a1 + angleStep / 2;
+        let a3 = a1 + angleStep;
+
+        let r1 = radius * 0.9; // Inner part
+        let r2 = radius * 1.1; // Outer tooth
+
+        vertex(r1 * cos(a1), r1 * sin(a1));
+        vertex(r2 * cos(a2), r2 * sin(a2));
+        vertex(r1 * cos(a3), r1 * sin(a3));
+      }
+      endShape(CLOSE);
+
+      // Draw inner circle
+      fill(50);
+      ellipse(0, 0, radius * 1.0, radius * 1.0);
+    }
+
+    // Display the current time near the bottom
+    function displayTime(h, m, s) {
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, width / 2, height - 15);
+    }
+  </script>
+</body>
+</html>

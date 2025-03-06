@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Skybound Time-Balloons</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to "Skybound Time-Balloons"!<br><br>
+        • The background color shifts gently throughout the hour.<br>
+        • The balloon sizes are tied to the current hour.<br>
+        • Their color hues reflect the minute value.<br>
+        • Their rising speed adjusts with passing seconds.<br><br>
+        Hover away to watch them drift through the sky.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let balloons = [];
+    let bgBaseColor;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      colorMode(HSB, 360, 100, 100);
+      bgBaseColor = random(0, 360);
+
+      // Initialize balloons
+      for (let i = 0; i < 10; i++) {
+        balloons.push(new Balloon());
+      }
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Shift background color over time
+      let backgroundHue = (bgBaseColor + (h * 15)) % 360;
+      background(backgroundHue, 50, 90);
+
+      // Update and display each balloon
+      for (let i = 0; i < balloons.length; i++) {
+        balloons[i].update(h, m, s);
+        balloons[i].display();
+      }
+
+      // Display digital clock near bottom
+      fill(0, 0, 0);
+      rectMode(CENTER);
+      noStroke();
+      rect(width / 2, height - 20, 60, 20, 5);
+
+      fill(255);
+      textSize(14);
+      textAlign(CENTER, CENTER);
+      let hourDisp = nf(h, 2);
+      let minuteDisp = nf(m, 2);
+      let secondDisp = nf(s, 2);
+      text(hourDisp + ":" + minuteDisp + ":" + secondDisp, width / 2, height - 20);
+    }
+
+    // Balloon class
+    class Balloon {
+      constructor() {
+        this.reset();
+      }
+
+      reset() {
+        // Each balloon starts at random x, below the canvas
+        this.x = random(width);
+        this.y = height + random(30, 80);
+        this.size = random(30, 50);
+        this.hue = random(0, 360);
+        this.speed = random(0.3, 0.7);
+      }
+
+      update(h, m, s) {
+        // Balloon size grows with hour
+        let mappedSize = map(h, 0, 23, 30, 60);
+        this.size = lerp(this.size, mappedSize, 0.01);
+
+        // Balloon color changes according to minute
+        let newHue = map(m, 0, 59, 0, 360);
+        this.hue = lerp(this.hue, newHue, 0.1);
+
+        // Rising speed depends on the second
+        let secondFactor = map(s, 0, 59, 0.5, 3);
+        this.y -= this.speed * secondFactor;
+
+        // Reset balloon if it moves off screen
+        if (this.y < -this.size) {
+          this.reset();
+        }
+      }
+
+      display() {
+        push();
+        noStroke();
+        fill(this.hue, 80, 90);
+        ellipse(this.x, this.y, this.size, this.size * 1.2);
+        // Simple string
+        stroke(this.hue, 80, 50);
+        strokeWeight(2);
+        line(this.x, this.y + (this.size * 0.6), this.x, this.y + this.size + 15);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

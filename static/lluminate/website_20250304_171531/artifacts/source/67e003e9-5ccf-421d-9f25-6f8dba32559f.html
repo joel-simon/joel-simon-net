@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Fusion Playground</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+    /* 512x512 container for the p5 sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    /* Overlay instructions on hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Fusion Playground</strong><br><br>
+        • Wave background shifts with the hour and minute.<br>
+        • Fractal tree angles change with minutes.<br>
+        • Gear in the center rotates faster with seconds.<br>
+        • A fish swims across, sized by the current hour.<br><br>
+        Hover away to see it in action!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Fusion Playground
+      -----------------------
+      • Wave background, amplitude and color driven by hour & minute.
+      • Fractal tree, angles shift with the minute.
+      • Central gear, rotation speed relates to seconds.
+      • A fish sized by the hour swims across the screen.
+    */
+
+    let waveOffset = 0;
+    let fish;
+    let gearRotation = 0;
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+
+      // Initialize fish
+      fish = new Fish();
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Background wave effect
+      drawWaves(h, m);
+
+      // Draw fractal tree on the left
+      push();
+      translate(100, height - 20);
+      drawTree(80, m); // trunk length
+      pop();
+
+      // Central rotating gear
+      drawGear(h, m, s);
+
+      // Fish update & draw
+      fish.update(h);
+      fish.display();
+
+      // Digital clock at the bottom-right
+      drawClock(h, m, s);
+    }
+
+    // Wave background
+    function drawWaves(h, m) {
+      // Shift hue over 24 hours
+      colorMode(HSB, 360, 100, 100);
+      let baseHue = map(h, 0, 23, 0, 360);
+      for (let y = 0; y < height; y++) {
+        let hueVal = lerp(baseHue, baseHue + 90, y / height) % 360;
+        stroke(hueVal, 80, 40);
+        line(0, y, width, y);
+      }
+      noStroke();
+      // Wavy stripe
+      fill(0, 50);
+      beginShape();
+      vertex(0, height);
+      let waveAmp = map(m, 0, 59, 50, 100);
+      let waveFreq = 0.02 + m * 0.001;
+      for (let x = 0; x <= width; x += 10) {
+        let yPos = height - 80 + sin((x + waveOffset) * waveFreq) * waveAmp;
+        vertex(x, yPos);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+      waveOffset += 0.5;
+      colorMode(RGB);
+    }
+
+    // Recursive fractal tree
+    function drawTree(length, minuteVal) {
+      // Adjust angle based on current minute
+      let angle = map(minuteVal, 0, 59, 15, 45);
+      stroke(255);
+      strokeWeight(2);
+      line(0, 0, 0, -length);
+      translate(0, -length);
+      if (length > 10) {
+        push();
+        rotate(angle);
+        drawTree(length * 0.67, minuteVal);
+        pop();
+        push();
+        rotate(-angle);
+        drawTree(length * 0.67, minuteVal);
+        pop();
+      }
+    }
+
+    // Center gear rotating
+    function drawGear(hourVal, minuteVal, secondVal) {
+      let gearSize = 60;
+      gearRotation += 0.5 + secondVal * 0.05; // increase rotation speed with seconds
+      push();
+      translate(width / 2, height / 2);
+      rotate(gearRotation);
+      fill(180);
+      stroke(0);
+      strokeWeight(2);
+      // Create gear with multiple teeth
+      let teeth = 8;
+      beginShape();
+      for (let i = 0; i < 360; i += 360 / (teeth * 2)) {
+        let rad = gearSize;
+        if (i % (360 / teeth) !== 0) {
+          rad *= 1.3; // tooth
+        }
+        vertex(rad * cos(i), rad * sin(i));
+      }
+      endShape(CLOSE);
+      // Center circle
+      fill(60);
+      ellipse(0, 0, gearSize * 0.6, gearSize * 0.6);
+      pop();
+    }
+
+    // Fish class
+    class Fish {
+      constructor() {
+        this.reset();
+      }
+      reset() {
+        this.x = random(-100, -50);
+        this.y = random(height * 0.3, height * 0.7);
+        this.speed = random(1.5, 2.5);
+        this.baseSize = 40;
+      }
+      update(h) {
+        let dayHour = h % 12 || 12;
+        this.size = this.baseSize + dayHour * 3;
+        this.x += this.speed;
+        if (this.x > width + this.size * 2) {
+          this.reset();
+        }
+      }
+      display() {
+        push();
+        translate(this.x, this.y);
+        noStroke();
+        fill(200, 100, 100);
+        ellipse(0, 0, this.size * 2, this.size);
+        // Tail
+        fill(180, 80, 80);
+        triangle(
+          -this.size, 0,
+          -this.size * 1.6, -this.size * 0.3,
+          -this.size * 1.6, this.size * 0.3
+        );
+        // Eye
+        fill(255);
+        ellipse(this.size * 0.3, -this.size * 0.15, this.size * 0.3, this.size * 0.3);
+        fill(0);
+        ellipse(this.size * 0.3, -this.size * 0.15, this.size * 0.1, this.size * 0.1);
+        pop();
+      }
+    }
+
+    // Digital clock bottom-right
+    function drawClock(h, m, s) {
+      fill(255);
+      noStroke();
+      textAlign(RIGHT, CENTER);
+      textSize(16);
+      let timeStr = nf(h,2) + ":" + nf(m,2) + ":" + nf(s,2);
+      text(timeStr, width - 10, height - 20);
+    }
+  </script>
+</body>
+</html>

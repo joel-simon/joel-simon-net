@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Time Fireflies</title>
+  <style>
+    /* Center the 512x512 canvas in the view */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000000;
+      height: 100vh;
+      width: 100vw;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    /* Tooltip container */
+    .info-tip {
+      position: relative;
+      font-family: sans-serif;
+      user-select: none;
+      cursor: pointer;
+      color: #ccc;
+      margin-bottom: 0.75em;
+    }
+
+    /* Tooltip text (hidden by default) */
+    .info-content {
+      visibility: hidden;
+      width: 280px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 10px;
+      position: absolute;
+      bottom: 120%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.85em;
+      line-height: 1.4em;
+      z-index: 1;
+    }
+
+    /* Show the tooltip text on hover */
+    .info-tip:hover .info-content {
+      visibility: visible;
+    }
+
+    /* Ensure the canvas is exactly 512x512 with no extra scrollbars */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 8px rgba(0,0,0,0.7);
+    }
+  </style>
+</head>
+<body>
+  <div class="info-tip">
+    Hover for instructions
+    <div class="info-content">
+      Time Fireflies Instructions:<br>
+      • The number of fireflies is based on the current hour.<br>
+      • Their brightness changes with the current minute.<br>
+      • Their speed changes with the current second.<br>
+      • Enjoy a twinkling dance of time.
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <script>
+    /*
+      TIME FIREFLIES
+      ==============
+      1) Firefly count depends on the current hour (0-23).
+      2) Brightness of fireflies changes with the current minute.
+      3) Firefly speed is influenced by the current second.
+      4) Fireflies move within a starry night scene, providing a whimsical display of time.
+    */
+
+    let fireflies = [];
+    let lastHour = -1; // track when hour changes
+
+    // A simple Firefly class
+    class Firefly {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.size = random(2, 5);
+        this.offset = random(TWO_PI); // random offset for twinkling
+      }
+
+      update(speedFactor) {
+        // Movement is random, scaled by the second-based speed factor
+        this.x += random(-0.5, 0.5) * speedFactor;
+        this.y += random(-0.5, 0.5) * speedFactor;
+
+        // Wrap around screen boundaries
+        if (this.x < 0) this.x = width;
+        if (this.x > width) this.x = 0;
+        if (this.y < 0) this.y = height;
+        if (this.y > height) this.y = 0;
+      }
+
+      display(brightness) {
+        // Subtle twinkle effect
+        let twinkle = sin(frameCount * 0.05 + this.offset) * 0.25 + 0.75;
+        fill(255, brightness * twinkle);
+        noStroke();
+        ellipse(this.x, this.y, this.size);
+      }
+    }
+
+    function setup() {
+      createCanvas(512, 512);
+      noStroke();
+      // Setup for initial hour
+      createFireflies(hour());
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Rebuild fireflies if hour changed
+      if (h !== lastHour) {
+        createFireflies(h);
+        lastHour = h;
+      }
+
+      // Starry background
+      drawStars();
+
+      // Draw a subtle forest silhouette at bottom
+      drawForest();
+
+      // Firefly speed is related to seconds
+      let speedFactor = map(s, 0, 59, 0.2, 3);
+
+      // Firefly brightness is related to minutes (0-59)
+      let brightness = map(m, 0, 59, 50, 255);
+
+      // Update and display each firefly
+      for (let f of fireflies) {
+        f.update(speedFactor);
+        f.display(brightness);
+      }
+    }
+
+    // Create new fireflies based on hour
+    function createFireflies(currentHour) {
+      // The maximum hour range is 0-23, but let's scale up to 24 or more
+      let count = (currentHour + 1) * 4; // e.g. hour 3 => 16 fireflies
+      fireflies = [];
+      for (let i = 0; i < count; i++) {
+        fireflies.push(new Firefly(random(width), random(height)));
+      }
+    }
+
+    // Draw small star field
+    function drawStars() {
+      push();
+      fill(255, 40);
+      let starCount = 60; // fixed star count
+      for (let i = 0; i < starCount; i++) {
+        let x = random(width);
+        let y = random(height * 0.7); // top portion for stars
+        ellipse(x, y, random(1, 3));
+      }
+      pop();
+    }
+
+    // Draw a simple forest silhouette (trees) at the bottom
+    function drawForest() {
+      push();
+      fill(10, 40, 10);
+      rect(0, height*0.85, width, height*0.15);
+
+      // Some triangular trees
+      fill(20, 60, 20);
+      let treeCount = 10;
+      let spacing = width / treeCount;
+      for (let i = 0; i < treeCount; i++) {
+        let x = i * spacing + spacing / 2;
+        let treeHeight = random(40, 80);
+        triangle(
+          x - 15, height*0.85,
+          x + 15, height*0.85,
+          x, height*0.85 - treeHeight
+        );
+      }
+      pop();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ephemeral Time Illusions</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 20px auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      box-sizing: border-box;
+      padding: 40px;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Ephemeral Time Illusions<br><br>
+        • New circles appear every second, like fleeting moments.<br>
+        • Color depends on the current hour, size on the minute, and fade speed on the second.<br>
+        • Watch them appear, expand, and fade away, reflecting the continuous flow of time.<br><br>
+        Hover away to experience it.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Each ephemeral illusion is stored as an object with:
+    // { x, y, baseSize, color, bornAtFrame, fadeSpeed }
+    let illusions = [];
+    let lastSecond = -1;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      // Get current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Add a new illusion each time the second increments
+      if (s !== lastSecond) {
+        // Generate color from hour
+        // Map hour to a hue from 0..360
+        let hueVal = map(h, 0, 23, 0, 360);
+        let c = color(`hsla(${hueVal}, 70%, 60%, 1)`);
+
+        // Size based on minute (range: 50..250)
+        let sizeVal = map(m, 0, 59, 50, 250);
+
+        // Fade speed based on second (range: 1..5)
+        let fadeVal = map(s, 0, 59, 1, 5);
+
+        illusions.push({
+          x: random(width),
+          y: random(height),
+          baseSize: sizeVal,
+          color: c,
+          bornAtFrame: frameCount,
+          fadeSpeed: fadeVal
+        });
+        lastSecond = s;
+      }
+
+      // Update and draw illusions
+      for (let i = illusions.length - 1; i >= 0; i--) {
+        let ill = illusions[i];
+        
+        // Calculate how long the illusion has been alive
+        let life = frameCount - ill.bornAtFrame;
+        
+        // Circle expansion over time
+        let currentSize = ill.baseSize + life * 0.4;
+
+        // Alpha decreases by fadeSpeed each frame
+        let alphaVal = 255 - life * ill.fadeSpeed;
+        
+        if (alphaVal <= 0) {
+          // Remove illusion if fully transparent
+          illusions.splice(i, 1);
+        } else {
+          fill(red(ill.color), green(ill.color), blue(ill.color), alphaVal);
+          ellipse(ill.x, ill.y, currentSize);
+        }
+      }
+
+      displayClock(h, m, s);
+    }
+
+    function displayClock(h, m, s) {
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, 10, 10);
+    }
+  </script>
+</body>
+</html>

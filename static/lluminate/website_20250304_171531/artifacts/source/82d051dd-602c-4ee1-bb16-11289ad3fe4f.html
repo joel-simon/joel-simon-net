@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reverse Time Waterfall</title>
+  <style>
+    /* Basic window/body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* 512x512 container for the canvas */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      text-align: center;
+      pointer-events: none; /* So it doesn't block clicks on canvas */
+      box-sizing: border-box;
+      padding: 20px;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Reverse Time Waterfall</strong><br><br>
+        • Water droplets flow upward.<br>
+        • The droplet color shifts with the current hour.<br>
+        • Droplet speed changes with the current second.<br>
+        • The spawn rate is influenced by the current minute.<br><br>
+        Hover here for instructions!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Reverse Time Waterfall
+
+      - Droplets appear at the bottom and flow upwards (reversing the usual waterfall assumption).
+      - Hour determines color shifts.
+      - Minute influences droplet spawn rate.
+      - Second influences droplet speed.
+    */
+
+    const CANVAS_SIZE = 512;
+    let droplets = [];
+    let lastSpawnTime = 0;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvas-container");
+      colorMode(HSB, 360, 100, 100, 100);
+      noStroke();
+    }
+
+    function draw() {
+      background(0, 0, 10); // Dark background
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Calculate droplet color based on hour
+      // As hour goes from 0..23, hue goes from 0..359 (wrapping around)
+      let hueValue = map(h % 24, 0, 24, 0, 360);
+
+      // Speed factor from second
+      // e.g. 0..59 -> 1..4
+      let speedFactor = map(s, 0, 59, 1, 4);
+
+      // Spawn interval (lower means more frequent) influenced by minute
+      // e.g. 0..59 -> spawn interval from ~1000ms down to ~200ms
+      let spawnInterval = map(m, 0, 59, 1000, 200);
+
+      // Create new droplets at intervals
+      if (millis() - lastSpawnTime > spawnInterval) {
+        mewDroplet(hueValue, speedFactor);
+        lastSpawnTime = millis();
+      }
+
+      // Update and display each droplet
+      for (let i = droplets.length - 1; i >= 0; i--) {
+        droplets[i].update();
+        droplets[i].show();
+        // Remove droplet if it flies off the top
+        if (droplets[i].y < 0) {
+          droplets.splice(i, 1);
+        }
+      }
+
+      // Optional: small clock display in corner
+      push();
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, BOTTOM);
+      text(nf(h,2) + ":" + nf(m,2) + ":" + nf(s,2), 10, height - 10);
+      pop();
+    }
+
+    // Create a new droplet
+    function mewDroplet(hueValue, speedFactor) {
+      let x = random(width);
+      let y = height + 10; // start slightly below the bottom
+      let size = random(5, 10);
+      let speed = random(1, 2) * speedFactor; // upward speed
+      let dropletColor = color(hueValue, 80, random(70, 100));
+      droplets.push(new Droplet(x, y, size, speed, dropletColor));
+    }
+
+    class Droplet {
+      constructor(x, y, size, speed, col) {
+        this.x = x;
+        this.y = y;
+        this.size = size;
+        this.speed = speed;
+        this.col = col;
+      }
+
+      update() {
+        // Move upward
+        this.y -= this.speed;
+      }
+
+      show() {
+        fill(this.col);
+        ellipse(this.x, this.y, this.size);
+      }
+    }
+  </script>
+</body>
+</html>

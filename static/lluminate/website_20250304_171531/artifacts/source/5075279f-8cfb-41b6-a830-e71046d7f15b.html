@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fractal Pirate Star Synergy</title>
+  <!-- Include p5.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Ensure page background and margins are zero */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* A 512x512 region for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Overlay for hover instructions */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 30px;
+    }
+
+    /* Show instructions on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+
+    /* Force the default p5 canvas to stay 512x512 exactly */
+    #defaultCanvas0 {
+      width: 512px !important;
+      height: 512px !important;
+      display: block;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Fractal Pirate Star Synergy Instructions:<br><br>
+        • A fractal tree on the right changes branching angles with the HOUR.<br>
+        • Our pirate's parrot on the left flaps its wing with the MINUTE.<br>
+        • A glowing star in the center pulses with the SECOND.<br><br>
+        Hover away to enjoy!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Time-based variables
+    let h, m, s;     // hour, minute, second
+    let parrotWing;  // wing angle
+    let starSize;    // size for pulsing star
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      // Update time
+      h = hour() % 12;  // 0-11
+      m = minute();      // 0-59
+      s = second();      // 0-59
+
+      // Background gradient that also shifts slightly with hour
+      drawBackground();
+
+      // Animate each element
+      // 1. Pulsing star with second
+      starSize = 30 + 10 * sin(frameCount * 4 * (s + 1) * 0.02);
+      drawCenterStar(width/2, height/2, starSize);
+
+      // 2. Flapping parrot on the left with minute
+      // Wing flaps using a sine wave whose amplitude depends on m
+      let wingAmp = map(m, 0, 59, 10, 45);
+      parrotWing = wingAmp * sin(frameCount * 3 * 0.03);
+      drawParrot(100, 250, parrotWing);
+
+      // 3. Fractal tree on the right with hour-based angle
+      // Angle range from about 15 degrees to 35 degrees
+      let treeAngle = map(h, 0, 11, 15, 35);
+      push();
+      translate(width - 100, height - 50);
+      stroke(200);
+      drawFractalTree(0, 0, 70, -90, treeAngle, 6);
+      pop();
+    }
+
+    // A simple radial gradient that changes with hour
+    function drawBackground() {
+      let baseHue = map(h, 0, 23, 0, 360);
+      noStroke();
+      for (let r = 512; r > 0; r -= 8) {
+        let inter = map(r, 0, 512, 1, 0);
+        fill(baseHue, 80 * inter, 120 * inter);
+        ellipse(width / 2, height / 2, r, r);
+      }
+    }
+
+    // Draw a pulsing star in the center
+    function drawCenterStar(x, y, sizeVal) {
+      push();
+      translate(x, y);
+      noStroke();
+      fill(255, 220, 0);
+      // A simple star shape with 8 points
+      beginShape();
+      for (let i = 0; i < 8; i++) {
+        let angle = i * 45;
+        let rad = i % 2 === 0 ? sizeVal : sizeVal / 2;
+        vertex(rad * cos(angle), rad * sin(angle));
+      }
+      endShape(CLOSE);
+      pop();
+    }
+
+    // Draw a silly parrot with a flapping wing
+    function drawParrot(x, y, wingAngle) {
+      push();
+      translate(x, y);
+      // Body
+      noStroke();
+      fill(0, 150, 0);
+      ellipse(0, 0, 50, 80);
+
+      // Head
+      fill(0, 180, 0);
+      ellipse(0, -50, 30, 30);
+
+      // Eye
+      fill(255);
+      ellipse(7, -52, 5, 5);
+
+      // Wing (rotates slightly)
+      push();
+      translate(-10, -10);
+      rotate(wingAngle);
+      fill(0, 100, 0);
+      ellipse(0, 20, 40, 60);
+      pop();
+
+      // Beak
+      fill(255, 200, 0);
+      triangle(10, -50, 25, -45, 10, -40);
+
+      pop();
+    }
+
+    // Recursive fractal tree
+    // dx, dy = branch start
+    // len = length of the branch
+    // angle = direction to draw
+    // angleOffset = angle difference for each recursion
+    // depth = how many levels of recursion
+    function drawFractalTree(dx, dy, len, angle, angleOffset, depth) {
+      if (depth === 0) return;
+
+      // Endpoint of the branch
+      let x2 = dx + len * cos(angle);
+      let y2 = dy + len * sin(angle);
+
+      line(dx, dy, x2, y2);
+
+      push();
+      translate(x2, y2);
+      // Left branch
+      push();
+      rotate(-angleOffset);
+      drawFractalTree(0, 0, len * 0.7, 0, angleOffset, depth - 1);
+      pop();
+      // Right branch
+      push();
+      rotate(angleOffset);
+      drawFractalTree(0, 0, len * 0.7, 0, angleOffset, depth - 1);
+      pop();
+      pop();
+    }
+  </script>
+</body>
+</html>

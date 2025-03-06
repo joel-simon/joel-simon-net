@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Skyline</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center the page content and give a neutral background */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f7f7f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #444;
+      padding: 8px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 220px;
+      z-index: 1;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      Time Skyline Display:
+      • Sky transitions from day to night with the hour. 
+      • Building lights turn on in proportion to the minutes. 
+      • A shooting star crosses the sky based on the seconds.
+    </div>
+  </div>
+
+  <script>
+    let w = 512;
+    let h = 512;
+    // For the shooting star animation
+    let starX = 0; 
+    let starY;
+    let starVisible = false;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      // Initialize shooting star position
+      starY = random(h/8, h/3);
+    }
+
+    function draw() {
+      let hr = hour() % 12;  // 0-11
+      let mn = minute();     // 0-59
+      let sc = second();     // 0-59
+
+      // Fraction for hour-based color transition in the sky
+      let hourFraction = (hr + mn/60 + sc/3600) / 12; // 0 to 1 across 12-hour cycle
+
+      // --- 1) Sky background transition from day to night ---
+      // We'll interpolate between two colors:
+      //   brightDayColor = color(135, 206, 235) (light blue)
+      //   midnightColor  = color(5, 15, 80) (dark navy)
+      let brightDayColor = color(135, 206, 235);
+      let midnightColor = color(5, 15, 80);
+      let skyColor = lerpColor(brightDayColor, midnightColor, hourFraction);
+      background(skyColor);
+
+      // --- 2) Draw city skyline ---
+      // We'll have a series of buildings with different heights. 
+      // The lit windows are determined by the minutes.
+      let buildingCount = 7;
+      let buildingWidth = width / buildingCount;
+      noStroke();
+      for (let i = 0; i < buildingCount; i++) {
+        // Random building height for variety (seeded for a consistent look each draw)
+        let bHeight = map(noise(i), 0, 1, h/4, (3*h)/4); 
+        // Draw building shape
+        fill(40);
+        rect(i * buildingWidth, height - bHeight, buildingWidth, bHeight);
+
+        // Draw windows. Let's define grid for windows in building
+        fill(255, 220, 100);
+        let rows = 10; // number of rows of windows
+        let cols = 4;  // number of columns of windows
+        let windowSpacingX = buildingWidth / (cols + 1);
+        let windowSpacingY = bHeight / (rows + 1);
+
+        let minuteLightsOn = floor(map(mn, 0, 59, 0, rows * cols + 1));
+        let count = 0;
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            count++;
+            // Only light up windows up to minuteLightsOn
+            if (count <= minuteLightsOn) {
+              let wx = i * buildingWidth + (c+1)*windowSpacingX - (windowSpacingX/2);
+              let wy = height - bHeight + (r+1)*windowSpacingY - (windowSpacingY/2);
+              // Draw a small rectangle for the window
+              rect(wx - 5, wy - 5, 10, 10);
+            }
+          }
+        }
+      }
+
+      // --- 3) Shooting star based on seconds ---
+      // We'll make a star appear near the top-left and go rightward when seconds == 0
+      // Then it moves across the sky
+      if (sc == 0 && !starVisible) {
+        // Reset star position and show it
+        starX = 0;
+        starY = random(h/8, h/3);
+        starVisible = true;
+      }
+      if (starVisible) {
+        // Move star across the sky
+        starX += 5; 
+        if (starX > width) {
+          starVisible = false;
+        }
+      }
+
+      if (starVisible) {
+        // Draw the shooting star
+        fill(255, 255, 0);
+        ellipse(starX, starY, 8, 8);
+        // Trail
+        stroke(255, 255, 200);
+        line(starX - 15, starY, starX, starY);
+        noStroke();
+      }
+
+      // --- 4) Display digital time at the bottom ---
+      fill(255);
+      noStroke();
+      textSize(24);
+      textAlign(CENTER, CENTER);
+      text(nf(hour(), 2) + ':' + nf(minute(), 2) + ':' + nf(second(), 2),
+           width / 2,
+           height - 30);
+    }
+  </script>
+</body>
+</html>

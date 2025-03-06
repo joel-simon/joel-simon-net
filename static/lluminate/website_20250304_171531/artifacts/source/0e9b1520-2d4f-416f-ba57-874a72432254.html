@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Time Kaleidoscope</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic page resets and styles */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+    /* 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.65);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the "Time Kaleidoscope"!<br><br>
+        • Hour changes the color range.<br>
+        • Minute adjusts zoom of the pattern.<br>
+        • Second influences the rotation.<br>
+        • A digital clock shows the exact time.<br><br>
+        Hover away to watch the kaleidoscope evolve.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Offscreen buffer to draw random lines/shapes
+    let buffer;
+    let angleOffset = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      
+      // Create an offscreen graphics buffer
+      buffer = createGraphics(width, height);
+      buffer.angleMode(DEGREES);
+      buffer.noStroke();
+      buffer.background(0);
+      
+      // Draw some random shapes into the buffer
+      for (let i = 0; i < 30; i++) {
+        buffer.fill(random(50,255), random(50,255), random(50,255));
+        let x = random(buffer.width);
+        let y = random(buffer.height);
+        let size = random(10,60);
+        buffer.ellipse(x, y, size, size);
+      }
+    }
+
+    function draw() {
+      background(0);
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Update kaleidoscope rotation based on seconds
+      angleOffset += s * 0.02 + 0.1;
+
+      // Shift color mode for dynamic tinting by hour
+      colorMode(HSB);
+      let hueVal = map(h, 0, 23, 0, 360);
+      tint(hueVal, 255, 255); 
+      colorMode(RGB);
+
+      // The minute controls scale
+      let kaleidoscopeScale = map(m, 0, 59, 0.5, 1.5);
+
+      // Display time in the center
+      push();
+      fill(255);
+      textSize(20);
+      textAlign(CENTER, CENTER);
+      text(nf(h,2) + ":" + nf(m,2) + ":" + nf(s,2), width/2, height/2);
+      pop();
+
+      // Draw kaleidoscope slices
+      let slices = 6; // number of symmetrical slices
+      let sliceAngle = 360 / slices;
+      push();
+      translate(width / 2, height / 2);
+      scale(kaleidoscopeScale);
+      for (let i = 0; i < slices; i++) {
+        push();
+        rotate(i * sliceAngle + angleOffset);
+        imageMode(CENTER);
+        // Clip half the area for symmetrical reflection
+        translate(0, -height/2);
+        scale(1, -1); 
+        image(buffer, 0, 0, width, height);
+        pop();
+      }
+      pop();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Time Bubbles</title>
+    <!-- Include p5.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+    <style>
+      /* Ensure body has no extra margin/padding and a dark background */
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: #000;
+      }
+
+      /* Center the container and fix its size */
+      #clock-container {
+        position: relative;
+        width: 512px;
+        height: 512px;
+        margin: 0 auto;
+      }
+
+      /* Instructions overlay, hidden by default */
+      #instructions {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 512px;
+        height: 512px;
+        background-color: rgba(0, 0, 0, 0.75);
+        color: #fff;
+        font-family: sans-serif;
+        text-align: center;
+        line-height: 1.5;
+        padding: 2rem;
+        box-sizing: border-box;
+      }
+
+      /* Show instructions on hover */
+      #clock-container:hover #instructions {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="clock-container">
+      <!-- Instructions appear when hovering over the canvas area -->
+      <div id="instructions">
+        <h2>Time Bubbles</h2>
+        <p>
+          Observe how the background and bubbles change every second.<br/>
+          Bubbles float upward and fade away. Enjoy the evolving display!
+        </p>
+      </div>
+    </div>
+
+    <script>
+      let canvasSize = 512;
+      let bubbles = [];
+      let prevSecond = -1;
+
+      function setup() {
+        let myCanvas = createCanvas(canvasSize, canvasSize);
+        myCanvas.parent("clock-container");
+        noStroke();
+      }
+
+      function draw() {
+        // Get current time values
+        let hr = hour();
+        let mn = minute();
+        let sc = second();
+        
+        // Create a background gradient influenced by the hour
+        drawGradient(hr);
+
+        // Each time second changes, add a new bubble
+        if (sc !== prevSecond) {
+          spawnBubble(hr, mn, sc);
+          prevSecond = sc;
+        }
+
+        // Update and draw all bubbles
+        for (let i = bubbles.length - 1; i >= 0; i--) {
+          bubbles[i].update();
+          bubbles[i].display();
+          // Remove if fully faded
+          if (bubbles[i].alpha <= 0) {
+            bubbles.splice(i, 1);
+          }
+        }
+
+        // Draw time readout at bottom
+        fill(255);
+        textSize(24);
+        textAlign(CENTER, CENTER);
+        text(`${hr}:${nf(mn, 2)}:${nf(sc, 2)}`, width / 2, height - 20);
+      }
+
+      // Create a bubble with position, velocity, and color based on the time
+      function spawnBubble(hr, mn, sc) {
+        // Random position in bottom portion
+        let x = random(width * 0.1, width * 0.9);
+        let y = height + 20; 
+        let diameter = random(20, 50);
+
+        // Color influenced by minute and second
+        // Subtle random factor for variety
+        let r = map(hr, 0, 23, 60, 255) + random(-20, 20);
+        let g = map(mn, 0, 59, 60, 255) + random(-20, 20);
+        let b = map(sc, 0, 59, 60, 255) + random(-20, 20);
+
+        // Slight upward velocity, random horizontal drift
+        let vy = random(-1.5, -0.5);
+        let vx = random(-0.3, 0.3);
+
+        bubbles.push(new Bubble(x, y, vx, vy, diameter, [r, g, b]));
+      }
+
+      // Bubble class
+      class Bubble {
+        constructor(x, y, vx, vy, diameter, col) {
+          this.x = x;
+          this.y = y;
+          this.vx = vx;
+          this.vy = vy;
+          this.diameter = diameter;
+          this.col = col;
+          this.alpha = 255;
+        }
+
+        update() {
+          this.x += this.vx;
+          this.y += this.vy;
+          // Fade out a bit each frame
+          this.alpha -= 1.5;
+        }
+
+        display() {
+          fill(this.col[0], this.col[1], this.col[2], this.alpha);
+          circle(this.x, this.y, this.diameter);
+        }
+      }
+
+      // Create a vertical gradient influenced by hour
+      function drawGradient(hr) {
+        let topColor = color(map(hr, 0, 23, 40, 80), 0, 100);
+        let bottomColor = color(0, 0, map(hr, 0, 23, 40, 80));
+        for (let y = 0; y < height; y++) {
+          let inter = map(y, 0, height, 0, 1);
+          let c = lerpColor(topColor, bottomColor, inter);
+          stroke(c);
+          line(0, y, width, y);
+        }
+      }
+    </script>
+  </body>
+</html>

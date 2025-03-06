@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Gears & Fractal Tree Time Display</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic page setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* Container for the 512x512 sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.65);
+      color: #fff;
+      box-sizing: border-box;
+      pointer-events: none;
+      padding: 30px;
+      text-align: center;
+    }
+    /* Appear on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: block;
+    }
+
+    /* Center the instruction text */
+    #hoverOverlay p {
+      position: relative;
+      top: 50%;
+      transform: translateY(-50%);
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Gears & Fractal Tree Time Display<br><br>
+        • The fractal tree in the background changes branching based on the current minute.<br>
+        • The tree sways according to the seconds.<br>
+        • A central gear rotates at a speed tied to the current hour.<br>
+        • Observe the digital time readout at the bottom.<br><br>
+        Hover away to return to the animation.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let gearAngle = 0;
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      rectMode(CENTER);
+      noStroke();
+    }
+
+    function draw() {
+      background(34);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Draw fractal tree in the background
+      push();
+      translate(width / 2, height);
+      drawFractalTree(80, m, s); 
+      pop();
+
+      // Update gear rotation based on hour
+      // (If hour is 0, use minimal rotation to avoid no movement)
+      let rotationSpeed = map(h === 0 ? 1 : h, 1, 23, 0.3, 2.5);
+      gearAngle += rotationSpeed;
+
+      // Draw gear in the center
+      push();
+      translate(width / 2, height / 2);
+      drawGear(80, 16, gearAngle, color(180, 100, 80));
+      pop();
+
+      // Display digital time at the bottom
+      showDigitalTime(h, m, s);
+    }
+
+    // Recursive fractal tree
+    // branchSize is the initial length of the branch
+    // m controls the branching depth, s adds a sway
+    function drawFractalTree(branchSize, m, s) {
+      // The branching depth will depend on the current minute (m)
+      let maxDepth = floor(map(m, 0, 59, 4, 9));
+      stroke(200);
+      strokeWeight(2);
+      branch(branchSize, 1, maxDepth, s);
+    }
+
+    function branch(length, depth, maxDepth, s) {
+      // Slight sway influenced by seconds
+      let swayAngle = map(sin(frameCount + s * 2), -1, 1, -5, 5);
+      line(0, 0, 0, -length);
+
+      // Move up to the end of this branch
+      translate(0, -length);
+
+      if (depth < maxDepth) {
+        push();
+        rotate(20 + swayAngle);
+        branch(length * 0.7, depth + 1, maxDepth, s);
+        pop();
+
+        push();
+        rotate(-20 - swayAngle);
+        branch(length * 0.7, depth + 1, maxDepth, s);
+        pop();
+      }
+    }
+
+    // Draw a gear with specified radius, number of teeth, angle, and color
+    function drawGear(radius, teeth, rotationAngle, gearColor) {
+      push();
+      rotate(rotationAngle);
+      fill(gearColor);
+      stroke(0);
+      strokeWeight(1);
+
+      // Main gear body
+      ellipse(0, 0, radius * 2, radius * 2);
+
+      // Gear teeth
+      for (let i = 0; i < 360; i += 360 / teeth) {
+        push();
+        rotate(i);
+        rect(0, -radius, radius * 0.15, radius * 0.4);
+        pop();
+      }
+
+      // Center circle
+      fill(0, 70);
+      ellipse(0, 0, radius * 0.5, radius * 0.5);
+      pop();
+    }
+
+    function showDigitalTime(h, m, s) {
+      noStroke();
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(16);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+    }
+  </script>
+</body>
+</html>

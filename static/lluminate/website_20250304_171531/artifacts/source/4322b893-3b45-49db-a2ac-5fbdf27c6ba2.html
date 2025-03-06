@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Kaleidoscope</title>
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #f8f8f8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #kaleidoscopeContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Instructions overlay, hidden by default. Display on hover. */
+    #instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.85);
+      color: #222;
+      font-family: sans-serif;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    #kaleidoscopeContainer:hover #instructions {
+      display: block;
+    }
+    h3 {
+      margin-top: 0;
+    }
+  </style>
+</head>
+<body>
+<div id="kaleidoscopeContainer">
+  <div id="instructions">
+    <h3>Time Kaleidoscope</h3>
+    <p>
+      • Center shape sizes reflect the hour (1–12).<br/>
+      • Colors shift with the current minute.<br/>
+      • Everything rotates according to the seconds.<br/>
+      • Watch the digital clock at the bottom to see the time.
+    </p>
+  </div>
+</div>
+
+<script>
+  let canvasSize = 512;
+
+  function setup() {
+    let c = createCanvas(canvasSize, canvasSize);
+    c.parent("kaleidoscopeContainer");
+    angleMode(DEGREES);
+    colorMode(HSB, 360, 100, 100);
+  }
+
+  function draw() {
+    background(0, 0, 95);
+
+    // Current local time
+    let hr = hour() % 12;  // 0-11
+    let mn = minute();     // 0-59
+    let sc = second();     // 0-59
+
+    // Derived parameters
+    let rotationAngle = map(sc, 0, 60, 0, 360);      // revolve with seconds
+    let kaleidoColor = map(mn, 0, 59, 0, 360);       // color changes each minute
+    let shapeSize = map(hr === 0 ? 12 : hr, 1, 12, 30, 150); // scale with the hour
+    let slices = 8;   // number of symmetrical slices
+    let sliceAngle = 360 / slices;
+
+    push();
+    translate(width / 2, height / 2);
+    rotate(rotationAngle);
+
+    // Draw kaleidoscopic slices
+    for (let i = 0; i < slices; i++) {
+      push();
+      rotate(sliceAngle * i);
+
+      // Set shape color based on minute
+      fill(kaleidoColor, 80, 70);
+      noStroke();
+
+      // Draw a triangular wedge or shape center
+      beginShape();
+      vertex(0, 0);
+      vertex(shapeSize, -shapeSize / 2);
+      vertex(shapeSize * 2, 0);
+      vertex(shapeSize, shapeSize / 2);
+      endShape(CLOSE);
+
+      pop();
+    }
+
+    pop();
+
+    // Display digital time near bottom center
+    noStroke();
+    fill(20);
+    textSize(20);
+    textAlign(CENTER, CENTER);
+    text(
+      nf(hour(), 2) + ":" + nf(minute(), 2) + ":" + nf(second(), 2),
+      width / 2,
+      height - 30
+    );
+  }
+</script>
+</body>
+</html>

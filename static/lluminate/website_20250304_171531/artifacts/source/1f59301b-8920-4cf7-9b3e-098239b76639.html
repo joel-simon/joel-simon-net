@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Wave-Spirograph Time Display</title>
+  <style>
+    /* Ensure margins and padding are zero and create a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100%;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Center a 512x512 container on the page */
+    #canvas-container {
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Instruction overlay hidden by default */
+    #instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.6);
+      text-align: center;
+      pointer-events: none;
+    }
+
+    /* Show when hovering on the container */
+    #canvas-container:hover #instructions {
+      display: block;
+    }
+
+    /* Instruction text styling */
+    #instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="instructions">
+      <div class="instructions-text">
+        <strong>Wave-Spirograph Time Display</strong><br><br>
+        • The background waves shift based on the current hour & minute.<br>
+        • A spirograph at the center is influenced by hour, minute, and second.<br>
+        • Watch the lines change color and shape each second!<br>
+        • Current time is displayed at the top-left corner.
+      </div>
+    </div>
+  </div>
+
+  <!-- Load p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let baseAngle = 0; // Controls slight rotation of the spirograph
+
+    const w = 512;
+    const h = 512;
+
+    function setup() {
+      const cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100);
+      noFill();
+    }
+
+    function draw() {
+      background(0);
+
+      // Obtain current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Draw wave background
+      drawWaves(hr, mn);
+
+      // Draw the spirograph
+      drawSpirograph(hr, mn, sc);
+
+      // Display digital time in the top-left
+      drawDigitalTime(hr, mn, sc);
+    }
+
+    // Draw wave pattern in the background
+    function drawWaves(hr, mn) {
+      push();
+      noFill();
+      stroke(255, 120);
+      strokeWeight(1);
+      let amplitude = map(hr, 0, 23, 10, 100);
+      let frequency = map(mn, 0, 59, 0.01, 0.1);
+
+      for (let y = 0; y < height; y += 20) {
+        beginShape();
+        for (let x = 0; x < width; x += 10) {
+          let wave = sin((x + frameCount) * frequency) * amplitude;
+          vertex(x, y + wave);
+        }
+        endShape();
+      }
+      pop();
+    }
+
+    // Draw a time-based spirograph
+    function drawSpirograph(hr, mn, sc) {
+      // Convert hour to 0-11 for neat variation
+      let hVal = hr % 12;
+
+      // Map hour, minute, second to spirograph parameters
+      let R = map(hVal, 0, 11, 50, 180); // Large radius
+      let r = map(mn, 0, 59, 10, 80);    // Small radius
+      let l = map(sc, 0, 59, 10, 80);    // Pen offset
+
+      // Base hue shifts every second
+      let hueVal = map(sc, 0, 59, 0, 360);
+
+      // Subtle rotation each frame
+      baseAngle += 0.15;
+
+      push();
+      translate(width / 2, height / 2);
+      rotate(baseAngle);
+      stroke(hueVal, 80, 70);
+      strokeWeight(1.5);
+      beginShape();
+      // Draw multiple revolutions of the hypotrochoid
+      for (let t = 0; t <= 2160; t += 2) {
+        let x = (R - r) * cos(t) + l * cos(((R - r) / r) * t);
+        let y = (R - r) * sin(t) - l * sin(((R - r) / r) * t);
+        vertex(x, y);
+      }
+      endShape();
+      pop();
+    }
+
+    // Display digital time in the top-left corner
+    function drawDigitalTime(hr, mn, sc) {
+      push();
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+
+      let formattedHr = hr % 12 || 12;
+      let ampm = hr >= 12 ? "PM" : "AM";
+      let mm = nf(mn, 2);
+      let ss = nf(sc, 2);
+
+      text(formattedHr + ":" + mm + ":" + ss + " " + ampm, 10, 10);
+      pop();
+    }
+  </script>
+</body>
+</html>

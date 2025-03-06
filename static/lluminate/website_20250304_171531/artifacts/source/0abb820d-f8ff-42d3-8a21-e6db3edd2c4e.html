@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Ouroboros</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #ouroborosContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Instructions overlay, hidden by default. Display on hover. */
+    #instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.8);
+      color: #333;
+      font-family: sans-serif;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    #ouroborosContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="ouroborosContainer">
+  <div id="instructions">
+    <h3>Time Ouroboros</h3>
+    <p>
+      • This symbolic snake-eating-its-tail circle changes color with the hour.<br/>
+      • Its thickness adapts to the current minute.<br/>
+      • The entire ring rotates each second.<br/>
+      • Watch closely as the transformations reflect real-time!
+    </p>
+  </div>
+</div>
+
+<script>
+  let canvasSize = 512;
+
+  function setup() {
+    let c = createCanvas(canvasSize, canvasSize);
+    c.parent("ouroborosContainer");
+    angleMode(DEGREES);
+  }
+
+  function draw() {
+    background(220);
+
+    // Get time values
+    let hr = hour() % 12;   // 0-11 for a simpler color cycle
+    let mn = minute();      // 0-59
+    let sc = second();      // 0-59
+
+    // Map hour to color shift (creates a smooth base hue for each hour)
+    // We'll use HSB color mode for easier hue rotation
+    colorMode(HSB, 360, 100, 100);
+    let baseHue = map(hr, 0, 11, 0, 330); // 0 to 330 degrees
+    let snakeHue = baseHue;
+
+    // Map minute to Ouroboros thickness
+    // Minimum thickness = 20, maximum = 90
+    let ringThickness = map(mn, 0, 59, 20, 90);
+
+    // Map second to Ouroboros rotation
+    // We'll rotate full circle in 60 seconds
+    let ringRotation = map(sc, 0, 59, 0, 360);
+
+    push();
+    translate(width/2, height/2);
+    rotate(ringRotation);
+    drawOuroboros(ringThickness, snakeHue);
+    pop();
+
+    // Reset color mode and draw time text
+    colorMode(RGB, 255, 255, 255);
+    fill(0);
+    noStroke();
+    textAlign(CENTER, CENTER);
+    textSize(20);
+    text(
+      nf(hour(),2) + ':' + nf(minute(),2) + ':' + nf(second(),2),
+      width/2,
+      height - 30
+    );
+  }
+
+  function drawOuroboros(thickness, hueValue) {
+    // Outer radius and inner radius for the ring
+    let outerRadius = 180;
+    let innerRadius = outerRadius - thickness;
+
+    // Draw the ring (body of the snake)
+    // We'll approximate with arcs or a shape. Let's use an arc for the ring face.
+    strokeWeight(thickness);
+    stroke(hueValue, 80, 90);
+    noFill();
+    arc(0, 0, outerRadius*2, outerRadius*2, 0, 360);
+
+    // Draw a simplified snake head near the top
+    // We'll place it at 0 degrees on the ring
+    push();
+      rotate(-90); // set top as reference
+      translate(outerRadius, 0);
+
+      // Snake head color
+      fill(hueValue, 80, 80);
+      noStroke();
+
+      // Head shape (triangle for a stylized snake head)
+      beginShape();
+      vertex(0, 0);
+      vertex(16, -8);
+      vertex(16, 8);
+      endShape(CLOSE);
+
+      // Eye
+      fill(0);
+      circle(12, -3, 4);
+    pop();
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Spiral Time Display</title>
+  <style>
+    /* Ensure no scrollbars & no page margin */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      font-family: sans-serif;
+      color: #ddd;
+    }
+    /* Container is positioned to hold a 512x512 canvas */
+    #container {
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      position: relative;
+    }
+    /* Overlay for hover instructions */
+    #hover-info {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #container:hover #hover-info {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="hover-info">
+      <p>Observe a dynamic spiral updated by your local time. The center shows hours, minutes, and seconds. Each ring of circles is colored by the changing time. Move your mouse away to see it in full!</p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let canvasSize = 512;
+
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent('container');
+      angleMode(DEGREES);
+      textAlign(CENTER, CENTER);
+      textSize(24);
+    }
+
+    function draw() {
+      background(17);
+
+      // Get current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Translate to center for easier drawing
+      translate(width / 2, height / 2);
+
+      // Number of circles in the spiral depends on seconds
+      let totalCircles = 60; 
+      let angleStep = 360 / totalCircles;
+      let spiralRadius = 6; // base step for spiral growth
+
+      // Generate spiral of circles
+      for (let i = 0; i < totalCircles; i++) {
+        push();
+        // Move outward in the spiral
+        let r = (i * spiralRadius) + (m * 0.5) + (h * 1.2);
+        let a = i * angleStep + (s * 2); 
+        rotate(a);
+        translate(r, 0);
+
+        noStroke();
+        // Map color slightly by the circle index and time
+        fill(
+          (h * 10 + i * 3) % 256,
+          (m * 4 + i * 5) % 256,
+          (s * 4 + i * 7) % 256
+        );
+
+        // Draw each circle
+        circle(0, 0, 10);
+        pop();
+      }
+
+      // Show time in the center
+      rotate(90);
+      fill(220);
+      noStroke();
+      text(
+        nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2),
+        0,
+        0
+      );
+    }
+  </script>
+</body>
+</html>

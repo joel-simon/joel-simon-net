@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Reef</title>
+  <style>
+    /* Page and body reset */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    /* Overlay instructions (hidden by default; visible on hover) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 24px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p style="max-width: 400px;">
+        Welcome to the "Time Reef"!<br><br>
+        • A wave in the background shifts based on the current hour.<br>
+        • Colorful fish represent the minute, forming patterns in motion.<br>
+        • A rotating star in the center reflects the passing seconds.<br><br>
+        Hover away to continue!
+      </p>
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    // Wave background variables
+    let waveOffset = 0;
+    let waveSpeed = 0.02;
+
+    // Star variables
+    let starRotation = 0;
+
+    // Fish variables
+    let fishCount = 12;
+    let fishArray = [];
+
+    // Canvas size
+    let canvasSize = 512;
+
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+
+      // Initialize fish
+      for (let i = 0; i < fishCount; i++) {
+        fishArray.push(new Fish());
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // 1) Draw wave background
+      drawWaveBackground(h);
+
+      // 2) Update & draw fish
+      for (let f of fishArray) {
+        f.update(m);
+        f.display();
+      }
+
+      // 3) Rotating star in center (reflecting seconds)
+      starRotation += 0.5 + s * 0.01; 
+      push();
+      translate(width / 2, height / 2);
+      rotate(starRotation);
+      noStroke();
+      fill(255, 204, 0);
+      drawStar(0, 0, 25, 60, 6);
+      pop();
+
+      // 4) Display digital time at bottom
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(16);
+      text(nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2), width / 2, height - 20);
+    }
+
+    // Draw wave background based on the hour
+    function drawWaveBackground(h) {
+      // Wave amplitude changes with hour
+      let amplitude = map(h, 0, 23, 30, 80);
+      noStroke();
+      fill(20, 80, 160);
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 5) {
+        let waveY = height / 2 + amplitude * sin((x + waveOffset) * 0.02);
+        vertex(x, waveY);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+      waveOffset += waveSpeed;
+    }
+
+    // Utility function to draw a star
+    function drawStar(x, y, radius1, radius2, npoints) {
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2.0;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+
+    // Fish class, representing minutes
+    class Fish {
+      constructor() {
+        this.x = random(width);
+        this.y = random(height * 0.3, height * 0.7);
+        this.speed = random(1, 2);
+        this.c = color(random(100, 255), random(50, 150), random(50, 255));
+        this.size = random(10, 20);
+        this.angle = random(360);
+      }
+
+      update(minuteValue) {
+        // Sway horizontally
+        this.x += this.speed * cos(this.angle);
+        this.y += this.speed * sin(this.angle * 0.5);
+        this.angle += 0.05;
+
+        // If out of canvas, reposition
+        if (this.x > width + this.size) this.x = -this.size;
+        if (this.x < -this.size) this.x = width + this.size;
+        if (this.y > height + this.size) this.y = random(height * 0.3, height * 0.7);
+        if (this.y < -this.size) this.y = random(height * 0.3, height * 0.7);
+
+        // Slight color shift by minute
+        let shift = map(minuteValue, 0, 59, -50, 50);
+        this.c = color(
+          constrain(red(this.c) + shift * 0.01, 0, 255),
+          constrain(green(this.c) + shift * 0.01, 0, 255),
+          constrain(blue(this.c) + shift * 0.01, 0, 255)
+        );
+      }
+
+      display() {
+        push();
+        translate(this.x, this.y);
+        fill(this.c);
+        noStroke();
+        // Simple ellipse-based fish
+        ellipse(0, 0, this.size * 2, this.size);
+        triangle(this.size, 0, this.size + 10, -this.size / 2, this.size + 10, this.size / 2);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

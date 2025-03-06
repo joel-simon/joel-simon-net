@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Vortex</title>
+  <style>
+    /* Page setup for a 512x512 display */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas and overlay */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: auto;
+      overflow: hidden;
+      background-color: #111;
+    }
+
+    /* Instructions overlay hidden by default, appears on hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: none;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+      color: #fff;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Vortex</strong><br><br>
+        • Swirling arcs revolve to reflect the current hour, minute, and second.<br>
+        • Hour influences the hue, minute alters arc size, and second affects thickness.<br>
+        • Move your mouse horizontally to adjust rotation speed.<br>
+        Hover away to see the vortex in motion.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+    let angle = 0;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100);
+    }
+
+    function draw() {
+      background(0);
+
+      // Get current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Map time to color, shape, and speed parameters
+      let vortexHue = map(hr, 0, 23, 0, 360); // Hour influences hue
+      let arcSize = map(mn, 0, 59, 50, 250);  // Minute influences arc radius
+      let thickness = map(sc, 0, 59, 1, 30);  // Second influences stroke weight
+      let rotationSpeed = map(mouseX, 0, width, -0.5, 0.5); // Mouse X adjusts rotation speed
+
+      angle += rotationSpeed;
+
+      // Translate to center of canvas
+      translate(width / 2, height / 2);
+      rotate(angle);
+
+      // Draw multiple arcs around center
+      strokeWeight(thickness);
+      stroke(vortexHue, 80, 90);
+      noFill();
+
+      // We'll create arcs that wrap around a circle
+      // Each arc is slightly offset from the previous
+      let totalArcs = 12;
+      for (let i = 0; i < totalArcs; i++) {
+        push();
+        rotate((360 / totalArcs) * i);
+        arc(0, 0, arcSize, arcSize, 0, 180);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Watercolor Splotches</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Root body styling */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f7f7f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* 512x512 container for the p5 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #444;
+      padding: 8px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 220px;
+      z-index: 1;
+    }
+
+    /* Show tooltip on hover */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      A new watercolor splotch appears each second, colored by the hour, sized by the minute, and fading away at a rate tied to the second.
+    </div>
+  </div>
+
+  <script>
+    // Global variables
+    let splotches = [];
+    let oldSecond;
+    
+    class Splotch {
+      constructor(h, m, s) {
+        // Position
+        this.x = random(width);
+        this.y = random(height);
+
+        // Hour-based color (in HSB)
+        colorMode(HSB, 360, 100, 100, 100);
+        this.col = color((h * 30) % 360, 70, 80, 80);
+
+        // Size mapped from minute
+        // minute() 0..59 -> size 40..360
+        this.size = map(m, 0, 59, 40, 360);
+
+        // Fade control
+        // second() -> fade step
+        // As seconds increase, fade out faster
+        this.alpha = 255;
+        this.fadeSpeed = 0.5 + s * 0.1; 
+
+        colorMode(RGB, 255);
+      }
+
+      update() {
+        this.alpha -= this.fadeSpeed;
+      }
+
+      display() {
+        noStroke();
+        fill(red(this.col), green(this.col), blue(this.col), this.alpha);
+        // Draw a rough watercolor circle
+        ellipse(this.x, this.y, this.size, this.size);
+      }
+
+      isDead() {
+        return this.alpha <= 0;
+      }
+    }
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      oldSecond = second();
+      noStroke();
+    }
+
+    function draw() {
+      background(250);
+
+      let hr = hour() % 12; 
+      let mn = minute();
+      let sc = second();
+
+      // Check if second changed to spawn a new splotch
+      if (sc !== oldSecond) {
+        splotches.push(new Splotch(hr, mn, sc));
+        oldSecond = sc;
+      }
+
+      // Update and draw all existing splotches
+      for (let i = splotches.length - 1; i >= 0; i--) {
+        splotches[i].update();
+        splotches[i].display();
+        // Remove if fully faded
+        if (splotches[i].isDead()) {
+          splotches.splice(i, 1);
+        }
+      }
+
+      // Overlay digital time in the center
+      fill(30);
+      textSize(24);
+      textAlign(CENTER, CENTER);
+      text(nf(hour(),2) + ':' + nf(mn,2) + ':' + nf(sc,2), width / 2, height / 2);
+    }
+  </script>
+</body>
+</html>

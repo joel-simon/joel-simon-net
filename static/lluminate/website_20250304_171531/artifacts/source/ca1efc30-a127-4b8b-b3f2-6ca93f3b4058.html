@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Mandala</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset default margins and background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container exactly 512x512 */
+    #timeMandalaContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    /* Instruction overlay on hover */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 30px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    #timeMandalaContainer:hover #instructionsOverlay {
+      display: block;
+    }
+
+    h1, p {
+      margin: 1em 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="timeMandalaContainer">
+    <div id="instructionsOverlay">
+      <h1>Time Mandala</h1>
+      <p>
+        • The number of rings is based on the current hour.<br>
+        • Colors shift every minute.<br>
+        • The rotation speed reflects the current seconds.<br>
+        • Hover again to see instructions.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      TIME MANDALA
+      - The number of rings is based on the hour (1 to 12).
+      - The color palette shifts with the minute.
+      - The rotation speed is tied to the current second.
+      - This draws multi-layered petals forming a mandala-like pattern.
+    */
+
+    let baseRotation = 0;
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('timeMandalaContainer');
+      angleMode(DEGREES);
+      colorMode(HSB);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Convert 24-hour format to a smaller range for ring count
+      // We'll limit ringCount to a max of 12 (more visually pleasing).
+      let ringCount = (h % 12);
+      if (ringCount === 0) ringCount = 12;
+
+      // Color's hue will shift over 360 degrees mapping from minute 0..59
+      let colorShift = map(m, 0, 59, 0, 360);
+
+      // Rotation speed influenced by seconds (0..59 => 0..5 degrees per frame)
+      let rotationSpeed = map(s, 0, 59, 0, 5);
+
+      // Center the drawing
+      translate(width / 2, height / 2);
+
+      // Accumulate rotation to continuously spin
+      baseRotation += rotationSpeed;
+      rotate(baseRotation);
+
+      // Draw multiple rings, each ring has multiple petals
+      for (let i = 0; i < ringCount; i++) {
+        let ringRadius = map(i, 0, ringCount - 1, 50, 200);
+        push();
+        // Slight rotation offset to distribute rings in a nested pattern
+        rotate(i * (360 / ringCount) * 0.2);
+        drawMandalaRing(ringRadius, i, ringCount, colorShift);
+        pop();
+      }
+    }
+
+    // Draw a single ring of petals
+    function drawMandalaRing(ringRadius, index, totalRings, baseHue) {
+      // The number of petals in each ring
+      let petals = 12;
+      for (let p = 0; p < petals; p++) {
+        push();
+        let angleStep = 360 / petals;
+        rotate(p * angleStep);
+
+        // Petal color changes slightly with ring index and baseHue
+        fill((baseHue + index * 20 + p * 2) % 360, 100, 100);
+        // Draw a 'petal' using arc or ellipse
+        ellipse(ringRadius, 0, ringRadius * 0.8, ringRadius * 0.4);
+        pop();
+      }
+    }
+
+  </script>
+</body>
+</html>

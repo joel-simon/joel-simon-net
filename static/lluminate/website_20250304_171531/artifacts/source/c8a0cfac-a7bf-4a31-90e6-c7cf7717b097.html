@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Time Maze & Fractal Playground</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset body margin/padding and use a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+    /* Container fixed at 512x512, centered */
+    #clock-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+    }
+    /* Instructions overlay, hidden by default */
+    #instructions {
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      display: none;
+      background-color: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      line-height: 1.5;
+      padding: 2rem;
+      box-sizing: border-box;
+    }
+    /* Show instructions on hover */
+    #clock-container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="clock-container">
+  <div id="instructions">
+    <h2>Time Maze &amp; Fractal Playground</h2>
+    <p>
+      1. Navigate the maze with arrow keys or WASD. <br/>
+      2. Each minute, a new maze appears. <br/>
+      3. The fractal tree in the background grows with hours. <br/>
+      4. Stars twinkle each second. Have fun exploring!
+    </p>
+  </div>
+</div>
+
+<script>
+/*
+  This sketch combines a time-based maze with a background fractal tree
+  and a starfield that responds to seconds. 
+  The maze regenerates every minute.
+  The fractal tree's size changes with the hour.
+  The starfield sparkles based on current seconds.
+  Player color changes with the hour, too.
+*/
+
+let canvasSize = 512;
+
+// Maze configuration
+let cols, rows;
+let cellSize = 32; // 512 / 32 = 16 cells wide, 16 tall
+let grid = [];
+let stack = [];
+let currentCell;
+let mazeGeneratedMinute = -1;
+
+// Player position
+let playerX = 0;
+let playerY = 0;
+
+// Track the previous minute to detect changes
+let lastMinute;
+
+// Setup p5.js
+function setup() {
+  let myCanvas = createCanvas(canvasSize, canvasSize);
+  myCanvas.parent("clock-container");
+  angleMode(RADIANS);
+
+  // Initialize maze
+  cols = width / cellSize;
+  rows = height / cellSize;
+  initMaze();
+
+  // Start with the current minute
+  lastMinute = minute();
+}
+
+function draw() {
+  background(0);
+
+  // Time-based updates
+  let hr = hour();
+  let mn = minute();
+  let sc = second();
+
+  // If the minute changed, regenerate the maze
+  if (mn !== lastMinute) {
+    initMaze();
+    lastMinute = mn;
+  }
+
+  // Draw starfield for the current second
+  drawStarField(sc);
+
+  // Draw fractal tree, based on the hour
+  push();
+  drawFractalTree(hr);
+  pop();
+
+  // Draw the maze
+  for (let i = 0; i < grid.length; i++) {
+    grid[i].show();
+  }
+
+  // Maze generation step (finish if it's still ongoing)
+  if (stack.length > 0) {
+    generateMazeStep();
+  }
+
+  // Draw the player
+  drawPlayer(hr);
+
+  // Display clock text
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(24);
+  text(`${nf(hr,2)}:${nf(mn,2)}:${nf(sc,2)}`, width/2, height - 20);
+}
+
+// Initialize (or re-initialize) the maze
+function initMaze() {
+  grid = [];
+  stack = [];
+
+  for (let j = 0; j < rows; j++) {
+    for (let i = 0; i < cols; i++) {
+      let cell = new Cell(i, j);
+      grid.push(cell);
+    }
+  }
+
+  // Start from first cell
+  currentCell = grid[0];
+  currentCell.visited = true;
+  stack.push(currentCell);
+
+  // Reset player
+  playerX = 0;
+  playerY = 0;
+}
+
+// Generate one step of the maze using a DFS approach
+function generateMazeStep() {
+  // Step 1: Pick a random unvisited neighbor
+  let nextCell = currentCell.checkNeighbors();
+  if (nextCell) {
+    nextCell.visited = true;
+    stack.push(nextCell);
+    // Remove the walls between the current and next
+    removeWalls(currentCell, nextCell);
+    currentCell = nextCell;
+  } else if (stack.length > 0) {
+    currentCell = stack.pop();
+  }
+}
+
+// Starfield changes with seconds
+function drawStarField(sc) {
+  // Use second to determine how many sparkles to draw
+  let starCount = map(sc, 0, 59, 50, 200);
+  noStroke();
+  for (let i = 0; i < starCount; i++) {
+    let x = random(width);
+    let y = random(height);
+    let starSize = random(1, 3);
+    let alpha = random(50, 255);
+    fill(255, alpha);
+    circle(x, y, starSize);
+  }
+}
+
+// Draw fractal tree in the background
+function drawFractalTree(hr) {
+  // Move to bottom center
+  translate(width / 4, height);
+  stroke(255, 150);
+  let maxDepth = floor(map(hr, 0, 23, 3, 10));
+  let branchLength = map(hr, 0, 23, 40, 140);
+  fractalTree(branchLength, PI / 4, maxDepth);
+}
+
+function fractalTree(len, angle, depth) {
+  if (depth <= 0) return;
+  strokeWeight(map(depth, 0, 10, 1, 3));
+  line(0, 0, 0, -len);
+  translate(0, -len);
+
+  push();
+  rotate(angle);
+  fractalTree(len * 0.7, angle, depth - 1);
+  pop();
+
+  push();
+  rotate(-angle);
+  fractalTree(len * 0.7, angle, depth - 1);
+  pop();
+}
+
+// Draw the player (color changes by hour)
+function drawPlayer(hr) {
+  let hue = map(hr, 0, 23, 0, 255);
+  fill(hue, 200, 255 - hue);
+  noStroke();
+  // playerX, playerY are in grid coords; convert to pixels
+  circle(playerX * cellSize + cellSize / 2, 
+         playerY * cellSize + cellSize / 2, 
+         cellSize / 2);
+}
+
+// Maze cell constructor
+function Cell(i, j) {
+  this.i = i;
+  this.j = j;
+  this.visited = false;
+  // top, right, bottom, left
+  this.walls = [true, true, true, true];
+
+  // Return index from (i, j) safely
+  this.index = function(i, j) {
+    if (i < 0 || j < 0 || i >= cols || j >= rows) {
+      return -1;
+    }
+    return i + j * cols;
+  }
+
+  // Check unvisited neighbors
+  this.checkNeighbors = function() {
+    let neighbors = [];
+    let top    = grid[this.index(i, j - 1)];
+    let right  = grid[this.index(i + 1, j)];
+    let bottom = grid[this.index(i, j + 1)];
+    let left   = grid[this.index(i - 1, j)];
+
+    if (top && !top.visited)    neighbors.push(top);
+    if (right && !right.visited)  neighbors.push(right);
+    if (bottom && !bottom.visited) neighbors.push(bottom);
+    if (left && !left.visited)  neighbors.push(left);
+
+    if (neighbors.length > 0) {
+      let r = floor(random(neighbors.length));
+      return neighbors[r];
+    } else {
+      return undefined;
+    }
+  }
+
+  // Draw the cell
+  this.show = function() {
+    let x = this.i * cellSize;
+    let y = this.j * cellSize;
+    stroke(255);
+    strokeWeight(2);
+    if (this.walls[0]) line(x, y, x + cellSize, y);         // top
+    if (this.walls[1]) line(x + cellSize, y, x + cellSize, y + cellSize); // right
+    if (this.walls[2]) line(x + cellSize, y + cellSize, x, y + cellSize); // bottom
+    if (this.walls[3]) line(x, y + cellSize, x, y);         // left
+  }
+}
+
+// Remove walls between two adjacent cells
+function removeWalls(a, b) {
+  let x = a.i - b.i;
+  if (x === 1) {
+    a.walls[3] = false;
+    b.walls[1] = false;
+  } else if (x === -1) {
+    a.walls[1] = false;
+    b.walls[3] = false;
+  }
+  let y = a.j - b.j;
+  if (y === 1) {
+    a.walls[0] = false;
+    b.walls[2] = false;
+  } else if (y === -1) {
+    a.walls[2] = false;
+    b.walls[0] = false;
+  }
+}
+
+// Handle arrow keys or WASD for movement
+function keyPressed() {
+  let nextX = playerX;
+  let nextY = playerY;
+  if (keyCode === UP_ARROW || key === 'w')    nextY--;
+  if (keyCode === DOWN_ARROW || key === 's')  nextY++;
+  if (keyCode === LEFT_ARROW || key === 'a')  nextX--;
+  if (keyCode === RIGHT_ARROW || key === 'd') nextX++;
+
+  // Check walls before moving
+  // Only move if there's no wall in that direction
+  let current = grid[playerY * cols + playerX];
+  if (nextY < playerY && !current.walls[0]) { 
+    playerY = nextY;
+  } 
+  else if (nextY > playerY && !current.walls[2]) {
+    playerY = nextY;
+  }
+  else if (nextX > playerX && !current.walls[1]) {
+    playerX = nextX;
+  }
+  else if (nextX < playerX && !current.walls[3]) {
+    playerX = nextX;
+  }
+}
+</script>
+</body>
+</html>

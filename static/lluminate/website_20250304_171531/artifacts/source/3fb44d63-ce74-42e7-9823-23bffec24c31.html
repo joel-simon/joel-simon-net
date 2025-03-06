@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Gravity Playground</title>
+  <style>
+    /* Basic page and body settings */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.75);
+      text-align: center;
+      padding: 20px;
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Gravity Playground</strong><br><br>
+        • Every second, a new ball drops from the top.<br>
+        • The ground’s slope changes with the hour.<br>
+        • Each ball’s color is set by the current minute.<br>
+        • Watch them bounce and roll!
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    // Canvas dimensions
+    let w = 512;
+    let h = 512;
+
+    // Array to store ball objects
+    let balls = [];
+
+    // Track the last second to know when to spawn a new ball
+    let prevSecond = -1;
+
+    // Gravity constant
+    let gravity = 0.4;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      // Get current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // If the second just changed, spawn a new ball
+      if (sc !== prevSecond) {
+        spawnNewBall(hr, mn, sc);
+        prevSecond = sc;
+      }
+
+      // Determine the left and right y-coordinates of the sloped ground
+      // Varies with hour: hr in [0..23]
+      // Map hour to a slope offset range of [-150..150]
+      let slopeOffset = map(hr, 0, 23, -150, 150);
+      let leftGroundY = 400 + slopeOffset; 
+      let rightGroundY = 400 - slopeOffset;
+
+      // Draw the sloped ground
+      stroke(200);
+      strokeWeight(2);
+      line(0, leftGroundY, width, rightGroundY);
+      noStroke();
+
+      // Update and draw each ball
+      for (let i = balls.length - 1; i >= 0; i--) {
+        let b = balls[i];
+        b.update(leftGroundY, rightGroundY);
+        b.drawBall();
+
+        // Remove the ball if it leaves the bottom or sides
+        if (b.outOfBounds()) {
+          balls.splice(i, 1);
+        }
+      }
+    }
+
+    // Spawns a new ball at the top with properties based on the current minute
+    function spawnNewBall(hr, mn, sc) {
+      let ballColor = color(
+        map(mn, 0, 59, 50, 255), 
+        map(mn, 0, 59, 255, 50), 
+        map(mn, 0, 59, 150, 255)
+      );
+      // Start at random x, near the top
+      let startX = random(50, width - 50);
+      balls.push(new Ball(startX, 0, ballColor));
+    }
+
+    // Ball class for managing position, velocity, and collision with sloped ground
+    class Ball {
+      constructor(x, y, c) {
+        this.x = x;
+        this.y = y;
+        this.vx = random(-1.5, 1.5);
+        this.vy = 0;
+        this.r = 15;
+        this.col = c;
+      }
+
+      update(leftGroundY, rightGroundY) {
+        // Apply gravity
+        this.vy += gravity;
+
+        // Move the ball
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Ground collision detection
+        // Ground y for this.x determined by linear interpolation
+        let groundY = lerp(leftGroundY, rightGroundY, this.x / width);
+
+        // If the ball hits or goes below the ground, make it bounce
+        if (this.y + this.r >= groundY) {
+          this.y = groundY - this.r; 
+          this.vy *= -0.6; // bounce factor
+          this.vx *= 0.9;  // lose some horizontal speed
+        }
+      }
+
+      drawBall() {
+        fill(this.col);
+        ellipse(this.x, this.y, this.r * 2);
+      }
+
+      // If ball is far off screen, we remove it
+      outOfBounds() {
+        return (this.x < -50 || this.x > width + 50 || this.y > height + 100);
+      }
+    }
+  </script>
+</body>
+</html>

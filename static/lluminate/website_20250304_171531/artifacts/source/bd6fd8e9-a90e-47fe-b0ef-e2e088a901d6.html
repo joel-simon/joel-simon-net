@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Surreal Time Tapestry</title>
+  <!-- Include p5.js -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic page setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (hidden by default, appears on hover) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      text-align: center;
+      box-sizing: border-box;
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <h2>Surreal Time Tapestry</h2>
+      <p>
+        • Background mosaic shifts with hour & minute<br>
+        • A fractal tree grows with seconds<br>
+        • A gear rotates with minutes<br>
+        Hover away to see it come alive!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Surreal Time Tapestry
+      ----------------------
+      1) A background mosaic whose colors depend on the hour and minute
+      2) A fractal tree that adjusts branch angles based on the seconds
+      3) A gear shape that rotates with the current minute
+      4) A small clock overlay
+    */
+
+    const CANVAS_SIZE = 512;
+    let mosaicTiles = [];
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      // Generate a mosaic pattern once (we'll recolor in draw)
+      generateMosaic();
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      drawMosaicBackground(h, m); // (1) mosaic background
+      drawFractalTree(s);         // (2) fractal tree driven by seconds
+      drawRotatingGear(m);        // (3) gear rotates with minute
+      drawClock(h, m, s);         // (4) small clock
+    }
+
+    // Generates a grid of tile coordinates (we'll recolor them per frame)
+    function generateMosaic() {
+      let tileSize = 32; // 16x16 tiles (512/32=16)
+      for (let y = 0; y < height; y += tileSize) {
+        for (let x = 0; x < width; x += tileSize) {
+          mosaicTiles.push({ x, y, size: tileSize });
+        }
+      }
+    }
+
+    // Draw mosaic background, tinted by hour & minute
+    function drawMosaicBackground(h, m) {
+      noStroke();
+      let baseHue = map(h, 0, 23, 0, 360);
+      let minuteShift = map(m, 0, 59, 0, 60);
+      colorMode(HSB, 360, 100, 100);
+      mosaicTiles.forEach(tile => {
+        let tHue = (baseHue + tile.x * 0.2 + tile.y * 0.1 + minuteShift) % 360;
+        fill(tHue, 90, 40);
+        rect(tile.x, tile.y, tile.size, tile.size);
+      });
+      colorMode(RGB, 255); // reset back to default
+    }
+
+    // Draw fractal tree from bottom center
+    function drawFractalTree(s) {
+      push();
+      translate(width / 2, height);
+      stroke(255);
+      let branches = 6;          // total branching depth
+      let angleVar = map(s, 0, 59, 15, 45); // branch angle changes with seconds
+      fractalBranch(80, branches, angleVar);
+      pop();
+    }
+
+    // Recursive function for fractal tree
+    function fractalBranch(len, depth, angleVar) {
+      line(0, 0, 0, -len);
+      translate(0, -len);
+      if (depth > 0) {
+        push();
+        rotate(angleVar);
+        fractalBranch(len * 0.7, depth - 1, angleVar);
+        pop();
+
+        push();
+        rotate(-angleVar);
+        fractalBranch(len * 0.7, depth - 1, angleVar);
+        pop();
+      }
+    }
+
+    // Draw a simple gear that rotates with current minute
+    function drawRotatingGear(m) {
+      push();
+      translate(width * 0.2, height * 0.3);
+      rotate(map(m, 0, 59, 0, 360));
+      noStroke();
+      fill(200);
+      // gear shape: circle with notches
+      let gearSize = 60;
+      ellipse(0, 0, gearSize * 2, gearSize * 2);
+      fill(50);
+      for (let i = 0; i < 12; i++) {
+        push();
+        rotate(i * 30);
+        rect(gearSize - 5, -5, 10, 10); // small rectangles around perimeter
+        pop();
+      }
+      // center hole
+      fill(0);
+      ellipse(0, 0, gearSize * 0.4, gearSize * 0.4);
+      pop();
+    }
+
+    // Show a small digital clock top-left
+    function drawClock(h, m, s) {
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 10, 10);
+      pop();
+    }
+  </script>
+</body>
+</html>

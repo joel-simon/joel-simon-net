@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Combined Interactive Time Display</title>
+  <!-- p5.js library from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset default margins and padding */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay instructions, hidden by default */
+    #hoverInstructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      padding: 30px;
+      box-sizing: border-box;
+      text-align: center;
+      background: rgba(0,0,0,0.8);
+    }
+
+    #canvasContainer:hover #hoverInstructions {
+      display: block;
+    }
+
+    h1 {
+      margin-top: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverInstructions">
+      <h1>Creative Time Display</h1>
+      <p>
+        • Hour: Affects the wave's primary color and the main orbit's speed.<br>
+        • Minute: Influences the fractal flower's size.<br>
+        • Second: Controls the swirling star's rotation and wave animation.<br>
+        • Watch the time update in the top-left. Enjoy!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let waveOffset = 0;      // Controls wave animation
+    let starRotation = 0;    // Rotating star angle
+    let orbitAngle = 0;      // Orbit animation for any orbiting shape
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      rectMode(CENTER);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      // Retrieve current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // 1) Dynamic wave background
+      // The wave color is based on hour (0..23 => hue 0..360).
+      colorMode(HSB);
+      let waveHue = map(h, 0, 23, 0, 360);
+      fill(waveHue, 70, 55);
+      beginShape();
+        vertex(0, height);
+        for (let x = 0; x <= width; x += 10) {
+          // second-based wave motion
+          let waveHeight = height * 0.5 + sin((x + waveOffset) * 0.02) * (s + 20);
+          vertex(x, waveHeight);
+        }
+        vertex(width, height);
+      endShape(CLOSE);
+      // Increase wave offset for continuous animation
+      waveOffset += 0.4;
+
+      // 2) An orbiting shape that moves based on hour
+      // The orbit radius and speed are tied to hour
+      let orbitRadius = map(h, 0, 23, 50, 200);
+      orbitAngle += 0.4 + (h * 0.03);
+      let orbX = width / 2 + orbitRadius * cos(orbitAngle);
+      let orbY = height / 2 + orbitRadius * sin(orbitAngle);
+      fill(255);
+      ellipse(orbX, orbY, 15, 15);
+
+      // 3) Fractal flower in center with size controlled by minute
+      push();
+      translate(width * 0.3, height * 0.65);
+      // Map minute to number of petals (3..12)
+      let petals = floor(map(m, 0, 59, 3, 12));
+      drawFractalFlower(petals, 40);
+      pop();
+
+      // 4) Rotating star near the top-right, rotation by second
+      push();
+      translate(width * 0.75, height * 0.25);
+      starRotation += s * 0.1 + 0.5;
+      rotate(starRotation);
+      drawStar(0, 0, 10, 20, 5);
+      pop();
+
+      // Return color mode to default for text
+      colorMode(RGB);
+
+      // 5) Digital clock in top-left
+      fill(255);
+      textSize(20);
+      textAlign(LEFT, TOP);
+      let displayHour = h % 12;
+      displayHour = displayHour ? displayHour : 12;
+      let ampm = h >= 12 ? "PM" : "AM";
+      let minString = nf(m, 2);
+      let secString = nf(s, 2);
+      text(`${displayHour}:${minString}:${secString} ${ampm}`, 10, 10);
+    }
+
+    // Draw a simple star shape
+    function drawStar(x, y, radius1, radius2, npoints) {
+      fill(255, 200, 0);
+      noStroke();
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+
+    // Fractal flower generator
+    // Recursively draw petals, branching outward
+    function drawFractalFlower(levels, size) {
+      if (levels < 1) return;
+      fill(255 - levels * 15, 100 + levels * 10, 100 + levels * 15);
+      ellipse(0, 0, size, size);
+      push();
+        for (let i = 0; i < 6; i++) {
+          rotate(60);
+          push();
+            translate(size * 0.6, 0);
+            drawFractalFlower(levels - 1, size * 0.65);
+          pop();
+        }
+      pop();
+    }
+  </script>
+</body>
+</html>

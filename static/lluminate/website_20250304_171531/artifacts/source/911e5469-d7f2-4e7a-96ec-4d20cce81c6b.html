@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Fractal Fish Time</title>
+
+  <!-- Required p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <style>
+    /* Reset body margin/padding and center the main container */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; 
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Container for the 512x512 canvas and the tooltip */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none; 
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      border-radius: 4px;
+      padding: 10px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 240px;
+      z-index: 2;
+      line-height: 1.4em;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+
+    /* Enforce the 512x512 size for the p5 canvas and add a subtle shadow */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      Hover over the canvas to explore!<br><br>
+      • Three fish visualize hours, minutes, and seconds with their size, speed, and color.<br>
+      • A fractal tree in the background changes its angle (hour), depth (minutes), and trunk length (seconds).<br><br>
+      Enjoy this blended time display!
+    </div>
+  </div>
+
+  <script>
+    // ---------- Fish Class ----------
+    class Fish {
+      constructor(scaleFactor, speedFactor, colorMode) {
+        this.x = random(width);
+        this.y = random(height * 0.3, height * 0.8);
+        this.scaleFactor = scaleFactor; // adjusts fish size
+        this.speedFactor = speedFactor; // affects horizontal speed
+        this.colorMode = colorMode;     // 'hour', 'minute', or 'second'
+      }
+
+      update() {
+        // moves fish from left to right, wraps around
+        this.x += this.speedFactor;
+        if (this.x > width + 50) {
+          this.x = -50;
+          this.y = random(height * 0.3, height * 0.8);
+        }
+      }
+
+      display() {
+        let h = hour();
+        let m = minute();
+        let s = second();
+
+        // Adjust fish color based on time
+        let baseColor;
+        if (this.colorMode === 'hour') {
+          baseColor = color((h % 12) * 20, 100, 200);
+        } else if (this.colorMode === 'minute') {
+          baseColor = color(100, m * 4, 180);
+        } else {
+          baseColor = color(80, 160, s * 4);
+        }
+
+        push();
+        translate(this.x, this.y);
+        scale(this.scaleFactor);
+        noStroke();
+        fill(baseColor);
+
+        // Body of fish
+        ellipse(0, 0, 60, 30);
+
+        // Tail
+        fill(
+          red(baseColor) * 0.8,
+          green(baseColor) * 0.8,
+          blue(baseColor) * 0.8
+        );
+        triangle(-30, 0, -45, -10, -45, 10);
+
+        // Fins
+        fill(
+          red(baseColor) * 1.2,
+          green(baseColor) * 1.2,
+          blue(baseColor) * 1.2
+        );
+        ellipse(5, -15, 20, 10);
+        ellipse(5, 15, 20, 10);
+
+        // Eye
+        fill(255);
+        ellipse(15, -5, 5, 5);
+
+        pop();
+      }
+    }
+
+    // -------- Fractal Tree Function --------
+    function drawFractalTree(len, level, angle) {
+      if (level === 0) return; // Base case
+
+      // Main branch
+      strokeWeight(map(level, 1, 10, 1, 5));
+      stroke(80, 50 + 15 * (10 - level), 30);
+      line(0, 0, 0, -len);
+
+      // Move to the end of the current branch
+      translate(0, -len);
+
+      // Draw left subtree
+      push();
+      rotate(-angle);
+      drawFractalTree(len * 0.7, level - 1, angle);
+      pop();
+
+      // Draw right subtree
+      push();
+      rotate(angle);
+      drawFractalTree(len * 0.7, level - 1, angle);
+      pop();
+    }
+
+    // --------------- Setup & Global Vars ---------------
+    let fishHour, fishMinute, fishSecond;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent("canvasContainer");
+      angleMode(RADIANS);
+      strokeCap(ROUND);
+
+      // Create fish objects for hour, minute, and second
+      fishHour   = new Fish(1.2, 0.5, 'hour');
+      fishMinute = new Fish(0.9, 1.2, 'minute');
+      fishSecond = new Fish(0.6, 2.0, 'second');
+    }
+
+    // --------------- Draw Loop ---------------
+    function draw() {
+      background(0, 30, 60);
+
+      // 1) Draw the fractal tree (background)
+      let hr = hour() % 12; 
+      let mn = minute();
+      let sc = second();
+
+      let branchAngle = map(hr, 0, 12, 0, PI / 2);   
+      let depth       = floor(map(mn, 0, 60, 5, 10));
+      let trunkLen    = map(sc, 0, 60, 40, 150);
+
+      push();
+      translate(width / 2, height); 
+      drawFractalTree(trunkLen, depth, branchAngle);
+      pop();
+
+      // 2) Update & display fish
+      fishHour.update();
+      fishMinute.update();
+      fishSecond.update();
+
+      fishHour.display();
+      fishMinute.display();
+      fishSecond.display();
+    }
+  </script>
+</body>
+</html>

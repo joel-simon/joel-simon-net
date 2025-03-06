@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Jelly</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  
+  <style>
+    /* Reset body margin/padding and ensure the page is centered */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Enforce the 512x512 size and position the tooltip */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none; 
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      border-radius: 4px;
+      padding: 10px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 240px;
+      z-index: 2;
+      line-height: 1.4em;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+
+    /* Keep the p5 canvas at exactly 512x512 */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      Time Jelly Instructions:<br><br>
+      • The jellyfish's color shifts with the hour.<br>
+      • The jellyfish grows or shrinks depending on the minute.<br>
+      • Tentacle motions speed up or slow down with the seconds.<br>
+      • Watch the gentle changes to observe the flow of time.
+    </div>
+  </div>
+
+  <script>
+    let waveOffset = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent("canvasContainer");
+      colorMode(HSB);
+      angleMode(RADIANS);
+    }
+
+    function draw() {
+      background(200, 50, 30); // a warm hue for watery background (HSB)
+      drawUnderwaterGlow();
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Map the hour (0-23) to a hue range (0-360)
+      let jellyHue = map(h, 0, 23, 0, 360);
+      // Map minute (0-59) to body size
+      let bodySize = map(m, 0, 59, 60, 200);
+      // Use seconds to control tentacle wave speed
+      waveOffset += 0.01 + s * 0.0003;
+
+      push();
+      translate(width / 2, height / 2);
+      noStroke();
+
+      // Draw the jellyfish body (a soft gradient circle)
+      for (let r = bodySize; r > 0; r -= 1) {
+        fill(jellyHue, 80, map(r, 0, bodySize, 100, 40));
+        circle(0, 0, r);
+      }
+
+      // Draw tentacles
+      let tentacleCount = 8;
+      let angleStep = TWO_PI / tentacleCount;
+      for (let i = 0; i < tentacleCount; i++) {
+        push();
+        rotate(i * angleStep);
+        drawTentacle(bodySize, jellyHue);
+        pop();
+      }
+      pop();
+    }
+
+    function drawUnderwaterGlow() {
+      // Subtle gradient to mimic underwater lighting
+      noFill();
+      for (let r = 512; r > 0; r -= 10) {
+        stroke(200, 50, map(r, 0, 512, 20, 70));
+        circle(width / 2, height / 2, r);
+      }
+    }
+
+    function drawTentacle(bodySize, hueVal) {
+      // Tentacle line settings
+      strokeWeight(2);
+      stroke(hueVal, 80, 90);
+
+      // We'll make a segmented tentacle
+      let segments = 20;
+      let segmentLength = 5 + (bodySize / 20);
+
+      // Start directly below jelly center
+      let x = 0;
+      let y = bodySize / 2;
+
+      for (let j = 0; j < segments; j++) {
+        // Slight horizontal wave
+        let wave = sin(waveOffset + j * 0.3) * 6;
+        let newX = x + wave;
+        let newY = y + segmentLength;
+
+        line(x, y, newX, newY);
+
+        x = newX;
+        y = newY;
+      }
+    }
+  </script>
+</body>
+</html>

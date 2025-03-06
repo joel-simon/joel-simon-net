@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Combined Time Mural - Remixed</title>
+  <style>
+    /* Basic page setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.75);
+      text-align: center;
+      padding: 20px;
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Combined Interactive Time Display</strong><br><br>
+        • A wave in the background flows with hour & minute.<br>
+        • A mosaic border draws colors based on hour & minute.<br>
+        • Particles swirl, reflecting the current hour.<br>
+        • A center star rotates with the seconds.<br>
+        • Watch the clock update continuously at the center.<br><br>
+        Hover away to return to the animation.
+      </p>
+    </div>
+  </div>
+
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    // Wave background variables
+    let waveOffset = 0;
+    let waveSpeed = 0.02;
+
+    // Mosaic variables
+    let mosaicCols = 8;
+    let mosaicRows = 8;
+    let squareSize = 64; // 512 / 8
+
+    // Particle swirl
+    let particles = [];
+    let numParticles = 40;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      rectMode(CENTER);
+
+      // Initialize particles
+      for (let i = 0; i < numParticles; i++) {
+        particles.push(createParticle());
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      // Current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // 1) Wave background
+      drawWaveBackground(hr, mn, sc);
+
+      // 2) Mosaic squares around edges
+      drawMosaic(hr, mn);
+
+      // 3) Swirling particles (based on hour)
+      drawSwirlingParticles(hr);
+
+      // 4) Rotating star in center (based on second)
+      drawRotatingStar(sc, mn);
+
+      // 5) Digital clock at center
+      drawDigitalClock(hr, mn, sc);
+    }
+
+    // Draw gently flowing wave background
+    function drawWaveBackground(hr, mn, sc) {
+      let amplitude = map(hr, 0, 23, 20, 100);
+      let freq = map(mn, 0, 59, 0.01, 0.2);
+      let phaseShift = map(sc, 0, 59, 0, TWO_PI);
+
+      noStroke();
+      fill(30, 100, 160);
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 5) {
+        let waveY = height / 2 + amplitude * sin(freq * (x + waveOffset) + phaseShift);
+        vertex(x, waveY);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+      waveOffset += waveSpeed;
+    }
+
+    // Draw mosaic squares around the edges
+    function drawMosaic(hr, mn) {
+      // We'll create squares in a grid, but only show those on the outer edges
+      push();
+      for (let col = 0; col < mosaicCols; col++) {
+        for (let row = 0; row < mosaicRows; row++) {
+          if (col === 0 || col === mosaicCols - 1 || row === 0 || row === mosaicRows - 1) {
+            let xPos = col * squareSize + squareSize / 2;
+            let yPos = row * squareSize + squareSize / 2;
+            // Use HSB color relating to hour & minute
+            let hueVal = (hr * 15 + mn * 2) % 360;
+            colorMode(HSB);
+            fill(hueVal, 90, 90);
+            noStroke();
+            rect(xPos, yPos, squareSize - 2, squareSize - 2);
+            colorMode(RGB);
+          }
+        }
+      }
+      pop();
+    }
+
+    // Create swirling particles whose radius depends on hour
+    function drawSwirlingParticles(hr) {
+      push();
+      translate(width / 2, height / 2);
+      stroke(255);
+      strokeWeight(2);
+      noFill();
+
+      let swirlRadius = map(hr % 12, 0, 12, 50, 200);
+      for (let p of particles) {
+        // Update angle
+        p.angle += p.speed;
+        // Compute position
+        let x = swirlRadius * cos(p.angle);
+        let y = swirlRadius * sin(p.angle);
+        point(x, y);
+      }
+      pop();
+    }
+
+    // Star rotating in the center by the second
+    function drawRotatingStar(sc, mn) {
+      push();
+      translate(width / 2, height / 2);
+      let rotationSpeed = map(sc, 0, 60, 0, 360);
+      rotate(rotationSpeed + frameCount * 0.1);
+
+      stroke(255);
+      strokeWeight(2);
+      fill(255, 100);
+      beginShape();
+      for (let i = 0; i < 10; i++) {
+        let angle = i * 36;
+        let r = i % 2 === 0 ? 30 : 10;
+        let x = r * cos(angle);
+        let y = r * sin(angle);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+      pop();
+    }
+
+    // Simple digital clock at the center
+    function drawDigitalClock(hr, mn, sc) {
+      push();
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      fill(255);
+      noStroke();
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, width / 2, height / 2);
+      pop();
+    }
+
+    // Particle creation
+    function createParticle() {
+      return {
+        angle: random(360),
+        speed: random(0.5, 2) * (random() < 0.5 ? 1 : -1)
+      };
+    }
+  </script>
+</body>
+</html>

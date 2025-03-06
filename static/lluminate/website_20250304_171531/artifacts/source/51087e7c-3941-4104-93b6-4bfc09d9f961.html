@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Upward Time Flow</title>
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page reset for consistent sizing and style */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222; /* A dark background outside the canvas */
+    }
+
+    /* Container for the 512x512 canvas and hover instructions */
+    #timeContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Overlay with instructions, hidden by default */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions upon hovering over the container */
+    #timeContainer:hover #instructionsOverlay {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="timeContainer">
+    <div id="instructionsOverlay">
+      <h2>Upward Time Flow</h2>
+      <p>Watch hours, minutes, and seconds rise from bottom to top as if gravity were reversed!</p>
+      <p>Largest circle for the hour, medium circle for the minute, and the smallest circle for the second.</p>
+      <p>Hover here to see these instructions again.</p>
+    </div>
+  </div>
+
+  <script>
+    // Circle objects for hour, minute, second
+    let hourCircle, minuteCircle, secondCircle;
+
+    // A simple Circle class to store position, diameter, color, etc.
+    class TimeCircle {
+      constructor(col) {
+        this.x = random(width);
+        this.y = height + 50;
+        this.diameter = 50;
+        this.color = col;
+        this.speed = 1;
+      }
+
+      resetPosition() {
+        this.y = height + this.diameter;
+        this.x = random(width);
+      }
+
+      update() {
+        this.y -= this.speed;
+        // If it goes above the canvas, reset to below the canvas
+        if (this.y < -this.diameter) {
+          this.resetPosition();
+        }
+      }
+
+      display() {
+        noStroke();
+        fill(this.color);
+        circle(this.x, this.y, this.diameter);
+      }
+    }
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('timeContainer');
+
+      // Instantiate each time circle with distinct colors
+      hourCircle = new TimeCircle(color(255, 0, 0));    // Red for hour
+      minuteCircle = new TimeCircle(color(0, 255, 0));  // Green for minute
+      secondCircle = new TimeCircle(color(0, 128, 255));// Blue for second
+
+      // Different speeds
+      hourCircle.speed = 0.3;
+      minuteCircle.speed = 1;
+      secondCircle.speed = 2;
+    }
+
+    function draw() {
+      // Subtle gradient background
+      for (let i = 0; i < height; i++) {
+        let inter = map(i, 0, height, 0, 1);
+        let c = lerpColor(color(50), color(20, 20, 80), inter);
+        stroke(c);
+        line(0, i, width, i);
+      }
+
+      // Time variables
+      let h = hour() % 12;
+      let m = minute();
+      let s = second();
+
+      // Map circle sizes based on time
+      hourCircle.diameter = map(h, 0, 12, 20, 100);
+      minuteCircle.diameter = map(m, 0, 60, 10, 80);
+      secondCircle.diameter = map(s, 0, 60, 5, 60);
+
+      // Update and display circles
+      hourCircle.update();
+      minuteCircle.update();
+      secondCircle.update();
+
+      hourCircle.display();
+      minuteCircle.display();
+      secondCircle.display();
+
+      // Digital readout in bottom-left corner
+      textSize(20);
+      textAlign(LEFT, CENTER);
+      fill(255);
+      let displayHour = hour() % 12;
+      displayHour = displayHour === 0 ? 12 : displayHour;
+      let ampm = hour() >= 12 ? "PM" : "AM";
+      let minStr = nf(minute(), 2);
+      let secStr = nf(second(), 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 10, height - 20);
+    }
+  </script>
+</body>
+</html>

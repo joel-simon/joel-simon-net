@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time City Skyline</title>
+  <!-- Include p5.js -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container to strictly hold 512x512 canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      background-color: #000;
+      overflow: hidden;
+    }
+
+    /* Hover overlay for instructions */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-family: sans-serif;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+
+<div id="canvasContainer">
+  <div id="hoverOverlay">
+    <h2>Time City Skyline</h2>
+    <p>
+      • Sky color transitions with the hour.<br>
+      • A clock tower with rotating hands for hour, minute, and second.<br>
+      • Building windows glow differently each minute.<br>
+      • Clouds appear in the sky every second.<br>
+      • Real-time clock at the bottom.<br>
+      Hover away to view the scene!
+    </p>
+  </div>
+</div>
+
+<script>
+/*
+  Time City Skyline:
+  - The sky color smoothly transitions according to the current hour.
+  - A central clock tower displays time with rotating arms (hour, minute, second).
+  - City buildings with illuminated windows change their patterns by the minute.
+  - Clouds drift across the sky, created anew each second.
+  - A digital clock is displayed near the bottom.
+*/
+
+const CANVAS_SIZE = 512;
+let buildings = [];
+let clouds = [];
+let lastSecond = -1;
+
+function setup() {
+  let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+  cnv.parent("canvasContainer");
+  angleMode(DEGREES);
+  rectMode(CORNERS);
+
+  // Create a few building silhouettes
+  for(let i = 0; i < 8; i++){
+    buildings.push(new Building());
+  }
+}
+
+function draw() {
+  backgroundSky();
+  drawBuildings();
+  drawClockTower();
+  makeCloudEachSecond();
+  updateAndDrawClouds();
+  displayDigitalTime();
+}
+
+// Smooth background color transitioning with hour
+function backgroundSky(){
+  let h = hour();
+  let m = minute();
+  let s = second();
+
+  // Convert current time to fraction of day
+  let totalSec = h * 3600 + m * 60 + s;
+  let fractionOfDay = totalSec / 86400; // 24h * 3600 = 86400
+
+  // Map fraction to color gradient from midnight blues to warmer tones at midday
+  // Hue from about 220 at midnight to about 60 at midday
+  let skyHue = lerp(220, 60, sin(PI * fractionOfDay));
+  colorMode(HSB, 360, 100, 100);
+  background(skyHue, 80, 80);
+  colorMode(RGB, 255);
+}
+
+// Building class
+class Building {
+  constructor(){
+    this.left = random(width);
+    this.right = this.left + random(50, 80);
+    this.topY = random(height * 0.4, height * 0.8);
+    this.windowWidth = 6;
+    this.windowHeight = 8;
+    // Building color is dark or darker (silhouette-like)
+    this.color = color(random(20,60));
+  }
+
+  drawBuilding() {
+    noStroke();
+    fill(this.color);
+    rect(this.left, this.topY, this.right, height);
+
+    let floorCount = int((height - this.topY) / (this.windowHeight + 4));
+    let windowCount = int((this.right - this.left) / (this.windowWidth + 4));
+
+    // Illuminate windows - pattern changes each minute
+    let m = minute();
+    // We'll use some pseudo-random approach based on minute
+    randomSeed(m + floorCount + windowCount + this.left);
+
+    fill(255, 230, 50);
+    for(let row = 0; row < floorCount; row++){
+      for(let col = 0; col < windowCount; col++){
+        // Decide randomly if a window is "lit"
+        if(random() < 0.5){
+          let wLeft = this.left + 4 + col * (this.windowWidth + 4);
+          let wTop = this.topY + 4 + row * (this.windowHeight + 4);
+          rect(wLeft, wTop, wLeft + this.windowWidth, wTop + this.windowHeight);
+        }
+      }
+    }
+  }
+}
+
+function drawBuildings(){
+  // Sort buildings by their base, so taller ones show behind
+  buildings.sort((a,b) => a.topY - b.topY);
+  for(let bld of buildings){
+    bld.drawBuilding();
+  }
+}
+
+// Draw a clock tower in center with rotating hands
+function drawClockTower(){
+  let cx = width * 0.5;
+  let baseH = height * 0.75;
+  let towerW = 60;
+  let towerTop = baseH - 120;
+
+  // Tower body
+  noStroke();
+  fill(40);
+  rect(cx - towerW/2, towerTop, cx + towerW/2, baseH);
+
+  // Tower roof
+  fill(25);
+  triangle(cx - towerW*0.5, towerTop, cx + towerW*0.5, towerTop, cx, towerTop - 30);
+
+  // Clock face
+  fill(220);
+  ellipse(cx, towerTop + 30, 40, 40);
+
+  // Draw clock hands
+  push();
+  translate(cx, towerTop + 30);
+  let hr = hour() % 12;
+  let mn = minute();
+  let sc = second();
+
+  // Hour hand
+  stroke(0);
+  strokeWeight(3);
+  let hourAngle = map(hr + mn/60.0, 0, 12, 0, 360);
+  rotate(hourAngle);
+  line(0, 0, 0, -8);
+  rotate(-hourAngle);
+
+  // Minute hand
+  strokeWeight(2);
+  let minuteAngle = map(mn + sc/60.0, 0, 60, 0, 360);
+  rotate(minuteAngle);
+  line(0, 0, 0, -12);
+  rotate(-minuteAngle);
+
+  // Second hand
+  strokeWeight(1);
+  stroke(200, 0, 0);
+  let secondAngle = map(sc, 0, 60, 0, 360);
+  rotate(secondAngle);
+  line(0, 0, 0, -15);
+  pop();
+}
+
+// Generate a new cloud each time second changes
+function makeCloudEachSecond(){
+  let sc = second();
+  if(sc !== lastSecond){
+    clouds.push(new Cloud());
+    lastSecond = sc;
+  }
+}
+
+// Cloud class
+class Cloud {
+  constructor(){
+    this.x = -50;
+    this.y = random(0, height*0.4);
+    this.speed = random(0.5, 1.5);
+    this.size = random(30, 60);
+    this.alpha = 200;
+  }
+
+  update(){
+    this.x += this.speed;
+  }
+
+  display(){
+    noStroke();
+    fill(255, this.alpha);
+    ellipse(this.x, this.y, this.size, this.size * 0.6);
+    ellipse(this.x + this.size * 0.4, this.y + this.size * 0.1, this.size * 0.8, this.size * 0.5);
+    ellipse(this.x - this.size * 0.4, this.y + this.size * 0.15, this.size * 0.7, this.size * 0.4);
+  }
+
+  offScreen(){
+    return (this.x - this.size > width + 50);
+  }
+}
+
+function updateAndDrawClouds(){
+  for(let c of clouds){
+    c.update();
+    c.display();
+  }
+  // Remove clouds that have drifted off
+  clouds = clouds.filter(cloud => !cloud.offScreen());
+}
+
+// Show digital time near bottom
+function displayDigitalTime(){
+  let hr = hour();
+  let mn = minute();
+  let sc = second();
+  fill(255);
+  noStroke();
+  textSize(18);
+  textAlign(CENTER, CENTER);
+  text(`${nf(hr, 2)}:${nf(mn, 2)}:${nf(sc, 2)}`, width / 2, height - 20);
+}
+</script>
+
+</body>
+</html>

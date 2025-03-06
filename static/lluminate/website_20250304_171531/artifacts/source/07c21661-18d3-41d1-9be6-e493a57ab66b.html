@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Interactive Orchard Accumulator</title>
+  <style>
+    /* Page layout: center everything on a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #111;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+    }
+    /* Tooltip container */
+    .info-tip {
+      position: relative;
+      color: #fff;
+      cursor: pointer;
+      margin-bottom: 1em;
+      user-select: none;
+      display: inline-block;
+    }
+    /* Tooltip text - hidden by default */
+    .info-content {
+      visibility: hidden;
+      width: 260px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      font-size: 0.9em;
+      bottom: 130%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      line-height: 1.4em;
+    }
+    /* Show tooltip on hover */
+    .info-tip:hover .info-content {
+      visibility: visible;
+    }
+    /* Ensure the canvas is exactly 512x512 */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="info-tip">
+    Hover for instructions
+    <div class="info-content">
+      Welcome to the Interactive Orchard Accumulator!<br><br>
+      1. Hour, Minute, and Second "fruits" glow in different colors.<br>
+      2. Each second spawns a random shape among the branches.<br>
+      3. All shapes reset at the start of a new minute.<br>
+      4. The background hue shifts each minute.<br>
+      Enjoy watching time grow and change!
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <script>
+    let hourFruit, minuteFruit, secondFruit;
+    let shapes = [];   // accumulates shapes each second
+    let prevSecond;
+    let prevMinute;
+    let backgroundHue = 120; // start with a greenish background
+
+    function setup() {
+      createCanvas(512, 512);
+      colorMode(HSB, 360, 100, 100);
+      angleMode(DEGREES);
+
+      hourFruit = new Fruit(width * 0.6, height * 0.3, 30);
+      minuteFruit = new Fruit(width * 0.5, height * 0.4, 20);
+      secondFruit = new Fruit(width * 0.65, height * 0.48, 10);
+
+      prevSecond = second();
+      prevMinute = minute();
+    }
+
+    function draw() {
+      background(backgroundHue, 40, 80);
+
+      // Draw the simple tree trunk and branches
+      drawTree();
+
+      // Update orchard fruits based on time
+      hourFruit.update('hour');
+      minuteFruit.update('minute');
+      secondFruit.update('second');
+
+      // Display orchard fruits
+      hourFruit.display();
+      minuteFruit.display();
+      secondFruit.display();
+
+      // Display any shapes that have accumulated
+      for (let s of shapes) {
+        s.display();
+      }
+
+      // Check if a new second has started (then add a shape)
+      let currSecond = second();
+      if (currSecond !== prevSecond) {
+        addRandomShape();
+        prevSecond = currSecond;
+      }
+
+      // If a new minute has started, reset shapes and shift background
+      let currMinute = minute();
+      if (currMinute !== prevMinute) {
+        shapes = [];
+        backgroundHue = random(360);  // shift hue each minute
+        prevMinute = currMinute;
+      }
+    }
+
+    function drawTree() {
+      push();
+      stroke(60, 80, 30);
+      strokeWeight(20);
+      line(width * 0.5, height, width * 0.5, height * 0.4); // trunk
+      strokeWeight(10);
+      line(width * 0.5, height * 0.5, width * 0.6, height * 0.3); // branch1
+      line(width * 0.5, height * 0.45, width * 0.65, height * 0.48); // branch2
+      pop();
+    }
+
+    class Fruit {
+      constructor(x, y, size) {
+        this.position = createVector(x, y);
+        this.baseSize = size;
+        this.offsetAngle = random(360);
+        this.col = color(255);
+      }
+      update(mode) {
+        let h = hour();
+        let m = minute();
+        let s = second();
+
+        if (mode === 'hour') {
+          // vary color by hour
+          this.col = color((h % 12) * 30, 100, 80);
+        }
+        else if (mode === 'minute') {
+          this.col = color(200, m * 1.7, 80); 
+        }
+        else if (mode === 'second') {
+          this.col = color(40, 100, s * 1.6);
+        }
+        // gentle sway
+        this.position.y += sin(frameCount * 0.02 + this.offsetAngle) * 0.3;
+      }
+      display() {
+        push();
+        noStroke();
+        fill(this.col);
+        ellipse(this.position.x, this.position.y, this.baseSize);
+        pop();
+      }
+    }
+
+    // Create a random shape (circle, rectangle, or triangle) and store in shapes array
+    function addRandomShape() {
+      let choice = floor(random(3));
+      if (choice === 0) shapes.push(new CircleShape());
+      else if (choice === 1) shapes.push(new RectShape());
+      else shapes.push(new TriangleShape());
+    }
+
+    // Circle shape
+    class CircleShape {
+      constructor() {
+        this.x = random(width * 0.4, width * 0.7);
+        this.y = random(height * 0.25, height * 0.5);
+        this.size = random(10, 40);
+        this.hue = random(360);
+      }
+      display() {
+        fill(this.hue, 80, 90);
+        noStroke();
+        circle(this.x, this.y, this.size);
+      }
+    }
+
+    // Rectangle shape
+    class RectShape {
+      constructor() {
+        this.x = random(width * 0.4, width * 0.7);
+        this.y = random(height * 0.25, height * 0.5);
+        this.w = random(15, 40);
+        this.h = random(15, 40);
+        this.angle = random(360);
+        this.hue = random(360);
+      }
+      display() {
+        push();
+        translate(this.x, this.y);
+        rotate(this.angle);
+        fill(this.hue, 80, 90);
+        noStroke();
+        rectMode(CENTER);
+        rect(0, 0, this.w, this.h);
+        pop();
+      }
+    }
+
+    // Triangle shape
+    class TriangleShape {
+      constructor() {
+        this.x = random(width * 0.4, width * 0.7);
+        this.y = random(height * 0.25, height * 0.5);
+        this.hue = random(360);
+        // define random offsets for the triangle
+        this.offsets = [
+          [random(-30, 30), random(-30, 30)],
+          [random(-30, 30), random(-30, 30)],
+        ];
+      }
+      display() {
+        fill(this.hue, 80, 90);
+        noStroke();
+        triangle(
+          this.x, this.y,
+          this.x + this.offsets[0][0], this.y + this.offsets[0][1],
+          this.x + this.offsets[1][0], this.y + this.offsets[1][1]
+        );
+      }
+    }
+  </script>
+</body>
+</html>

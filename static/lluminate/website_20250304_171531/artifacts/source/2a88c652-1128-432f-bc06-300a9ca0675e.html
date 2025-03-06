@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Kaleidoscope Maze</title>
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Ensure body has no scrolling and is centered */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    
+    /* The 512x512 dedicated canvas container */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      background: #000;
+    }
+
+    /* Hover overlay for instructions (initially hidden) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-family: sans-serif;
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    /* Display the overlay only on container hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: block;
+    }
+
+    /* Style the instruction text */
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.5em;
+      margin: 0 auto;
+      max-width: 80%;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <!-- Instructions appear on hover -->
+    <div id="hoverOverlay">
+      <h3>Time Kaleidoscope Maze</h3>
+      <p>
+        • Background waves shift with the hour & minute.<br>
+        • A fractal swirl in the center adapts to the current hour.<br>
+        • Rotating gear color changes with seconds.<br>
+        • Mosaic squares shift position each minute.<br>
+        • A small digital clock is shown at the bottom.<br>
+        Hover away and watch time unfold!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Kaleidoscope Maze
+      ----------------------
+      1) A wavy background that shifts with hour & minute.
+      2) A fractal swirl in the center that grows or shrinks based on hour.
+      3) A rotating gear whose tint changes with the current second.
+      4) Mosaic squares around the edges that reposition each minute.
+      5) A small digital clock displayed in the bottom-left corner.
+    */
+
+    const CANVAS_SIZE = 512;
+
+    // Gear variables
+    let gearAngle = 0;
+    let gearPoints = []; // for a simple gear shape
+
+    // Mosaic square list
+    let squares = [];
+    let currentMinute = -1;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+
+      // Build a simple gear shape (cog) - a circle with notches
+      for (let i = 0; i < 360; i += 30) {
+        let r = (i % 60 === 0) ? 70 : 60;
+        let rad = radians(i);
+        gearPoints.push({ x: r * cos(rad), y: r * sin(rad) });
+      }
+
+      // Initialize mosaic squares
+      initializeSquares();
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // 1) Wavy background
+      drawWaveBackground(h, m);
+
+      // 2) Fractal swirl in the center
+      push();
+      translate(width / 2, height / 2);
+      stroke(255);
+      noFill();
+      drawFractalSwirl(map(h, 0, 23, 2, 6), 70, 0);
+      pop();
+
+      // 3) Rotating gear
+      push();
+      translate(width / 2, height / 2);
+      rotate(gearAngle);
+      gearAngle += 1; // constant rotation
+      drawGear(s); // gear color changes with second
+      pop();
+
+      // 4) Mosaic squares (update if minute changed)
+      if (m !== currentMinute) {
+        initializeSquares();
+        currentMinute = m;
+      }
+      drawSquares();
+
+      // 5) Digital clock
+      drawClock(h, m, s);
+    }
+
+    // Initialize squares in random positions near the edges
+    function initializeSquares() {
+      squares = [];
+      let numSquares = 8;
+      for (let i = 0; i < numSquares; i++) {
+        let side = random(20, 40);
+        // distribute near edges: x or y ~ 0 or ~ width
+        let edgeChoice = floor(random(4));
+        let x, y;
+        switch (edgeChoice) {
+          case 0: // left edge
+            x = random(0, 50);
+            y = random(0, height);
+            break;
+          case 1: // right edge
+            x = random(width - 50, width);
+            y = random(0, height);
+            break;
+          case 2: // top edge
+            x = random(0, width);
+            y = random(0, 50);
+            break;
+          case 3: // bottom edge
+            x = random(0, width);
+            y = random(height - 50, height);
+            break;
+        }
+        squares.push({ x, y, size: side, hue: random(360) });
+      }
+    }
+
+    function drawSquares() {
+      push();
+      colorMode(HSB, 360, 100, 100);
+      noStroke();
+      for (let sq of squares) {
+        fill(sq.hue, 80, 80);
+        rect(sq.x, sq.y, sq.size, sq.size);
+      }
+      pop();
+    }
+
+    function drawClock(h, m, s) {
+      push();
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 10, height - 16);
+      pop();
+    }
+
+    // 1) Wavy background
+    function drawWaveBackground(h, m) {
+      push();
+      noStroke();
+      colorMode(HSB, 360, 100, 100);
+      let hueVal = map(h, 0, 23, 0, 360);
+      fill(hueVal, 50, 15);
+      rect(0, 0, width, height);
+
+      // White wave lines
+      stroke(255, 60);
+      strokeWeight(1);
+      noFill();
+      let amplitude = map(h, 0, 23, 10, 60);
+      let freq = map(m, 0, 59, 0.02, 0.2);
+
+      for (let y = 0; y < height; y += 20) {
+        beginShape();
+        for (let x = 0; x <= width; x += 10) {
+          let waveOffset = amplitude * sin((x + frameCount) * freq);
+          vertex(x, y + waveOffset);
+        }
+        endShape();
+      }
+      pop();
+    }
+
+    // 2) Fractal swirl (recursive arcs)
+    function drawFractalSwirl(levels, radius, angleOffset) {
+      if (levels < 1) return;
+      arc(0, 0, radius * 2, radius * 2, 0, 180);
+      push();
+      rotate(30 + angleOffset);
+      translate(radius * 0.5, 0);
+      drawFractalSwirl(levels - 1, radius * 0.7, angleOffset + 15);
+      pop();
+    }
+
+    // 3) Gear shape drawing
+    function drawGear(secondValue) {
+      push();
+      colorMode(HSB, 360, 100, 100);
+      let col = map(secondValue, 0, 59, 0, 360);
+      fill(col, 80, 80);
+      stroke(0);
+      strokeWeight(2);
+
+      beginShape();
+      for (let p of gearPoints) {
+        vertex(p.x, p.y);
+      }
+      endShape(CLOSE);
+
+      // Center circle
+      fill(0);
+      ellipse(0, 0, 20, 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

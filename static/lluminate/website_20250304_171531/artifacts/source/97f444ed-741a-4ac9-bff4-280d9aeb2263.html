@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Fusion Labyrinth Tree</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset defaults, dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #000;
+    }
+
+    /* Container for the 512x512 canvas, centered */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+    }
+
+    /* Instructions overlay, hidden by default, shown on hover */
+    #instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      display: none;
+      box-sizing: border-box;
+      padding: 1rem;
+      font-family: sans-serif;
+      text-align: center;
+    }
+    #canvas-container:hover #instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="instructions">
+      <div class="instructions-text">
+        <strong>Time Fusion Labyrinth Tree</strong><br><br>
+        Watch the labyrinth shift with minutes, fractal tree grow with hours, and swirling lights dance with seconds. 
+        A digital clock sits in the corner to keep you synced with real time.<br><br>
+        Hover here to view these instructions and explore!
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CANVAS_SIZE = 512;
+    let mazeGrid, mazeCols, mazeRows;
+    let cellSize = 16; // Maze cell size
+    // Keep track of fractal tree parameters
+    let branchLength = 80;
+    let maxDepth = 5;
+    // Swirl rotation
+    let swirlAngle = 0;
+    // For refreshing the maze each minute
+    let lastMinute = -1;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvas-container");
+      angleMode(DEGREES);
+
+      // Initialize Maze
+      mazeCols = floor(width / cellSize);
+      mazeRows = floor(height / cellSize);
+      initMaze();
+      generateMaze();
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Regenerate maze if minute changed
+      if (mn !== lastMinute) {
+        generateMaze();
+        lastMinute = mn;
+      }
+
+      // 1) Dynamic background color based on hour
+      drawBackgroundGradient(hr);
+
+      // 2) Draw Maze that shifts with minute
+      drawMaze(mn);
+
+      // 3) Fractal Tree in center, scaling with hour
+      push();
+      translate(width / 2, height * 0.7);
+      branchLength = map(hr % 12, 0, 11, 50, 120);
+      maxDepth = floor(map(hr, 0, 23, 3, 6));
+      stroke(255);
+      fractalTree(branchLength, maxDepth);
+      pop();
+
+      // 4) Swirl reacting to seconds
+      swirlAngle = map(sc, 0, 59, 0, 360);
+      push();
+      translate(width / 2, height / 2);
+      rotate(swirlAngle);
+      drawSwirl();
+      pop();
+
+      // 5) Digital Clock
+      drawDigitalClock(hr, mn, sc);
+    }
+
+    /* (1) Simple gradient based on hour */
+    function drawBackgroundGradient(hr) {
+      let topColor = color(map(hr, 0, 23, 0, 255), 50, map(hr, 0, 23, 50, 200));
+      let bottomColor = color(0, 0, 0);
+
+      for (let y = 0; y < height; y++) {
+        let lerpAmt = y / height;
+        let col = lerpColor(topColor, bottomColor, lerpAmt);
+        stroke(col);
+        line(0, y, width, y);
+      }
+    }
+
+    /* (2) Maze: We'll draw a simple grid representation */
+    function initMaze() {
+      mazeGrid = [];
+      for (let r = 0; r < mazeRows; r++) {
+        let row = [];
+        for (let c = 0; c < mazeCols; c++) {
+          row.push({
+            walls: [true, true, true, true], // top, right, bottom, left
+            visited: false
+          });
+        }
+        mazeGrid.push(row);
+      }
+    }
+
+    /* Maze Generation (Depth-first search) */
+    function generateMaze() {
+      initMaze();
+      let stack = [];
+      let current = { r: 0, c: 0 };
+      mazeGrid[current.r][current.c].visited = true;
+      stack.push(current);
+
+      while (stack.length > 0) {
+        current = stack[stack.length - 1];
+        let neighbors = getUnvisitedNeighbors(current.r, current.c);
+        if (neighbors.length > 0) {
+          let next = random(neighbors);
+          removeWalls(current, next);
+          mazeGrid[next.r][next.c].visited = true;
+          stack.push(next);
+        } else {
+          stack.pop();
+        }
+      }
+    }
+
+    /* Get unvisited neighbors for DFS */
+    function getUnvisitedNeighbors(r, c) {
+      let neighbors = [];
+      if (r > 0 && !mazeGrid[r - 1][c].visited) 
+        neighbors.push({ r: r - 1, c: c });
+      if (c < mazeCols - 1 && !mazeGrid[r][c + 1].visited)
+        neighbors.push({ r: r, c: c + 1 });
+      if (r < mazeRows - 1 && !mazeGrid[r + 1][c].visited)
+        neighbors.push({ r: r + 1, c: c });
+      if (c > 0 && !mazeGrid[r][c - 1].visited)
+        neighbors.push({ r: r, c: c - 1 });
+      return neighbors;
+    }
+
+    /* Remove walls between current and next cells */
+    function removeWalls(a, b) {
+      let dx = b.c - a.c;
+      let dy = b.r - a.r;
+
+      if (dx === 1) {
+        // next is right
+        mazeGrid[a.r][a.c].walls[1] = false;
+        mazeGrid[b.r][b.c].walls[3] = false;
+      } else if (dx === -1) {
+        // next is left
+        mazeGrid[a.r][a.c].walls[3] = false;
+        mazeGrid[b.r][b.c].walls[1] = false;
+      }
+
+      if (dy === 1) {
+        // next is below
+        mazeGrid[a.r][a.c].walls[2] = false;
+        mazeGrid[b.r][b.c].walls[0] = false;
+      } else if (dy === -1) {
+        // next is above
+        mazeGrid[a.r][a.c].walls[0] = false;
+        mazeGrid[b.r][b.c].walls[2] = false;
+      }
+    }
+
+    /* Draw the maze, with color shift based on minute */
+    function drawMaze(mn) {
+      stroke(255);
+      strokeWeight(2);
+      let mazeColor = color(map(mn, 0, 59, 50, 255), 255, 255);
+      stroke(mazeColor);
+
+      for (let r = 0; r < mazeRows; r++) {
+        for (let c = 0; c < mazeCols; c++) {
+          let x = c * cellSize;
+          let y = r * cellSize;
+          let cell = mazeGrid[r][c];
+          // top
+          if (cell.walls[0]) line(x, y, x + cellSize, y);
+          // right
+          if (cell.walls[1]) line(x + cellSize, y, x + cellSize, y + cellSize);
+          // bottom
+          if (cell.walls[2]) line(x, y + cellSize, x + cellSize, y + cellSize);
+          // left
+          if (cell.walls[3]) line(x, y, x, y + cellSize);
+        }
+      }
+    }
+
+    /* (3) Fractal Tree with branching influenced by hour */
+    function fractalTree(len, depth) {
+      if (depth === 0) return;
+
+      line(0, 0, 0, -len);
+      translate(0, -len);
+
+      push();
+      rotate(25);
+      fractalTree(len * 0.7, depth - 1);
+      pop();
+
+      push();
+      rotate(-20);
+      fractalTree(len * 0.7, depth - 1);
+      pop();
+    }
+
+    /* (4) Swirl shape in the center, rotating with seconds */
+    function drawSwirl() {
+      stroke(255);
+      noFill();
+      beginShape();
+      for (let a = 0; a < 360; a += 15) {
+        let r = map(a, 0, 360, 40, 100);
+        let x = r * cos(a);
+        let y = r * sin(a);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+    }
+
+    /* (5) Digital Clock in bottom-left corner */
+    function drawDigitalClock(hr, mn, sc) {
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, CENTER);
+      text(`${nf(hr,2)}:${nf(mn,2)}:${nf(sc,2)}`, 10, height - 20);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Celtic Time Tapestry</title>
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center the page and ensure no margins */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #ecebe8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Container for 512x512 scene */
+    #celticContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Instructions overlay: hidden by default, shown on hover */
+    #instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.8);
+      color: #222;
+      font-family: sans-serif;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    #celticContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="celticContainer">
+    <div id="instructions">
+      <h3>Celtic Time Tapestry</h3>
+      <p>
+        • Arcs form a "Celtic swirl" in constant motion.<br/>
+        • The color changes each second.<br/>
+        • The ring expands or contracts according to the minute.<br/>
+        • The swirl thickness shifts with the hour.<br/>
+        • Current digital time is displayed at the bottom.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let canvasSize = 512;
+    // We'll store arcs in an array to animate around the center
+    let swirlArcs = [];
+    let numArcs = 12;
+
+    function setup() {
+      let c = createCanvas(canvasSize, canvasSize);
+      c.parent("celticContainer");
+      angleMode(RADIANS);
+
+      // Initialize arcs with random offsets
+      for (let i = 0; i < numArcs; i++) {
+        swirlArcs.push({
+          baseAngle: (TWO_PI / numArcs) * i,
+          offset: random(TWO_PI),
+          radiusFactor: random(0.5, 1.0)
+        });
+      }
+    }
+
+    function draw() {
+      background(236, 235, 232);
+
+      let hr = hour() % 12;  // 0 - 11
+      let mn = minute();     // 0 - 59
+      let sc = second();     // 0 - 59
+
+      // Swirl thickness linked to hour: range from 2 to 14
+      let swirlThickness = map(hr, 0, 11, 2, 14);
+
+      // Outer ring size linked to minute: range from 150 to 230
+      let ringSize = map(mn, 0, 59, 150, 230);
+
+      // Color variations based on second
+      let cR = map(sc, 0, 59, 50, 255);
+      let cG = map(sin(frameCount * 0.01), -1, 1, 100, 180);
+      let cB = map(sc, 0, 59, 255, 100);
+
+      noFill();
+      strokeWeight(swirlThickness);
+
+      // Translate to center before drawing arcs
+      translate(width / 2, height / 2);
+
+      // Draw swirl arcs
+      for (let i = 0; i < swirlArcs.length; i++) {
+        let arcData = swirlArcs[i];
+        
+        // Each arc rotates slowly
+        arcData.offset += 0.01;
+
+        // Arc center radius changes with minute plus a random factor
+        let dynamicRadius = ringSize * arcData.radiusFactor;
+
+        // Arc angles based on swirling offset
+        let startAngle = arcData.baseAngle + arcData.offset;
+        let arcExtent = PI * 0.6; // each arc covers a portion of the circle
+
+        // Stroke color changes with time
+        stroke(
+          cR + 50 * sin(arcData.offset),
+          cG + 50 * cos(arcData.offset),
+          cB + 50 * sin(arcData.offset * 0.5)
+        );
+
+        // Draw arc
+        arc(0, 0, dynamicRadius * 2, dynamicRadius * 2, startAngle, startAngle + arcExtent);
+      }
+
+      // Display the digital clock near the bottom center
+      push();
+      resetMatrix(); // so text is placed at the correct screen position
+      fill(0);
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      text(
+        nf(hour(), 2) + ":" + nf(minute(), 2) + ":" + nf(second(), 2),
+        width / 2, height - 30
+      );
+      pop();
+    }
+  </script>
+</body>
+</html>

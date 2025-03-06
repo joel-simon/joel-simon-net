@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Skyline</title>
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic reset and dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container for the 512x512 canvas plus hover instructions */
+    #skylineCanvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      background-color: #000;
+    }
+
+    /* Hover overlay for instructions */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      box-sizing: border-box;
+      padding: 20px;
+    }
+
+    /* Display instructions on hover */
+    #skylineCanvasContainer:hover #hoverOverlay {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="skylineCanvasContainer">
+    <div id="hoverOverlay">
+      <h2>Time Skyline</h2>
+      <p>
+        • The sky color shifts with the hour.<br>
+        • Building heights adjust to the minute.<br>
+        • A drone moves across the sky with the seconds.<br>
+        Hover away to watch it in action!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const canvasSize = 512;
+
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent('skylineCanvasContainer');
+      noStroke();
+      rectMode(CORNER);
+      textFont('sans-serif');
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Sky color transitions based on hour
+      // We'll map hr (0-23) onto a gradient from deep blue to orange-ish
+      let skyR = map(hr, 0, 23, 10, 255);
+      let skyG = map(hr, 0, 23, 20, 120);
+      let skyB = map(hr, 0, 23, 40, 70);
+      background(skyR, skyG, skyB);
+
+      // Draw ground
+      fill(20, 20, 20);
+      rect(0, height * 0.75, width, height * 0.25);
+
+      // Draw city buildings
+      // We'll generate some building widths and positions, with heights based on minutes
+      let baseBuildingHeight = map(mn, 0, 59, 30, height * 0.4);
+      let buildingCount = 6;
+      let buildingWidth = width / buildingCount;
+      fill(50);
+
+      for (let i = 0; i < buildingCount; i++) {
+        let xPos = i * buildingWidth;
+        // Vary each building height slightly by i to avoid uniform look
+        let bHeight = baseBuildingHeight + random(-10, 10);
+        // Use a second fill for variety
+        let c = color(70 + i * 20, 70, 70 + i * 20);
+        fill(c);
+        rect(xPos, height * 0.75 - bHeight, buildingWidth - 4, bHeight);
+      }
+
+      // Drone traveling across the sky with seconds
+      // We'll move it horizontally and slightly change its vertical position
+      let droneX = map(sc, 0, 60, 0, width);
+      let droneY = height * 0.25 - map(sin(frameCount * 2), -1, 1, 0, 20);
+      fill(230);
+      ellipse(droneX, droneY, 20, 10);
+      // Simple highlight
+      fill(255, 0, 0);
+      ellipse(droneX + 5, droneY, 5, 5);
+
+      // Overlay clock text in the top-left corner
+      fill(255);
+      textSize(18);
+      textAlign(LEFT, TOP);
+      text(`${hr}:${nf(mn, 2)}:${nf(sc, 2)}`, 10, 10);
+    }
+  </script>
+</body>
+</html>

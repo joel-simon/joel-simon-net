@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Creative Combined Time Display</title>
+  <!-- p5.js Library from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page & Body Reset */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      font-family: Arial, sans-serif;
+      color: #fff;
+    }
+
+    /* Container for a fixed 512x512 sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions (shown on hover) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.5);
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      box-sizing: border-box;
+      padding: 30px;
+    }
+
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the Creative Combined Time Display!<br><br>
+        • Hour controls waving water amplitude<br>
+        • Minute adjusts fractal tree growth<br>
+        • Second spins star & gear<br><br>
+        Hover away to watch the time evolve.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let waveOffset = 0;
+    let waveSpeed = 0.02;
+
+    // Star rotation
+    let starRotation = 0;
+
+    // Gear rotation
+    let gearRotation = 0;
+    
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Draw wave background (wave amplitude depends on hour)
+      let amplitude = map(h, 0, 23, 10, 80);
+      let freq = map(h, 0, 23, 0.01, 0.2);
+      drawWave(amplitude, freq);
+
+      // Draw fractal tree in lower left (branch depth depends on minute)
+      push();
+      translate(width * 0.2, height * 0.75);
+      stroke(255);
+      fractalTree(map(m, 0, 59, 3, 10));
+      pop();
+
+      // Rotating star in the sky (second-based)
+      starRotation += 1 + s * 0.02;
+      push();
+      translate(width / 2, height * 0.3);
+      rotate(starRotation);
+      drawStar(0, 0, 12, 24, 5);
+      pop();
+
+      // Rotating gear in the top-right corner (combine hour+second for slow/fast rotation)
+      gearRotation += 0.5 + s * 0.01;
+      push();
+      translate(width * 0.85, height * 0.2);
+      rotate(gearRotation);
+      drawGear(0, 0, 40, 16);
+      pop();
+
+      // Time readout near bottom center
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      text(
+        nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2),
+        width / 2, height - 20
+      );
+    }
+
+    // Wave background
+    function drawWave(amplitude, freq) {
+      noStroke();
+      fill(20, 80, 140);
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 5) {
+        let waveY = height / 2 + amplitude * sin(freq * (x + waveOffset));
+        vertex(x, waveY);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+      waveOffset += waveSpeed;
+    }
+
+    // Simple fractal tree
+    function fractalTree(levels) {
+      if (levels < 1) return;
+      strokeWeight(levels);
+      line(0, 0, 0, -40);
+      translate(0, -40);
+
+      push();
+      rotate(25);
+      fractalTree(levels - 1);
+      pop();
+
+      push();
+      rotate(-25);
+      fractalTree(levels - 1);
+      pop();
+    }
+
+    // Draw a star
+    function drawStar(x, y, radius1, radius2, npoints) {
+      fill(255, 200, 0);
+      noStroke();
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+
+    // Draw a simple gear shape
+    function drawGear(x, y, radius, toothCount) {
+      fill(200);
+      noStroke();
+      let angleStep = 360 / toothCount;
+
+      beginShape();
+      for (let a = 0; a < 360; a += angleStep) {
+        // Outer tooth
+        let rx1 = x + cos(a) * (radius + 10);
+        let ry1 = y + sin(a) * (radius + 10);
+        vertex(rx1, ry1);
+
+        // Inner gap
+        let rx2 = x + cos(a + angleStep * 0.5) * radius;
+        let ry2 = y + sin(a + angleStep * 0.5) * radius;
+        vertex(rx2, ry2);
+      }
+      endShape(CLOSE);
+
+      // Inner circle
+      fill(80);
+      circle(x, y, radius * 0.6);
+    }
+  </script>
+</body>
+</html>

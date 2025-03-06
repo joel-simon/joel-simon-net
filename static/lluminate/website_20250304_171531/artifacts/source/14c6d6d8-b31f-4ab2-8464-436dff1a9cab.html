@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Rorschach</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center the page content and give a neutral background */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f7f7f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #444;
+      padding: 8px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 220px;
+      z-index: 1;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      This creative "Time Rorschach" updates every second, drawing mirrored forms:
+      • Colors shift with the hour and minute. 
+      • Composition re-randomizes with each second. 
+      • Observe the symmetrical inkblot evolve with time.
+    </div>
+  </div>
+
+  <script>
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      angleMode(RADIANS);
+      noStroke();
+    }
+
+    function draw() {
+      // Fetch current time
+      let hr = hour() % 12;        // 0-11
+      let mn = minute();           // 0-59
+      let sc = second();           // 0-59
+
+      // To ensure a fresh pattern each second, reset randomSeed based on second
+      randomSeed(sc);
+
+      // Determine background using hour and minute for a subtle gradient
+      let bgColor1 = color((hr * 20) % 256, (mn * 4) % 256, (hr * 5 + mn * 2) % 256);
+      let bgColor2 = color((hr * 10 + mn * 4) % 256, (100 + hr * 3) % 256, (200 + mn * 3) % 256);
+
+      // Create a vertical gradient background
+      setGradient(0, 0, w, h, bgColor1, bgColor2);
+
+      // Draw symmetrical shapes in the center region
+      push();
+      translate(w / 2, h / 2);
+      // Dynamic color mapping based on hour/minute
+      let shapeColor = color(
+        (hr * 21 + mn * 3) % 255, 
+        (hr * 5 + mn * 8) % 255, 
+        (hr * 12 + mn * 4) % 255, 
+        180
+      );
+      fill(shapeColor);
+
+      // We'll draw random shapes on one side then mirror them
+      drawMirrorShapes();
+      pop();
+
+      // Display digital time at bottom
+      fill(60);
+      textSize(24);
+      textAlign(CENTER, CENTER);
+      text(
+        nf(hour(), 2) + ':' + nf(mn, 2) + ':' + nf(sc, 2),
+        width / 2,
+        height - 20
+      );
+    }
+
+    // Helper function to draw a vertical gradient on the background
+    function setGradient(x, y, w, h, c1, c2) {
+      noFill();
+      for (let i = y; i <= y + h; i++) {
+        let inter = map(i, y, y + h, 0, 1);
+        let c = lerpColor(c1, c2, inter);
+        stroke(c);
+        line(x, i, x + w, i);
+      }
+    }
+
+    // Creates random shapes on right side, then mirrors them on left
+    function drawMirrorShapes() {
+      // Number of random "splotches" depends on minute value
+      let numSplotches = 5 + minute() % 6; 
+      for (let i = 0; i < numSplotches; i++) {
+        // Random position on the right side
+        let xPos = random(0, 120);
+        let yPos = random(-200, 200);
+        let size = random(20, 80);
+
+        // Draw shape on the right side
+        ellipse(xPos, yPos, size, size);
+
+        // Mirror shape to the left side
+        // Reflect xPos using negative to create symmetrical effect
+        ellipse(-xPos, yPos, size, size);
+      }
+    }
+  </script>
+</body>
+</html>

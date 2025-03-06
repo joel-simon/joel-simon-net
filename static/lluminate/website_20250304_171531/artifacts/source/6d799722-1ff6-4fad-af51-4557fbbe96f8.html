@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Radiant Mandala</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* 512x512 container */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      background: #111;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay: appears on hover */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      pointer-events: none; /* So the mouse can still interact with the canvas */
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Radiant Mandala</strong><br><br>
+        • Constellation-like background with twinkling stars.<br>
+        • The radial mandala changes color and shape based on hour (hue), minute (line thickness), and second (pulse).<br>
+        • Check the top-left corner for the current time.<br>
+        • Hover here to see this overlay at any time.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Radiant Mandala
+
+      Features:
+      - A field of "stars" in the background, twinkling subtly.
+      - A radial mandala with:
+          * Hue controlled by current hour.
+          * Line thickness related to current minute.
+          * Pulsing radius influenced by current second.
+      - A digital time display in the top-left corner.
+    */
+
+    let w = 512;
+    let h = 512;
+    let stars = [];
+
+    function setup() {
+      let canvas = createCanvas(w, h);
+      canvas.parent('canvas-container');
+      // Create a random star field
+      for (let i = 0; i < 100; i++) {
+        stars.push({
+          x: random(width),
+          y: random(height),
+          brightness: random(150, 255),
+          flickerSpeed: random(0.005, 0.02)
+        });
+      }
+      colorMode(HSB);
+      angleMode(DEGREES);
+      frameRate(30);
+    }
+
+    function draw() {
+      // Draw background with subtle fade
+      background(0, 0, 10);
+
+      // Update and draw star field
+      noStroke();
+      for (let i = 0; i < stars.length; i++) {
+        let star = stars[i];
+        // Flicker effect
+        star.brightness += sin(frameCount * star.flickerSpeed);
+        fill(0, 0, star.brightness);
+        circle(star.x, star.y, 2);
+      }
+
+      // Retrieve current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Convert hour to 0-12 range for intuitive color shifts (0-12 or 1-12).
+      let displayHour = (hr % 12);
+      // We'll map hour to 0..360 hue
+      let hueVal = map(displayHour, 0, 11, 0, 360);
+      // Map minute to line thickness
+      let strokeVal = map(mn, 0, 59, 1, 8);
+      // Map second to radius pulse
+      let radiusPulse = map(sc, 0, 59, 0.8, 1.2);
+
+      // Draw radial mandala
+      push();
+      translate(width / 2, height / 2);
+      strokeWeight(strokeVal);
+      stroke(hueVal, 80, 90);
+      noFill();
+
+      let sides = 60; // one spoke for each possible second
+      let baseRadius = 150;
+      beginShape();
+      for (let i = 0; i < sides; i++) {
+        let angle = map(i, 0, sides, 0, 360);
+        let r = baseRadius;
+        // Add slight wave in radius to emphasize second-based pulse
+        r *= radiusPulse + 0.05 * sin(frameCount + i * 6);
+        let x = r * cos(angle);
+        let y = r * sin(angle);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+      pop();
+
+      // Display time in the top-left corner
+      displayTime(hr, mn, sc);
+    }
+
+    // Helper function to draw time text
+    function displayTime(hr, mn, sc) {
+      noStroke();
+      fill(0, 0, 100);
+      textSize(16);
+      textAlign(LEFT, TOP);
+
+      let displayHour = (hr % 12) || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let mnStr = nf(mn, 2);
+      let scStr = nf(sc, 2);
+
+      text(displayHour + ":" + mnStr + ":" + scStr + " " + ampm, 10, 10);
+    }
+  </script>
+</body>
+</html>

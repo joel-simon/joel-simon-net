@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Combined Skyline & Fractal</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #combinedContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Instructions overlay, hidden by default. Display on hover. */
+    #instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.8);
+      color: #222;
+      font-family: sans-serif;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    #combinedContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="combinedContainer">
+  <div id="instructions">
+    <h3>Combined Skyline & Fractal Time Display</h3>
+    <p>
+      • The sky and buildings adjust with the hour and minutes.<br/>
+      • The fractal tree evolves in real-time, affected by hour, minute, and second.<br/>
+      • Watch for subtle time-driven transformations across the scene!
+    </p>
+  </div>
+</div>
+
+<script>
+  let canvasSize = 512;
+
+  // For skyline
+  let buildingCount = 7;
+
+  function setup() {
+    let c = createCanvas(canvasSize, canvasSize);
+    c.parent("combinedContainer");
+    angleMode(RADIANS);
+    noStroke();
+  }
+
+  function draw() {
+    // Current local time
+    let hr = hour() % 12;  // 0-11
+    let mn = minute();     // 0-59
+    let sc = second();     // 0-59
+
+    // Smooth fractional hour for background interpolation
+    let hourFraction = (hr + mn / 60 + sc / 3600) / 12;
+
+    // Sky color transitions from light to dark
+    let dayColor = color(135, 206, 235);
+    let nightColor = color(5, 15, 80);
+    let skyColor = lerpColor(dayColor, nightColor, hourFraction);
+    background(skyColor);
+
+    // Draw a skyline
+    drawSkyline(hr, mn);
+
+    // Draw fractal tree at bottom center
+    push();
+    translate(width / 2, height);
+    drawFractalTree(hr, mn, sc);
+    pop();
+
+    // Digital time
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textSize(20);
+    text(nf(hour(),2) + ':' + nf(minute(),2) + ':' + nf(second(),2), width/2, height - 30);
+  }
+
+  function drawSkyline(hr, mn) {
+    // Building color
+    fill(40);
+    let buildingWidth = width / buildingCount;
+
+    for (let i = 0; i < buildingCount; i++) {
+      // Pseudorandom building height
+      let bHeight = map(noise(i), 0, 1, height/4, (3*height)/4);
+      rect(i * buildingWidth, height - bHeight, buildingWidth, bHeight);
+
+      // Windows that turn on with minutes
+      let litWindows = floor(map(mn, 0, 59, 0, 40));
+      let rows = 10;
+      let cols = 4;
+      let windowGapX = buildingWidth / (cols + 1);
+      let windowGapY = bHeight / (rows + 1);
+      let windowCount = 0;
+
+      fill(255, 220, 100);
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          windowCount++;
+          if (windowCount <= litWindows) {
+            let wx = i * buildingWidth + (c + 1) * windowGapX - windowGapX/2;
+            let wy = height - bHeight + (r + 1) * windowGapY - windowGapY/2;
+            rect(wx - 5, wy - 5, 10, 10);
+          }
+        }
+      }
+      fill(40); // reset fill for next building if needed
+    }
+  }
+
+  // Recursive fractal tree influenced by time
+  function drawFractalTree(hr, mn, sc) {
+    let depth = floor(map(hr, 0, 11, 5, 9));  // Branch depth from hour
+    let length = map(mn, 0, 59, 60, 150);     // Main branch length from minute
+    let a = map(sc, 0, 59, 0, PI / 2);        // Angle from seconds
+
+    stroke(255);
+    strokeWeight(3);
+    fractalBranch(length, a, depth);
+  }
+
+  function fractalBranch(len, angle, depth) {
+    if (depth <= 0) return;
+
+    line(0, 0, 0, -len);
+    translate(0, -len);
+
+    // Branch right
+    push();
+    rotate(angle);
+    fractalBranch(len * 0.7, angle, depth - 1);
+    pop();
+
+    // Branch left
+    push();
+    rotate(-angle);
+    fractalBranch(len * 0.7, angle, depth - 1);
+    pop();
+  }
+</script>
+
+</body>
+</html>

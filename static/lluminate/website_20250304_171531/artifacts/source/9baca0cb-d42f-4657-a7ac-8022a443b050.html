@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Kaleidoscope</title>
+  <style>
+    /* Basic page setup for a 512x512 display */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas and overlay */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: auto;
+      overflow: hidden;
+      background-color: #111;
+    }
+
+    /* Instructions overlay hidden by default, appears on hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: none;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.8);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.3em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Kaleidoscope</strong><br><br>
+        • Observe how the shape changes with the clock (hour, minute, second).<br>
+        • Move your mouse inside the canvas to swirl the patterns.<br>
+        • Hover away to let the kaleidoscope dance on its own.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512, h = 512;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      colorMode(HSB, 255);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      // Get current local time
+      let hr = hour() % 12;    // 0-11
+      let mn = minute();       // 0-59
+      let sc = second();       // 0-59
+
+      // Decide how many segments we draw, based on the hour
+      let segments = hr + 3; // Ensure at least a few segments
+
+      // Base hue for color depends on current minute
+      let baseHue = map(mn, 0, 59, 0, 255);
+
+      // Rotation factor based on second + mouse speed influences swirl
+      let swirlFactor = map(sc, 0, 60, 0.1, 2) + map(abs(mouseX - pmouseX) + abs(mouseY - pmouseY), 0, 50, 0, 1);
+
+      push();
+      translate(width / 2, height / 2);
+
+      // We'll rotate through the circle, creating symmetrical shapes
+      let stepAngle = 360 / segments;
+      for (let i = 0; i < segments; i++) {
+        push();
+        // The pattern slowly swirls over time
+        rotate(i * stepAngle + swirlFactor * frameCount * 0.2);
+
+        // Vary color for each segment
+        fill((baseHue + i * 15) % 255, 200, 200);
+
+        // Draw a wavy radial shape
+        beginShape();
+        for (let r = 0; r < 100; r++) {
+          let radius = 50 + noise(i, r, frameCount * 0.01) * 80;
+          vertex(radius, 0);
+          rotate(3.6); // create a small wave by incremental rotation
+        }
+        endShape(CLOSE);
+        pop();
+      }
+      pop();
+    }
+  </script>
+</body>
+</html>

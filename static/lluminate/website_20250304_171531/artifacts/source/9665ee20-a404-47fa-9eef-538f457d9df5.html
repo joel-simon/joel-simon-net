@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Mandala</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <style>
+    /* Reset body margin/padding and ensure the page is centered */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Enforce the 512x512 size and position the tooltip */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      border-radius: 4px;
+      padding: 10px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 250px;
+      z-index: 2;
+      line-height: 1.4em;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+
+    /* Keep the p5 canvas at exactly 512x512 */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      Time Mandala Instructions:<br><br>
+      • Observe how hour, minute, and second values affect the petal shapes and colors.<br>
+      • Move your mouse to influence the mandala's positioning.<br>
+      • Watch as the shapes rotate and pulse with each passing second.
+    </div>
+  </div>
+
+  <script>
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent("canvasContainer");
+      angleMode(RADIANS);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      // Capture the current time
+      let h = hour() % 12; // range: 0-11
+      let m = minute();    // range: 0-59
+      let s = second();    // range: 0-59
+
+      /* 
+         Create a rotating mandala-like pattern. 
+         We'll vary color and shape by hour, minute, and second. 
+         Hour controls the number of petal repeats,
+         minute influences petal length & color range,
+         second drives an overall rotation and pulse.
+      */
+
+      let numPetals = 6 + int(h / 2); // 6 to 11 petals
+      let thetaStep = TWO_PI / numPetals;
+
+      /* Petal length & color shift:
+         - Petal length is mapped from minute.
+         - The color offset also uses minute. */
+      let petalLength = map(m, 0, 59, 100, 250);
+      let colorOffset = map(m, 0, 59, 0, 255);
+
+      // The mandala rotates slightly each frame, enhanced by the seconds
+      let baseRotation = frameCount * 0.01 + s * 0.1;
+
+      // Translate to center, then add some subtle mouse offset
+      push();
+      translate(width / 2 + (mouseX - width / 2) * 0.05, 
+                height / 2 + (mouseY - height / 2) * 0.05);
+      rotate(baseRotation);
+
+      // Draw the mandala: repeated petals in a circle
+      for (let i = 0; i < numPetals; i++) {
+        push();
+        rotate(i * thetaStep);
+        
+        // Pulse the petal size based on the current second
+        let pulse = sin((frameCount + i * 5) * 0.02 + s * 0.3) * 20;
+        let totalPetalLength = petalLength + pulse;
+
+        /* Petal color changes with minute offset, plus a small variation 
+           from the petal index for subtle color gradients. 
+           We'll also vary the brightness with the second-based pulse. */
+        let hueVal = (colorOffset + i * 20) % 256;
+        let brightness = map(sin((frameCount + i * 10) * 0.02), -1, 1, 100, 255);
+        
+        fill(hueVal, 120, brightness, 180);
+
+        // Draw a simple "petal" using a rectangle, then rotate to silhouette a petal shape
+        push();
+        rotate(-PI / 2);
+        rectMode(CENTER);
+        rect(0, 0, 20, totalPetalLength);
+        pop();
+
+        pop();
+      }
+      pop();
+
+      // Overlay a soft radial fade or "glow"
+      drawRadialGlow();
+    }
+
+    /* A function to draw a subtle radial glow behind the mandala */
+    function drawRadialGlow() {
+      push();
+      translate(width / 2, height / 2);
+      for (let r = 200; r > 0; r -= 2) {
+        let alphaVal = map(r, 200, 0, 0, 100);
+        fill(0, 0, 0, alphaVal);
+        ellipse(0, 0, r);
+      }
+      pop();
+    }
+  </script>
+</body>
+</html>

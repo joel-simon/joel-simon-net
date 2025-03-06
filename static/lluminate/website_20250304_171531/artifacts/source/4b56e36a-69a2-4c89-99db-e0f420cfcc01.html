@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Candle Maze Garden</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page layout: center the 512x512 area in the window */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    /* Container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+    /* Instructions overlay, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      padding: 20px;
+      display: none;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      font-family: sans-serif;
+      font-size: 14px;
+      text-align: center;
+      line-height: 1.4em;
+    }
+    /* Show instructions on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Candle Maze Garden<br><br>
+        • A maze regenerates every minute.<br>
+        • A fractal tree grows with the hour.<br>
+        • A swirling ring changes color with each second.<br>
+        • The candle height reflects the hour.<br>
+        Hover away to explore!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Candle Maze Garden
+      - A procedural maze resets every minute (union-find MST approach).
+      - A fractal tree's complexity scales with the current hour.
+      - A swirl ring changes color based on the current second.
+      - A candle in the bottom center grows taller with the current hour.
+    */
+
+    const CANVAS_SIZE = 512;
+    const ROWS = 10;
+    const COLS = 10;
+    let walls = [];
+    let cellSize;
+    let lastMinute = -1;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+
+      cellSize = width / COLS;
+      generateMaze();
+    }
+
+    function draw() {
+      background(35);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Regenerate maze if the minute has changed
+      if (m !== lastMinute) {
+        generateMaze();
+        lastMinute = m;
+      }
+
+      // Draw the maze
+      stroke(255);
+      strokeWeight(3);
+      for (let w of walls) {
+        line(w.x1, w.y1, w.x2, w.y2);
+      }
+
+      // Draw fractal tree in top-left corner
+      push();
+      translate(70, height * 0.9);
+      rotate(270);
+      let branches = map(h % 12, 0, 11, 4, 10); // complexity tied to hour
+      stroke(0, 255, 120);
+      strokeWeight(2);
+      drawFractalTree(0, 0, 60, branches);
+      pop();
+
+      // Draw swirl ring in top-right corner (color changes with seconds)
+      drawSwirlRing(s);
+
+      // Draw candle in bottom center (height tied to hour)
+      drawCandle(h);
+
+      // Optional digital clock for reference
+      push();
+      fill(255);
+      textSize(13);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 10, height - 15);
+      pop();
+    }
+
+    // --- Maze Generation (Union-Find / MST) ---
+    function generateMaze() {
+      walls = [];
+
+      // Prepare sets for each cell
+      let cells = [];
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          cells.push({ row: r, col: c, parent: r * COLS + c });
+        }
+      }
+
+      // Edges between adjacent cells
+      let edges = [];
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (r < ROWS - 1) edges.push({ c1: {r, c}, c2: {r: r+1, c} });
+          if (c < COLS - 1) edges.push({ c1: {r, c}, c2: {r, c: c+1} });
+        }
+      }
+
+      // Randomize edges
+      edges.sort(() => random() - 0.5);
+
+      function findParent(i) {
+        if (cells[i].parent !== i) {
+          cells[i].parent = findParent(cells[i].parent);
+        }
+        return cells[i].parent;
+      }
+      function unionCells(i, j) {
+        let rootA = findParent(i);
+        let rootB = findParent(j);
+        cells[rootB].parent = rootA;
+      }
+
+      // Build MST
+      let finalEdges = [];
+      for (let e of edges) {
+        let idx1 = e.c1.r * COLS + e.c1.c;
+        let idx2 = e.c2.r * COLS + e.c2.c;
+        if (findParent(idx1) !== findParent(idx2)) {
+          unionCells(idx1, idx2);
+          finalEdges.push(e);
+        }
+      }
+
+      // Unused edges become walls
+      for (let e of edges) {
+        if (!finalEdges.includes(e)) {
+          let x1 = e.c1.c * cellSize;
+          let y1 = e.c1.r * cellSize;
+          let x2 = e.c2.c * cellSize;
+          let y2 = e.c2.r * cellSize;
+          walls.push({ x1, y1, x2, y2 });
+        }
+      }
+
+      // Maze borders
+      for (let r = 0; r <= ROWS; r++) {
+        walls.push({ x1: 0, y1: r*cellSize, x2: 0, y2: r*cellSize });
+        walls.push({ x1: COLS*cellSize, y1: r*cellSize, x2: COLS*cellSize, y2: r*cellSize });
+      }
+      for (let c = 0; c <= COLS; c++) {
+        walls.push({ x1: c*cellSize, y1: 0, x2: c*cellSize, y2: 0 });
+        walls.push({ x1: c*cellSize, y1: ROWS*cellSize, x2: c*cellSize, y2: ROWS*cellSize });
+      }
+    }
+
+    // --- Fractal Tree Drawing ---
+    function drawFractalTree(x, y, len, depth) {
+      if (depth === 0) return;
+      line(x, y, x, y - len);
+      push();
+      translate(x, y - len);
+      rotate(30);
+      drawFractalTree(0, 0, len * 0.7, depth - 1);
+      pop();
+      push();
+      translate(x, y - len);
+      rotate(-30);
+      drawFractalTree(0, 0, len * 0.7, depth - 1);
+      pop();
+    }
+
+    // --- Swirl Ring (top-right corner) ---
+    function drawSwirlRing(sec) {
+      push();
+      translate(width - 70, 70);
+      noFill();
+      // Swirl color shifts with seconds
+      strokeWeight(4);
+      stroke(map(sec, 0, 59, 0, 255), 100, map(sec, 0, 59, 255, 100));
+      let swirlRadius = 30 + sec; // radius grows with seconds
+      ellipse(0, 0, swirlRadius * 2, swirlRadius * 2);
+      pop();
+    }
+
+    // --- Candle (bottom center) ---
+    function drawCandle(h) {
+      push();
+      translate(width / 2, height - 40);
+      noStroke();
+      fill(200, 170, 80);
+      // Candle height: map hour to min (10) - max (120)
+      let cHeight = map(h % 12, 0, 11, 10, 120);
+
+      // Candle body
+      rectMode(CENTER);
+      rect(0, -cHeight/2, 30, cHeight);
+
+      // Candle flame
+      fill(255, 180, 0);
+      ellipse(0, -cHeight - 5, 12, 18);
+      pop();
+    }
+  </script>
+</body>
+</html>

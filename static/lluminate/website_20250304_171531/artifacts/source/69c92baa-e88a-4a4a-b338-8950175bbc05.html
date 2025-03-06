@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Kaleidoscope</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset body margin/padding and ensure the page is centered */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Enforce the 512x512 size and position the tooltip */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none; 
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      border-radius: 4px;
+      padding: 10px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 260px;
+      z-index: 2;
+      line-height: 1.4em;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+
+    /* Keep the p5 canvas at exactly 512x512 */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      Time Kaleidoscope Instructions:<br><br>
+      • The kaleidoscope colors shift with hours, minutes, and seconds.<br>
+      • Patterns rotate at a speed influenced by the current time.<br>
+      • Press SPACE to toggle burst mode, intensifying the visual effect.
+    </div>
+  </div>
+
+  <script>
+    let burstMode = false;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent("canvasContainer");
+      angleMode(RADIANS);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+      let s = second();
+      let m = minute();
+      let h = hour() % 12;
+      
+      // Map time to color and rotation factors
+      let rCol = map(h, 0, 11, 50, 255);
+      let gCol = map(m, 0, 59, 50, 255);
+      let bCol = map(s, 0, 59, 50, 255);
+
+      // Adjust rotation speed and scale factor based on seconds and burst mode
+      let rotationSpeed = (s + 1) * 0.005;
+      let scaleFactor = burstMode ? 0.7 : 0.45;
+
+      // Draw kaleidoscope
+      translate(width / 2, height / 2);
+      for (let i = 0; i < 8; i++) {
+        push();
+        rotate(frameCount * rotationSpeed + TWO_PI * i / 8);
+        fill(rCol, gCol, bCol, 150);
+        // Main shape
+        ellipse(50, 0, 80, 130 * scaleFactor);
+        // Mirrored shape
+        scale(1, -1);
+        ellipse(50, 0, 80, 130 * scaleFactor);
+        pop();
+      }
+    }
+
+    // Toggle burst mode on SPACE
+    function keyPressed() {
+      if (key === ' ') {
+        burstMode = !burstMode;
+      }
+    }
+  </script>
+</body>
+</html>

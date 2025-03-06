@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Origami Explorer</title>
+  <style>
+    /* Basic page setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.75);
+      text-align: center;
+      padding: 20px;
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Origami Explorer</strong><br><br>
+        • Background color changes by hour (radial gradient).<br>
+        • Origami shape changes sides each minute.<br>
+        • Circles swirl with seconds.<br>
+        • A digital clock is displayed in the center.<br>
+        • Press Left/Right arrows to rotate the entire scene.<br><br>
+        Hover away to return to the animation.
+      </p>
+    </div>
+  </div>
+
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    // Rotation angle for user interaction
+    let rotationAngle = 0;
+
+    // Track pressed keys to slowly rotate scene
+    function keyPressed() {
+      if (keyCode === LEFT_ARROW) {
+        rotationAngle -= 10;
+      } else if (keyCode === RIGHT_ARROW) {
+        rotationAngle += 10;
+      }
+    }
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      rectMode(CENTER);
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // 1) Draw radial gradient background that changes color by hour
+      drawRadialGradientBackground(hr);
+
+      // Move to center, rotate by user-controlled angle
+      push();
+      translate(width / 2, height / 2);
+      rotate(rotationAngle);
+
+      // 2) Draw origami-like polygon that changes number of sides by minute
+      drawOrigamiShape(mn);
+
+      // 3) Draw swirling circles for the seconds
+      drawSwirlingCircles(sc);
+
+      // 4) Display digital clock in center (on top of everything)
+      drawDigitalClock(hr, mn, sc);
+
+      pop();
+    }
+
+    // Creates a radial gradient background
+    function drawRadialGradientBackground(hr) {
+      // Base color changes with hour (0-23 mapped to 0-360 hue).
+      let hueValue = map(hr, 0, 23, 0, 360);
+      // We will draw many circles from center to edges to mimic a radial gradient
+      noStroke();
+      colorMode(HSB);
+      for (let r = max(width, height); r > 0; r -= 5) {
+        fill(hueValue, 60, 100 - (r / (max(width, height)) * 100));
+        ellipse(width / 2, height / 2, r, r);
+      }
+      colorMode(RGB);
+    }
+
+    // Draws a polygon (origami shape) with minutes controlling the number of sides
+    function drawOrigamiShape(mn) {
+      let sides = floor(map(mn, 0, 59, 3, 12)); // 3 to 12 sides
+      let radius = 100;
+      fill(255, 150);
+      stroke(255);
+      strokeWeight(2);
+      beginShape();
+      for (let i = 0; i < sides; i++) {
+        let angle = map(i, 0, sides, 0, 360);
+        let x = radius * cos(angle);
+        let y = radius * sin(angle);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+    }
+
+    // Draw swirling circles that revolve around the center based on seconds
+    function drawSwirlingCircles(sc) {
+      stroke(255);
+      strokeWeight(2);
+      noFill();
+      let swirlCount = 12;
+      let swirlRadius = map(sc, 0, 59, 50, 150);
+      for (let i = 0; i < swirlCount; i++) {
+        let angle = map(i, 0, swirlCount, 0, 360) + frameCount * 0.5;
+        let x = swirlRadius * cos(angle);
+        let y = swirlRadius * sin(angle);
+        circle(x, y, 10);
+      }
+    }
+
+    // Draw a simple digital clock rotated with the scene
+    function drawDigitalClock(hr, mn, sc) {
+      push();
+      noStroke();
+      fill(255);
+      textSize(20);
+      textAlign(CENTER, CENTER);
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 0, 0);
+      pop();
+    }
+  </script>
+</body>
+</html>

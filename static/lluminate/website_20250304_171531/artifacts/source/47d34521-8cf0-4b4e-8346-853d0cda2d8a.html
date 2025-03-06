@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Snowglobe</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic page setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Container for 512x512 canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (hidden by default, appears on hover) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      text-align: center;
+      box-sizing: border-box;
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <h2>Time Snowglobe</h2>
+      <p>
+        • Snowfall and swirl speed match seconds<br>
+        • Snowglobe shade changes gradually over the hour<br>
+        • Silhouette changes color each minute<br>
+        • Observe the clock in the corner!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Snowglobe
+      --------------
+      1) A large snowglobe circle in the center whose color shifts over the hour
+      2) A silhouette inside that changes color each minute
+      3) Snow particles swirling at speeds related to seconds
+      4) A digital clock in the top-left corner
+    */
+
+    const CANVAS_SIZE = 512;
+    const SNOWFLAKE_COUNT = 100;
+    let snowflakes = [];
+    const globeRadius = 200;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+
+      // Initialize snowflakes
+      for (let i = 0; i < SNOWFLAKE_COUNT; i++) {
+        snowflakes.push(createSnowflake());
+      }
+    }
+
+    function draw() {
+      background(20);
+
+      // Gather time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // 1) Draw the snowglobe
+      drawSnowglobe(h);
+
+      // 2) Draw the silhouette
+      drawSilhouette(m);
+
+      // 3) Update and draw snow
+      updateSnow(s);
+      drawSnow();
+
+      // 4) Draw small digital clock
+      drawClock(h, m, s);
+    }
+
+    // Creates a single snowflake with random polar coords
+    function createSnowflake() {
+      // Radius random from 10 to 0.9 * globeRadius
+      let r = random(10, globeRadius * 0.9);
+      // Angle random from 0 to 360
+      let a = random(360);
+      return {
+        r: r,
+        angle: a,
+      };
+    }
+
+    // Updates snowflake swirling speed based on the current second
+    function updateSnow(s) {
+      let swirlSpeed = map(s, 0, 59, 0.5, 3);  // swirl faster as seconds progress
+      for (let flake of snowflakes) {
+        flake.angle += swirlSpeed;
+        // Slight radius bobbing
+        flake.r += sin(frameCount * 0.01 + flake.angle) * 0.01;
+      }
+    }
+
+    // Draw all snowflakes in polar coords, centered in the globe
+    function drawSnow() {
+      push();
+      translate(width / 2, height / 2);
+      noStroke();
+      fill(255);
+      for (let flake of snowflakes) {
+        let x = flake.r * cos(flake.angle);
+        let y = flake.r * sin(flake.angle);
+        ellipse(x, y, 4, 4);
+      }
+      pop();
+    }
+
+    // Draw the snowglobe circle in the center
+    // The color transitions over hours (0-23 mapping to hue or brightness)
+    function drawSnowglobe(h) {
+      push();
+      translate(width / 2, height / 2);
+
+      // Let's map hour to a color shift
+      colorMode(HSB, 360, 100, 100);
+      let hueVal = map(h, 0, 23, 180, 360);  // some range shift
+      fill(hueVal, 40, 80);
+      noStroke();
+      ellipse(0, 0, globeRadius * 2, globeRadius * 2);
+      pop();
+      colorMode(RGB, 255);
+    }
+
+    // Draw a small silhouette inside the globe
+    // It changes color each minute
+    // We'll just draw a little house for this example
+    function drawSilhouette(m) {
+      push();
+      translate(width / 2, height / 2 + globeRadius * 0.3); // near bottom
+      // color changes each minute
+      let c = color(map(m, 0, 59, 0, 255), 100, map(m, 0, 59, 255, 50));
+      fill(c);
+      noStroke();
+
+      // House base
+      rectMode(CENTER);
+      rect(0, 0, 50, 30);
+
+      // Roof
+      triangle(-30, 0, 30, 0, 0, -25);
+      pop();
+    }
+
+    // Show a small digital clock top-left
+    function drawClock(h, m, s) {
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 10, 10);
+      pop();
+    }
+  </script>
+</body>
+</html>

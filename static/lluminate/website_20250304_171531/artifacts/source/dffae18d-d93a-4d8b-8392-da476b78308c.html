@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Kaleidoscope</title>
+  <style>
+    /* Page setup ensuring only a 512x512 area is visible for the canvas */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for canvas and overlay */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: auto;
+      overflow: hidden;
+      background-color: #111;
+    }
+
+    /* Instructions overlay hidden by default, appears on hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: none;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.8);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Kaleidoscope</strong><br><br>
+        • Background color changes with the hour.<br>
+        • Petals expand with the minute.<br>
+        • The entire shape rotates as seconds pass.<br>
+        • Wave the mouse to create swirling effects.<br><br>
+        Hover away to see the animation.
+      </p>
+    </div>
+  </div>
+
+  <!-- Include p5.js -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    const CANVAS_SIZE = 512;
+    const PETAL_COUNT = 12;             // Repetitions in the kaleidoscope
+    const MAX_RADIUS = CANVAS_SIZE / 3; // Max size for petals
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      // Obtain current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Map hour (0-23) to a background color range
+      let bgHue = map(hr, 0, 23, 0, 360);
+      colorMode(HSB);
+      background(bgHue, 60, 30);
+
+      // Calculate a scale factor for the radius based on minutes
+      // Gently animate with minute + a small sin wave to keep it lively
+      let petalRadius = map(mn, 0, 59, MAX_RADIUS * 0.2, MAX_RADIUS) + sin(frameCount * 0.05) * 8;
+
+      // Apply time-based rotation: each second adds more spin
+      let timeRotation = map(sc, 0, 59, 0, 360);
+      push();
+      translate(width / 2, height / 2);
+      rotate(timeRotation + frameCount * 0.2);
+
+      for (let i = 0; i < PETAL_COUNT; i++) {
+        // Each repetition: rotate by 360/PETAL_COUNT
+        rotate(360 / PETAL_COUNT);
+
+        // Use a color based on i plus the minute to achieve a dynamic palette
+        let petalHue = (bgHue + i * 15 + mn * 2) % 360;
+        fill(petalHue, 80, 90);
+
+        // Slight offset added by mouse movement for swirling effect
+        let swirlX = (mouseX - width / 2) * 0.02;
+        let swirlY = (mouseY - height / 2) * 0.02;
+
+        // Draw the "petal" shape
+        push();
+        translate(swirlX, swirlY);
+        ellipse(0, petalRadius / 2, petalRadius * 0.5, petalRadius);
+        pop();
+      }
+      pop();
+
+      // Display a small time readout in the center
+      drawClockDisplay(hr, mn, sc);
+    }
+
+    // Centered digital clock readout
+    function drawClockDisplay(hr, mn, sc) {
+      push();
+      translate(width / 2, height / 2);
+      textSize(18);
+      textAlign(CENTER, CENTER);
+      fill(255);
+
+      let displayHour = hr % 12 || 12;
+      let ampm = hr >= 12 ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(`${displayHour}:${minStr}:${secStr} ${ampm}`, 0, 0);
+      pop();
+    }
+  </script>
+</body>
+</html>

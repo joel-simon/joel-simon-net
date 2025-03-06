@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Singularity Spiral</title>
+  <!-- Include p5.js -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Zero out page margins and ensure a dark background behind the canvas */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Fixed 512x512 container for our canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden; /* Clip any off-canvas content */
+      background-color: #000;
+    }
+
+    /* Hover overlay for instructions (initially hidden) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-family: sans-serif;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    /* Show the overlay text only on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <h2>Time Singularity Spiral</h2>
+      <p>
+        • The background hue shifts each hour.<br>
+        • A swirling vortex's speed aligns with the minutes.<br>
+        • The spiral widens or narrows by the second.<br>
+        • Golden sparks appear at each second tick and drift away.<br>
+        • A digital readout hovers in the center.<br>
+        Hover away to explore!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Singularity Spiral
+      - Background hue changes with hour.
+      - A spiral of lines rotates based on minute.
+      - The spiral's size pulsates based on second.
+      - Golden sparks spawn each second and gently vanish.
+      - Live time is displayed at the center of the canvas.
+    */
+
+    const CANVAS_SIZE = 512;
+    let sparks = [];
+    let lastSecond = null;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100);
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Background hue based on hour, with slight shifts
+      let totalSeconds = hr * 3600 + mn * 60 + sc;
+      let hueVal = map(totalSeconds % 86400, 0, 86400, 0, 360);
+      background(hueVal, 60, 60);
+
+      // Golden sparks appear on each second
+      if (sc !== lastSecond) {
+        sparks.push(new Spark());
+        lastSecond = sc;
+      }
+
+      // Update and display sparks
+      for (let s of sparks) {
+        s.update();
+        s.display();
+      }
+
+      // Remove fully faded sparks
+      sparks = sparks.filter(s => s.alpha > 0);
+
+      // Draw swirling lines that rotate based on minute
+      push();
+      translate(width / 2, height / 2);
+      let spinSpeed = map(mn, 0, 59, 0, 10);
+      rotate(frameCount * spinSpeed * 0.05);
+
+      // Spiral expansion based on second
+      let spiralSize = map(sc, 0, 59, 50, 180);
+
+      stroke(60, 90, 100);
+      noFill();
+      // Draw multiple arcs in a spiral form
+      for (let i = 0; i < 12; i++) {
+        push();
+        rotate(30 * i);
+        arc(0, 0, spiralSize, spiralSize, 0, 120);
+        pop();
+      }
+      pop();
+
+      // Display time in the center
+      fill(255);
+      noStroke();
+      textSize(20);
+      textAlign(CENTER, CENTER);
+      text(`${hr}:${nf(mn, 2)}:${nf(sc, 2)}`, width / 2, height / 2);
+    }
+
+    // Spark class
+    class Spark {
+      constructor() {
+        this.x = random(width);
+        this.y = random(height);
+        this.size = random(5, 10);
+        this.alpha = 255;
+      }
+
+      update() {
+        // Spark floats upward and fades
+        this.y -= 0.3;
+        this.alpha -= 2;
+      }
+
+      display() {
+        noStroke();
+        fill(50, 100, 100, this.alpha);
+        ellipse(this.x, this.y, this.size);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Time Microbes</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset body margin/padding and use a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container fixed at 512x512, centered */
+    #clock-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay, hidden by default */
+    #instructions {
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      display: none;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      line-height: 1.5;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #clock-container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="clock-container">
+  <div id="instructions">
+    <h2>Time Microbes</h2>
+    <p>Observe the alien microbes! Their size grows with hours,<br>
+       their color changes with minutes, and their velocity depends on seconds.<br>
+       Move your mouse inside the canvas to push them away.<br> 
+       The digital clock is displayed at the bottom.</p>
+  </div>
+</div>
+
+<script>
+  const canvasSize = 512;
+  let microbes = [];
+  let numMicrobes = 10;
+  
+  class Microbe {
+    constructor() {
+      this.x = random(width);
+      this.y = random(height);
+      this.vx = random(-1, 1);
+      this.vy = random(-1, 1);
+      this.size = 20;
+      this.col = color(255);
+    }
+
+    update(hr, mn, sc) {
+      // Update size based on hour
+      // Map hour (0-23) to a range for microbe size
+      let maxSize = map(hr, 0, 23, 20, 60);
+      // Smooth it out so each microbe has a bit of variation
+      this.size = lerp(this.size, maxSize, 0.01);
+
+      // Update color based on minute
+      // We'll shift through a spectrum as minutes go from 0 to 59
+      let hueVal = map(mn, 0, 59, 0, 360);
+      this.col = color(hueVal, 80, 90);
+
+      // Velocity based on seconds
+      // The more seconds, the faster they become
+      let speedFactor = map(sc, 0, 59, 0.5, 3);
+      this.x += this.vx * speedFactor;
+      this.y += this.vy * speedFactor;
+
+      // Wrap around edges
+      if (this.x < 0) this.x = width;
+      if (this.x > width) this.x = 0;
+      if (this.y < 0) this.y = height;
+      if (this.y > height) this.y = 0;
+    }
+
+    // Mouse repulsion
+    repel(mx, my) {
+      let distThresh = 50;
+      let d = dist(mx, my, this.x, this.y);
+      if (d < distThresh) {
+        let angle = atan2(this.y - my, this.x - mx);
+        let force = 2; 
+        this.vx += force * cos(angle);
+        this.vy += force * sin(angle);
+      }
+    }
+
+    display() {
+      noStroke();
+      fill(this.col);
+      circle(this.x, this.y, this.size);
+    }
+  }
+
+  function setup() {
+    let myCanvas = createCanvas(canvasSize, canvasSize);
+    myCanvas.parent("clock-container");
+    colorMode(HSB);
+    textAlign(CENTER, CENTER);
+    
+    // Create our microbes
+    for (let i = 0; i < numMicrobes; i++) {
+      microbes.push(new Microbe());
+    }
+  }
+
+  function draw() {
+    background(20, 20, 20);
+
+    // Get current time
+    let hr = hour();
+    let mn = minute();
+    let sc = second();
+
+    // For each microbe, update and display
+    microbes.forEach(m => {
+      m.update(hr, mn, sc);
+      m.repel(mouseX, mouseY);
+      m.display();
+    });
+
+    // Display digital clock at bottom center
+    fill(255);
+    textSize(24);
+    text(`${hr}:${nf(mn, 2)}:${nf(sc, 2)}`, width / 2, height - 20);
+  }
+</script>
+</body>
+</html>

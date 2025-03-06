@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Combined Time Maze & Fractal Display</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for contrast */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shown on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Combined Time Maze & Fractal Display</strong><br><br>
+        • Maze changes whenever the hour or minute changes.<br>
+        • Use arrow keys to guide the white square from the top-left cell to the bottom-right.<br>
+        • A small fractal tree in the top-right corner grows based on the hour.<br>
+        • A spinning star in the bottom-left corner rotates with the seconds.<br>
+        • Background color also shifts with the seconds.<br><br>
+        Hover over the canvas to see instructions!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /************************
+     * Maze-Related Variables
+     ************************/
+    let cols, rows;
+    let cellSize;
+    let maze = [];
+    let stack = [];
+
+    // Player position for maze
+    let playerCol = 0;
+    let playerRow = 0;
+
+    // Time trackers to trigger maze regeneration
+    let lastHr, lastMn;
+
+    // Canvas dimensions
+    let w = 512;
+    let h = 512;
+
+    /************************
+     * Setup
+     ************************/
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      frameRate(30);
+      angleMode(DEGREES);
+
+      // Generate the maze initially
+      generateNewMaze();
+    }
+
+    /************************
+     * Main Draw Loop
+     ************************/
+    function draw() {
+      // Background color changes with seconds
+      let sc = second();
+      let bgCol = map(sc, 0, 59, 0, 255);
+      background(bgCol, 80, 150);
+
+      // Check for changes in hour or minute => regenerate maze if needed
+      let currentHr = hour();
+      let currentMn = minute();
+      if (currentHr !== lastHr || currentMn !== lastMn) {
+        generateNewMaze();
+      }
+
+      // Draw the labyrinth
+      drawMaze();
+      // Draw the player
+      drawPlayer();
+      // Draw the fractal tree in the top right corner
+      push();
+      translate(width - 60, 70);
+      drawFractalTree(0, 0, map(hour(), 0, 23, 40, 120));
+      pop();
+      // Draw the rotating star in the bottom-left corner
+      push();
+      translate(60, height - 60);
+      rotate(sc * 6); // 6 degrees per second
+      drawStar(0, 0, 15, 30, 5);
+      pop();
+      // Display the time
+      drawTime();
+    }
+
+    /************************
+     * Maze Generation
+     ************************/
+    function generateNewMaze() {
+      // hour => columns, minute => rows
+      let hr = hour();
+      let mn = minute();
+
+      // Keep a reasonable range
+      cols = floor(map(hr, 0, 23, 5, 20));
+      rows = floor(map(mn, 0, 59, 5, 30));
+
+      // Each cell's size so the entire maze fits within 512x512
+      cellSize = floor(min(width / cols, height / rows));
+
+      // Reset data structures
+      maze = [];
+      for (let r = 0; r < rows; r++) {
+        let rowCells = [];
+        for (let c = 0; c < cols; c++) {
+          rowCells.push({
+            visited: false,
+            walls: { top: true, right: true, bottom: true, left: true }
+          });
+        }
+        maze.push(rowCells);
+      }
+
+      // Use DFS-based generation
+      let startCell = { r: 0, c: 0 };
+      maze[0][0].visited = true;
+      stack = [startCell];
+
+      while (stack.length > 0) {
+        let current = stack[stack.length - 1];
+        let next = getUnvisitedNeighbor(current.r, current.c);
+        if (next) {
+          maze[next.r][next.c].visited = true;
+          stack.push(next);
+          removeWalls(current, next);
+        } else {
+          stack.pop();
+        }
+      }
+
+      // Reset player position
+      playerRow = 0;
+      playerCol = 0;
+
+      // Track time to detect changing hour/minute
+      lastHr = hr;
+      lastMn = mn;
+    }
+
+    // Return a random unvisited neighbor
+    function getUnvisitedNeighbor(r, c) {
+      let neighbors = [];
+      if (r > 0 && !maze[r - 1][c].visited) {
+        neighbors.push({ r: r - 1, c: c });
+      }
+      if (r < rows - 1 && !maze[r + 1][c].visited) {
+        neighbors.push({ r: r + 1, c: c });
+      }
+      if (c > 0 && !maze[r][c - 1].visited) {
+        neighbors.push({ r: r, c: c - 1 });
+      }
+      if (c < cols - 1 && !maze[r][c + 1].visited) {
+        neighbors.push({ r: r, c: c + 1 });
+      }
+      if (neighbors.length === 0) return null;
+      return random(neighbors);
+    }
+
+    // Remove walls between two cells
+    function removeWalls(a, b) {
+      let dr = b.r - a.r;
+      let dc = b.c - a.c;
+      if (dr === 1 && dc === 0) {
+        // b below a
+        maze[a.r][a.c].walls.bottom = false;
+        maze[b.r][b.c].walls.top = false;
+      } else if (dr === -1 && dc === 0) {
+        // b above a
+        maze[a.r][a.c].walls.top = false;
+        maze[b.r][b.c].walls.bottom = false;
+      } else if (dr === 0 && dc === 1) {
+        // b right of a
+        maze[a.r][a.c].walls.right = false;
+        maze[b.r][b.c].walls.left = false;
+      } else if (dr === 0 && dc === -1) {
+        // b left of a
+        maze[a.r][a.c].walls.left = false;
+        maze[b.r][b.c].walls.right = false;
+      }
+    }
+
+    /************************
+     * Drawing the Maze and Player
+     ************************/
+    function drawMaze() {
+      stroke(255);
+      strokeWeight(2);
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          let x = c * cellSize;
+          let y = r * cellSize;
+          let cell = maze[r][c];
+          // Top
+          if (cell.walls.top) {
+            line(x, y, x + cellSize, y);
+          }
+          // Right
+          if (cell.walls.right) {
+            line(x + cellSize, y, x + cellSize, y + cellSize);
+          }
+          // Bottom
+          if (cell.walls.bottom) {
+            line(x, y + cellSize, x + cellSize, y + cellSize);
+          }
+          // Left
+          if (cell.walls.left) {
+            line(x, y, x, y + cellSize);
+          }
+        }
+      }
+    }
+
+    function drawPlayer() {
+      fill(255);
+      noStroke();
+      let px = playerCol * cellSize + cellSize / 4;
+      let py = playerRow * cellSize + cellSize / 4;
+      rect(px, py, cellSize / 2, cellSize / 2);
+    }
+
+    /************************
+     * Fractal Tree
+     ************************/
+    function drawFractalTree(x, y, length) {
+      stroke(200, 255, 200);
+      strokeWeight(2);
+      push();
+      translate(x, y);
+      // The trunk
+      line(0, 0, 0, -length);
+      translate(0, -length);
+      branch(length * 0.7);
+      pop();
+    }
+
+    function branch(len) {
+      if (len < 4) return;
+      push();
+      rotate(25);
+      line(0, 0, 0, -len);
+      translate(0, -len);
+      branch(len * 0.7);
+      pop();
+      push();
+      rotate(-25);
+      line(0, 0, 0, -len);
+      translate(0, -len);
+      branch(len * 0.7);
+      pop();
+    }
+
+    /************************
+     * Spinning Star
+     ************************/
+    function drawStar(x, y, radius1, radius2, npoints) {
+      fill(255, 255, 100);
+      stroke(255);
+      strokeWeight(1);
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+
+    /************************
+     * Show Time
+     ************************/
+    function drawTime() {
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+      let displayHour = hr % 12 || 12;
+      let ampm = hr >= 12 ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 10, 10);
+    }
+
+    /************************
+     * Player Movement
+     ************************/
+    function keyPressed() {
+      if (keyCode === LEFT_ARROW) {
+        if (!maze[playerRow][playerCol].walls.left) {
+          playerCol = max(playerCol - 1, 0);
+        }
+      }
+      else if (keyCode === RIGHT_ARROW) {
+        if (!maze[playerRow][playerCol].walls.right) {
+          playerCol = min(playerCol + 1, cols - 1);
+        }
+      }
+      else if (keyCode === UP_ARROW) {
+        if (!maze[playerRow][playerCol].walls.top) {
+          playerRow = max(playerRow - 1, 0);
+        }
+      }
+      else if (keyCode === DOWN_ARROW) {
+        if (!maze[playerRow][playerCol].walls.bottom) {
+          playerRow = min(playerRow + 1, rows - 1);
+        }
+      }
+    }
+  </script>
+</body>
+</html>

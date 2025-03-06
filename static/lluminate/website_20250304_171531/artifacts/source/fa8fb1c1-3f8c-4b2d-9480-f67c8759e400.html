@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Kaleidoscope</title>
+  <style>
+    /* Page setup for a 512x512 display */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas and overlay */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: auto;
+      overflow: hidden;
+      background-color: #111;
+    }
+
+    /* Instructions overlay hidden by default, appears on hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: none;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.8);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Kaleidoscope</strong><br><br>
+        • The current hour influences color tones.<br>
+        • The minute sets the number of kaleidoscope segments.<br>
+        • The second shifts the brightness of the background.<br>
+        • Watch as patterns randomly draw and rotate.<br><br>
+        Hover away to see the animation.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      colorMode(HSB, 360, 100, 100);
+      noFill();
+      strokeWeight(2);
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+      
+      // Map hour to hue, second to brightness
+      let baseHue = map(hr, 0, 23, 0, 360);
+      let baseBright = map(sc, 0, 59, 30, 100);
+
+      // Clear background with color based on hour and second
+      background(baseHue, 60, baseBright);
+
+      // Number of mirrored segments depends on minute (min 2 segments, max 12)
+      let segCount = int(map(mn, 0, 59, 2, 12));
+      let angleStep = TWO_PI / segCount;
+
+      // Random lines or arcs repeated in each segment
+      let shapeCount = 6; 
+      stroke((baseHue + sc*3) % 360, 100, 100);
+
+      push();
+      translate(width/2, height/2);
+      
+      for (let i = 0; i < shapeCount; i++) {
+        // Random endpoints within a certain range
+        let x1 = random(-width/4, width/4);
+        let y1 = random(-height/4, height/4);
+        let x2 = random(-width/2, width/2);
+        let y2 = random(-height/2, height/2);
+
+        // Draw shape in each segment
+        for (let seg = 0; seg < segCount; seg++) {
+          push();
+          rotate(seg * angleStep + frameCount * 0.001 * (hr + 1));
+          // Sometimes draw arcs, sometimes lines for variety
+          if (i % 2 === 0) {
+            line(x1, y1, x2, y2);
+          } else {
+            arc(x1, y1, abs(x2), abs(y2), 0, HALF_PI);
+          }
+          pop();
+        }
+      }
+      pop();
+
+      // Display current time in the center
+      displayTime(hr, mn, sc);
+    }
+
+    function displayTime(hr, mn, sc) {
+      push();
+      textAlign(CENTER, CENTER);
+      textSize(24);
+      fill(0, 0, 100); // white in HSB
+      let dh = (hr % 12) || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      text(dh + ":" + nf(mn, 2) + ":" + nf(sc, 2) + " " + ampm, width/2, height/2);
+      pop();
+    }
+
+  </script>
+</body>
+</html>

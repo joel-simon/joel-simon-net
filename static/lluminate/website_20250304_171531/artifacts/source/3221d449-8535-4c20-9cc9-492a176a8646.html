@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Time Orb Flow</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+    }
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to "Time Orb Flow"!<br><br>
+        • The background color shifts with the hour.<br>
+        • Orb sizes adjust with the hour.<br>
+        • Orb colors vary with the minute.<br>
+        • Orb speeds change with the second.<br>
+        • Move your mouse near an orb to gently push it away.<br><br>
+        Hover away to return to the animation.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let orbs = [];
+
+    // Basic orb object
+    class Orb {
+      constructor(x, y, r, hueVal) {
+        this.x = x;
+        this.y = y;
+        this.r = r;
+        this.hueVal = hueVal;
+        // Random direction
+        this.vx = random(-1, 1);
+        this.vy = random(-1, 1);
+      }
+
+      update(speedFactor) {
+        // Adjust position
+        this.x += this.vx * speedFactor;
+        this.y += this.vy * speedFactor;
+
+        // Wrap around the edges
+        if (this.x < -this.r) this.x = width + this.r;
+        if (this.x > width + this.r) this.x = -this.r;
+        if (this.y < -this.r) this.y = height + this.r;
+        if (this.y > height + this.r) this.y = -this.r;
+
+        // Mouse interaction
+        let d = dist(mouseX, mouseY, this.x, this.y);
+        if (d < this.r + 30) {
+          let angle = atan2(this.y - mouseY, this.x - mouseX);
+          this.x += cos(angle) * 2;
+          this.y += sin(angle) * 2;
+        }
+      }
+
+      display() {
+        push();
+        colorMode(HSB);
+        fill(this.hueVal, 80, 90);
+        noStroke();
+        circle(this.x, this.y, this.r * 2);
+        pop();
+      }
+    }
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      noStroke();
+      angleMode(DEGREES);
+
+      // Create initial orb population
+      for (let i = 0; i < 20; i++) {
+        orbs.push(new Orb(random(width), random(height), 20, random(360)));
+      }
+    }
+
+    function draw() {
+      backgroundGradient();
+
+      // Gather current time
+      let h = hour();    // 0 - 23
+      let m = minute();  // 0 - 59
+      let s = second();  // 0 - 59
+
+      // Orb radius from hour
+      let orbRadius = map(h, 0, 23, 10, 50);
+      // Orb color from minute
+      let orbHue = map(m, 0, 59, 0, 360);
+      // Speed factor from second
+      let speedFactor = map(s, 0, 59, 0.5, 3);
+
+      // Update and display orbs
+      for (let orb of orbs) {
+        orb.r = orbRadius;
+        orb.hueVal = orbHue;
+        orb.update(speedFactor);
+        orb.display();
+      }
+
+      // Optional text: digital clock
+      fill(255);
+      textSize(14);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+    }
+
+    // Creates a vertical gradient background based on the current hour
+    function backgroundGradient() {
+      let h = hour();
+      colorMode(HSB);
+      let topColor = color(map(h, 0, 23, 0, 360), 50, 30);
+      let bottomColor = color(map(h, 0, 23, 0, 360), 100, 10);
+      for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        let c = lerpColor(topColor, bottomColor, inter);
+        stroke(c);
+        line(0, y, width, y);
+      }
+      colorMode(RGB);
+    }
+  </script>
+</body>
+</html>

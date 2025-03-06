@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Reversal Moiré</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset default margins and background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container exactly 512x512 */
+    #timeReversalMoireContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Instruction overlay on hover */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 30px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #timeReversalMoireContainer:hover #instructionsOverlay {
+      display: block;
+    }
+
+    h1, p {
+      margin: 1em 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="timeReversalMoireContainer">
+    <div id="instructionsOverlay">
+      <h1>Time Reversal Moiré</h1>
+      <p>• Background hue shifts with the hour and minute<br>
+         • Black lines spiral forward or backward, guided by seconds<br>
+         • Hover again to see instructions<br>
+         • Move the mouse to distort the moiré pattern</p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      TIME REVERSAL MOIRÉ
+      1) The background hue changes based on the current hour & minute.
+      2) Black lines radiate from the center, spiraling in a direction
+         reversed or not based on the current second.
+      3) Mouse movement adds an interactive distortion.
+      4) A time readout is displayed in the corner.
+    */
+
+    // Variables for controlling rotations and distortion
+    let angleBase = 0;        // Base angle for the moiré pattern
+    let direction = 1;        // Direction of line rotation
+    let distortionFactor = 0; // Changes based on mouse movements
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('timeReversalMoireContainer');
+      // Use angleMode(DEGREES) to simplify rotation
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Adjust direction based on the second:
+      // Even seconds rotate lines forward, odd seconds rotate them backward
+      direction = (s % 2 === 0) ? 1 : -1;
+
+      // Map hour & minute to an HSL background color
+      colorMode(HSL);
+      let bgHue = map(h * 60 + m, 0, 1440, 0, 360);
+      background(bgHue, 70, 40);
+
+      // Return color mode to RGB for line color
+      colorMode(RGB);
+
+      // Generate moiré lines
+      push();
+      translate(width / 2, height / 2);
+
+      // Update rotation angle
+      angleBase += direction * 0.2;
+
+      for (let i = 0; i < 360; i += 8) {
+        push();
+        // Each line is offset from the base angle
+        rotate(i + angleBase);
+        // Distorted line depends on mouse Y
+        let distortedLength = map(distortionFactor, 0, height, 0, 50);
+        stroke(0);
+        strokeWeight(2);
+        line(0, 0, width / 2 + distortedLength, 0);
+        pop();
+      }
+      pop();
+
+      // Quick instructions: Mouse movement updates the distortionFactor
+      distortionFactor = mouseY;
+
+      // Digital time readout at top-left
+      fill(255);
+      noStroke();
+      textSize(20);
+      textAlign(LEFT, TOP);
+      let displayHour = h % 12; 
+      displayHour = (displayHour === 0) ? 12 : displayHour; 
+      let ampm = (h >= 12) ? "PM" : "AM";
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      let timeString = displayHour + ":" + minStr + ":" + secStr + " " + ampm;
+      text(timeString, 10, 10);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Reversal Vortex</title>
+  <style>
+    /* Basic page styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: sans-serif;
+    }
+
+    /* Container to hold the 512x512 canvas */
+    .canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* The p5 canvas should match the container */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Instructions overlay, hidden by default; displays on hover */
+    .instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .canvas-container:hover .instructions {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div class="canvas-container">
+    <div class="instructions">
+      <p>
+        Welcome to the Time Reversal Vortex!<br><br>
+        • This visualization shows how long remains until the next midnight.<br>
+        • Swirling lines spiral inward, representing reverse seconds.<br>
+        • The rotating shape in the center shrinks based on reverse minutes.<br>
+        • The text at the bottom is the reversed time counting down toward midnight.<br><br>
+        Hover away to see it all in motion!
+      </p>
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let swirlParticles = [];
+
+    function setup() {
+      let canvas = createCanvas(512, 512);
+      canvas.parent(document.querySelector('.canvas-container'));
+      angleMode(RADIANS);
+      // Initialize a batch of spiral particles
+      for (let i = 0; i < 200; i++) {
+        swirlParticles.push({
+          angle: random(TWO_PI),
+          radius: random(100, 300),
+          speed: random(0.005, 0.02)
+        });
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      // Current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Calculate the number of seconds from midnight and to next midnight
+      let totalSecondsInDay = 24 * 3600;
+      let currentSeconds = hr * 3600 + mn * 60 + sc;
+      let reversedSeconds = totalSecondsInDay - currentSeconds;
+      if (reversedSeconds === totalSecondsInDay) {
+        // Just past midnight, show 0
+        reversedSeconds = 0;
+      }
+
+      // Break back down into H:M:S
+      let leftHr = floor(reversedSeconds / 3600);
+      let remainder = reversedSeconds % 3600;
+      let leftMn = floor(remainder / 60);
+      let leftSc = remainder % 60;
+
+      // Draw swirling lines that spiral inward
+      push();
+      translate(width / 2, height / 2);
+      stroke(255);
+      noFill();
+
+      // Scale swirl speed by reversing seconds
+      let swirlFactor = map(leftSc, 0, 59, 1, 2);
+      swirlParticles.forEach(p => {
+        // Move each particle slightly inward and rotate
+        p.angle += p.speed * swirlFactor;
+        p.radius *= 0.999; // Gradually collapse inward
+
+        // Wrap if radius gets too small
+        if (p.radius < 1) {
+          p.radius = random(150, 300);
+          p.angle = random(TWO_PI);
+        }
+
+        let x = p.radius * cos(p.angle);
+        let y = p.radius * sin(p.angle);
+        point(x, y);
+      });
+      pop();
+
+      // Central shape that shrinks with reverse minutes
+      push();
+      translate(width / 2, height / 2);
+      rotate(frameCount * 0.01);
+      
+      let sizeFactor = map(leftMn, 0, 59, 10, 80);
+      stroke(255);
+      fill(0, 50);
+      let sides = 7; // Heptagon
+      beginShape();
+      for (let i = 0; i < sides; i++) {
+        let angle = map(i, 0, sides, 0, TWO_PI);
+        let x = sizeFactor * cos(angle);
+        let y = sizeFactor * sin(angle);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+      pop();
+
+      // Display reversed time text at bottom
+      textAlign(CENTER, CENTER);
+      textSize(24);
+      fill(255);
+      noStroke();
+      text(
+        nf(leftHr, 2) + ":" + nf(leftMn, 2) + ":" + nf(leftSc, 2),
+        width / 2, height - 20
+      );
+    }
+  </script>
+</body>
+</html>

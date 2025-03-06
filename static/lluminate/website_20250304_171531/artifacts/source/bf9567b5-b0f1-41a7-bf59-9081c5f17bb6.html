@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Wave-Kaleidoscope Time Fusion</title>
+  <style>
+    /* Basic page and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    /* 512x512 container with an instruction overlay that appears on hover */
+    #container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Instruction overlay that appears on hover */
+    #hover-info {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 40px;
+      text-align: center;
+    }
+    #container:hover #hover-info {
+      display: flex;
+    }
+    p {
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="hover-info">
+      <p>
+        Wave-Kaleidoscope Time Fusion<br><br>
+        • An ever-shifting wave in the background is influenced by current hour, minute, and second.<br>
+        • A kaleidoscopic array of shapes is generated each second, mirroring across multiple segments.<br>
+        • Enjoy this artistic representation of time, and watch it evolve continuously.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    // Wave properties
+    let waveOffset = 0;
+    const waveSpeed = 0.02;
+
+    // Kaleidoscope shapes store
+    let shapes = [];
+    let prevSecond = -1;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('container');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(0);
+
+      // Current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // -------------------- Wave Background --------------------
+      // Amplitude mapped from hour [0..23] -> [20..100]
+      const amplitude = map(h, 0, 23, 20, 100);
+      // Frequency mapped from minute [0..59] -> [0.01..0.2]
+      const freq = map(m, 0, 59, 0.01, 0.2);
+      // Phase shift from seconds
+      const phaseShift = map(s, 0, 59, 0, TWO_PI);
+
+      noStroke();
+      fill(50, 100, 160); // wave color
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 5) {
+        let waveY = height / 2 + amplitude * sin(freq * (x + waveOffset) + phaseShift);
+        vertex(x, waveY);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+
+      // Move the wave for next frame
+      waveOffset += waveSpeed;
+
+      // -------------------- Kaleidoscope Shapes --------------------
+      // Add new shape array element once per second
+      if (s !== prevSecond) {
+        shapes.push(createKaleidoShape(h, m, s));
+        // Limit stored shapes to avoid massive buildup
+        if (shapes.length > 60) shapes.shift();
+        prevSecond = s;
+      }
+
+      // Center the canvas for kaleidoscope
+      push();
+      translate(width / 2, height / 2);
+      colorMode(HSB);
+
+      // Scale kaleidoscope based on hour [1..12]
+      let scaleFactor = map(h % 12 || 12, 1, 12, 0.6, 1.3);
+      scale(scaleFactor);
+
+      // Display the shapes through mirrored segments
+      let segments = 8;
+      for (let seg = 0; seg < segments; seg++) {
+        push();
+        rotate(seg * (360 / segments));
+        for (let sh of shapes) {
+          fill((m * 6 + sh.hueOffset) % 360, 80, 90);
+          drawKaleidoShape(sh.x, sh.y, sh.size, sh.type);
+        }
+        pop();
+      }
+
+      // Reset color mode
+      colorMode(RGB);
+
+      // Display digital time at center
+      fill(255);
+      textSize(20);
+      textAlign(CENTER, CENTER);
+      let hDisp = h % 12 || 12;
+      let ampm = (h >= 12) ? "PM" : "AM";
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(`${hDisp}:${mDisp}:${sDisp} ${ampm}`, 0, 0);
+
+      pop();
+    }
+
+    // Create a shape object for the kaleidoscope each second
+    function createKaleidoShape(h, m, s) {
+      // Random position near center
+      let xPos = random(-80, 80);
+      let yPos = random(-80, 80);
+
+      // Size scaled by hour (1..12)
+      let sizeVal = map(h % 12 || 12, 1, 12, 10, 60);
+
+      // Shape type selected by second
+      let shapeType = (s % 2 === 0) ? 'ellipse' : 'rect';
+
+      // Random hue offset
+      let hueOffset = random(360);
+
+      return { x: xPos, y: yPos, size: sizeVal, type: shapeType, hueOffset: hueOffset };
+    }
+
+    // Draw the chosen shape
+    function drawKaleidoShape(x, y, sizeVal, shapeType) {
+      if (shapeType === 'ellipse') {
+        ellipse(x, y, sizeVal, sizeVal);
+      } else {
+        rectMode(CENTER);
+        rect(x, y, sizeVal, sizeVal);
+        rectMode(CORNER);
+      }
+    }
+  </script>
+</body>
+</html>

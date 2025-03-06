@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Infinity Garden</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Step into the Time Infinity Garden!<br><br>
+        • Background color evolves with the hour.<br>
+        • Water ripples grow and shift with the minute.<br>
+        • The fractal tree morphs scale and angle by the seconds.<br><br>
+        Hover away to immerse yourself fully!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Variables for fractal tree
+    let maxBranches = 7;    // upper bound on branching
+    let baseLen = 60;       // fractal base length
+    let angleOffset = 0;
+
+    // Fish variables
+    let fishCount = 10;
+    let fishList = [];
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+
+      // Initialize fish positions
+      for (let i = 0; i < fishCount; i++) {
+        fishList.push(createFish());
+      }
+
+      // Use degrees for angles
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      backgroundWithTime();
+      drawRipples();
+      translate(width / 2, height * 0.75);
+      stroke(255);
+      drawFractalTree(baseLen, 0);
+      drawFish();
+      displayClock();
+    }
+
+    function backgroundWithTime() {
+      // Use hour to set background color
+      let h = hour();
+      let bgHue = map(h, 0, 23, 0, 360);
+      colorMode(HSB);
+      background(bgHue, 100, 30);
+      colorMode(RGB);
+    }
+
+    function drawRipples() {
+      // Minute affects the ripple rings
+      let m = minute();
+      let ringCount = map(m, 0, 59, 3, 12);
+      noFill();
+      stroke(255, 150);
+      strokeWeight(2);
+
+      // Draw concentric circles in the top portion of the canvas
+      for (let i = 0; i < ringCount; i++) {
+        let radius = map(i, 0, ringCount, 20, 200);
+        ellipse(width / 2, height * 0.25, radius, radius);
+      }
+    }
+
+    function drawFractalTree(len, level) {
+      let s = second();
+      // The angle offset changes with seconds so the tree "breathes"
+      angleOffset = map(s, 0, 59, 15, 60);
+
+      line(0, 0, 0, -len);
+      translate(0, -len);
+
+      if (level < maxBranches) {
+        push();
+        rotate(angleOffset);
+        drawFractalTree(len * 0.66, level + 1);
+        pop();
+
+        push();
+        rotate(-angleOffset);
+        drawFractalTree(len * 0.66, level + 1);
+        pop();
+      }
+    }
+
+    function createFish() {
+      return {
+        x: random(width),
+        y: random(height * 0.3, height - 50),
+        size: random(15, 30),
+        speed: random(1, 3),
+        hue: random(0, 360)
+      };
+    }
+
+    function drawFish() {
+      // Minute affects fish speeds slightly
+      let m = minute();
+      let speedBoost = map(m, 0, 59, 0.5, 2);
+
+      for (let f of fishList) {
+        f.x += f.speed * speedBoost;
+        // Wrap around the screen
+        if (f.x > width + 20) {
+          f.x = -20;
+          f.y = random(height * 0.3, height - 50);
+          f.speed = random(1, 3);
+          f.hue = random(0, 360);
+        }
+        // Draw fish
+        push();
+        colorMode(HSB);
+        fill(f.hue, 80, 90);
+        strokeWeight(1);
+        stroke(0);
+        ellipse(f.x, f.y, f.size * 1.5, f.size);
+        // Simple triangle tail
+        triangle(
+          f.x - f.size, f.y,
+          f.x - f.size * 1.4, f.y - f.size * 0.3,
+          f.x - f.size * 1.4, f.y + f.size * 0.3
+        );
+        pop();
+      }
+    }
+
+    function displayClock() {
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

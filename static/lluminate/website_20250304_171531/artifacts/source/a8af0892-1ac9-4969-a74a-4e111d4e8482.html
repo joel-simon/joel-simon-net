@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Sundial</title>
+  <!-- Include the p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #eee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #timeSundialContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+    /* Instructions overlay, hidden by default. Display on hover. */
+    #instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.85);
+      color: #222;
+      font-family: sans-serif;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    #timeSundialContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="timeSundialContainer">
+  <div id="instructions">
+    <h3>Time Sundial</h3>
+    <p>
+      • The background color transitions gradually to represent sunrise, midday, sunset, and night.<br/>
+      • The sundial’s shadow rotates based on the current hour, minute, and second.<br/>
+      • Watch for subtle changes over time — each second shifts the shadow and background.<br/>
+      • Hover here again to see these instructions.
+    </p>
+  </div>
+</div>
+
+<script>
+  const canvasSize = 512;
+
+  function setup() {
+    let c = createCanvas(canvasSize, canvasSize);
+    c.parent("timeSundialContainer");
+    angleMode(DEGREES);
+    textAlign(CENTER, CENTER);
+  }
+
+  function draw() {
+    // Get current time
+    let h = hour();
+    let m = minute();
+    let s = second();
+
+    /* 
+      Create a background gradient by grouping hours:
+      0-5   = Night (darkest)
+      6-11  = Sunrise transition
+      12-17 = Midday/afternoon
+      18-23 = Sunset to Night
+    */
+    // Convert hours+minutes to a fraction of the day
+    let dayFraction = (h + m / 60 + s / 3600) / 24.0;
+    // We'll create a color from sunrise to midday to sunset to night
+    // by mapping dayFraction to a custom gradient.
+
+    let c1, c2; // Two colors for blending
+    if (dayFraction < 6/24) {
+      // Late night -> early morning
+      c1 = color(10, 10, 35);
+      c2 = color(70, 70, 120);
+    } else if (dayFraction < 12/24) {
+      // Sunrise -> midday
+      c1 = color(70, 70, 120);
+      c2 = color(135, 206, 250);
+    } else if (dayFraction < 18/24) {
+      // Midday -> late afternoon
+      c1 = color(135, 206, 250);
+      c2 = color(255, 120, 0);
+    } else {
+      // Sunset -> night
+      c1 = color(255, 120, 0);
+      c2 = color(10, 10, 35);
+    }
+
+    // Final blend factor within each 6-hour segment
+    let segmentFraction = (dayFraction * 24) % 6 / 6;
+    let bgColor = lerpColor(c1, c2, segmentFraction);
+    
+    // Draw the background
+    background(bgColor);
+
+    // Draw the circular base for the sundial
+    noStroke();
+    fill(220, 220, 200);
+    ellipse(width/2, height/2, 200, 200);
+
+    // Calculate angles for the gnomon (shadow) based on current time
+    // Hours + fraction of minutes + fraction of seconds
+    let hourAngle = ((h % 12) * 30) + (m / 60) * 30 + (s / 3600) * 30;
+
+    /* 
+      We'll make the gnomon cast a shadow line:
+      The length can change with the current minute (longer in early part of hour, shorter later).
+      The line rotates based on hourAngle.
+    */
+    let shadowLength = map(m, 0, 59, 80, 140); 
+
+    // Draw the gnomon (shadow line)
+    push();
+    translate(width/2, height/2);
+    rotate(hourAngle); 
+    stroke(60);
+    strokeWeight(5);
+    line(0, 0, 0, -shadowLength);
+    pop();
+
+    // Overlay the digital time near the bottom
+    noStroke();
+    fill(255);
+    textSize(20);
+    text(
+      nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2),
+      width / 2,
+      height - 30
+    );
+  }
+</script>
+</body>
+</html>

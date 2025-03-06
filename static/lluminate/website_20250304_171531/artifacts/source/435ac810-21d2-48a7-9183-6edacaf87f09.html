@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Desert Time Flow</title>
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page reset for consistent sizing and style */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222; /* A dark background outside the canvas */
+    }
+
+    /* Container for the 512x512 canvas and hover instructions */
+    #timeContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Overlay with instructions, hidden by default */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions upon hovering over the container */
+    #timeContainer:hover #instructionsOverlay {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="timeContainer">
+    <div id="instructionsOverlay">
+      <h2>Desert Time Flow</h2>
+      <p>
+        • Enjoy a desert scene with day/night transitions and a wandering camel.<br>
+        • Watch colored circles rise from the desert floor: red (hour), green (minute), blue (second).<br>
+        • Each circle’s size adjusts in real-time to its respective time component.<br>
+        Hover away to return to the animation.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Circle objects for hour, minute, second
+    let hourCircle, minuteCircle, secondCircle;
+
+    // A simple class to store circle data
+    class TimeCircle {
+      constructor(col, sp) {
+        this.color = col;
+        this.speed = sp;
+        // Initial random position below the canvas
+        this.x = random(width);
+        this.y = random(height, height + 100);
+        this.diameter = 50;
+      }
+      update() {
+        this.y -= this.speed;
+        // If the circle goes above, reset to a random position below the canvas
+        if (this.y < -this.diameter) {
+          this.x = random(width);
+          this.y = random(height, height + 100);
+        }
+      }
+      display() {
+        noStroke();
+        fill(this.color);
+        circle(this.x, this.y, this.diameter);
+      }
+    }
+
+    // Variables for desert scene
+    let camelX = 0;
+    let camelY = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('timeContainer');
+      angleMode(DEGREES);
+
+      // Instantiate circles with different speeds
+      hourCircle = new TimeCircle(color(255, 0, 0), 0.3);
+      minuteCircle = new TimeCircle(color(0, 255, 0), 1);
+      secondCircle = new TimeCircle(color(0, 128, 255), 2);
+    }
+
+    function draw() {
+      // Current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Draw desert background with sunrise/sunset
+      drawSky(h);
+      drawDesert();
+      drawSunOrMoon(h, m, s);
+
+      // Update and draw the camel
+      drawCamel(h, m, s);
+
+      // Update circle sizes based on time
+      hourCircle.diameter   = map(h % 12, 0, 12, 20, 100); 
+      minuteCircle.diameter = map(m, 0, 60, 10, 80);
+      secondCircle.diameter = map(s, 0, 60, 5, 60);
+
+      // Update and draw circles
+      hourCircle.update();
+      minuteCircle.update();
+      secondCircle.update();
+
+      hourCircle.display();
+      minuteCircle.display();
+      secondCircle.display();
+
+      // Digital time readout at the bottom
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let dispH = h % 12;
+      dispH = dispH === 0 ? 12 : dispH;
+      let ampm = h >= 12 ? "PM" : "AM";
+      let mStr = nf(m, 2);
+      let sStr = nf(s, 2);
+      text(dispH + ":" + mStr + ":" + sStr + " " + ampm, width / 2, height - 20);
+      pop();
+    }
+
+    // Draw a smooth gradient sky based on hour
+    function drawSky(h) {
+      let topSky, bottomSky;
+      if (h < 6) {
+        // Late night
+        topSky = color(10, 10, 40);
+        bottomSky = color(20, 20, 70);
+      } else if (h < 12) {
+        // Morning
+        topSky = color(80, 120, 200);
+        bottomSky = color(160, 220, 255);
+      } else if (h < 18) {
+        // Afternoon
+        topSky = color(135, 206, 235);
+        bottomSky = color(255, 240, 200);
+      } else {
+        // Evening / night
+        topSky = color(40, 20, 60);
+        bottomSky = color(80, 30, 100);
+      }
+      setGradient(0, 0, width, height, topSky, bottomSky);
+    }
+
+    // Helper to draw vertical gradient
+    function setGradient(x, y, w, h, c1, c2) {
+      noFill();
+      for (let i = y; i <= y + h; i++) {
+        let inter = map(i, y, y + h, 0, 1);
+        let c = lerpColor(c1, c2, inter);
+        stroke(c);
+        line(x, i, x + w, i);
+      }
+    }
+
+    // Draw layered desert dunes
+    function drawDesert() {
+      noStroke();
+      // A few random dune layers
+      fill(194, 178, 128);
+      beginShape();
+      vertex(0, height*0.65);
+      vertex(width*0.4, height*0.6);
+      vertex(width, height*0.7);
+      vertex(width, height);
+      vertex(0, height);
+      endShape(CLOSE);
+
+      fill(210, 189, 130);
+      beginShape();
+      vertex(0, height*0.75);
+      vertex(width*0.3, height*0.7);
+      vertex(width, height*0.8);
+      vertex(width, height);
+      vertex(0, height);
+      endShape(CLOSE);
+
+      fill(220, 200, 140);
+      beginShape();
+      vertex(0, height*0.85);
+      vertex(width*0.2, height*0.8);
+      vertex(width, height*0.9);
+      vertex(width, height);
+      vertex(0, height);
+      endShape(CLOSE);
+    }
+
+    // Draw sun or moon crossing the sky
+    function drawSunOrMoon(h, m, s) {
+      let timeVal = h + m/60 + s/3600;
+      let sunMoonX = map(timeVal, 0, 24, 0, width);
+      let sunMoonY = map(sin(timeVal * 15), -1, 1, 50, height * 0.25);
+
+      noStroke();
+      if (h >= 6 && h < 18) {
+        // Daytime sun
+        fill(255, 230, 0);
+        ellipse(sunMoonX, sunMoonY, 50);
+      } else {
+        // Nighttime moon
+        fill(200);
+        ellipse(sunMoonX, sunMoonY, 40);
+      }
+    }
+
+    // Draw a camel path across the desert
+    function drawCamel(h, m, s) {
+      // Camel’s horizontal position is mainly based on minute, plus a fraction for seconds
+      camelX = map(m, 0, 60, 0, width);
+      camelX += map(s, 0, 60, 0, width / 60.0);
+      // Camel’s vertical position is near horizon
+      camelY = height * 0.75;
+
+      push();
+      translate(camelX, camelY);
+      // Subtle bobbing with seconds
+      let bob = sin(s * 6) * 2;
+      translate(0, bob);
+
+      stroke(0);
+      strokeWeight(1);
+      fill(160, 130, 80);
+
+      // Body
+      ellipse(0, 0, 60, 30);
+      // Hump
+      ellipse(-10, -15, 30, 20);
+      // Neck and head
+      rect(20, -10, 10, 30, 2);
+      ellipse(25, -25, 15, 15);
+
+      // Legs
+      strokeWeight(3);
+      // front leg
+      line(15, 15, 15, 30);
+      // middle leg
+      line(0, 15, 0, 30 + sin(s * 6) * 5);
+      // back leg
+      line(-15, 15, -15, 30);
+
+      pop();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Solar Horse Stampede Time Display</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Base page styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* 512x512 container centered */
+    #timeHorseDisplay {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Hover overlay for instructions */
+    #hoverInstructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background-color: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding: 2rem;
+      box-sizing: border-box;
+    }
+
+    #timeHorseDisplay:hover #hoverInstructions {
+      display: block;
+    }
+
+    /* Center the instructions message */
+    #instructionsText {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+<div id="timeHorseDisplay">
+  <div id="hoverInstructions">
+    <div id="instructionsText">
+      <strong>Solar Horse Stampede Time Display</strong><br><br>
+      • Hour sets each horse’s hue.<br>
+      • Minute expands or shrinks their body.<br>
+      • Second accelerates or slows their gallop.<br>
+      • Move the mouse to influence their route.<br>
+      • Watch cosmic time romp across the sky!
+    </div>
+  </div>
+</div>
+
+<script>
+  /* 
+    Solar Horse Stampede Time Display
+    Features:
+      - "Horses" that move across a cosmic sky.
+      - Hour controls hue (color shift).
+      - Minute controls body size.
+      - Second controls speed.
+      - Mouse movement attracts horses.
+      - Starry background for cosmic atmosphere.
+  */
+
+  const CANVAS_SIZE = 512;
+  let horses = [];
+  let starPositions = [];
+  const STAR_COUNT = 100;
+
+  function setup() {
+    let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+    cnv.parent("timeHorseDisplay");
+
+    // Create star field
+    for (let i = 0; i < STAR_COUNT; i++) {
+      starPositions.push({
+        x: random(width),
+        y: random(height),
+        r: random(1, 3),
+        alpha: random(100, 255)
+      });
+    }
+
+    // Create horses
+    for (let i = 0; i < 8; i++) {
+      horses.push(new Horse(random(width), random(height)));
+    }
+  }
+
+  function draw() {
+    background(0);
+
+    // Current time
+    let hr = hour();
+    let mn = minute();
+    let sc = second();
+
+    // Draw starry background
+    noStroke();
+    for (let s of starPositions) {
+      fill(255, s.alpha);
+      circle(s.x, s.y, s.r);
+    }
+
+    // Calculate time-based attributes
+    // Hue from hour (0 to 23 mapped to 0..360)
+    const hueVal = map(hr, 0, 23, 0, 360);
+    // Size from minute
+    const horseSize = map(mn, 0, 59, 10, 60);
+    // Speed from second
+    const horseSpeed = map(sc, 0, 59, 1, 5);
+
+    // Update and display horses
+    for (let h of horses) {
+      h.update(horseSpeed);
+      h.show(hueVal, horseSize);
+    }
+
+    // Display current time
+    fill(255);
+    textSize(16);
+    textAlign(LEFT, TOP);
+    text(`${nf(hr,2)}:${nf(mn,2)}:${nf(sc,2)}`, 10, 10);
+  }
+
+  // Horse class
+  class Horse {
+    constructor(x, y) {
+      this.pos = createVector(x, y);
+      this.vel = p5.Vector.random2D();
+    }
+
+    update(speedFactor) {
+      // Steer toward mouse
+      let mouse = createVector(mouseX, mouseY);
+      let desired = p5.Vector.sub(mouse, this.pos);
+      desired.setMag(speedFactor);
+
+      // Blend some random wander
+      let wander = p5.Vector.random2D();
+      wander.mult(0.2);
+
+      // Combine
+      this.vel = p5.Vector.lerp(this.vel, desired.add(wander), 0.02);
+      this.pos.add(this.vel);
+
+      // Wrap around edges
+      if (this.pos.x < 0)  this.pos.x = width;
+      if (this.pos.x > width) this.pos.x = 0;
+      if (this.pos.y < 0)  this.pos.y = height;
+      if (this.pos.y > height) this.pos.y = 0;
+    }
+
+    show(hueVal, sizeVal) {
+      colorMode(HSB);
+      fill(hueVal, 80, 100);
+      noStroke();
+      // Basic "horse" shape: a circle for body, smaller ellipse for head
+      push();
+      translate(this.pos.x, this.pos.y);
+      ellipse(0, 0, sizeVal * 1.2, sizeVal); // body
+      ellipse(sizeVal * 0.45, -sizeVal * 0.3, sizeVal * 0.6, sizeVal * 0.4); // head
+      pop();
+      colorMode(RGB);
+    }
+  }
+</script>
+</body>
+</html>

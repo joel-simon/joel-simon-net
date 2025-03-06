@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Combined Time Skyline & Fractal Orbit</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset and body styles */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 15px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the “Time Skyline & Fractal Orbit”!<br><br>
+        • HOUR subtly changes gradient & building heights.<br>
+        • MINUTE affects fractal tree growth.<br>
+        • SECOND speeds the orbiting star.<br><br>
+        Hover away to see time come alive!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Combined Time Skyline & Fractal Orbit
+      --------------------------------------
+      This sketch merges:
+      1) A changing city skyline whose height & color shift with the hour.
+      2) A fractal 'branch' tree that adapts to the minute.
+      3) An orbiting star whose speed depends on the second.
+      Everything is integrated into one dynamic time-based scene.
+    */
+    let orbitAngle = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // ----- BACKGROUND GRADIENT: changes slightly with hour -----
+      // We'll blend from a base color to a darker color
+      let topColor = color(map(h, 0, 23, 50, 180), 80, 150);
+      let bottomColor = color(0, 10, 60);
+      
+      // Draw vertical gradient
+      for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        let clr = lerpColor(topColor, bottomColor, inter);
+        stroke(clr);
+        line(0, y, width, y);
+      }
+
+      // ----- DRAW THE CITY SKYLINE -----
+      // Hour modifies building heights
+      let buildingCount = 12;
+      let maxBuildingHeight = map(h, 0, 23, 100, 300); 
+      let buildingWidth = width / buildingCount;
+
+      noStroke();
+      fill(20);
+      rect(0, height - 60, width, 60); // a ground block
+
+      fill(40);
+      for (let i = 0; i < buildingCount; i++) {
+        let xPos = i * buildingWidth;
+        // Vary building height randomly but scale with hour
+        let bHeight = random(maxBuildingHeight * 0.5, maxBuildingHeight);
+        rect(xPos, height - 60 - bHeight, buildingWidth, bHeight);
+      }
+
+      // ----- DRAW THE FRACTAL TREE -----
+      // The minute changes the branching depth
+      let maxDepth = floor(map(m, 0, 59, 3, 7));
+      push();
+      translate(width * 0.2, height - 60); 
+      stroke(200);
+      strokeWeight(1.5);
+      branch(40, maxDepth);
+      pop();
+
+      // ----- ORBITING STAR -----
+      // The second modifies orbit speed
+      orbitAngle += map(s, 0, 59, 0.5, 3.5);
+      let orbitRadius = 120;
+      let starX = width * 0.7 + orbitRadius * cos(orbitAngle);
+      let starY = 120 + orbitRadius * sin(orbitAngle);
+
+      push();
+      fill(255, 180, 0);
+      noStroke();
+      circle(starX, starY, 15);
+      pop();
+
+      // ----- TIME DISPLAY -----
+      // Minimal digital clock at top-left
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, 10, 10);
+      pop();
+    }
+
+    // Recursive fractal branch
+    function branch(len, depth) {
+      line(0, 0, 0, -len);
+      translate(0, -len);
+
+      if (depth > 0) {
+        push();
+        rotate(25);
+        branch(len * 0.7, depth - 1);
+        pop();
+
+        push();
+        rotate(-25);
+        branch(len * 0.7, depth - 1);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

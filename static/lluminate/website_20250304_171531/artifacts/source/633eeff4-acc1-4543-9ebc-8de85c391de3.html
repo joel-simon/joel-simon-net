@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Helix</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the “Time Helix”!<br><br>
+        • Hours define the helix loops.<br>
+        • Minutes affect the colors.<br>
+        • Seconds influence the rotation speed.<br><br>
+        Hover away to see the pulsating 3D helix in motion.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let baseRotation = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512, WEBGL);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      // Current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Helix parameters influenced by current time
+      // Number of loops is guided by hours (min 1 in case it's midnight)
+      let loops = max(1, h);
+      // Use seconds to slightly increase overall rotation speed
+      baseRotation += 0.2 + s * 0.005; 
+      
+      // Color is connected to the minute value
+      let hueBase = map(m, 0, 59, 0, 360);
+
+      // Light and camera
+      directionalLight(255, 255, 255, 0, 0, -1);
+      ambientLight(40);
+
+      // Rotate the entire helix
+      rotateY(baseRotation);
+      rotateX(30);
+
+      // Construct the helix
+      // We'll place a sequence of spheres along a spiral path
+      // The radius amplitude changes based on the second
+      let radiusAmp = map(s, 0, 59, 50, 150);
+      let totalPoints = 200; 
+      let helixHeight = 300; 
+      
+      for (let i = 0; i < totalPoints; i++) {
+        let t = map(i, 0, totalPoints, 0, 360 * loops);
+        let x = radiusAmp * cos(t);
+        let y = map(i, 0, totalPoints, -helixHeight / 2, helixHeight / 2);
+        let z = radiusAmp * sin(t);
+
+        push();
+        translate(x, y, z);
+        // Color mode HSB so we can shift hue with minutes
+        colorMode(HSB, 360, 100, 100);
+        let localHue = (hueBase + t) % 360;
+        fill(localHue, 80, 100);
+        sphere(10);
+        colorMode(RGB, 255);
+        pop();
+      }
+      
+      // Show a small 2D digital clock overlay in 3D context
+      push();
+      resetMatrix(); // back to 2D-like position
+      translate(-width/2 + 10, height/2 - 40, 0); 
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, 0, 0);
+      pop();
+    }
+  </script>
+</body>
+</html>

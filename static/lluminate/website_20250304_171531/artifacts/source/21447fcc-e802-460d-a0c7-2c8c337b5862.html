@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Drips in Reverse</title>
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset and center everything */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    /* Container for our 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative; /* for tooltip positioning */
+    }
+    /* Hide .tooltip by default; show on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      font-family: sans-serif;
+      font-size: 13px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #666;
+      padding: 10px;
+      width: 250px;
+      z-index: 10;
+    }
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <!-- Tooltip instructions appear on hover -->
+    <div class="tooltip">
+      Time Drips in Reverse:
+      · Each second may trigger a reversed or frozen flow of colored drips. 
+      · Drips symbolize time’s unpredictable surge and fall. 
+      · Observe the digital clock at the bottom as drips move in unexpected ways.
+    </div>
+  </div>
+
+  <script>
+    // Canvas dimensions
+    const w = 512;
+    const h = 512;
+
+    // Drips container
+    let drips = [];
+    let spawnInterval = 30;  // frames between new drip spawns
+    let freezeChance = 0.1;  // chance to freeze drips on a given second
+    let reverseChance = 0.15; // chance to reverse drips on a given second
+    let frameCountForSpawn = 0;
+    let dripsAreFrozen = false;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      noStroke();
+    }
+
+    function draw() {
+      backgroundGradient();
+
+      // Current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Check random events each time the second changes
+      if (frameCount % 60 === 0) {
+        dripsAreFrozen = random() < freezeChance;  
+        if (!dripsAreFrozen && random() < reverseChance) {
+          // Reverse movement of all drips
+          for (let i = 0; i < drips.length; i++) {
+            drips[i].speed *= -1;
+          }
+        }
+      }
+
+      // Possibly spawn a new drip
+      frameCountForSpawn++;
+      if (!dripsAreFrozen && frameCountForSpawn >= spawnInterval) {
+        drips.push(new Drip(random(width), 0));
+        frameCountForSpawn = 0;
+      }
+
+      // Update and display each drip
+      for (let i = drips.length - 1; i >= 0; i--) {
+        if (!dripsAreFrozen) {
+          drips[i].update();
+        }
+        drips[i].render();
+
+        // Remove drip if it goes off screen
+        if (drips[i].y > height + drips[i].length || drips[i].y < -drips[i].length) {
+          drips.splice(i, 1);
+        }
+      }
+
+      // Show digital time at the bottom
+      fill(40);
+      textSize(20);
+      textAlign(CENTER, CENTER);
+      text(
+        nf(hr, 2) + ":" + nf(mn, 2) + ":" + nf(sc, 2),
+        width / 2,
+        height - 20
+      );
+    }
+
+    // Class representing a single drip
+    class Drip {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.length = random(30, 80);  
+        this.speed = random(1, 4);     
+        // Color driven by time to emphasize unpredictability
+        this.r = random(100, 200);
+        this.g = random(70, 180);
+        this.b = random(120, 255);
+      }
+
+      update() {
+        this.y += this.speed;
+      }
+
+      render() {
+        fill(this.r, this.g, this.b);
+        rect(this.x, this.y, 4, this.length);
+        ellipse(this.x + 2, this.y + this.length, 8, 8);
+      }
+    }
+
+    // Create a vertical color gradient that reacts to minutes
+    function backgroundGradient() {
+      let mn = minute();
+      let c1 = color((mn * 4) % 255, 100, 180);
+      let c2 = color(200, (mn * 3) % 255, 160);
+      for (let i = 0; i < height; i++) {
+        let inter = map(i, 0, height, 0, 1);
+        let c = lerpColor(c1, c2, inter);
+        stroke(c);
+        line(0, i, width, i);
+      }
+    }
+  </script>
+</body>
+</html>

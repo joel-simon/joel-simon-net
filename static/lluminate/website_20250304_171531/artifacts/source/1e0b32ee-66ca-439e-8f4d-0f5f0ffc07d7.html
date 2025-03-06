@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Reversal Mandala</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for contrast */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+      max-width: 80%;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Reversal Mandala</strong><br><br>
+        • Rotates forward for the first 30 seconds of a minute, and reverses for the last 30 seconds.<br>
+        • The number of arms is based on the current hour.<br>
+        • The color shifts with the current minute.<br>
+        • Keep an eye on the digital clock in the corner!<br><br>
+        Hover to see tips. Enjoy this twist on time!
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let angle = 0;
+    let canvasSize = 512;
+    
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent("canvas-container");
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(0);
+      
+      // Get real-time values
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Map hour to number of arms (avoid zero by adding 1 if hour is zero)
+      let arms = hr === 0 ? 1 : hr;
+      
+      // Determine the color from the minute
+      let colVal = map(mn, 0, 59, 0, 255);
+      stroke(colVal, 200, 255 - colVal);
+      fill(colVal, 100, 255 - colVal, 50);
+
+      // Time reversal logic: forward rotation if sec < 30, backward if sec >= 30
+      if (sc < 30) {
+        angle += 0.5;
+      } else {
+        angle -= 0.5;
+      }
+
+      // Translate to center
+      translate(width / 2, height / 2);
+
+      // Draw a mandala-like pattern
+      push();
+      rotate(angle);
+      for (let i = 0; i < arms; i++) {
+        // Rotate each arm
+        rotate(360 / arms);
+        
+        // Draw a simple shape in each arm
+        beginShape();
+        vertex(0, 0);
+        vertex(40, 80);
+        vertex(0, 120);
+        vertex(-40, 80);
+        endShape(CLOSE);
+
+        // Draw radial lines on each arm
+        line(0, 0, 0, 130);
+        ellipse(0, 130, 20, 20);
+      }
+      pop();
+
+      // Draw time in the top-left corner
+      resetMatrix();
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let displayHour = hr % 12 || 12;
+      let ampm = hr >= 12 ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 10, 10);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reverse Maze Waterfall</title>
+  <!-- Include p5.js -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page settings to ensure a consistent background and no scrollbars */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000000;
+      overflow: hidden;
+    }
+
+    /* 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      background-color: #000;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (hidden by default, appears on hover) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-family: sans-serif;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <h2>Reverse Maze Waterfall</h2>
+      <p>
+        • The labyrinth regenerates each minute.<br>
+        • Fish color changes with current hour.<br>
+        • Water droplets flow upward each second.<br>
+        Hover away to experience the magic!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Reverse Maze Waterfall
+      ----------------------
+      1) A randomly generated labyrinth regenerates each minute.
+      2) Fish swim across, with colors tied to the current hour.
+      3) Water droplets flow upward, appearing every second.
+      4) Background color shifts smoothly over the day.
+      5) Displays a digital clock at the bottom.
+
+      Inspired by combining:
+      - Time Maze Aquarium (regenerating maze each minute)
+      - Reverse Time Waterfall (droplets moving upwards every second)
+      - Time-based color shifts (like fish changing hue with hour)
+    */
+
+    const CANVAS_SIZE = 512;
+    const GRID_SIZE = 32; // 32x32 = each cell ~16px
+    const CELL_SIZE = CANVAS_SIZE / GRID_SIZE;
+
+    let maze = [];
+    let lastMinute = -1;
+    let fishSchool = [];
+    let dropletStream = [];
+    let lastSecond = -1;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      // Generate the initial maze
+      generateMaze();
+      // Create fish
+      for (let i = 0; i < 6; i++) {
+        fishSchool.push(new Fish());
+      }
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // If minute changed, regenerate the maze
+      if (m !== lastMinute) {
+        generateMaze();
+        lastMinute = m;
+      }
+
+      // If second changed, spawn a new droplet
+      if (s !== lastSecond) {
+        dropletStream.push(new Droplet());
+        lastSecond = s;
+      }
+
+      // Background color transitions based on time (across 24 hours)
+      let totalSeconds = (h * 3600) + (m * 60) + s;
+      let hueVal = map(totalSeconds % 86400, 0, 86400, 0, 360);
+      colorMode(HSB, 360, 100, 100);
+      background(hueVal, 70, 50);
+      colorMode(RGB, 255);
+
+      // Draw the maze
+      drawMaze();
+
+      // Update and draw fish
+      for (let f of fishSchool) {
+        f.update(h);
+        f.display();
+      }
+
+      // Update and draw droplets
+      for (let i = dropletStream.length - 1; i >= 0; i--) {
+        let d = dropletStream[i];
+        d.update();
+        d.display();
+        if (d.offScreen) {
+          dropletStream.splice(i, 1);
+        }
+      }
+
+      // Clock near bottom
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, width / 2, height - 20);
+    }
+
+    // Generate a simple random maze with 1s (wall) and 0s (path)
+    function generateMaze() {
+      maze = [];
+      for (let y = 0; y < GRID_SIZE; y++) {
+        let row = [];
+        for (let x = 0; x < GRID_SIZE; x++) {
+          // Edges are walls, interior random
+          if (x === 0 || x === GRID_SIZE - 1 || y === 0 || y === GRID_SIZE - 1) {
+            row.push(1);
+          } else {
+            // random 1 or 0
+            row.push(random() < 0.2 ? 1 : 0);
+          }
+        }
+        maze.push(row);
+      }
+    }
+
+    function drawMaze() {
+      stroke(0);
+      strokeWeight(1);
+      fill(50);
+      for (let y = 0; y < GRID_SIZE; y++) {
+        for (let x = 0; x < GRID_SIZE; x++) {
+          if (maze[y][x] === 1) {
+            rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+          }
+        }
+      }
+    }
+
+    // Fish class
+    class Fish {
+      constructor() {
+        this.reset();
+      }
+
+      reset() {
+        this.x = random(-100, -20);
+        this.y = random(50, height - 50);
+        this.speed = random(1, 1.5);
+      }
+
+      update(h) {
+        // Hour influences fish color
+        this.fishHue = map(h, 0, 23, 0, 360);
+        this.x += this.speed;
+        if (this.x > width + 50) {
+          this.reset();
+        }
+      }
+
+      display() {
+        push();
+        translate(this.x, this.y);
+        noStroke();
+        colorMode(HSB, 360, 100, 100);
+        fill(this.fishHue, 80, 90);
+        colorMode(RGB, 255);
+
+        // Body
+        ellipse(0, 0, 40, 20);
+        // Tail
+        triangle(-20, 0, -30, -10, -30, 10);
+        // Eye
+        fill(255);
+        ellipse(10, -5, 5, 5);
+        fill(0);
+        ellipse(10, -5, 2, 2);
+
+        pop();
+      }
+    }
+
+    // Droplet class
+    class Droplet {
+      constructor() {
+        this.x = random(width);
+        this.y = height + 10;
+        this.speed = random(1, 2);
+        this.size = random(4, 8);
+        this.offScreen = false;
+      }
+
+      update() {
+        this.y -= this.speed;
+        if (this.y < -this.size) {
+          this.offScreen = true;
+        }
+      }
+
+      display() {
+        push();
+        noFill();
+        stroke(200, 230, 255);
+        ellipse(this.x, this.y, this.size, this.size);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

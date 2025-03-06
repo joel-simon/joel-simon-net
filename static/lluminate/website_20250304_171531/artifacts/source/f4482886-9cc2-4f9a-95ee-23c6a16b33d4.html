@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Ocean Fractal</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset default margins and background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container exactly 512x512 */
+    #timeOceanFractalContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    /* Instruction overlay on hover */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 30px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #timeOceanFractalContainer:hover #instructionsOverlay {
+      display: block;
+    }
+
+    h1, p {
+      margin: 1em 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="timeOceanFractalContainer">
+    <div id="instructionsOverlay">
+      <h1>Time Ocean Fractal</h1>
+      <p>• The wave color shifts with the hour of the day.<br>
+         • A fractal tree grows and shrinks based on the current minute.<br>
+         • A fish changes color with passing seconds and swims around.<br>
+         • Hover again to see instructions.</p>
+    </div>
+  </div>
+
+  <script>
+    /* 
+      COMBINED INTERACTIVE TIME DISPLAY
+      - The wave color changes with current hour.
+      - A fractal tree's branch depth depends on current minute.
+      - A fish moves across the screen, changing color with seconds.
+      - The digital clock in the corner displays local time (H:M:S).
+    */
+
+    let angleOffset = 0; // For wave animation
+    let fishX = 0;       // Horizontal position of the fish
+    let fishY;           // Vertical position of the fish
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('timeOceanFractalContainer');
+      fishY = height * 0.6; // Start fish well below center
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Wave color based on hour (0..23 -> 0..360 in hue)
+      colorMode(HSL);
+      let waveHue = map(h, 0, 23, 0, 360);
+      fill(waveHue, 100, 20);
+      noStroke();
+
+      // Draw a wave across the canvas
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 10) {
+        // wave amplitude can be changed, add some animation with angleOffset
+        let waveHeight = map(sin(x * 0.02 + angleOffset), -1, 1, height*0.3, height*0.5);
+        vertex(x, waveHeight);
+      }
+      vertex(width, height);
+      endShape();
+      angleOffset += 0.01; // wave's horizontal animation speed
+
+      // Draw fractal tree above the wave line
+      // The "depth" (branch levels) changes with the minutes: 0..59 => 3..7
+      let treeDepth = floor(map(m, 0, 59, 3, 7));
+      push();
+      let treeStartY = height*0.3; // approximate highest wave point
+      translate(width*0.8, treeStartY);
+      stroke(200);
+      strokeWeight(2);
+      drawFractalTree(50, radians(25), treeDepth);
+      pop();
+
+      // Move the fish across the screen
+      fishX += 1; 
+      if (fishX > width + 50) {
+        fishX = -50;
+      }
+      // Color of the fish changes with seconds
+      let fishHue = map(s, 0, 59, 0, 360);
+      drawFish(fishX, fishY, fishHue);
+
+      // Return color mode to default
+      colorMode(RGB);
+
+      // Display digital time at top-left
+      fill(255);
+      noStroke();
+      textSize(24);
+      textAlign(LEFT, TOP);
+      let displayHour = h % 12;
+      if (displayHour === 0) displayHour = 12;
+      let ampm = (h >= 12) ? "PM" : "AM";
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      let timeString = displayHour + ":" + minStr + ":" + secStr + " " + ampm;
+      text(timeString, 10, 10);
+    }
+
+    // Recursive fractal tree function
+    function drawFractalTree(branchLen, angle, depth) {
+      line(0, 0, 0, -branchLen); // main branch
+      translate(0, -branchLen);
+      if (depth > 0) {
+        push();
+        rotate(angle);
+        drawFractalTree(branchLen * 0.7, angle, depth - 1);
+        pop();
+
+        push();
+        rotate(-angle);
+        drawFractalTree(branchLen * 0.7, angle, depth - 1);
+        pop();
+      }
+    }
+
+    // Basic fish drawing function
+    function drawFish(x, y, hueVal) {
+      push();
+      colorMode(HSL);
+      fill(hueVal, 100, 50);
+      noStroke();
+      translate(x, y);
+      // fish body
+      ellipse(0, 0, 60, 30);
+      // tail
+      triangle(-30, 0, -45, -10, -45, 10);
+      // eye
+      fill(255);
+      circle(15, -5, 5);
+      pop();
+    }
+  </script>
+</body>
+</html>

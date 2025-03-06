@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time AquaFractal</title>
+  <style>
+    /* Center and reset */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      background: #000;
+    }
+
+    /* Hover instructions overlay */
+    #hoverInstructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.6);
+      box-sizing: border-box;
+      padding: 20px;
+      pointer-events: none;
+      text-align: center;
+    }
+    #canvasContainer:hover #hoverInstructions {
+      display: block;
+    }
+    .instructionsText {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverInstructions">
+      <div class="instructionsText">
+        <strong>Time AquaFractal</strong><br><br>
+        • Fractal seaweed sways each second<br>
+        • Fish color changes with the current hour<br>
+        • Fish speed is tied to minutes<br>
+        • Background undulates with time<br>
+        • Current time shown at top-left
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    // Fish class
+    class Fish {
+      constructor(y) {
+        this.x = random(width);
+        this.y = y;
+        this.size = 24;
+        this.speed = 1;
+        this.color = color(255);
+      }
+      update() {
+        this.x += this.speed;
+        if (this.x > width + this.size) {
+          this.x = -this.size;
+        }
+      }
+      display() {
+        push();
+        fill(this.color);
+        noStroke();
+        ellipse(this.x, this.y, this.size * 1.5, this.size); // Fish body
+        // Tail
+        triangle(
+          this.x - this.size / 2, this.y,
+          this.x - this.size, this.y - this.size / 2,
+          this.x - this.size, this.y + this.size / 2
+        );
+        pop();
+      }
+    }
+
+    let fishArr = [];
+    let seaweedAngle = 0;
+    let waveOffset = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+
+      // Create some fish at varying depths
+      for (let i = 0; i < 5; i++) {
+        fishArr.push(new Fish(random(height * 0.3, height * 0.8)));
+      }
+    }
+
+    function draw() {
+      background(10, 18, 40);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Background wave effect
+      drawWaves(hr, mn);
+
+      // Update fractal seaweed each second
+      seaweedAngle = map(sc, 0, 60, -15, 15);
+      push();
+      translate(width * 0.8, height);
+      drawFractalSeaweed(80, seaweedAngle, 8);
+      pop();
+
+      // Fish updates
+      for (let f of fishArr) {
+        f.speed = map(mn, 0, 59, 0.5, 3);                   // Speed depends on minute
+        let r = map(hr, 0, 23, 50, 255);                   // Color depends on hour
+        f.color = color(r, 150, 200, 200);
+        f.update();
+        f.display();
+      }
+
+      // Display current time at top-left
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let displayHour = (hr % 12) || 12;
+      let ampm = hr >= 12 ? 'PM' : 'AM';
+      text(nf(displayHour,2) + ':' + nf(mn,2) + ':' + nf(sc,2) + ' ' + ampm, 10, 10);
+    }
+
+    // Simple wave pattern for the background
+    function drawWaves(hr, mn) {
+      noFill();
+      stroke(255, 60);
+      let amp = map(hr, 0, 23, 20, 100);
+      let freq = map(mn, 0, 59, 0.005, 0.05);
+      waveOffset += 0.02;
+      for (let y = 0; y < height; y += 20) {
+        beginShape();
+        for (let x = 0; x <= width; x += 10) {
+          let waveVal = sin((x * freq) + waveOffset) * amp;
+          vertex(x, y + waveVal);
+        }
+        endShape();
+      }
+    }
+
+    // Recursive fractal "seaweed"
+    function drawFractalSeaweed(len, angle, depth) {
+      stroke(0, 180, 0);
+      strokeWeight(map(depth, 1, 8, 3, 1));
+      line(0, 0, 0, -len);
+      translate(0, -len);
+
+      if (depth > 0) {
+        push();
+        rotate(angle);
+        drawFractalSeaweed(len * 0.7, angle, depth - 1);
+        pop();
+
+        push();
+        rotate(-angle);
+        drawFractalSeaweed(len * 0.7, angle, depth - 1);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

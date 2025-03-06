@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Time Bubbles</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset body margin/padding and use a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container fixed at 512x512, centered */
+    #clock-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay, hidden by default */
+    #instructions {
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      display: none;
+      background-color: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      line-height: 1.5;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #clock-container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="clock-container">
+  <div id="instructions">
+    <h2>Time Bubbles</h2>
+    <p>
+      Bubbles revolve around the center. The color is influenced by the hour, the number of bubbles depends on the minute, and their rotation speed depends on the current second. Watch them swirl in real-time!
+    </p>
+  </div>
+</div>
+
+<script>
+  let canvasSize = 512;
+  let bubbles = [];
+
+  function setup() {
+    let myCanvas = createCanvas(canvasSize, canvasSize);
+    myCanvas.parent("clock-container");
+    angleMode(RADIANS);
+    ellipseMode(RADIUS);
+  }
+
+  function draw() {
+    background(0);
+
+    let hr = hour();
+    let mn = minute();
+    let sc = second();
+
+    // Bubbles revolve around the center
+    // 1. Number of bubbles depends on mn (minute).
+    //    We will ensure at least a few bubbles for variety.
+    let targetBubbleCount = max(5, mn);
+
+    // Adjust the array length if min changes
+    if (bubbles.length < targetBubbleCount) {
+      while (bubbles.length < targetBubbleCount) {
+        bubbles.push(new TimeBubble());
+      }
+    } else if (bubbles.length > targetBubbleCount) {
+      bubbles.splice(targetBubbleCount);
+    }
+
+    // 2. The color depends on the hour. We'll create a color scale.
+    //    Map hour (0-23) to HSB color or just manipulate RGB directly.
+    //    We'll store that color in a global variable for drawing bubbles.
+    let hrColor = color(map(hr, 0, 23, 0, 360), 180, 180);
+
+    // 3. The rotation speed depends on the second (0-59).
+    //    Faster rotation for higher seconds.
+    let rotationSpeed = map(sc, 0, 59, 0.005, 0.05);
+
+    // Draw each bubble
+    push();
+    translate(width / 2, height / 2);
+    for (let i = 0; i < bubbles.length; i++) {
+      bubbles[i].update(rotationSpeed);
+      bubbles[i].display(hrColor);
+    }
+    pop();
+
+    // Display digital time near the bottom edge
+    textSize(24);
+    fill(255);
+    textAlign(CENTER, CENTER);
+    text(hr + ":" + nf(mn, 2) + ":" + nf(sc, 2), width / 2, height - 30);
+  }
+
+  // Bubble class
+  class TimeBubble {
+    constructor() {
+      // Random initial angle
+      this.angle = random(TWO_PI);
+      // Random distance from center (within a range)
+      this.distance = random(50, 200);
+      // Random size
+      this.radius = random(10, 30);
+      // Each bubble has its own spin offset for variety
+      this.spinOffset = random(0.005, 0.02);
+    }
+
+    update(baseSpeed) {
+      // Rotate bubble around center
+      // We'll incorporate its spin offset plus baseSpeed from second
+      this.angle += baseSpeed + this.spinOffset * 0.5;
+    }
+
+    display(hrColor) {
+      push();
+      // Use orbit position
+      rotate(this.angle);
+      translate(this.distance, 0);
+
+      noStroke();
+      fill(hrColor);
+      ellipse(0, 0, this.radius, this.radius);
+      pop();
+    }
+  }
+</script>
+</body>
+</html>

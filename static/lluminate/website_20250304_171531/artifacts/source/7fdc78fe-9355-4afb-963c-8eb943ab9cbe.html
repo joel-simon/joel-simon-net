@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Seismic Mandala</title>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: sans-serif;
+      overflow: hidden;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container (for iframe) */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      border: none;
+      overflow: hidden;
+      background: #000;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center instructions text */
+    .instructions-text {
+      position: absolute;
+      width: 80%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Seismic Mandala</strong><br><br>
+        • Background color shifts with the hour.<br>
+        • Mandala rotation speed influenced by the minute.<br>
+        • Radial wave amplitude fluctuates with the second.<br>
+        • Watch for the subtle quake-like movements.<br><br>
+        Hover here for instructions.
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time Seismic Mandala
+      1) Background hue changes according to the hour.
+      2) A series of arcs form a rotating mandala; rotation speed tied to the current minute.
+      3) Arcs gently "pulse" in amplitude based on seconds, simulating a seismic wave.
+      4) Digital time in the lower-left corner.
+    */
+
+    const CANVAS_SIZE = 512;
+    const ARC_COUNT = 16; // Number of arcs in the mandala
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      noFill();
+      strokeWeight(2);
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+      
+      // Background color changes with hour
+      backgroundColorByHour(hr);
+
+      // Draw and rotate the mandala
+      push();
+      translate(width/2, height/2);
+      rotate(frameCount * 0.1 * (mn + 1) / 60.0); // minimal rotation leaps if mn=0
+
+      for (let i = 0; i < ARC_COUNT; i++) {
+        push();
+        // Dividing the circle among arcs
+        rotate((360 / ARC_COUNT) * i);
+        drawSeismicArc(hr, mn, sc, i);
+        pop();
+      }
+      pop();
+
+      // Digital clock
+      drawClock(hr, mn, sc);
+    }
+
+    /* Shift background color with hour using HSB mode */
+    function backgroundColorByHour(hr) {
+      colorMode(HSB, 360, 100, 100);
+      // Hue cycles across 24 hours; satur. & bright. are fixed
+      let hueVal = map(hr, 0, 23, 0, 360);
+      background(hueVal, 60, 40);
+    }
+
+    /*
+      Draw an arc with amplitude modulated by seconds,
+      tinted by the arc index and hour.
+    */
+    function drawSeismicArc(hr, mn, sc, i) {
+      colorMode(HSB, 360, 100, 100);
+      let hueVal = (map(hr, 0, 23, 0, 360) + i*5) % 360;
+      let waveAmplitude = map(sc, 0, 59, 10, 40);
+      let arcRadius = 60 + (i * 12) + waveAmplitude * 0.5 * sin(frameCount * 2);
+      
+      stroke(hueVal, 80, 90);
+      arc(0, 0, arcRadius, arcRadius, 0, 180);
+    }
+
+    /* Digital clock in bottom-left corner */
+    function drawClock(hr, mn, sc) {
+      push();
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, BASELINE);
+      text(`${nf(hr,2)}:${nf(mn,2)}:${nf(sc,2)}`, 10, height - 10);
+      pop();
+    }
+  </script>
+</body>
+</html>

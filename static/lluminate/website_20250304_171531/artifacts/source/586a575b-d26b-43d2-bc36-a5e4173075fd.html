@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Combined Time Display: Orchard Fish Star</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset default page styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #eee;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Container for the 512x512 canvas and hover instructions */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* The hover instructions, hidden by default */
+    .instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      box-sizing: border-box;
+      background: rgba(255, 255, 255, 0.85);
+      color: #333;
+      font-family: sans-serif;
+      font-size: 14px;
+      padding: 20px;
+      z-index: 10;
+    }
+
+    /* Reveal instructions on hover over the container */
+    #canvasContainer:hover .instructions {
+      display: block;
+    }
+
+    /* Force canvas to exactly 512x512 */
+    canvas {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      border: 1px solid #ccc;
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <!-- Instructions appear on hover -->
+    <div class="instructions">
+      <h3>Combined Time Display</h3>
+      <p>
+        This artwork merges three concepts:
+      </p>
+      <ul>
+        <li>A gently moving wave background.</li>
+        <li>A piece of orchard fruit in the top-left that changes size and color based on the hour.</li>
+        <li>A fish swimming across the canvas, changing movement and color by the minute.</li>
+        <li>A rotating star near the bottom that reflects passing seconds.</li>
+      </ul>
+      <p>Hover again to see these instructions!</p>
+    </div>
+  </div>
+
+  <script>
+    // Wave offset
+    let waveOffset = 0;
+    
+    // Fish parameters
+    let fishX;
+    let fishY;
+    
+    function setup() {
+      let c = createCanvas(512, 512);
+      c.parent('canvasContainer');
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100, 1);
+
+      // Initialize fish position
+      fishX = 0;
+      fishY = height * 0.55;
+      noStroke();
+    }
+
+    function draw() {
+      background(240);
+      // Get current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // 1) Draw wave background
+      drawWaveBackground(h);
+
+      // 2) Draw orchard fruit (top-left)
+      drawOrchardFruit(h);
+
+      // 3) Animate fish (center region)
+      drawFish(m);
+
+      // 4) Draw rotating star (bottom region)
+      drawStar(s);
+
+      // 5) Draw digital clock in center
+      drawDigitalClock(h, m, s);
+    }
+
+    function drawWaveBackground(h) {
+      // Slightly tinted wave behind everything
+      push();
+      fill(200, 20, 80, 0.2);
+      waveOffset += 0.02;
+      let waveAmp = map(h, 0, 23, 10, 50);
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 10) {
+        let y = map(
+          noise(x * 0.01, waveOffset),
+          0, 1,
+          height / 2 - waveAmp,
+          height / 2 + waveAmp
+        );
+        vertex(x, y);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+      pop();
+    }
+
+    function drawOrchardFruit(h) {
+      // Represent orchard fruit as a circle that changes size and hue based on hour
+      push();
+      let fruitHue = map(h, 0, 23, 0, 360);
+      let fruitSize = map(h, 0, 23, 20, 100);
+      fill(fruitHue, 80, 90);
+      // Slight sway effect
+      let sway = sin(frameCount * 1.2) * 10;
+      ellipse(80, 80 + sway, fruitSize, fruitSize);
+      pop();
+    }
+
+    function drawFish(m) {
+      // Fish color changes by minute, fish speed changes by minute
+      push();
+      let fishHue = map(m, 0, 59, 0, 360);
+      let fishSpeed = map(m, 0, 59, 0.5, 5);
+      fishX += fishSpeed;
+      // Wrap around if off-screen
+      if (fishX > width + 50) {
+        fishX = -50;
+      }
+      fill(fishHue, 80, 90);
+      // Draw a simple fish shape
+      translate(fishX, fishY);
+      // Body
+      ellipse(0, 0, 50, 25);
+      // Tail
+      triangle(-25, 0, -40, -10, -40, 10);
+      // Eye
+      fill(0);
+      ellipse(10, -5, 5, 5);
+      pop();
+    }
+
+    function drawStar(s) {
+      // Star rotates by second
+      push();
+      translate(width * 0.5, height * 0.8);
+      let rot = map(s, 0, 59, 0, 360);
+      rotate(rot);
+      stroke(200, 40, 90);
+      strokeWeight(2);
+      fill(340, 60, 90, 0.5);
+      beginShape();
+      let npoints = 5;
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2.0;
+      let outerRadius = 30;
+      let innerRadius = 15;
+      for (let a = 0; a < 360; a += angle) {
+        let sx = cos(a) * outerRadius;
+        let sy = sin(a) * outerRadius;
+        vertex(sx, sy);
+        sx = cos(a + halfAngle) * innerRadius;
+        sy = sin(a + halfAngle) * innerRadius;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+      pop();
+    }
+
+    function drawDigitalClock(h, m, s) {
+      fill(30);
+      noStroke();
+      textAlign(CENTER, CENTER);
+      textSize(24);
+      let displayTime = nf(h,2) + ":" + nf(m,2) + ":" + nf(s,2);
+      text(displayTime, width / 2, height / 2);
+    }
+  </script>
+</body>
+</html>

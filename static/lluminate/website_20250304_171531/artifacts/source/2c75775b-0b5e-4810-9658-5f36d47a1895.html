@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Circus Menagerie</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the "Time Circus Menagerie"!<br><br>
+        • The background color shifts with the hour.<br>
+        • The trapeze swing amplifies with the minute.<br>
+        • The ringmaster's hat grows and shrinks with the second.<br><br>
+        Hover away to enjoy the show!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let trapezeAngle = 0;
+    let ringmasterScale = 1;
+    let trapezePivotY = 150; // vertical position of trapeze pivot
+    let trapezeLength = 150; // radius of arc for the swinging trapeze
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      backgroundGradient();
+      drawCircusTent();
+      drawTrapeze();
+      drawRingmaster();
+      displayClock();
+    }
+
+    function backgroundGradient() {
+      let h = hour();
+      let hueVal = map(h, 0, 23, 0, 360);
+      // Simple radial gradient effect
+      noStroke();
+      for (let r = 512; r > 0; r -= 8) {
+        let inter = map(r, 0, 512, 1, 0);
+        let c = color(hueVal, 100 * inter, 180 * inter);
+        fill(c);
+        ellipse(width / 2, height / 2, r, r);
+      }
+    }
+
+    function drawCircusTent() {
+      // A simple shape implying a circus tent near the top
+      push();
+      fill(200, 0, 0);
+      noStroke();
+      triangle(
+        width / 2 - 100, 220,
+        width / 2 + 100, 220,
+        width / 2, 60
+      );
+      fill(255);
+      rect(width / 2 - 100, 220, 200, 15);
+      pop();
+    }
+
+    function drawTrapeze() {
+      let m = minute();
+      // Swing angle grows with the minute
+      let swingAmplitude = map(m, 0, 59, 10, 70);
+      trapezeAngle = swingAmplitude * sin(frameCount * 2);
+
+      // Draw pivot
+      stroke(255);
+      strokeWeight(4);
+      line(width / 2, 60, width / 2, trapezePivotY);
+
+      // Trapeze bar
+      push();
+      translate(width / 2, trapezePivotY);
+      rotate(trapezeAngle);
+      stroke(255);
+      strokeWeight(4);
+      // "rope" lines
+      line(0, 0, -10, trapezeLength);
+      line(0, 0, 10, trapezeLength);
+      // bar
+      line(-30, trapezeLength, 30, trapezeLength);
+
+      // Stick figure for the trapeze artist
+      strokeWeight(2);
+      let artistY = trapezeLength + 20;
+      line(0, trapezeLength, 0, artistY);            // body
+      line(0, artistY, -10, artistY + 10);           // left leg
+      line(0, artistY, 10, artistY + 10);            // right leg
+      line(0, trapezeLength + 5, -10, trapezeLength); // left arm
+      line(0, trapezeLength + 5, 10, trapezeLength);  // right arm
+      fill(255);
+      noStroke();
+      ellipse(0, trapezeLength - 10, 10, 10);        // head
+      pop();
+    }
+
+    function drawRingmaster() {
+      let s = second();
+      // Ringmaster's hat scale changes with seconds
+      ringmasterScale = map(s, 0, 59, 0.5, 1.5);
+
+      push();
+      translate(width / 2, height - 80);
+      noStroke();
+
+      // Body
+      fill(100, 0, 0);
+      ellipse(0, 0, 50, 80);
+
+      // Head
+      fill(255, 200, 170);
+      ellipse(0, -50, 30, 40);
+
+      // Hat
+      push();
+      scale(ringmasterScale);
+      fill(0);
+      rect(-15, -75, 30, 20);
+      rect(-25, -55, 50, 5);
+      pop();
+      pop();
+    }
+
+    function displayClock() {
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

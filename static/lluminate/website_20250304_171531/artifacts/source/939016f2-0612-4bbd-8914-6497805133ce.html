@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Snow Globe</title>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* A fixed 512x512 container (for iframe) */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      border: none;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Snow Globe</strong><br><br>
+        • Snowfall quantity depends on the hour.<br>
+        • Globe's inner color responds to the minute.<br>
+        • Wind swirl changes with the seconds.<br>
+        • Move your mouse over the globe to stir the snow.<br><br>
+        Hover here for instructions.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time Snow Globe
+
+      This interactive display simulates a snow globe:
+       • The hour determines how many snowflakes populate the globe.
+       • The minute changes the globe's internal color background.
+       • The second controls the swirl speed of the snow.
+       • User's mouse movement adds extra swirling to the snow.
+
+      A digital clock is displayed at the bottom-left corner.
+      All within a 512 x 512 canvas.
+    */
+
+    const CANVAS_SIZE = 512;
+    const GLOBE_RADIUS = 200; // radius for the snow globe
+    let snowflakes = [];
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      // Get current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Determine quantity of snow based on hour
+      let desiredCount = floor(map(hr, 0, 23, 50, 200));
+
+      // Adjust number of snowflakes to match desired count
+      while (snowflakes.length < desiredCount) {
+        snowflakes.push(new Snowflake());
+      }
+      while (snowflakes.length > desiredCount) {
+        snowflakes.pop();
+      }
+
+      // Draw stand for the globe
+      drawGlobeStand();
+
+      // Draw the globe background color based on minute
+      push();
+      translate(width / 2, height / 2);
+      fill(map(mn, 0, 59, 50, 200), map(mn, 0, 59, 50, 100), map(mn, 0, 59, 120, 255));
+      circle(0, 0, 2 * GLOBE_RADIUS);
+      pop();
+
+      // Draw and update snowflakes (clipped to the globe area)
+      push();
+      translate(width / 2, height / 2);
+      for (let flake of snowflakes) {
+        flake.update(sc);
+        flake.draw();
+      }
+      pop();
+
+      // Draw a simple highlight on the globe for a glass effect
+      drawGlobeHighlight();
+
+      // Draw digital clock
+      drawClock(hr, mn, sc);
+    }
+
+    class Snowflake {
+      constructor() {
+        // Position in polar coordinates relative to the center
+        this.angle = random(360);
+        this.radialDist = random(GLOBE_RADIUS * 0.1, GLOBE_RADIUS * 0.95);
+        // Velocity
+        this.vr = random(0.1, 0.3);   // radial velocity
+        this.va = random(-0.5, 0.5); // angular velocity
+        this.size = random(2, 5);
+      }
+
+      update(sc) {
+        // The swirl factor changes with the seconds
+        let swirl = map(sc, 0, 59, 0.01, 0.05);
+        
+        // Drift changes with mouse proximity for interactive "shake"
+        let distFromMouse = dist(mouseX - width/2, mouseY - height/2, 
+                                 this.radialDist * cos(this.angle), this.radialDist * sin(this.angle));
+        let mouseInfluence = map(distFromMouse, 0, GLOBE_RADIUS, 0.03, 0);
+
+        // Update angular velocity (swirl and slight mouse influence)
+        this.angle += this.va + swirl + mouseInfluence * (mouseIsPressed ? 4 : 1);
+
+        // Move radially inward/outward
+        this.radialDist += this.vr * random(-1, 1);
+
+        // Keep snowflake within the globe bounds
+        if (this.radialDist > GLOBE_RADIUS) {
+          this.radialDist = GLOBE_RADIUS - 1;
+        } else if (this.radialDist < 0) {
+          this.radialDist = 1;
+        }
+      }
+
+      draw() {
+        let x = this.radialDist * cos(this.angle);
+        let y = this.radialDist * sin(this.angle);
+        fill(255);
+        circle(x, y, this.size);
+      }
+    }
+
+    function drawGlobeStand() {
+      // Simple stand for the globe at the bottom
+      let standWidth = 220;
+      let standHeight = 20;
+      let standX = width/2 - standWidth/2;
+      let standY = height/2 + GLOBE_RADIUS - 10;
+
+      fill(60);
+      rect(standX, standY, standWidth, standHeight, 6);
+    }
+
+    function drawGlobeHighlight() {
+      // A small white ellipse near the top-left to simulate reflection
+      push();
+      translate(width / 2, height / 2);
+      noStroke();
+      fill(255, 150);
+      ellipse(-GLOBE_RADIUS / 3, -GLOBE_RADIUS / 2, 40, 25);
+      pop();
+    }
+
+    function drawClock(h, m, s) {
+      push();
+      translate(10, height - 20);
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 0, 0);
+      pop();
+    }
+  </script>
+</body>
+</html>

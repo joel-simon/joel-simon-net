@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Unified Time Mosaic & Fractal Maze</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #050505;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.8);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the "Unified Time Mosaic & Fractal Maze"!<br><br>
+        • The mosaic-like background changes color with the current hour and minute.<br>
+        • A rotating gear in the center reflects the seconds ticking by.<br>
+        • The fractal tree at the bottom grows and shifts with time.<br>
+        • A randomly generated maze overlays and changes color every minute.<br><br>
+        Hover away to view the animated scene.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let tileSize = 32; // For mosaic background
+    let gearAngle = 0; // Gear rotation
+    let mazeCols, mazeRows;
+    let mazeGrid = [];
+
+    function setup() {
+      const c = createCanvas(512, 512);
+      c.parent("canvasContainer");
+      angleMode(DEGREES);
+      mazeCols = width / 16;  // Maze cell size 16x16
+      mazeRows = height / 16;
+      generateMaze();
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Background mosaic
+      mosaicBackground(h, m);
+
+      // Draw random maze overlay
+      drawMaze(m);
+
+      // Draw fractal tree near bottom center
+      push();
+      translate(width / 2, height);
+      drawFractalTree(h, m, s);
+      pop();
+
+      // Draw rotating gear in the center
+      drawGear(s);
+
+      // Display digital clock
+      drawClock(h, m, s);
+    }
+
+    // A mosaic of squares that shift color with hour & minute
+    function mosaicBackground(h, m) {
+      // Create a base hue from hour and minute
+      let hueBase = map(h + m / 60.0, 0, 23.999, 0, 360);
+      for (let y = 0; y < height; y += tileSize) {
+        for (let x = 0; x < width; x += tileSize) {
+          let distortion = noise(x * 0.01, y * 0.01, frameCount * 0.01);
+          let hueVar = hueBase + distortion * 60;
+          fill(hueVar, 50, 70 + distortion * 50);
+          noStroke();
+          rect(x, y, tileSize, tileSize);
+        }
+      }
+    }
+
+    // Generate a simple random "maze" layout
+    function generateMaze() {
+      mazeGrid = [];
+      for (let r = 0; r < mazeRows; r++) {
+        mazeGrid[r] = [];
+        for (let c = 0; c < mazeCols; c++) {
+          // Cells are either walls (1) or open (0)
+          // Weighted randomness (more open paths)
+          mazeGrid[r][c] = random() < 0.7 ? 0 : 1;
+        }
+      }
+      // Make borders walls
+      for (let c = 0; c < mazeCols; c++) {
+        mazeGrid[0][c] = 1;
+        mazeGrid[mazeRows - 1][c] = 1;
+      }
+      for (let r = 0; r < mazeRows; r++) {
+        mazeGrid[r][0] = 1;
+        mazeGrid[r][mazeCols - 1] = 1;
+      }
+    }
+
+    // Draw the maze above the mosaic
+    function drawMaze(m) {
+      // Maze color changes each minute
+      let mazeColor = map(m, 0, 59, 100, 220);
+      noStroke();
+      fill(mazeColor, 50, 50);
+      for (let r = 0; r < mazeRows; r++) {
+        for (let c = 0; c < mazeCols; c++) {
+          if (mazeGrid[r][c] === 1) {
+            rect(c * 16, r * 16, 16, 16);
+          }
+        }
+      }
+      // Regenerate maze each minute on the first second
+      if (second() === 0 && frameCount % 60 === 0) {
+        generateMaze();
+      }
+    }
+
+    // Simple fractal tree from bottom, affected by hour/minute/second
+    function drawFractalTree(h, m, s) {
+      let depth = floor(map(h, 0, 23, 6, 10)); // branch depth
+      let length = map(m, 0, 59, 60, 140);
+      let angle = map(s, 0, 59, 15, 45);       // angle amplitude
+      stroke(255);
+      strokeWeight(2);
+      fractalBranch(length, angle, depth);
+    }
+
+    function fractalBranch(len, angle, depth) {
+      if (depth <= 0) return;
+      line(0, 0, 0, -len);
+      translate(0, -len);
+
+      // Branch right
+      push();
+      rotate(angle);
+      fractalBranch(len * 0.7, angle, depth - 1);
+      pop();
+
+      // Branch left
+      push();
+      rotate(-angle);
+      fractalBranch(len * 0.7, angle, depth - 1);
+      pop();
+    }
+
+    // Draw a gear in the center that rotates with seconds
+    function drawGear(s) {
+      gearAngle += map(s, 0, 59, 0.5, 3);
+      push();
+      translate(width / 2, height / 2);
+      rotate(gearAngle);
+      // Gear shape
+      fill(220);
+      stroke(50);
+      strokeWeight(2);
+      beginShape();
+      for (let i = 0; i < 360; i += 30) {
+        let rOuter = 60;
+        let rInner = 40;
+        let xOuter = cos(i) * rOuter;
+        let yOuter = sin(i) * rOuter;
+        vertex(xOuter, yOuter);
+        let xInner = cos(i + 15) * rInner;
+        let yInner = sin(i + 15) * rInner;
+        vertex(xInner, yInner);
+      }
+      endShape(CLOSE);
+
+      // Center circle
+      fill(100);
+      ellipse(0, 0, 30, 30);
+      pop();
+    }
+
+    // Display digital clock near bottom
+    function drawClock(h, m, s) {
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

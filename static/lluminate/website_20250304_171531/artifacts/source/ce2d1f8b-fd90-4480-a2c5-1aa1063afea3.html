@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Inversion Star Lab</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <style>
+    /* Reset and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: default;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the Time Inversion Star Lab!<br><br>
+        • The background color flips after noon.<br>
+        • Stars reverse direction every second.<br>
+        • Star speed scales with the current minute.<br><br>
+        Hover away to watch the star field unfold!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let stars = [];
+    let numStars = 100;
+    let starSpeed = 1;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      // Create an initial star field
+      for (let i = 0; i < numStars; i++) {
+        stars.push({
+          x: random(width),
+          y: random(height),
+          size: random(2, 4)
+        });
+      }
+    }
+
+    function draw() {
+      backgroundLogic();
+      moveStars();
+      drawStars();
+      displayClock();
+    }
+
+    // Flip the background color after noon
+    function backgroundLogic() {
+      let h = hour();
+      if (h < 12) {
+        background(0);
+      } else {
+        background(255);
+      }
+    }
+
+    // Move stars left or right based on whether the second is odd or even
+    // Speed scales with the current minute
+    function moveStars() {
+      let s = second();
+      let m = minute();
+      let direction = (s % 2 === 0) ? -1 : 1;
+      let scaledSpeed = map(m, 0, 59, 0.5, 3);
+
+      for (let i = 0; i < stars.length; i++) {
+        stars[i].x += direction * scaledSpeed;
+        // Warp the star around if it goes off screen
+        if (stars[i].x < 0) {
+          stars[i].x = width;
+          stars[i].y = random(height);
+        } else if (stars[i].x > width) {
+          stars[i].x = 0;
+          stars[i].y = random(height);
+        }
+      }
+    }
+
+    function drawStars() {
+      let h = hour();
+      // When background is dark, make stars white; otherwise make them black.
+      let starColor = (h < 12) ? 255 : 0;
+      noStroke();
+      fill(starColor);
+
+      for (let i = 0; i < stars.length; i++) {
+        ellipse(stars[i].x, stars[i].y, stars[i].size, stars[i].size);
+      }
+    }
+
+    // Display the digital clock
+    function displayClock() {
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+
+      push();
+      textAlign(CENTER, CENTER);
+      textSize(16);
+      // Invert text color if background is white
+      if (hour() < 12) {
+        fill(255);
+      } else {
+        fill(0);
+      }
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

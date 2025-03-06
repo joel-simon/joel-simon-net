@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Moiré Illusion</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #e6e6e6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #timeMoireIllusionContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Instructions overlay, hidden by default. Display on hover. */
+    #instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.85);
+      color: #222;
+      font-family: sans-serif;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    #timeMoireIllusionContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="timeMoireIllusionContainer">
+  <div id="instructions">
+    <h3>Time Moiré Illusion</h3>
+    <p>
+      • Concentric arcs create dynamic Moiré patterns that shift with the current time.<br/>
+      • The pattern spacing changes with the hour.<br/>
+      • The overall rotation of the arcs depends on the minute.<br/>
+      • The colors cycle every second.<br/>
+      • Observe the changing overlay patterns as time progresses!
+    </p>
+  </div>
+</div>
+
+<script>
+  const SIZE = 512;
+
+  function setup() {
+    let cnv = createCanvas(SIZE, SIZE);
+    cnv.parent("timeMoireIllusionContainer");
+    angleMode(DEGREES);
+  }
+
+  function draw() {
+    background(240);
+
+    let currentHour = hour() % 12;     // 0-11
+    let currentMinute = minute();      // 0-59
+    let currentSecond = second();      // 0-59
+
+    // Compute dynamic parameters
+    // The arc spacing is influenced by the hour (spread from 1 to ~24)
+    let arcSpacing = map(currentHour, 0, 11, 3, 24, true) || 3;
+    // The whole pattern rotates based on the minute
+    let rotationOffset = map(currentMinute, 0, 59, 0, 360, true);
+    // A color offset that changes every second
+    let colorHue = map(currentSecond, 0, 59, 0, 360);
+
+    push();
+    translate(width/2, height/2);
+    rotate(rotationOffset);
+    colorMode(HSB, 360, 100, 100);
+    noFill();
+
+    // Draw multiple arcs expanding outward
+    // We create moiré illusions by slightly shifting the start angle of each arc
+    let maxRadius = width * 0.8; 
+    let arcsCount = int(maxRadius / arcSpacing);
+
+    for (let i = 0; i < arcsCount; i++) {
+      let radius = i * arcSpacing;
+      stroke((colorHue + i * 5) % 360, 80, 100);
+      strokeWeight(2);
+
+      // Each arc will sweep a small portion, then skip, to create overlapping wave patterns
+      // We'll use multiple arcs around the circle
+      beginShape();
+      // Break each circle into small arcs at intervals of 10 degrees
+      for (let angle = 0; angle < 360; angle += 10) {
+        if (angle % 40 < 20) {
+          let x = cos(angle) * radius;
+          let y = sin(angle) * radius;
+          vertex(x, y);
+        } else {
+          endShape();
+          beginShape();
+        }
+      }
+      endShape();
+    }
+    pop();
+  }
+</script>
+</body>
+</html>

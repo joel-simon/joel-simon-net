@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time-Coded Petal Spiral</title>
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center the page content with a neutral background */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: sans-serif;
+    }
+
+    /* Container for the 512x512 canvas */
+    #sketchContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip styling (hidden by default) */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      padding: 30px;
+      box-sizing: border-box;
+      text-align: center;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Show tooltip on hover */
+    #sketchContainer:hover .tooltip {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="sketchContainer">
+    <div class="tooltip">
+      <p>
+        • Number of petals matches the current hour (12-hour format).<br>
+        • Petal size grows or shrinks based on the current minute.<br>
+        • Petal color shifts with each second.<br>
+        • Watch the background swirl as time flows.<br>
+        • Current time is displayed at the bottom of the canvas.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let w = 512;
+    let h = 512;
+
+    // Variables for background swirling effect
+    let swirlParticles = [];
+
+    function setup() {
+      const cnv = createCanvas(w, h);
+      cnv.parent('sketchContainer');
+      angleMode(DEGREES);
+      noStroke();
+      // Initialize swirl particles
+      for (let i = 0; i < 100; i++) {
+        swirlParticles.push(new SwirlParticle());
+      }
+    }
+
+    function draw() {
+      background(20);
+
+      // Draw dynamic swirling background
+      for (let p of swirlParticles) {
+        p.move();
+        p.display();
+      }
+
+      // Get current time
+      let hr = hour() % 12; // 12-hour format
+      let mn = minute();
+      let sc = second();
+
+      // Draw the time-coded petal spiral
+      push();
+      translate(width / 2, height / 2);
+      let petals = hr === 0 ? 12 : hr;  // If hr is 0, show 12 petals
+      let petalSize = map(mn, 0, 59, 50, 200); // diameter depends on minute
+      let colorOffset = map(sc, 0, 59, 0, 255); // color changes each second
+      for (let i = 0; i < petals; i++) {
+        // Rotate around center
+        rotate(360 / petals);
+        // Dynamic fill color based on second
+        fill((colorOffset + i * 20) % 255, 160, 255 - ((colorOffset + i * 10) % 255));
+        // Draw a petal
+        beginShape();
+          vertex(0, 0);
+          bezierVertex(petalSize * 0.2, -petalSize * 0.3, petalSize * 0.8, -petalSize * 0.3, petalSize, 0);
+          bezierVertex(petalSize * 0.8, petalSize * 0.3, petalSize * 0.2, petalSize * 0.3, 0, 0);
+        endShape(CLOSE);
+      }
+      pop();
+
+      // Display current time at the bottom of the canvas
+      fill(255);
+      textSize(20);
+      textAlign(CENTER, CENTER);
+      text(nf(hour(), 2) + ':' + nf(mn, 2) + ':' + nf(sc, 2), width / 2, height - 20);
+    }
+
+    // Class for moving swirl particles in the background
+    class SwirlParticle {
+      constructor() {
+        this.init();
+      }
+
+      init() {
+        // Random start position
+        this.x = random(width);
+        this.y = random(height);
+        // Random speed and direction
+        this.vx = random(-1, 1);
+        this.vy = random(-1, 1);
+        // Random color
+        this.c = color(random(60, 100), random(60, 100), random(60, 100), 100);
+        // Swirl rotation factor
+        this.angle = random(360);
+        this.angleSpeed = random(0.5, 1.5);
+      }
+
+      move() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.angle += this.angleSpeed;
+
+        // Create subtle swirling by rotating velocity
+        let swirlStrength = 0.03;
+        let newVx = this.vx * cos(this.angle * swirlStrength) - this.vy * sin(this.angle * swirlStrength);
+        let newVy = this.vx * sin(this.angle * swirlStrength) + this.vy * cos(this.angle * swirlStrength);
+        this.vx = newVx;
+        this.vy = newVy;
+
+        // Wrap around edges
+        if (this.x < 0)  this.x = w;
+        if (this.x > w)  this.x = 0;
+        if (this.y < 0)  this.y = h;
+        if (this.y > h)  this.y = 0;
+      }
+
+      display() {
+        fill(this.c);
+        ellipse(this.x, this.y, 5, 5);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time-Bloom Observatory</title>
+  <style>
+    /* Reset and layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      font-family: Arial, sans-serif;
+      color: #fff;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Container for a fixed 512x512 sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0,0,0,0.8);
+      cursor: pointer;
+    }
+
+    /* Instructions overlay (appears on hover) */
+    #infoOverlay {
+      position: absolute;
+      top: 0; 
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    #canvasContainer:hover #infoOverlay {
+      display: flex;
+    }
+
+    /* Style the p5 canvas exactly 512x512 */
+    #defaultCanvas0 {
+      width: 512px !important;
+      height: 512px !important;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="infoOverlay">
+      <p>
+        Time-Bloom Observatory<br><br>
+        • Fractal trees on the edges grow with the hour.<br>
+        • Mosaic squares shift hue with the minute.<br>
+        • A rotating star in the center aligns with the second.<br>
+        • Move the white explorer square with arrow keys.<br>
+        Hover away to see the animation!
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time-Bloom Observatory
+      - Fractal trees on left and right sides, scaling with hour.
+      - Mosaic squares in the background shift color with minute.
+      - Central star rotates with second.
+      - A player square moves via arrow keys.
+    */
+
+    let explorer = { x: 256, y: 256, size: 15 }; // Explorer's position and size
+    const moveSpeed = 2;                        // Speed of the explorer square
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      rectMode(CENTER);
+      noStroke();
+    }
+
+    function draw() {
+      background(20);
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Draw mosaic background
+      drawMosaic(m);
+
+      // Draw fractal trees on the left and right edges
+      drawFractalTree(75, height - 10, -90, 7 + h % 12);
+      push();
+      translate(width - 75, height - 10);
+      drawFractalTree(0, 0, -90, 7 + h % 12); // symmetrical tree
+      pop();
+
+      // Draw rotating star in the center
+      push();
+      translate(width/2, height/2);
+      rotate(s * 6); // each second -> 6 degrees rotation
+      drawStar(0, 0, 20, 50, 6);
+      pop();
+
+      // Draw explorer
+      fill(255);
+      rect(explorer.x, explorer.y, explorer.size, explorer.size);
+      handleMovement();
+    }
+
+    // Function to draw mosaic squares in background
+    function drawMosaic(minVal) {
+      push();
+      let gridCount = 10; // coarser mosaic
+      let tileSize = width / gridCount;
+      colorMode(HSB, 360, 100, 100);
+      for (let i = 0; i < gridCount; i++) {
+        for (let j = 0; j < gridCount; j++) {
+          // Shift color with minute
+          let hueVal = (minVal * 6 + (i + j) * 5) % 360;
+          fill(hueVal, 80, 80);
+          rect(i * tileSize, j * tileSize, tileSize, tileSize);
+        }
+      }
+      pop();
+      colorMode(RGB);
+    }
+
+    // Function to draw a fractal tree
+    function drawFractalTree(x, y, angle, depth) {
+      push();
+      translate(x, y);
+      stroke(160, 110, 60);
+      strokeWeight(2);
+      branch(60, angle, depth);
+      pop();
+    }
+
+    // Recursive branch function for fractal tree
+    function branch(length, angle, depth) {
+      if (depth === 0) return;
+      push();
+      rotate(angle);
+      line(0, 0, 0, -length);
+      translate(0, -length);
+      branch(length * 0.7, 25, depth - 1);
+      branch(length * 0.7, -25, depth - 1);
+      pop();
+    }
+
+    // Draw a star shape
+    function drawStar(x, y, radius1, radius2, npoints) {
+      fill(220, 150, 80);
+      beginShape();
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2;
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+
+    // Handle arrow key movement for explorer
+    function keyPressed() {
+      if (keyCode === LEFT_ARROW) {
+        explorer.x -= moveSpeed;
+      } else if (keyCode === RIGHT_ARROW) {
+        explorer.x += moveSpeed;
+      } else if (keyCode === UP_ARROW) {
+        explorer.y -= moveSpeed;
+      } else if (keyCode === DOWN_ARROW) {
+        explorer.y += moveSpeed;
+      }
+    }
+
+    function handleMovement() {
+      // Keep explorer within canvas bounds
+      explorer.x = constrain(explorer.x, explorer.size/2, width - explorer.size/2);
+      explorer.y = constrain(explorer.y, explorer.size/2, height - explorer.size/2);
+    }
+  </script>
+</body>
+</html>

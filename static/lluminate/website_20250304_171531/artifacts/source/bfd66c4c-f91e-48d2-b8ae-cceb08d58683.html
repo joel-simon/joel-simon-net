@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Wave, Star & Swirl Fusion</title>
+  <style>
+    /* Basic page and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Wave, Star &amp; Swirl Fusion</strong><br><br>
+        • Wave frequency responds to hour, amplitude to minute.<br>
+        • A swirling ring of particles reflects hour-based movement.<br>
+        • The core star rotates and changes color, driven by seconds.<br>
+        • Scene updates with real-time clock data. Enjoy!
+      </div>
+    </div>
+  </div>
+  
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <script>
+    let particles = [];
+    let numParticles = 40;
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+
+      // Initialize particle array
+      for (let i = 0; i < numParticles; i++) {
+        particles.push({
+          angle: random(360),
+          speed: random(0.5, 2) * (random() < 0.5 ? 1 : -1)
+        });
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      // Current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Draw wave background
+      drawWave(hr, mn);
+
+      // Draw swirling particles around center
+      drawSwirlingParticles(hr);
+
+      // Draw rotating star at center
+      drawStar(hr, mn, sc);
+
+      // Digital clock in corner
+      drawClock(hr, mn, sc);
+    }
+
+    // Wave pattern that shifts with hour and minute
+    function drawWave(hr, mn) {
+      noFill();
+      stroke(255, 60);
+      strokeWeight(2);
+
+      let frequency = map(hr % 12, 0, 12, 0.5, 3.0);
+      let amplitude = map(mn, 0, 59, 20, 100);
+
+      push();
+      translate(0, height / 2);
+      beginShape();
+      for (let x = 0; x < width; x++) {
+        let t = x * frequency + frameCount * 0.5;
+        let y = sin(t) * amplitude;
+        vertex(x, y);
+      }
+      endShape();
+      pop();
+    }
+
+    // Particles swirling in a ring, radius depends on hour
+    function drawSwirlingParticles(hr) {
+      push();
+      translate(width / 2, height / 2);
+      stroke(255);
+      strokeWeight(2);
+
+      let swirlRadius = map(hr % 12, 0, 12, 50, 200);
+
+      for (let p of particles) {
+        p.angle += p.speed;
+        let x = swirlRadius * cos(p.angle);
+        let y = swirlRadius * sin(p.angle);
+        point(x, y);
+      }
+      pop();
+    }
+
+    // Rotating star in center, color depends on hr, mn, sc
+    function drawStar(hr, mn, sc) {
+      push();
+      translate(width / 2, height / 2);
+
+      // Rotation speed from seconds
+      let rotationSpeed = map(sc, 0, 59, 0, 5);
+      rotate(frameCount * rotationSpeed);
+
+      // Color from hr, mn, sc
+      let r = map(hr, 0, 23, 100, 255);
+      let g = map(mn, 0, 59, 100, 255);
+      let b = map(sc, 0, 59, 100, 255);
+      fill(r, g, b, 180);
+      stroke(255);
+      strokeWeight(2);
+
+      // 5-pointed star
+      let numPoints = 5;
+      let outerRadius = 60;
+      let innerRadius = 25;
+      beginShape();
+      for (let i = 0; i < 2 * numPoints; i++) {
+        let angle = i * 360 / (2 * numPoints);
+        let rad = i % 2 === 0 ? outerRadius : innerRadius;
+        let x = cos(angle) * rad;
+        let y = sin(angle) * rad;
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+
+      pop();
+    }
+
+    // Unobtrusive digital clock in bottom-right corner
+    function drawClock(hr, mn, sc) {
+      fill(255);
+      noStroke();
+      textSize(14);
+      textAlign(RIGHT, BOTTOM);
+
+      let hourStr = nf(hr, 2);
+      let minuteStr = nf(mn, 2);
+      let secondStr = nf(sc, 2);
+      text(hourStr + ":" + minuteStr + ":" + secondStr, width - 10, height - 10);
+    }
+  </script>
+</body>
+</html>

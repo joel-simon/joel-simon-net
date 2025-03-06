@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Kaleidoscope Observatory</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset default margins and background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container exactly 512x512 */
+    #timeKaleidoscopeContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    /* Instruction overlay on hover */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 30px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #timeKaleidoscopeContainer:hover #instructionsOverlay {
+      display: block;
+    }
+
+    h1, p {
+      margin: 1em 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="timeKaleidoscopeContainer">
+    <div id="instructionsOverlay">
+      <h1>Time Kaleidoscope Observatory</h1>
+      <p>
+        • Colors shift every hour.<br>
+        • The kaleidoscope spins faster or slower based on the minute.<br>
+        • Pattern size updates with each passing second.<br>
+        • Hover again to see instructions.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /* 
+      TIME KALEIDOSCOPE OBSERVATORY
+      - The hue of the kaleidoscope changes hourly (0..23 -> 0..360 in hue).
+      - Rotation speed varies by the current minute (0..59 -> 0..approximately 0.1).
+      - The size of shapes is determined by the current second (0..59 -> 10..50).
+      - A digital clock is displayed in the corner.
+    */
+
+    let baseRotation = 0;
+    
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('timeKaleidoscopeContainer');
+      angleMode(DEGREES);
+      colorMode(HSL);
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Map hour [0..23] to hue [0..360]
+      let hueVal = map(h, 0, 23, 0, 360);
+      // Map minute [0..59] to rotation speed [0..0.1 approximate]
+      let rotationSpeed = map(m, 0, 59, 0.0, 0.1);
+      // Map second [0..59] to shape size [10..50]
+      let shapeSize = map(s, 0, 59, 10, 50);
+
+      // Increase base rotation
+      baseRotation += rotationSpeed;
+      
+      // Move origin to center
+      translate(width / 2, height / 2);
+
+      // We'll create a 6-sided (hex) kaleidoscope pattern
+      let sections = 6;
+      for (let i = 0; i < sections; i++) {
+        push();
+        rotate((360 / sections) * i + baseRotation);
+        drawKaleidoShape(hueVal, shapeSize);
+        pop();
+      }
+
+      // Reset transformations to display digital clock
+      resetMatrix();
+      textSize(24);
+      fill(255);
+      noStroke();
+      textAlign(LEFT, TOP);
+
+      let displayHour = h % 12;
+      if (displayHour === 0) displayHour = 12;
+      let ampm = (h >= 12) ? "PM" : "AM";
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      let timeString = displayHour + ":" + minStr + ":" + secStr + " " + ampm;
+
+      text(timeString, 10, 10);
+    }
+
+    function drawKaleidoShape(kaleidoHue, sizeVal) {
+      // We'll draw several arcs and polygons to mimic a fancy shape
+      fill(kaleidoHue, 80, 50);
+      noStroke();
+
+      // Inner circle
+      ellipse(0, 0, sizeVal, sizeVal);
+
+      // Radiating rectangles/trapezoids
+      for (let a = 0; a < 360; a += 60) {
+        push();
+        rotate(a);
+        rect(0, -sizeVal * 0.6, sizeVal * 0.3, sizeVal * 0.4);
+        pop();
+      }
+
+      // Outer arcs
+      stroke(kaleidoHue, 80, 80);
+      strokeWeight(2);
+      noFill();
+      arc(0, 0, sizeVal * 2, sizeVal * 2, 0, 180);
+    }
+
+  </script>
+</body>
+</html>

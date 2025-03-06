@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Fairy Gear Factory</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Fairy Gear Factory<br><br>
+        • The background color transitions with the current hour.<br>
+        • A fractal tree's branching angle changes with the minute.<br>
+        • Gears rotate at speeds determined by seconds.<br>
+        • Glowing fairy orbs flicker in response to time.<br><br>
+        Hover away to see it in action!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let gearAngle = 0;
+    let orbs = [];
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+      // Initialize fairy orbs
+      for (let i = 0; i < 10; i++) {
+        orbs.push({
+          x: random(width),
+          y: random(height - 100),
+          size: random(5, 15),
+          speed: random(0.5, 1),
+          alpha: random(100, 200)
+        });
+      }
+    }
+
+    function draw() {
+      drawDynamicBackground();
+      drawFractalTree(80, height - 50, 80, -90, 0);
+      drawGear();
+      drawFairyOrbs();
+      drawTime();
+    }
+
+    // Background changes with hour
+    function drawDynamicBackground() {
+      let h = hour();
+      let baseColor = map(h, 0, 23, 0, 255);
+      background(baseColor, baseColor * 0.7, 255 - baseColor * 0.5);
+    }
+
+    // Fractal tree whose angle changes with minute
+    function drawFractalTree(x, y, length, angle, depth) {
+      let maxDepth = 5;
+      let m = minute();
+      let branchAngle = map(m, 0, 59, 15, 40);
+
+      push();
+      translate(x, y);
+      stroke(60, 40, 20);
+      strokeWeight(map(length, 0, 80, 1, 4));
+      line(0, 0, 0, -length);
+      translate(0, -length);
+      if (depth < maxDepth) {
+        push();
+        rotate(branchAngle);
+        drawFractalTree(0, 0, length * 0.7, angle, depth + 1);
+        pop();
+        push();
+        rotate(-branchAngle);
+        drawFractalTree(0, 0, length * 0.7, angle, depth + 1);
+        pop();
+      }
+      pop();
+
+      noStroke();
+    }
+
+    // Gear that rotates at speeds determined by seconds
+    function drawGear() {
+      let s = second();
+      gearAngle += map(s, 0, 59, 1, 3);
+      push();
+      translate(width / 2, height / 2);
+      rotate(gearAngle);
+      fill(120);
+      // Outer gear
+      ellipse(0, 0, 120, 120);
+      // Gear teeth
+      fill(100);
+      for (let i = 0; i < 12; i++) {
+        push();
+        rotate(i * 30);
+        rect(45, -5, 15, 10, 2);
+        pop();
+      }
+      // Inner circle
+      fill(80);
+      ellipse(0, 0, 50, 50);
+      pop();
+    }
+
+    // Glowing fairy orbs that flicker with time
+    function drawFairyOrbs() {
+      let t = millis() / 1000.0;
+      for (let orb of orbs) {
+        orb.y -= orb.speed * 0.3;
+        if (orb.y < 0) {
+          orb.x = random(width);
+          orb.y = height;
+        }
+        let flicker = sin(t + orb.x + orb.y) * 50;
+        fill(255, 200, 255, orb.alpha + flicker);
+        ellipse(orb.x, orb.y, orb.size, orb.size);
+      }
+    }
+
+    function drawTime() {
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Surreal Desert Constellation</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container for the 512x512 canvas */
+    #sketchContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto; /* center horizontally */
+      overflow: hidden;
+    }
+
+    /* Instructions appear on hover */
+    #hoverInstructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 30px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+    }
+    #sketchContainer:hover #hoverInstructions {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="sketchContainer">
+    <div id="hoverInstructions">
+      <p>
+        Surreal Desert Constellation<br><br>
+        • Scene color shifts between day and night according to the hour.<br>
+        • A fractal cactus stands in the desert, its branch angles and depth influenced by time.<br>
+        • Floating fish represent hour, minute, and second, swimming across the desert.<br>
+        • Connective constellation lines appear in the sky, bound by the current hour.<br>
+        • A rotating star in the sky changes size with the seconds.<br><br>
+        Hover away to continue!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Fish Class ----------
+    class Fish {
+      constructor(scaleFactor, speedFactor, colorMode) {
+        this.x = random(width);
+        this.y = random(height * 0.55, height * 0.85);
+        this.scaleFactor = scaleFactor; // adjusts fish size
+        this.speedFactor = speedFactor; // affects horizontal speed
+        this.colorMode = colorMode;     // 'hour', 'minute', 'second'
+      }
+
+      update() {
+        this.x += this.speedFactor;
+        if (this.x > width + 50) {
+          this.x = -50;
+          this.y = random(height * 0.55, height * 0.85);
+        }
+      }
+
+      display() {
+        const h = hour();
+        const m = minute();
+        const s = second();
+
+        // Adjust fish color based on time
+        let cFish;
+        if (this.colorMode === 'hour') {
+          cFish = color(map(h, 0, 23, 50, 255), 100, 180);
+        } else if (this.colorMode === 'minute') {
+          cFish = color(100, map(m, 0, 59, 50, 255), 180);
+        } else {
+          cFish = color(80, 160, map(s, 0, 59, 50, 255));
+        }
+
+        push();
+        translate(this.x, this.y);
+        scale(this.scaleFactor);
+        noStroke();
+        fill(cFish);
+
+        // Body
+        ellipse(0, 0, 60, 30);
+        // Tail
+        fill(
+          red(cFish) * 0.8,
+          green(cFish) * 0.8,
+          blue(cFish) * 0.8
+        );
+        triangle(-30, 0, -45, -10, -45, 10);
+        // Fins
+        fill(
+          red(cFish) * 1.2,
+          green(cFish) * 1.2,
+          blue(cFish) * 1.2
+        );
+        ellipse(5, -15, 20, 10);
+        ellipse(5, 15, 20, 10);
+        // Eye
+        fill(255);
+        ellipse(15, -5, 6, 6);
+
+        pop();
+      }
+    }
+
+    // ---------- Star Object for rotating star in the sky ----------
+    class SkyStar {
+      constructor() {
+        this.rotation = 0;
+      }
+
+      update() {
+        this.rotation += 0.5; // Rotational speed
+      }
+
+      display() {
+        const s = second();
+        // Oscillate size based on seconds
+        let starRad = map(s, 0, 59, 20, 60);
+
+        push();
+        translate(width * 0.8, height * 0.2);
+        rotate(this.rotation);
+        fill(255, 200, 0);
+        noStroke();
+        drawStar(0, 0, starRad * 0.4, starRad, 5); 
+        pop();
+      }
+    }
+
+    // Utility function to draw a star shape
+    function drawStar(x, y, radius1, radius2, npoints) {
+      let angle = TWO_PI / npoints;
+      let halfAngle = angle / 2;
+      beginShape();
+      for (let a = 0; a < TWO_PI; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+
+    // -------- Fractal Cactus (adapted from fractal tree) --------
+    function drawFractalCactus(length, level, angle) {
+      if (level <= 0) return;
+
+      strokeWeight(map(level, 1, 10, 1, 5));
+      stroke(30, 150, 60); 
+      line(0, 0, 0, -length);
+
+      translate(0, -length);
+
+      push();
+      rotate(-angle);
+      drawFractalCactus(length * 0.7, level - 1, angle);
+      pop();
+
+      push();
+      rotate(angle);
+      drawFractalCactus(length * 0.7, level - 1, angle);
+      pop();
+    }
+
+    // ---------- Constellation class ----------
+    class Constellation {
+      constructor(numStars) {
+        this.stars = [];
+        for (let i = 0; i < numStars; i++) {
+          this.stars.push({
+            x: random(width),
+            y: random(height * 0.05, height * 0.4)
+          });
+        }
+      }
+
+      display() {
+        const h = hour();
+        let maxDist = map(h, 0, 23, 40, 150);
+
+        stroke(255);
+        strokeWeight(1);
+        for (let i = 0; i < this.stars.length; i++) {
+          let sx = this.stars[i].x;
+          let sy = this.stars[i].y;
+          for (let j = i + 1; j < this.stars.length; j++) {
+            let dx = sx - this.stars[j].x;
+            let dy = sy - this.stars[j].y;
+            let distStars = sqrt(dx * dx + dy * dy);
+            if (distStars < maxDist) {
+              line(sx, sy, this.stars[j].x, this.stars[j].y);
+            }
+          }
+        }
+
+        // Draw the stars
+        noStroke();
+        fill(255);
+        for (let star of this.stars) {
+          circle(star.x, star.y, 3);
+        }
+      }
+    }
+
+    // ---------- Global objects ----------
+    let fishHour, fishMinute, fishSecond;
+    let desertStar;
+    let constellation;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent("sketchContainer");
+      angleMode(RADIANS);
+
+      fishHour = new Fish(1.1, 0.4, 'hour');
+      fishMinute = new Fish(0.9, 1.0, 'minute');
+      fishSecond = new Fish(0.7, 1.6, 'second');
+
+      desertStar = new SkyStar();
+      constellation = new Constellation(40);
+    }
+
+    function draw() {
+      backgroundDesert();
+      drawCactus();
+      fishHour.update();   fishHour.display();
+      fishMinute.update(); fishMinute.display();
+      fishSecond.update(); fishSecond.display();
+      desertStar.update(); desertStar.display();
+      constellation.display();
+    }
+
+    // ---------- Desert background that shifts from day to night ----------
+    function backgroundDesert() {
+      let h = hour();
+      // Map hour to two gradient colors
+      // Day (light blues) ~ Night (dark purple)
+      let topColor = lerpColor(color(50, 150, 200), color(10, 10, 35), map(h, 0, 23, 0, 1));
+      let bottomColor = lerpColor(color(230, 220, 180), color(20, 10, 5), map(h, 0, 23, 0, 1));
+
+      for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        let c = lerpColor(topColor, bottomColor, inter);
+        stroke(c);
+        line(0, y, width, y);
+      }
+    }
+
+    // ---------- Draw fractal cactus ----------
+    function drawCactus() {
+      // Angle, depth, trunk length influenced by time
+      let hr = hour() % 12;
+      let mn = minute();
+      let sc = second();
+
+      let angle = map(hr, 0, 12, 0.1, 1.0);
+      let depth = floor(map(mn, 0, 59, 4, 8));
+      let trunkLen = map(sc, 0, 59, 60, 120);
+
+      push();
+      translate(width * 0.2, height);
+      drawFractalCactus(trunkLen, depth, angle);
+      pop();
+    }
+  </script>
+</body>
+</html>

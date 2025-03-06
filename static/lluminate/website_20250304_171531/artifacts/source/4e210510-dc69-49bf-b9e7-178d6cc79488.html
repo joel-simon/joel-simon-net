@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Fireworks Sonata</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset margins, padding, and default body settings */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container fixed at 512x512 so it fits in a 512x512 iframe */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Hover overlay initially hidden, appears on mouse hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.6);
+    }
+
+    /* Show instructions on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Fireworks Sonata<br><br>
+        • New firework launches each time seconds tick.<br>
+        • Hue changes by hour, explosion size depends on minute.<br>
+        • Enjoy the fleeting bursts of color as time flows.<br><br>
+        Hover away to watch the show!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Array of fireworks
+    let fireworks = [];
+    // Track the most recent second value to trigger new firework spawns
+    let lastSecond = -1;
+    
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      colorMode(HSB, 360, 100, 100);
+      noStroke();
+    }
+
+    function draw() {
+      // Slightly transparent background to create a trailing effect
+      background(0, 0, 0, 20);
+
+      // Get the current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // If the second changes, launch a new firework
+      if (s !== lastSecond) {
+        lastSecond = s;
+        // Create a new Firework with attributes influenced by real time
+        fireworks.push(new Firework(h, m));
+      }
+
+      // Update and display all fireworks
+      for (let i = fireworks.length - 1; i >= 0; i--) {
+        fireworks[i].update();
+        fireworks[i].display();
+        if (fireworks[i].done()) {
+          fireworks.splice(i, 1);
+        }
+      }
+    }
+
+    // Firework class
+    class Firework {
+      constructor(h, m) {
+        // Launch position
+        this.x = random(width);
+        this.y = height;
+        // Upward velocity
+        this.vy = random(-9, -7);
+        // Horizontal drift
+        this.vx = random(-1, 1);
+        // State: false = rising, true = exploded
+        this.exploded = false;
+        // Pick a hue based on the hour (loop up to 360)
+        this.hue = map(h, 0, 23, 0, 360);
+        // Explosion size depends on the minute
+        this.explosionSize = map(m, 0, 59, 50, 120);
+        // Sparks array
+        this.sparks = [];
+      }
+
+      update() {
+        if (!this.exploded) {
+          // Move upward until velocity reduces
+          this.x += this.vx;
+          this.y += this.vy;
+          this.vy += 0.2; // gravity
+
+          // If velocity flips downward, explode
+          if (this.vy >= 0) {
+            this.explode();
+          }
+        } else {
+          // Update sparks
+          for (let s of this.sparks) {
+            s.update();
+          }
+        }
+      }
+
+      display() {
+        if (!this.exploded) {
+          // Draw the rising firework
+          fill(this.hue, 100, 100);
+          ellipse(this.x, this.y, 5);
+        } else {
+          // Draw sparks
+          for (let s of this.sparks) {
+            s.display();
+          }
+        }
+      }
+
+      explode() {
+        this.exploded = true;
+        // Create sparks in all directions
+        for (let i = 0; i < this.explosionSize; i++) {
+          this.sparks.push(new Spark(this.x, this.y, this.hue));
+        }
+      }
+
+      done() {
+        // If exploded, check sparks to see if they're finished
+        if (this.exploded) {
+          for (let s of this.sparks) {
+            if (!s.done()) return false;
+          }
+          return true;
+        }
+        return false;
+      }
+    }
+
+    // Spark class for the explosion particles
+    class Spark {
+      constructor(x, y, hue) {
+        this.x = x;
+        this.y = y;
+        // Velocity in random direction
+        let angle = random(TWO_PI);
+        let speed = random(2, 5);
+        this.vx = cos(angle) * speed;
+        this.vy = sin(angle) * speed;
+        this.life = 255;
+        this.hue = hue;
+      }
+
+      update() {
+        // Move
+        this.x += this.vx;
+        this.y += this.vy;
+        // Apply gravity
+        this.vy += 0.1;
+        // Fade
+        this.life -= 4;
+      }
+
+      display() {
+        fill(this.hue, 100, 100, this.life / 255 * 100);
+        ellipse(this.x, this.y, 5);
+      }
+
+      done() {
+        return (this.life <= 0);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Lightning Storm</title>
+  <style>
+    /* Overall page styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100vh;
+      width: 100vw;
+      display: grid;
+      place-items: center;
+    }
+    /* Tooltip container */
+    .info-tip {
+      position: relative;
+      font-family: sans-serif;
+      user-select: none;
+      cursor: pointer;
+      color: #fff;
+      margin-bottom: 0.5em;
+    }
+    /* Tooltip content (hidden by default) */
+    .info-content {
+      visibility: hidden;
+      width: 300px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.9em;
+      line-height: 1.4em;
+      z-index: 1;
+    }
+    /* Show the text when hovering over the container */
+    .info-tip:hover .info-content {
+      visibility: visible;
+    }
+    /* Ensure the canvas is exactly 512x512 with no extra scrollbars */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="info-tip">
+    Hover for instructions
+    <div class="info-content">
+      Time Lightning Storm: 
+      • Lightning bolts intensify every 10 seconds. 
+      • Bolt color changes each hour. 
+      • Press SPACE to toggle thunder (visual effect).
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      TIME LIGHTNING STORM
+      ======================
+      A dynamic storm that visualizes the passage of time:
+      - The hour determines the hue for lightning bolts
+      - Every 10-second mark, a surge of bolts appears
+      - Press SPACE to toggle an extra thunder effect (visual flicker)
+    */
+
+    let bolts = [];
+    let lastSecond = -1;
+    let thunderActive = false;
+    let flickerFrames = 0;
+
+    class Bolt {
+      constructor(xStart, yStart, xEnd, yEnd, hue, intensity) {
+        this.xStart = xStart;
+        this.yStart = yStart;
+        this.xEnd = xEnd;
+        this.yEnd = yEnd;
+        this.hue = hue;
+        this.intensity = intensity;
+        this.alpha = 255;          // fades over time
+        this.fadeSpeed = 6;        // how quickly it disappears
+        this.segments = [];        // to create a 'zigzag' effect
+        this.createSegments(6);
+      }
+
+      createSegments(count) {
+        // break the line into random segments
+        let segmentPoints = [];
+        segmentPoints.push({x: this.xStart, y: this.yStart});
+        for (let i = 1; i < count; i++) {
+          let t = i / count;
+          let midX = lerp(this.xStart, this.xEnd, t);
+          let midY = lerp(this.yStart, this.yEnd, t);
+          // random offset to create a jagged path
+          midX += random(-10, 10) * this.intensity;
+          midY += random(-10, 10) * this.intensity;
+          segmentPoints.push({x: midX, y: midY});
+        }
+        segmentPoints.push({x: this.xEnd, y: this.yEnd});
+        this.segments = segmentPoints;
+      }
+
+      update() {
+        this.alpha -= this.fadeSpeed;
+      }
+
+      display() {
+        strokeWeight(2);
+        stroke(this.hue, 255, 255, this.alpha);
+        noFill();
+        beginShape();
+        for (let pt of this.segments) {
+          vertex(pt.x, pt.y);
+        }
+        endShape();
+      }
+
+      isDone() {
+        return this.alpha <= 0;
+      }
+    }
+
+    function setup() {
+      createCanvas(512, 512);
+      colorMode(HSB, 255);
+      frameRate(30);
+    }
+
+    function draw() {
+      // Slightly dark background to see the lightning
+      background(0, 0.1);
+      
+      let h = hour();
+      let s = second();
+
+      // Check if the second changed
+      if (s !== lastSecond) {
+        lastSecond = s;
+        // Bolt color depends on hour (wrap at 24 for variety)
+        let hueVal = map(h % 24, 0, 23, 0, 255);
+
+        // Every 10 seconds, spawn a burst
+        if (s % 10 === 0) {
+          for (let i = 0; i < 6; i++) {
+            let x1 = random(width);
+            let x2 = x1 + random(-30, 30);
+            let bolt = new Bolt(x1, 0, x2, height, hueVal, 1.25);
+            bolts.push(bolt);
+          }
+        } else {
+          // Spawn a single bolt
+          let x1 = random(width);
+          let x2 = x1 + random(-20, 20);
+          let bolt = new Bolt(x1, 0, x2, height, hueVal, 0.75);
+          bolts.push(bolt);
+        }
+      }
+
+      // If thunder effect toggled, flicker the background
+      if (thunderActive && random(1) < 0.1) {
+        flickerFrames = 2; // short flicker
+      }
+      if (flickerFrames > 0) {
+        background(255, 50);
+        flickerFrames--;
+      }
+
+      // Update and show all bolts
+      for (let i = bolts.length - 1; i >= 0; i--) {
+        bolts[i].update();
+        bolts[i].display();
+        if (bolts[i].isDone()) {
+          bolts.splice(i, 1);
+        }
+      }
+    }
+
+    function keyPressed() {
+      // Toggle thunder effect (visual flicker) with SPACE
+      if (key === ' ') {
+        thunderActive = !thunderActive;
+      }
+    }
+  </script>
+</body>
+</html>

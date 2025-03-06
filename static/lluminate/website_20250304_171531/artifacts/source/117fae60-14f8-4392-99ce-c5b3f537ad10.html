@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Desert Bubbles Time Display</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center the page content and give a neutral background */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f7f7f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #444;
+      padding: 8px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 200px;
+      z-index: 1;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      This display shifts from day to night based on the hour.
+      The camel moves with the minutes. Rising bubbles change color with seconds and grow with hours.
+    </div>
+  </div>
+
+  <script>
+    let bubbles = [];
+    let lastSecond = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      noStroke();
+      // Initialize a small number of bubbles
+      for (let i = 0; i < 15; i++) {
+        bubbles.push(new Bubble());
+      }
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Draw desert background
+      drawDesertBackground(hr);
+
+      // Draw dunes
+      drawDunes();
+
+      // Draw a moving camel silhouette
+      drawCamel(mn);
+
+      // Update and display bubbles
+      updateBubbles(hr, sc);
+
+      // Possibly add a new bubble each time the second changes
+      if (sc != lastSecond) {
+        bubbles.push(new Bubble());
+        lastSecond = sc;
+      }
+
+      // Display a small clock in the corner
+      textSize(16);
+      fill(255);
+      textAlign(RIGHT, TOP);
+      text(nf(hr,2) + ":" + nf(mn,2) + ":" + nf(sc,2), width - 10, 10);
+    }
+
+    // Draw a gradient sky changing from day to night
+    function drawDesertBackground(hr) {
+      // We treat hours 6-18 as day, 18-24 & 0-6 as night
+      let c1, c2;
+      if (hr >= 6 && hr < 18) {
+        // Daytime gradient
+        c1 = color(135, 206, 235); // sky blue top
+        c2 = color(220, 240, 255); // lighter near horizon
+      } else {
+        // Nighttime gradient
+        c1 = color(5, 15, 50);   // deep blue top
+        c2 = color(20, 30, 65);  // slightly lighter near horizon
+      }
+      for (let y = 0; y < height; y++) {
+        let lerpAmt = map(y, 0, height, 0, 1);
+        let c = lerpColor(c1, c2, lerpAmt);
+        stroke(c);
+        line(0, y, width, y);
+      }
+    }
+
+    // Simple dune shapes
+    function drawDunes() {
+      fill(194, 178, 128);
+      ellipse(width * 0.3, height * 0.8, width * 0.9, height * 0.4);
+      ellipse(width * 0.7, height * 0.85, width, height * 0.5);
+    }
+
+    // A silhouette camel that moves horizontally with the minutes
+    function drawCamel(mn) {
+      // Camel position
+      let xPos = map(mn, 0, 59, 50, width - 50);
+      fill(80, 50, 20); 
+      // Body
+      ellipse(xPos, height * 0.7, 60, 30);
+      // Humps
+      ellipse(xPos - 15, height * 0.65, 30, 15);
+      ellipse(xPos + 10, height * 0.65, 30, 15);
+      // Neck and head
+      rect(xPos + 15, height * 0.62, 10, 15);
+      ellipse(xPos + 20, height * 0.58, 15, 12);
+      // Legs
+      rect(xPos - 15, height * 0.72, 5, 20);
+      rect(xPos - 5, height * 0.72, 5, 20);
+      rect(xPos + 5, height * 0.72, 5, 20);
+      rect(xPos + 15, height * 0.72, 5, 20);
+    }
+
+    // Bubbles that rise from the bottom
+    function updateBubbles(hr, sc) {
+      for (let i = bubbles.length - 1; i >= 0; i--) {
+        bubbles[i].move();
+        bubbles[i].display(hr, sc);
+        if (bubbles[i].offScreen()) {
+          bubbles.splice(i, 1);
+        }
+      }
+    }
+
+    // Bubble class
+    class Bubble {
+      constructor() {
+        this.x = random(width);
+        this.y = height + 10;
+        this.speed = random(1, 2);
+        this.diameter = random(10, 20);
+      }
+      move() {
+        this.y -= this.speed;
+      }
+      display(hr, sc) {
+        // Color changes with seconds
+        let bubbleColor = color(map(sc, 0, 59, 0, 255), 100, map(sc, 0, 59, 255, 0));
+        fill(bubbleColor, 180);
+
+        // Size grows with hour (mod 12 to keep it changing)
+        let sizeBoost = map(hr % 12, 0, 11, 0, 40);
+        ellipse(this.x, this.y, this.diameter + sizeBoost);
+      }
+      offScreen() {
+        return (this.y < -this.diameter);
+      }
+    }
+  </script>
+</body>
+</html>

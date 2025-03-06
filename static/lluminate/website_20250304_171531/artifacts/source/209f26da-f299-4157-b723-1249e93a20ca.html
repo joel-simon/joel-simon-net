@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Odyssey: A Grand Combination</title>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: sans-serif;
+      overflow: hidden;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container (for iframe) */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      border: none;
+      overflow: hidden;
+      background: #111;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    .instructions-text {
+      position: absolute;
+      width: 80%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Odyssey: A Grand Combination</strong><br><br>
+        • The wave background shifts with the hour & minute.<br>
+        • A fractal tree in the left area grows by hour.<br>
+        • A gear in the top-right rotates faster as minutes pass.<br>
+        • The candle at bottom-right flickers by seconds.<br>
+        • Bubbles float upward and shift color with each second.<br>
+        • A digital clock shows real time at the bottom-left.<br><br>
+        Hover for instructions and enjoy!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time Odyssey: A Grand Combination
+      Combines multiple time-based elements:
+      1. Wave background reacting to hour & minute.
+      2. Fractal tree (hour-based).
+      3. Rotating gear in the top-right (minute-based).
+      4. Candle flicker (second-based).
+      5. Floating bubbles with color mapped to seconds.
+      6. Digital clock in bottom-left corner.
+
+      All within a 512x512 canvas.
+    */
+
+    const CANVAS_SIZE = 512;
+
+    // For fractal tree
+    let treeBranches = 6; // base recursion depth will vary with hour
+    const MAX_DEPTH = 8;
+
+    // For gear rotation
+    let gearAngle = 0;
+    
+    // Candle flicker
+    let candleFlickerBase = 50;
+    
+    // Bubbles
+    let bubbles = [];
+    const NUM_BUBBLES = 20;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      initBubbles();
+      noStroke();
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // 1) Wave background
+      drawWaves(hr, mn);
+
+      // 2) Fractal tree in left side
+      push();
+      translate(width*0.2, height*0.7);
+      let depth = map(hr, 0, 23, 3, MAX_DEPTH);
+      drawFractalTree(depth, 80);
+      pop();
+
+      // 3) Rotating gear (top-right corner)
+      push();
+      translate(width*0.8, height*0.2);
+      gearAngle += 0.05 + 0.01 * mn; // speeds up with minute
+      rotate(gearAngle);
+      drawGear(60, 12);
+      pop();
+
+      // 4) Candle flicker at bottom-right
+      push();
+      translate(width*0.85, height*0.8);
+      drawCandle(sc);
+      pop();
+
+      // 5) Bubbles floating up
+      drawBubbles(sc);
+
+      // 6) Digital clock bottom-left
+      drawClock(hr, mn, sc);
+    }
+
+    /* 
+      1) WAVE BACKGROUND:
+         Layers of sine waves whose amplitude or phase changes with hour & minute.
+    */
+    function drawWaves(hr, mn) {
+      background(10); // base
+      let waveCount = 4;
+      for (let i = 0; i < waveCount; i++) {
+        let waveOffset = i * 50;
+        let waveColor = color(30 + i*20, 100 + i*30, 200 + i*10, 80);
+        fill(waveColor);
+        noStroke();
+        beginShape();
+        vertex(0, height);
+        // wave pattern
+        for (let x = 0; x <= width; x += 10) {
+          let freq = 0.003 + 0.0002 * mn; // minute modifies wave frequency
+          let amp = 15 + hr * 1.2;        // hour modifies wave amplitude
+          let y = height - waveOffset - (amp * sin(x * freq + frameCount * 0.02 + i*2));
+          vertex(x, y);
+        }
+        vertex(width, height);
+        endShape(CLOSE);
+      }
+    }
+
+    /*
+      2) FRACTAL TREE:
+         Draw a simple fractal tree with a recursion depth based on hour.
+    */
+    function drawFractalTree(depth, length) {
+      stroke(120, 80, 50);
+      strokeWeight(map(depth, 3, MAX_DEPTH, 5, 1));
+      line(0, 0, 0, -length);
+      translate(0, -length);
+      if (depth > 0) {
+        push();
+          rotate(25);
+          drawFractalTree(depth - 1, length * 0.7);
+        pop();
+        push();
+          rotate(-20);
+          drawFractalTree(depth - 1, length * 0.75);
+        pop();
+      }
+    }
+
+    /*
+      3) GEAR:
+         Basic gear shape that rotates. The rate is influenced by the current minute.
+    */
+    function drawGear(radius, toothCount) {
+      stroke(200);
+      strokeWeight(2);
+      fill(100);
+      // Gear body
+      let angleStep = 360 / toothCount;
+      beginShape();
+      for (let a = 0; a < 360; a += angleStep) {
+        let rOut = radius * 1.1;
+        let rIn = radius * 0.8;
+        vertex(rOut * cos(a), rOut * sin(a));
+        vertex(rIn * cos(a + angleStep / 2), rIn * sin(a + angleStep / 2));
+      }
+      endShape(CLOSE);
+      // Center circle
+      fill(50);
+      noStroke();
+      ellipse(0, 0, radius*0.5, radius*0.5);
+    }
+
+    /*
+      4) CANDLE:
+         Candle that flickers with the seconds. 
+         The flame's vertical flicker changes with sin of seconds.
+    */
+    function drawCandle(sc) {
+      noStroke();
+      // Candle body
+      fill(200);
+      rectMode(CENTER);
+      rect(0, 0, 20, 60);
+      // Flicker
+      let flicker = candleFlickerBase + 5 * sin(frameCount + sc * 10);
+      fill(255, 150, 0);
+      ellipse(0, -35, 10, flicker * 0.6);
+      fill(255, 220, 50);
+      ellipse(0, -35, 6, flicker * 0.3);
+    }
+
+    /*
+      5) BUBBLES:
+         Float upward, changing color with seconds.
+    */
+    function initBubbles() {
+      for (let i = 0; i < NUM_BUBBLES; i++) {
+        bubbles.push({
+          x: random(width),
+          y: random(height, height * 1.5),
+          diameter: random(10, 20),
+          speed: random(0.5, 2)
+        });
+      }
+    }
+
+    function drawBubbles(sc) {
+      colorMode(HSB, 360, 100, 100);
+      for (let b of bubbles) {
+        let hueVal = map(sc + b.x*0.1, 0, 60, 0, 360) % 360;
+        fill(hueVal, 60, 100, 70);
+        noStroke();
+        ellipse(b.x, b.y, b.diameter);
+        // Move bubble
+        b.y -= b.speed;
+        if(b.y < -20) {
+          b.y = random(height, height * 1.5);
+          b.x = random(width);
+        }
+      }
+      colorMode(RGB, 255);
+    }
+
+    /*
+      6) DIGITAL CLOCK in bottom-left corner.
+    */
+    function drawClock(hr, mn, sc) {
+      push();
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, BASELINE);
+      text(`${nf(hr,2)}:${nf(mn,2)}:${nf(sc,2)}`, 10, height - 10);
+      pop();
+    }
+  </script>
+</body>
+</html>

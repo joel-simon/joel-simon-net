@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Vortex</title>
+  <!-- Include p5.js -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #0f0f0f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Hover overlay for instructions (initially hidden) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.75);
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Vortex<br><br>
+        • Background color shifts with the hour.<br>
+        • Vortex radius changes based on minutes.<br>
+        • Spin velocity increases as seconds pass.<br>
+        • Internal arcs glow brighter every second.<br>
+        Hover away to watch the swirl!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Vortex:
+      - The background hue is influenced by the current hour.
+      - The vortex radius expands or shrinks based on the current minute.
+      - The rotation speed grows with the current second.
+      - Sub-arcs pulse with brightness each second.
+    */
+    
+    const CANVAS_SIZE = 512;
+    let angleOffset = 0;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      colorMode(HSB);
+      noStroke();
+    }
+
+    function draw() {
+      let h = hour();     // 0-23
+      let m = minute();   // 0-59
+      let s = second();   // 0-59
+
+      // Map hour to a background hue (24-hour cycle)
+      let hueVal = map(h, 0, 23, 0, 360);
+      background(hueVal, 80, 30);
+
+      // Calculate vortex radius from minutes
+      let vortexRadius = map(m, 0, 59, 50, 220);
+
+      // Calculate spin speed from seconds
+      let spinSpeed = map(s, 0, 59, 0.2, 5);
+
+      // Rotate the entire scene
+      angleOffset += spinSpeed * 0.05;
+      push();
+      translate(width / 2, height / 2);
+      rotate(angleOffset);
+
+      // Draw multiple arcs forming a "vortex" shape
+      for (let i = 0; i < 12; i++) {
+        push();
+        rotate(i * (360 / 12));
+        let arcHue = map(i, 0, 11, 0, 360);
+        let glow = map(sin(frameCount + i * 10), -1, 1, 0, 15) + s * 0.3;
+        fill((arcHue + hueVal) % 360, 80, 50 + glow);
+        arc(0, 0, vortexRadius * 2, vortexRadius * 2, 0, 30);
+        pop();
+      }
+
+      // Inner swirl
+      fill((hueVal + 180) % 360, 90, 80 + sin(frameCount * 2) * 10);
+      ellipse(0, 0, vortexRadius * 0.25, vortexRadius * 0.25);
+
+      pop();
+    }
+  </script>
+</body>
+</html>

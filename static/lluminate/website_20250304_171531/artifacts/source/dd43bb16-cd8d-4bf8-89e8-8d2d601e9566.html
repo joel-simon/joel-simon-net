@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Orbital Playground</title>
+  <style>
+    /* Basic setup for a black background and no margins */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* Keep everything to 512x512 for the iframe */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (visible on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+      max-width: 450px;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Orbital Playground</strong><br><br>
+        • Each ring represents a different layer of time: hours, minutes, and seconds.<br>
+        • Hour rings revolve at a moderate pace with a color shift as the hour progresses.<br>
+        • Minute orbiters pulsate in size based on the current minute.<br>
+        • Second orbiters flash and rotate lively in sync with every second.<br>
+        • Current digital time is displayed at the center.<br><br>
+        Hover to see instructions. Enjoy!
+      </div>
+    </div>
+  </div>
+  
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let canvasSize = 512;
+    let hourOrbiters = [];
+    let minuteOrbiters = [];
+    let secondOrbiters = [];
+
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      
+      // Pre-generate orbiters
+      for (let i = 0; i < 12; i++) {
+        hourOrbiters.push(new Orbiter(70 + i * 3, random(360)));
+      }
+      for (let i = 0; i < 60; i++) {
+        minuteOrbiters.push(new Orbiter(120 + i * 0.8, random(360)));
+      }
+      for (let i = 0; i < 60; i++) {
+        secondOrbiters.push(new Orbiter(220 + i * 0.5, random(360)));
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      translate(width / 2, height / 2);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Show digital time at the center
+      push();
+      noStroke();
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(16);
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      text(displayHour + ":" + nf(mn, 2) + ":" + nf(sc, 2) + " " + ampm, 0, 0);
+      pop();
+
+      // Draw hour orbiters
+      // They change color more subtly, revolve slower
+      for (let i = 0; i < hourOrbiters.length; i++) {
+        let a = (frameCount * 0.02) + i * 10;
+        hourOrbiters[i].update(a);
+        hourOrbiters[i].show(getHourColor(hr, i));
+      }
+
+      // Draw minute orbiters
+      // They scale in size based on the minute
+      for (let i = 0; i < minuteOrbiters.length; i++) {
+        let a = (frameCount * 0.1) + i * 8;
+        minuteOrbiters[i].update(a);
+        let scaleFactor = map(mn, 0, 59, 0.5, 2);
+        minuteOrbiters[i].show(getMinuteColor(mn), scaleFactor);
+      }
+
+      // Draw second orbiters
+      // They flash color based on seconds, revolve faster
+      for (let i = 0; i < secondOrbiters.length; i++) {
+        let a = (frameCount * 0.5) + i * 6;
+        secondOrbiters[i].update(a);
+        let c = getSecondColor(sc, i);
+        secondOrbiters[i].show(c);
+      }
+    }
+
+    // Orbiter class
+    class Orbiter {
+      constructor(radius, angle) {
+        this.radius = radius;
+        this.angle = angle;
+      }
+      update(step) {
+        // just revolve
+        this.angle += step * 0.01;
+      }
+      show(col, scaleFactor=1) {
+        push();
+        rotate(this.angle);
+        translate(this.radius, 0);
+        noStroke();
+        fill(col);
+        ellipse(0, 0, 12 * scaleFactor, 12 * scaleFactor);
+        pop();
+      }
+    }
+
+    // Color mapping functions
+    function getHourColor(hr, i) {
+      // Subtle gradient shift by hour
+      let baseHue = map(hr, 0, 23, 0, 255);
+      colorMode(HSB);
+      let c = color((baseHue + i * 2) % 255, 200, 200);
+      colorMode(RGB);
+      return c;
+    }
+
+    function getMinuteColor(mn) {
+      // More vibrant changes each minute
+      let baseHue = map(mn, 0, 59, 0, 255);
+      colorMode(HSB);
+      let c = color(baseHue, 255, 255);
+      colorMode(RGB);
+      return c;
+    }
+
+    function getSecondColor(sc, i) {
+      // Flashy effect each second
+      let intensity = map(sc, 0, 59, 50, 255);
+      colorMode(HSB);
+      let c = color((i * 4) % 255, 255, intensity);
+      colorMode(RGB);
+      return c;
+    }
+
+  </script>
+</body>
+</html>

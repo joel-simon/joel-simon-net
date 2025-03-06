@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Origami</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center the page content and give a neutral background */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f7f7f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #444;
+      padding: 8px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 220px;
+      z-index: 1;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      This Time Origami display folds in real-time: 
+      • The number of folds depends on the hour. 
+      • The hue shifts every minute. 
+      • The shape pulses with seconds.
+    </div>
+  </div>
+
+  <script>
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      angleMode(RADIANS);
+      colorMode(HSB, 360, 100, 100);
+    }
+
+    function draw() {
+      background(0, 0, 95); // light gray background in HSB
+
+      // Capture current time
+      let hr = hour() % 12;  // 0-11
+      let mn = minute();     // 0-59
+      let sc = second();     // 0-59
+
+      // Fractions
+      let minuteFraction = mn / 60; // 0..1
+      let secondFraction = sc / 60; // 0..1
+
+      // Origami fold count (hours + something so we never get zero)
+      let numFolds = hr + 1; 
+      // Hue changes with minutes (map 0..59 -> 0..360)
+      let fillHue = map(mn, 0, 59, 0, 360);
+      // Pulsing scale factor for seconds
+      let pulse = map(sin(frameCount * 0.1 + secondFraction * TWO_PI), -1, 1, 0.8, 1.2);
+
+      push();
+      translate(width/2, height/2);
+      scale(pulse);
+
+      // Draw radial "origami" folds
+      noStroke();
+      fill(fillHue, 70, 90); 
+      let angleStep = TWO_PI / numFolds;
+      for (let i = 0; i < numFolds; i++) {
+        push();
+        rotate(i * angleStep);
+        // A simple "fold" shape
+        beginShape();
+        vertex(0, 0);
+        // Outer radius depends slightly on minuteFraction
+        let outerRadius = 100 + minuteFraction * 100;
+        vertex(outerRadius, -10);
+        vertex(outerRadius, 10);
+        endShape(CLOSE);
+        pop();
+      }
+
+      // Inner circle that changes color with seconds
+      noStroke();
+      let secondHue = map(sc, 0, 59, 200, 360);
+      fill(secondHue, 70, 100);
+      ellipse(0, 0, 60, 60);
+
+      // Outer swirl lines, rotating with secondFraction
+      strokeWeight(2);
+      stroke((fillHue + 180) % 360, 50, 90); 
+      noFill();
+      rotate(secondFraction * TWO_PI);
+      arc(0, 0, 220, 220, 0, PI/2);
+      rotate(HALF_PI);
+      arc(0, 0, 220, 220, 0, PI/2);
+
+      pop();
+
+      // Draw digital time
+      fill(0, 0, 20); 
+      noStroke();
+      textSize(24);
+      textAlign(CENTER, CENTER);
+      text(
+        nf(hour(), 2) + ':' + nf(minute(), 2) + ':' + nf(second(), 2),
+        width / 2,
+        height - 30
+      );
+    }
+  </script>
+</body>
+</html>

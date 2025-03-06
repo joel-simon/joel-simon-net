@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creative Time Display - Time Fractal Tree</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center the page content and give a neutral background */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f7f7f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #444;
+      padding: 8px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 220px;
+      z-index: 1;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      This fractal tree’s angle changes every hour, depth changes with minutes, and trunk length changes every second. Enjoy the evolving time-tree!
+    </div>
+  </div>
+
+  <script>
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(RADIANS);
+      strokeCap(ROUND);
+    }
+
+    function draw() {
+      background(230);
+
+      // Retrieve current time
+      let hr = hour() % 12;  // 12-hour basis
+      let mn = minute();
+      let sc = second();
+
+      // Map time to tree parameters
+      let branchAngle = map(hr, 0, 12, 0, PI / 2);   // Hour influences bending angle
+      let depth = floor(map(mn, 0, 60, 5, 10));     // Minute controls recursion depth
+      let trunkLen = map(sc, 0, 60, 40, 150);       // Second adjusts trunk length
+
+      // Draw the fractal tree from bottom center
+      push();
+      translate(width / 2, height);
+      drawFractalTree(trunkLen, depth, branchAngle);
+      pop();
+
+      // Display digital time near the bottom
+      noStroke();
+      fill(60);
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      text(nf(hour(),2) + ':' + nf(minute(),2) + ':' + nf(second(),2), width / 2, height - 30);
+    }
+
+    // Recursive function to draw a fractal tree
+    function drawFractalTree(len, level, angle) {
+      if (level === 0) return; // Base case
+
+      // Main branch
+      strokeWeight(map(level, 1, 10, 1, 5));
+      stroke(80, 50 + 15 * (10 - level), 30);
+      line(0, 0, 0, -len);
+
+      // Move to the end of the current branch
+      translate(0, -len);
+
+      // Draw left subtree
+      push();
+      rotate(-angle);
+      drawFractalTree(len * 0.7, level - 1, angle);
+      pop();
+
+      // Draw right subtree
+      push();
+      rotate(angle);
+      drawFractalTree(len * 0.7, level - 1, angle);
+      pop();
+    }
+  </script>
+</body>
+</html>

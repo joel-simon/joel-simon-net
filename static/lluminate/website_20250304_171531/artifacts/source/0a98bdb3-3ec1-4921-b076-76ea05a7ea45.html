@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>City Skyline Timepiece</title>
+  <style>
+    /* Page styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100vh;
+      width: 100vw;
+      display: grid;
+      place-items: center;
+    }
+    /* Tooltip container */
+    .info-tip {
+      position: relative;
+      font-family: sans-serif;
+      user-select: none;
+      cursor: pointer;
+      color: #fff;
+      margin-bottom: 0.5em;
+    }
+    /* Tooltip content (hidden by default) */
+    .info-content {
+      visibility: hidden;
+      width: 300px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.9em;
+      line-height: 1.4em;
+      z-index: 1;
+    }
+    /* Show the text when hovering over the container */
+    .info-tip:hover .info-content {
+      visibility: visible;
+    }
+    /* Ensure the canvas is exactly 512x512 with no extra scrollbars */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="info-tip">
+    Hover for instructions
+    <div class="info-content">
+      • Skyline color changes with the hour. <br>
+      • Windows flicker each second, with color set by the minute. <br>
+      • Press "W" to toggle a wavy effect on the buildings.
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      CITY SKYLINE TIMEPIECE
+      ======================
+      - The sky color transitions over the hour (0-23).
+      - The minute determines the color of windows in the buildings.
+      - Windows flicker each second.
+      - Press 'W' to toggle a wavy effect on the buildings.
+    */
+
+    let buildings = [];
+    let waveActive = false;
+
+    class Building {
+      constructor(x, w, h) {
+        this.x = x;
+        this.w = w;
+        this.h = h;
+      }
+
+      display(offsetY) {
+        // Shift building top if wave effect is active
+        let waveOffset = waveActive ? offsetY : 0;
+
+        // Draw main building body
+        noStroke();
+        fill(40); // Dark gray building
+        rect(this.x, height - this.h + waveOffset, this.w, this.h - waveOffset);
+
+        // Draw windows
+        // We'll use minute() to define the window color, second() to flicker windows
+        let m = minute();
+        let s = second(); 
+        // Flicker seed so windows change each second
+        randomSeed(s + this.x); 
+        let winCols = color(map(m, 0, 59, 20, 255), map(m, 0, 59, 200, 50), map(m, 0, 59, 80, 200));
+        fill(winCols);
+        let rows = floor(this.h / 20);
+        let cols = floor(this.w / 10);
+
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            // Randomly determine if window is lit
+            if (random(1) < 0.5) {
+              let winX = this.x + c*10 + 2;
+              let winY = height - (r+1)*20 + waveOffset;
+              rect(winX, winY, 6, 10);
+            }
+          }
+        }
+      }
+    }
+
+    function setup() {
+      createCanvas(512, 512);
+      // Create skyline of random buildings
+      let xPos = 0;
+      while (xPos < width) {
+        let w = random(30, 60);
+        let h = random(100, 300);
+        buildings.push(new Building(xPos, w, h));
+        xPos += w;
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      // Sky color transitions based on hour
+      let h = hour();
+      // Map hour 0..23 to a subtle gradient color (night to midday to night again)
+      // We'll create a top-to-bottom sky gradient
+      for (let y = 0; y < height; y++) {
+        let t = map(y, 0, height, 0, 1);
+        // Interpolate from a darker color to a brighter one and back
+        // We'll do a two-part interpolation to simulate day-night cycle
+        // Example colors: night(0,0,30) ~ midday(100,180,255)
+        let dayColor = lerpColor(color(0, 0, 30), color(100, 180, 255), sin((h / 24.0) * PI));
+        stroke(lerpColor(color(0, 0, 30), dayColor, t));
+        line(0, y, width, y);
+      }
+
+      // Display buildings
+      // If wave is active, we'll offset each building top in a sine pattern
+      let waveValue = 0;
+      buildings.forEach((b, i) => {
+        waveValue = sin(frameCount * 0.02 + i * 0.5) * 10;
+        b.display(waveValue);
+      });
+    }
+
+    function keyPressed() {
+      // Toggle the wave effect with 'W'
+      if (key === 'w' || key === 'W') {
+        waveActive = !waveActive;
+      }
+    }
+  </script>
+</body>
+</html>

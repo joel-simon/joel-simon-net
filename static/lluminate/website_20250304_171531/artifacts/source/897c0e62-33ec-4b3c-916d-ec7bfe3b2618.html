@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Blended Creative Time Display</title>
+  <!-- Embedded CSS -->
+  <style>
+    /* Page layout: fill the screen, center the canvas */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #e09, #d0e);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas and the hover overlay */
+    #container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Hidden instructions overlay that appears on hover */
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background-color: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+    }
+    #overlay p {
+      text-align: center;
+      font-size: 14px;
+      margin: 0;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    /* Show overlay on container hover */
+    #container:hover #overlay {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="overlay">
+      <p>Outer ring (red) = Seconds<br>
+         Middle ring (green) = Minutes<br>
+         Inner ring (blue) = Hours<br>
+         Numeric time and rotating hands are displayed in the center.<br>
+         Hover to reveal these instructions.
+      </p>
+    </div>
+  </div>
+
+  <!-- Required p5 Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <!-- Embedded p5.js Sketch -->
+  <script>
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent("container");
+      angleMode(DEGREES);
+      textAlign(CENTER, CENTER);
+    }
+
+    function draw() {
+      background(20);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Translate and rotate so arcs begin from top (12 o'clock)
+      translate(width / 2, height / 2);
+      rotate(-90);
+
+      // Map each time component to angles
+      let secondAngle = map(sc, 0, 60, 0, 360);
+      let minuteAngle = map(mn, 0, 60, 0, 360);
+      let hourAngle   = map(hr % 12, 0, 12, 0, 360);
+
+      // Draw arcs
+      strokeWeight(8);
+      noFill();
+
+      // Seconds arc (red)
+      stroke(255, 0, 0);
+      arc(0, 0, 300, 300, 0, secondAngle);
+
+      // Minutes arc (green)
+      stroke(0, 255, 0);
+      arc(0, 0, 280, 280, 0, minuteAngle);
+
+      // Hours arc (blue)
+      stroke(0, 0, 255);
+      arc(0, 0, 260, 260, 0, hourAngle);
+
+      // Second hand (red)
+      push();
+      rotate(secondAngle);
+      stroke(255, 0, 0);
+      line(0, 0, 110, 0);
+      pop();
+
+      // Minute hand (green)
+      push();
+      rotate(minuteAngle);
+      stroke(0, 255, 0);
+      line(0, 0, 90, 0);
+      pop();
+
+      // Hour hand (blue)
+      push();
+      rotate(hourAngle);
+      stroke(0, 0, 255);
+      line(0, 0, 60, 0);
+      pop();
+
+      // Display numeric time in the center
+      rotate(90); // Rotate back for text
+      fill(255);
+      noStroke();
+      textSize(28);
+
+      let session = (hr >= 12) ? "PM" : "AM";
+      let displayHr = (hr % 12) || 12;
+      let displayMn = nf(mn, 2);
+      let displaySc = nf(sc, 2);
+      text(displayHr + ":" + displayMn + ":" + displaySc + " " + session, 0, 0);
+    }
+  </script>
+</body>
+</html>

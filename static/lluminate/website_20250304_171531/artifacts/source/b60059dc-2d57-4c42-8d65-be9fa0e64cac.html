@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creative Bouncing Ball Time Display</title>
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset margin and padding, fix the overall layout to 512x512 to fit in an iframe */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+
+    /* Container for the 512x512 canvas and hover instructions */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Instructions appear only on hover */
+    #instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      padding: 10px;
+      box-sizing: border-box;
+      background-color: rgba(255, 255, 255, 0.85);
+      color: #333;
+    }
+
+    #canvasContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="instructions">
+      A single ball bounces inside the 512x512 window. 
+      • The hour sets the gravity. 
+      • The minute sets the bounce elasticity. 
+      • The second sets the color. 
+      The current time is shown at the top. Hover away to hide these instructions.
+    </div>
+  </div>
+
+  <script>
+    let canvasSize = 512;
+    let yPos;      // Vertical position of the ball
+    let yVel = 0;  // Vertical velocity
+    let g;         // Gravity (affected by hour)
+    let e;         // Elasticity (affected by minute)
+    let ballColor; // Ball color (affected by second)
+
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent("canvasContainer");
+      textAlign(CENTER, CENTER);
+      yPos = height / 2;
+    }
+
+    function draw() {
+      // Update time-based parameters each frame
+      let h = hour();
+      let m = minute();
+      let s = second();
+      // Map hour to gravity [0.1, 1.5], minute to elasticity [0.6, 0.95], second to color
+      g = map(h, 0, 23, 0.1, 1.5);
+      e = map(m, 0, 59, 0.6, 0.95);
+      let colorValue = map(s, 0, 59, 0, 255);
+      ballColor = color(colorValue, 150, 255 - colorValue);
+
+      background(245);
+
+      // Draw time at the top
+      fill(0);
+      textSize(32);
+      text(nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2), width / 2, 40);
+
+      // Apply gravity
+      yVel += g;
+      yPos += yVel;
+
+      // Bounce off bottom
+      if (yPos + 20 > height) {
+        yPos = height - 20;
+        yVel *= -e;
+      }
+
+      // Draw the bouncing ball
+      fill(ballColor);
+      noStroke();
+      ellipse(width / 2, yPos, 40, 40);
+    }
+  </script>
+</body>
+</html>

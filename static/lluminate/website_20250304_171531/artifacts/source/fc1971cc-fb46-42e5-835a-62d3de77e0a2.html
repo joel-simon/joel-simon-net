@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Combined Time Mosaic & Swirl Star</title>
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <style>
+    /* Page layout */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* 512x512 canvas container */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip styling */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.85);
+      color: #000;
+      border: 1px solid #444;
+      padding: 8px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 300px;
+      z-index: 1;
+      box-sizing: border-box;
+    }
+
+    /* Show tooltip on hover */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      <p>
+        This display combines a time-based mosaic, a fractal swirl, and a rotating star:
+        <br><br>
+        • The mosaic squares change color with the current minute and second.<br>
+        • A swirling pattern expands and contracts based on the seconds.<br>
+        • A star in the center rotates with the minutes and has points based on the hour.<br>
+        • A digital time readout is at the bottom.<br>
+        Hover away to see it in action!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(30);
+
+      let h = hour() % 12;
+      let m = minute();
+      let s = second();
+
+      drawMosaic(m, s);
+      drawSwirl(s);
+      drawRotatingStar(h, m, s);
+      drawDigitalTime();
+    }
+
+    // Draws a mosaic-like background where each cell changes color based on the minute & second
+    function drawMosaic(m, s) {
+      let gridCount = 8; // 8x8 grid
+      let cellW = width / gridCount;
+      let cellH = height / gridCount;
+
+      for (let i = 0; i < gridCount; i++) {
+        for (let j = 0; j < gridCount; j++) {
+          // Blend minute & second to pick a color variation
+          // Mod the minute with gridCount to shift the pattern
+          let offset = (m + s) % 60;
+          let colVal = map(offset + i + j, 0, 60 + gridCount*2, 0, 255);
+          fill(colVal * 0.6, colVal * 0.4, 120 + colVal * 0.5, 100);
+          noStroke();
+          rect(i * cellW, j * cellH, cellW, cellH);
+        }
+      }
+    }
+
+    // Draw a swirl that expands and contracts based on the seconds
+    function drawSwirl(s) {
+      push();
+      translate(width / 2, height / 2);
+      let swirlSize = map(s, 0, 59, 80, 300);
+      stroke(200, 100, 255, 150);
+      strokeWeight(1.5);
+      noFill();
+
+      beginShape();
+      // Create a spiral by increasing the radius as angle increases
+      let turns = 3; 
+      for (let angle = 0; angle <= 360 * turns; angle += 5) {
+        let progress = angle / (360 * turns); // from 0 to 1
+        // Spiral radius
+        let r = swirlSize * progress;
+        let x = r * cos(angle);
+        let y = r * sin(angle);
+        curveVertex(x, y);
+      }
+      endShape();
+      pop();
+    }
+
+    // Draws a rotating star at the center
+    function drawRotatingStar(h, m, s) {
+      // Star's rotation speed and point count
+      let rotationSpeed = m + (s * 0.03);
+      let starPoints = max(5, h + 3);
+      // Scale outer radius by second
+      let starSize = map(s, 0, 59, 40, 110);
+
+      push();
+      translate(width / 2, height / 2);
+      rotate(rotationSpeed);
+      noStroke();
+      fill(255, 200, 50, 200);
+      drawStar(0, 0, starSize * 0.4, starSize, starPoints);
+      pop();
+    }
+
+    // Utility function to draw a star with a specified number of points
+    function drawStar(x, y, radius1, radius2, npoints) {
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2.0;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+
+    // Draw a digital readout of the current time
+    function drawDigitalTime() {
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      fill(255);
+      textSize(18);
+      textAlign(CENTER, CENTER);
+      text(hDisp + ':' + mDisp + ':' + sDisp, width / 2, height - 20);
+    }
+  </script>
+</body>
+</html>

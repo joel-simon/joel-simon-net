@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Creative Time Display</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic reset and layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #666;
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    
+    /* Container that holds the canvas and the tooltip */
+    #sketch-container {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+    
+    /* Tooltip styling (hidden by default) */
+    .tooltip {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: rgba(0,0,0,0.6);
+      color: #fff;
+      text-align: center;
+      padding: 10px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    
+    /* Show tooltip on hover */
+    #sketch-container:hover .tooltip {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    
+    /* Make the canvas fill the container exactly */
+    canvas {
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+
+<div id="sketch-container">
+  <!-- Tooltip instructions: show on hover only -->
+  <div class="tooltip">
+    Hovering over the clock! This is a creative time display:<br>
+    The colored arcs represent hours, minutes, and seconds.
+  </div>
+</div>
+
+<script>
+  function setup() {
+    // Create a 512x512 canvas and place it inside the #sketch-container
+    let cnv = createCanvas(512, 512);
+    cnv.parent('sketch-container');
+    angleMode(DEGREES); // Easier for arcs
+  }
+
+  function draw() {
+    background(255);
+
+    let h = hour();
+    let m = minute();
+    let s = second();
+
+    translate(width / 2, height / 2);
+    strokeWeight(10);
+    noFill();
+
+    // Seconds arc (red)
+    let endS = map(s, 0, 60, 0, 360);
+    stroke(255, 0, 0);
+    arc(0, 0, 300, 300, -90, endS - 90);
+
+    // Minutes arc (green)
+    let endM = map(m, 0, 60, 0, 360);
+    stroke(0, 255, 0);
+    arc(0, 0, 280, 280, -90, endM - 90);
+
+    // Hours arc (blue)
+    let endH = map(h % 12, 0, 12, 0, 360);
+    stroke(0, 0, 255);
+    arc(0, 0, 260, 260, -90, endH - 90);
+
+    // Digital readout in the center
+    noStroke();
+    fill(0);
+    textSize(24);
+    textAlign(CENTER, CENTER);
+    let displayH = nf(h, 2);
+    let displayM = nf(m, 2);
+    let displayS = nf(s, 2);
+    text(displayH + ":" + displayM + ":" + displayS, 0, 0);
+  }
+</script>
+
+</body>
+</html>

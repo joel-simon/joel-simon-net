@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Fireworks</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for better visibility */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Fireworks</strong><br><br>
+        • Background color changes based on the hour.<br>
+        • A new firework is launched every second.<br>
+        • The firework intensity is driven by the minute.<br>
+        • Current time is shown in the top-left corner.<br><br>
+        Hover to read instructions; watch the fireworks evolve each second.
+      </div>
+    </div>
+  </div>
+  
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+    let fireworks = [];
+    let lastSecond = -1;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      colorMode(RGB);
+    }
+
+    function draw() {
+      // Acquire current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Create a background color that shifts with hour
+      // e.g., red & green scale with hr, add a bit of blue for dimension
+      background(hr * 10, hr * 4, hr * 3);
+
+      // Launch a new firework once each new second
+      if (sc !== lastSecond) {
+        let fireworkCount = map(mn, 0, 59, 10, 80); // # of particles depends on current minute
+        fireworks.push(new Firework(random(width * 0.2, width * 0.8), height, fireworkCount));
+        lastSecond = sc;
+      }
+
+      // Update and draw each firework
+      for (let i = fireworks.length - 1; i >= 0; i--) {
+        fireworks[i].update();
+        fireworks[i].show();
+        // Remove finished fireworks
+        if (fireworks[i].done()) {
+          fireworks.splice(i, 1);
+        }
+      }
+
+      // Display the current time in the top-left corner
+      fill(255);
+      noStroke();
+      textSize(16);
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 10, 20);
+    }
+
+    // Firework class
+    class Firework {
+      constructor(x, y, numParticles) {
+        this.particles = [];
+        // Launch upward from base location
+        this.x = x;
+        this.y = y;
+        // Random color for each firework
+        this.col = color(random(128, 255), random(128, 255), random(128, 255));
+        
+        // Create particles
+        for (let i = 0; i < numParticles; i++) {
+          this.particles.push(new Particle(this.x, this.y, this.col));
+        }
+      }
+      update() {
+        // Update all particles
+        for (let p of this.particles) {
+          p.update();
+        }
+      }
+      show() {
+        // Display all particles
+        for (let p of this.particles) {
+          p.show();
+        }
+      }
+      done() {
+        // If all particles are faded, the firework is done
+        for (let p of this.particles) {
+          if (!p.finished()) {
+            return false;
+          }
+        }
+        return true;
+      }
+    }
+
+    // Particle class
+    class Particle {
+      constructor(x, y, col) {
+        this.x = x;
+        this.y = y;
+        this.lifespan = 255;
+        this.col = col;
+        // Assign a random velocity in a circular spread
+        this.vx = random(-3, 3);
+        this.vy = random(-5, -2); // mostly upward
+        this.gravity = 0.1;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += this.gravity; // simulate gravity
+        this.lifespan -= 4;     // fade out
+      }
+      finished() {
+        return (this.lifespan <= 0);
+      }
+      show() {
+        noStroke();
+        fill(red(this.col), green(this.col), blue(this.col), this.lifespan);
+        ellipse(this.x, this.y, 6);
+      }
+    }
+  </script>
+</body>
+</html>

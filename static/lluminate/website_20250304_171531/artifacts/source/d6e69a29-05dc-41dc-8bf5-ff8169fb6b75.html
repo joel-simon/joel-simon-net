@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Deep Sea Time</title>
+  <style>
+    /* Overall page styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Deep background */
+      height: 100vh;
+      width: 100vw;
+      display: grid;
+      place-items: center;
+    }
+
+    /* Tooltip container */
+    .info-tip {
+      position: relative;
+      font-family: sans-serif;
+      user-select: none;
+      cursor: pointer;
+      color: #fff;
+      margin-bottom: 0.5em;
+    }
+    /* Tooltip content (hidden by default) */
+    .info-content {
+      visibility: hidden;
+      width: 250px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.9em;
+      line-height: 1.4em;
+      z-index: 1;
+    }
+    /* Show the text when hovering over the container */
+    .info-tip:hover .info-content {
+      visibility: visible;
+    }
+
+    /* Ensure the canvas is exactly 512x512 with no extra scrollbars */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="info-tip">
+    Hover for instructions
+    <div class="info-content">
+      Welcome to Deep Sea Time! Three fish display the hour, minute, 
+      and second. The largest one shows hours, medium indicates 
+      minutes, and the tiniest fish follows seconds. 
+      Watch them swim with the current and change color as time flows.
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <script>
+    // Fish class to handle each fish's appearance and movement
+    class Fish {
+      constructor(scaleFactor, speedFactor, colorMode) {
+        this.x = random(width);
+        this.y = random(height * 0.3, height * 0.8);
+        this.scaleFactor = scaleFactor; // adjusts fish size
+        this.speedFactor = speedFactor; // affects horizontal speed
+        this.colorMode = colorMode;     // 'hour', 'minute', or 'second'
+      }
+
+      update() {
+        // moves fish from left to right, wraps around
+        this.x += this.speedFactor;
+        if (this.x > width + 50) {
+          this.x = -50;
+          this.y = random(height * 0.3, height * 0.8);
+        }
+      }
+
+      display() {
+        let h = hour();
+        let m = minute();
+        let s = second();
+
+        // Adjust fish color based on time
+        let baseColor;
+        if (this.colorMode === 'hour') {
+          baseColor = color((h % 12) * 20, 100, 200);
+        } else if (this.colorMode === 'minute') {
+          baseColor = color(100, m * 4, 180);
+        } else {
+          baseColor = color(80, 160, s * 4);
+        }
+
+        push();
+        translate(this.x, this.y);
+        scale(this.scaleFactor);
+        noStroke();
+        fill(baseColor);
+
+        // Body of fish
+        ellipse(0, 0, 60, 30);
+
+        // Tail
+        fill(red(baseColor)*0.8, green(baseColor)*0.8, blue(baseColor)*0.8);
+        triangle(-30, 0, -45, -10, -45, 10);
+
+        // Fins
+        fill(red(baseColor)*1.2, green(baseColor)*1.2, blue(baseColor)*1.2);
+        ellipse(5, -15, 20, 10);
+        ellipse(5, 15, 20, 10);
+
+        // Eye
+        fill(255);
+        ellipse(15, -5, 5, 5);
+        pop();
+      }
+    }
+
+    let fishHour, fishMinute, fishSecond;
+
+    function setup() {
+      createCanvas(512, 512);
+      // Create separate fish for hours, minutes, and seconds
+      fishHour = new Fish(1.2, 0.5, 'hour');   // largest fish, slow speed
+      fishMinute = new Fish(0.9, 1.2, 'minute'); // medium fish
+      fishSecond = new Fish(0.6, 2.0, 'second'); // smallest, fastest fish
+    }
+
+    function draw() {
+      background(0, 30, 60);
+
+      // Subtle wave effect in the background
+      // We can make a watery overlay using sin waves
+      noStroke();
+      fill(255, 255, 255, 20);
+      for (let x = 0; x <= width; x += 10) {
+        let wave = map(sin(frameCount * 0.02 + x * 0.1), -1, 1, -5, 5);
+        rect(x, height * 0.05 + wave, 10, height);
+      }
+
+      fishHour.update();
+      fishMinute.update();
+      fishSecond.update();
+
+      fishHour.display();
+      fishMinute.display();
+      fishSecond.display();
+    }
+  </script>
+</body>
+</html>

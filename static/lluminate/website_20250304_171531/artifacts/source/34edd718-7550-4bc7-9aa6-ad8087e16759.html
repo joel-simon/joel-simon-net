@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time-Fusion Tapestry</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+    }
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-family: sans-serif;
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to "Time-Fusion Tapestry"!<br><br>
+        • The wavy background flows with the minute.<br>
+        • A fractal tree grows based on the hour and second.<br>
+        • Colorful tiles in corners show changing hues by second.<br>
+        • Watch a gear-like shape rotate with every tick.<br><br>
+        Hover away to return to the animation.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let waveOffset = 0;
+    let gearRotation = 0;
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      rectMode(CENTER);
+    }
+
+    function draw() {
+      background(0);
+
+      // Get current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // 1) Draw wavy background
+      drawWaves(m);
+
+      // 2) Fractal tree in the center
+      push();
+      translate(width / 2, height * 0.75);
+      let branchLen = map(h, 0, 23, 60, 120);
+      fractalTree(branchLen, s);
+      pop();
+
+      // 3) Rotating gear
+      gearRotation += 1 + (s * 0.02);
+      drawGear();
+
+      // 4) Colorful corner tiles
+      drawCornerTiles(s);
+
+      // 5) Optional small digital time display
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      text(nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2), width / 2, height - 20);
+      pop();
+    }
+
+    // Waves background
+    function drawWaves(minVal) {
+      noStroke();
+      fill(20, 40, 100, 150); 
+      let waveCount = 4;
+      let freq = 0.02;
+      let waveHeight = map(minVal, 0, 59, 10, 80);
+
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 10) {
+        let totalWave = 0;
+        for (let i = 1; i <= waveCount; i++) {
+          totalWave += sin((x + waveOffset * i) * freq * i) * waveHeight / i;
+        }
+        let yPos = height * 0.5 + totalWave;
+        vertex(x, yPos);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+
+      waveOffset += 0.3;
+    }
+
+    // Recursive fractal tree
+    // The angle changes slightly with the seconds
+    function fractalTree(branchLen, sec) {
+      stroke(180, 230, 255);
+      strokeWeight(map(branchLen, 60, 120, 1, 4));
+      line(0, 0, 0, -branchLen);
+      translate(0, -branchLen);
+
+      if (branchLen > 10) {
+        push();
+        rotate(map(sec, 0, 59, 15, 45));
+        fractalTree(branchLen * 0.67, sec);
+        pop();
+
+        push();
+        rotate(-map(sec, 0, 59, 15, 45));
+        fractalTree(branchLen * 0.67, sec);
+        pop();
+      }
+    }
+
+    // Rotating gear
+    function drawGear() {
+      push();
+      translate(width * 0.8, height * 0.2);
+      rotate(gearRotation);
+      noStroke();
+      fill(200, 120, 70);
+      beginShape();
+      // Draw gear by creating multiple triangular 'spokes'
+      let spokes = 10;
+      let innerRadius = 20;
+      let outerRadius = 40;
+      for (let i = 0; i < 360; i += 360 / spokes) {
+        vertex(cos(i) * innerRadius, sin(i) * innerRadius);
+        vertex(cos(i + 360 / (spokes * 2)) * outerRadius, sin(i + 360 / (spokes * 2)) * outerRadius);
+        vertex(cos(i + 360 / spokes) * innerRadius, sin(i + 360 / spokes) * innerRadius);
+      }
+      endShape(CLOSE);
+      pop();
+    }
+
+    // Corner mosaic tiles that change hue by second
+    function drawCornerTiles(sec) {
+      push();
+      colorMode(HSB);
+      let tileSize = 50;
+      let tileColor = color(map(sec, 0, 59, 0, 360), 80, 90);
+
+      // Top-left corner
+      fill(tileColor);
+      rect(tileSize / 2, tileSize / 2, tileSize, tileSize);
+
+      // Top-right corner
+      rect(width - tileSize / 2, tileSize / 2, tileSize, tileSize);
+
+      // Bottom-left corner
+      rect(tileSize / 2, height - tileSize / 2, tileSize, tileSize);
+
+      // Bottom-right corner
+      rect(width - tileSize / 2, height - tileSize / 2, tileSize, tileSize);
+      pop();
+    }
+  </script>
+</body>
+</html>

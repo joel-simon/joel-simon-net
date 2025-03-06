@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Lizard Eye</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #e6e6e6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #timeLizardEyeContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Instructions overlay, hidden by default. Display on hover. */
+    #instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.85);
+      color: #222;
+      font-family: sans-serif;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    #timeLizardEyeContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="timeLizardEyeContainer">
+  <div id="instructions">
+    <h3>Time Lizard Eye</h3>
+    <p>
+      • Outer eye color changes with the hour (12-hour format).<br/>
+      • Pupil size adjusts according to the current minute.<br/>
+      • The sine-wave ripple in the iris is animated by the current second.<br/>
+      • Observe how the eye responds over time!
+    </p>
+  </div>
+</div>
+
+<script>
+  const CANVAS_SIZE = 512;
+
+  function setup() {
+    let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+    cnv.parent("timeLizardEyeContainer");
+    angleMode(DEGREES);
+    noStroke();
+  }
+
+  function draw() {
+    // Current time
+    let hr = hour() % 12;  // 0...11
+    let mn = minute();     // 0...59
+    let sc = second();     // 0...59
+
+    // Map hour to color
+    // We'll shift hue from 0 to 300 as hr goes from 0 to 11
+    let hueValue = map(hr, 0, 11, 0, 300);
+    
+    // Fill background
+    background(230);
+    
+    // Draw outer circle (the sclera + colorful region)
+    // We'll use p5's HSB color mode for fun
+    colorMode(HSB, 360, 100, 100);
+    fill(hueValue, 80, 90);
+    ellipse(width/2, height/2, 400);
+
+    // Switch back to RGB for parts of the iris
+    colorMode(RGB);
+
+    // Draw iris circle
+    // Keep it a darker color
+    let irisRadius = 270;
+    fill(40, 55, 40);
+    ellipse(width/2, height/2, irisRadius);
+
+    // Time-based swirl or ripple in the iris
+    // We'll draw lines or arcs that swirl around, influenced by the current second
+    let swirlCount = 36;
+    push();
+    translate(width/2, height/2);
+    stroke(160, 200, 160, 80);
+    strokeWeight(2);
+    noFill();
+    
+    // The swirl rotation changes slightly over seconds
+    rotate(sc * 6);
+    for (let i = 0; i < swirlCount; i++) {
+      let angle = map(i, 0, swirlCount, 0, 360);
+      let x1 = (irisRadius/2) * cos(angle);
+      let y1 = (irisRadius/2) * sin(angle);
+      let waveOffset = 20 * sin(sc * 6 + i * 10);
+      let r2 = (irisRadius/2) + waveOffset;
+      let x2 = r2 * cos(angle + 5);
+      let y2 = r2 * sin(angle + 5);
+      line(x1, y1, x2, y2);
+    }
+    pop();
+
+    // Draw pupil
+    // Pupil size is minute-based: min=0 -> largest pupil, min=59 -> smallest
+    // We'll map minute 0..59 to radius 80..20
+    let pupilRadius = map(mn, 0, 59, 80, 20);
+    fill(0);
+    ellipse(width/2, height/2, pupilRadius*2);
+
+    // Tiny highlight
+    fill(255, 255, 255, 180);
+    ellipse(width/2 + pupilRadius/3, height/2 - pupilRadius/3, pupilRadius/4);
+  }
+</script>
+</body>
+</html>

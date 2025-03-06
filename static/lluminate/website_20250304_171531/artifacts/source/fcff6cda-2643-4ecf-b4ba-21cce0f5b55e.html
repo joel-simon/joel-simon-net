@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Time Waterfall Aurora</title>
+  <style>
+    /* Basic page setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* 512x512 container for the canvas */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay: hidden by default, shown on hover */
+    #hover-instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      color: #fff;
+      font-family: sans-serif;
+      box-sizing: border-box;
+      text-align: center;
+      padding: 20px;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 400px;
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Waterfall Aurora</strong><br><br>
+        • Background color shifts with the hour<br>
+        • Water flow patterns change each minute<br>
+        • Aurora flickers with the passing seconds<br>
+        • Enjoy the drifting lights and changing time<br>
+        Hover here for instructions!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5 Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time Waterfall Aurora
+      ---------------------
+      1) Sky Gradient: transitions based on the current hour (0 - 23)
+      2) Water Flow: vertical strands vary per minute
+      3) Aurora Flicker: subtle arcs influenced by seconds
+      4) Drifting Lanterns: small floating lights that wander around
+      5) Digital Clock: displayed in bottom-left
+    */
+
+    const CANVAS_SIZE = 512;
+    let lastMinute = -1;
+    let waterFlowData = [];
+    let driftLights = [];
+    let driftCount = 7; // number of drifting lanterns
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      noiseDetail(2, 0.5);
+
+      // Create random vertical lines for waterfall
+      generateWaterFlow();
+      // Create drifting lights
+      for (let i = 0; i < driftCount; i++) {
+        driftLights.push({
+          x: random(width),
+          y: random(height),
+          speedX: random(-1, 1),
+          speedY: random(-0.5, 0.5),
+          c: color(random(100,255), random(100,255), random(150,255))
+        });
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Regenerate water flow if minute changed
+      if (mn !== lastMinute) {
+        generateWaterFlow();
+        lastMinute = mn;
+      }
+
+      // (1) Draw sky gradient
+      drawSkyGradient(hr);
+
+      // (2) Draw water flow
+      drawWaterfall(mn);
+
+      // (3) Aurora flickers
+      drawAurora(sc);
+
+      // (4) Drifting lanterns
+      updateDriftingLights();
+      drawDriftingLights();
+
+      // (5) Digital clock
+      drawClock(hr, mn, sc);
+    }
+
+    // --------------- 1) SKY GRADIENT based on hour
+    function drawSkyGradient(h) {
+      // Map hour 0-23 to two main hue shifts
+      let hueStart = map(h, 0, 23, 0, 360);
+      for(let y = 0; y < height; y++){
+        let inter = map(y, 0, height, 0, 1);
+        let hueVal = lerp(hueStart, (hueStart + 150) % 360, inter);
+        stroke(color('hsb('+hueVal+', 70%, '+(100 - 40*inter)+'%)'));
+        line(0, y, width, y);
+      }
+    }
+
+    // --------------- 2) WATERFALL, with vertical strands
+    function generateWaterFlow() {
+      waterFlowData = [];
+      let columns = 8;
+      for (let c = 0; c < columns; c++) {
+        // each flow line
+        let xPos = map(c, 0, columns-1, width*0.2, width*0.8);
+        let off = random(1000);
+        waterFlowData.push({ x: xPos, noiseOffset: off });
+      }
+    }
+
+    function drawWaterfall(m) {
+      strokeWeight(2);
+      stroke(200, 220, 255, 180);
+      noFill();
+      // variation in amplitude based on minute
+      let amplitude = map(m, 0, 59, 0.02, 0.2);
+      for (let flow of waterFlowData) {
+        beginShape();
+        for (let y = 0; y <= height; y += 10) {
+          let wave = noise(flow.noiseOffset + y * amplitude) * 50;
+          vertex(flow.x + wave - 25, y);
+        }
+        endShape();
+      }
+    }
+
+    // --------------- 3) AURORA flickers, arcs based on seconds
+    function drawAurora(s) {
+      push();
+      noFill();
+      strokeWeight(2);
+
+      // We'll draw some arcs in the upper sky
+      let arcsCount = 4;
+      for (let i = 0; i < arcsCount; i++) {
+        let arcAlpha = map(sin(frameCount + i*30), -1, 1, 20, 120);
+        let arcTop = map(i, 0, arcsCount-1, 0, height*0.3);
+        stroke(120, 255, 200, arcAlpha);
+        arc(width/2, arcTop, width, 150+(i*30), 180, 360);
+      }
+      pop();
+    }
+
+    // --------------- 4) DRIFTING LIGHTS
+    function updateDriftingLights() {
+      for (let d of driftLights) {
+        d.x += d.speedX;
+        d.y += d.speedY;
+        // wrap around
+        if (d.x < 0) d.x = width;
+        if (d.x > width) d.x = 0;
+        if (d.y < 0) d.y = height;
+        if (d.y > height) d.y = 0;
+      }
+    }
+
+    function drawDriftingLights() {
+      noStroke();
+      for (let d of driftLights) {
+        fill(d.c);
+        ellipse(d.x, d.y, 8, 8);
+      }
+    }
+
+    // --------------- 5) DIGITAL CLOCK in bottom-left
+    function drawClock(hr, mn, sc) {
+      push();
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, BOTTOM);
+      text(nf(hr, 2) + ":" + nf(mn, 2) + ":" + nf(sc, 2), 10, height - 10);
+      pop();
+    }
+  </script>
+</body>
+</html>

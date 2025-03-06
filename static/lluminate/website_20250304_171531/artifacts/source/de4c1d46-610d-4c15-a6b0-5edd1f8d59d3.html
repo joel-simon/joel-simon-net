@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cosmic Time Galaxy</title>
+  <style>
+    /* Basic page styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: sans-serif;
+    }
+    /* Container to hold the 512x512 canvas */
+    .canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+    /* The p5 canvas should match the container size */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px;
+      height: 512px;
+    }
+    /* Instructions overlay, hidden by default; displayed on hover */
+    .instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .canvas-container:hover .instructions {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div class="canvas-container">
+    <div class="instructions">
+      <p>
+        Welcome to the Cosmic Time Galaxy!<br><br>
+        • The number of spiral arms reflects the current hour.<br>
+        • Star colors shift with the minute.<br>
+        • Rotation speed syncs with the second.<br>
+        • Click anywhere to invert the colors.<br><br>
+        Hover away to watch time swirl!
+      </p>
+    </div>
+  </div>
+  
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let angle = 0;
+    let invertColors = false;
+
+    function setup() {
+      let canvas = createCanvas(512, 512);
+      canvas.parent(document.querySelector('.canvas-container'));
+      angleMode(RADIANS);
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Background inversion
+      if (invertColors) {
+        background(255);
+      } else {
+        background(0);
+      }
+
+      // Calculate the swirling galaxy parameters
+      let arms = max(1, (hr % 12)) + 2; 
+      let swirlSpeed = map(sc, 0, 59, 0.005, 0.05);
+      angle += swirlSpeed;
+
+      push();
+      translate(width / 2, height / 2);
+      rotate(angle);
+
+      // Draw each arm of the galaxy
+      for (let a = 0; a < TWO_PI; a += TWO_PI / arms) {
+        push();
+        rotate(a);
+        // Along each arm, add multiple stars
+        for (let r = 10; r < 220; r += 15) {
+          // Star color changes with minute
+          let starCol = color(
+            map(mn, 0, 59, 0, 255),
+            map(mn, 0, 59, 255, 100),
+            map(mn, 0, 59, 50, 200)
+          );
+
+          let finalCol;
+          // Invert star color if needed
+          if (invertColors) {
+            finalCol = color(
+              255 - red(starCol),
+              255 - green(starCol),
+              255 - blue(starCol)
+            );
+          } else {
+            finalCol = starCol;
+          }
+
+          fill(finalCol);
+          noStroke();
+          ellipse(r, 0, 5, 5);
+        }
+        pop();
+      }
+
+      pop();
+
+      // Draw a central "black hole" or "white hole" depending on inversion
+      noStroke();
+      if (invertColors) {
+        fill(0);
+      } else {
+        fill(255);
+      }
+      ellipse(width / 2, height / 2, 40, 40);
+    }
+
+    // Invert colors on mouse press
+    function mousePressed() {
+      invertColors = !invertColors;
+    }
+  </script>
+</body>
+</html>

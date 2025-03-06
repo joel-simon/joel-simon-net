@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Creative Time Display</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Ensure no extra scrolling or padding */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #f2f2f2;
+    }
+    /* Container for the canvas (512x512) and the hidden instructions */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    /* Instructions overlay, displayed on hover */
+    #instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #ffffff;
+      text-align: center;
+      padding-top: 2em;
+      box-sizing: border-box;
+      cursor: default;
+    }
+    /* Show instructions on hover */
+    #canvasContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="instructions">
+      <p>Hover over the canvas to see this overlay.</p>
+      <p>This displays a creative analog + digital time.</p>
+      <p>Enjoy!</p>
+    </div>
+  </div>
+
+  <script>
+    let centerX, centerY;
+
+    function setup() {
+      const canvas = createCanvas(512, 512);
+      canvas.parent('canvasContainer');
+      angleMode(DEGREES);
+      centerX = width / 2;
+      centerY = height / 2;
+    }
+
+    function draw() {
+      background(230);
+      
+      let s = second();
+      let m = minute();
+      let h = hour() % 12;
+
+      // Translate to center and rotate so arcs start at top
+      push();
+      translate(centerX, centerY);
+      rotate(-90);
+
+      // Second Arc
+      strokeWeight(8);
+      noFill();
+      stroke(255, 0, 0);
+      let secondAngle = map(s, 0, 60, 0, 360);
+      arc(0, 0, 300, 300, 0, secondAngle);
+
+      // Minute Arc
+      stroke(0, 255, 0);
+      let minuteAngle = map(m, 0, 60, 0, 360);
+      arc(0, 0, 280, 280, 0, minuteAngle);
+
+      // Hour Arc
+      stroke(0, 0, 255);
+      let hourAngle = map(h, 0, 12, 0, 360) + map(m, 0, 60, 0, 30);
+      arc(0, 0, 260, 260, 0, hourAngle);
+
+      pop();
+
+      // Digital Time
+      noStroke();
+      fill(0);
+      textAlign(CENTER, CENTER);
+      textSize(32);
+      let fullHour = hour();
+      let ampm = fullHour >= 12 ? "PM" : "AM";
+      let displayHour = fullHour % 12;
+      if (displayHour === 0) displayHour = 12;
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, centerX, centerY);
+    }
+  </script>
+</body>
+</html>

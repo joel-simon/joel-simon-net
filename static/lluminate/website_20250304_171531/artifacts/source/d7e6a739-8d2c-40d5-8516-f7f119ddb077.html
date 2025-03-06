@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Origami Bird Migration</title>
+  <!-- Include p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset and center body content */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f2f2f2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+      background: #fff;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Tooltip that shows on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 240px;
+      padding: 10px;
+      font-family: sans-serif;
+      font-size: 14px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #555;
+      z-index: 10;
+    }
+
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      Time Origami Bird Migration • Hour sets the number of birds • Minute adjusts color blending • Second influences wing flapping speed • Press "SPACE" to toggle geometric patterns
+    </div>
+  </div>
+
+  <script>
+    let birds = [];
+    let hourVal, minuteVal, secondVal;
+    let showGuides = false;  // Toggles extra geometric patterns
+
+    class OrigamiBird {
+      constructor(x, y, size) {
+        this.x = x;
+        this.y = y;
+        this.size = size;
+        this.angle = random(TWO_PI);
+        this.flap = 0; // Wing flap angle
+        this.flapSpeed = 0.05;
+        this.xSpeed = random(-1, 1);
+        this.ySpeed = random(-1, 1);
+      }
+
+      update() {
+        // Gently move around
+        this.x += this.xSpeed;
+        this.y += this.ySpeed;
+
+        // Wrap edges
+        if (this.x < 0) this.x = width;
+        if (this.x > width) this.x = 0;
+        if (this.y < 0) this.y = height;
+        if (this.y > height) this.y = 0;
+
+        // Flap speed is influenced by the current second
+        this.flapSpeed = map(secondVal, 0, 59, 0.02, 0.2);
+        this.flap += this.flapSpeed;
+      }
+
+      display() {
+        push();
+        translate(this.x, this.y);
+
+        // Base color blending depends on the current minute
+        // to produce shifting hues
+        let baseColor = map(minuteVal, 0, 59, 0, 360);
+        let flapOffset = sin(this.flap) * 30; 
+        stroke(baseColor, 80, 100);
+        fill((baseColor + flapOffset) % 360, 60, 90);
+
+        // Draw an origami-style bird shape with triangles
+        beginShape();
+        // Body center
+        vertex(0, 0);
+        // Wing 1
+        vertex(-this.size / 2, -this.size / 2 - flapOffset);
+        // Tail
+        vertex(-this.size, 0);
+        // Wing 2
+        vertex(-this.size / 2, this.size / 2 + flapOffset);
+        endShape(CLOSE);
+
+        // Optionally draw geometric guides
+        if (showGuides) {
+          stroke((baseColor + 180) % 360, 80, 100);
+          noFill();
+          ellipse(0, 0, this.size * 2);
+        }
+        pop();
+      }
+    }
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      colorMode(HSB, 360, 100, 100, 1);
+      rectMode(CENTER);
+      noStroke();
+    }
+
+    function draw() {
+      background(60, 10, 95);
+
+      // Retrieve current time
+      hourVal   = hour() % 12;  // 0-11
+      minuteVal = minute();     // 0-59
+      secondVal = second();     // 0-59
+
+      // Adjust number of birds by hour
+      let desiredCount = max(1, hourVal);
+      while (birds.length < desiredCount) {
+        birds.push(new OrigamiBird(random(width), random(height), random(20, 40)));
+      }
+      while (birds.length > desiredCount) {
+        birds.pop();
+      }
+
+      // Update and display birds
+      for (let b of birds) {
+        b.update();
+        b.display();
+      }
+
+      // Current time readout
+      fill(0, 0, 20);
+      noStroke();
+      textSize(14);
+      textAlign(LEFT, TOP);
+      text(nf(hour(), 2) + ":" + nf(minute(), 2) + ":" + nf(second(), 2), 10, 10);
+    }
+
+    function keyPressed() {
+      // Space key toggles geometric patterns
+      if (key == ' ') {
+        showGuides = !showGuides;
+      }
+    }
+  </script>
+</body>
+</html>

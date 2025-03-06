@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creative Time Display</title>
+  <!-- Required p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset basic styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* Restrict overall page dimensions */
+    html, body {
+      width: 512px;
+      height: 512px;
+      background: #ddd;
+      margin: 0;
+      font-family: sans-serif;
+    }
+
+    /* Center everything */
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Container for our canvas and the tooltip */
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+
+    /* The hidden message box */
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 220px;
+      background-color: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      text-align: center;
+      padding: 8px;
+      border-radius: 4px;
+      position: absolute;
+      bottom: 110%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9;
+      font-size: 14px;
+      line-height: 1.2;
+    }
+
+    /* Show it on hover */
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+    }
+
+    /* Ensure canvas is 512x512 and centered in the container */
+    #p5-canvas {
+      display: block;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="tooltip">
+    <!-- p5.js canvas gets inserted into this div -->
+    <div id="p5-canvas"></div>
+    <!-- Instructions on hover -->
+    <div class="tooltiptext">
+      The outer ring shows seconds, the middle ring shows minutes, and the inner ring shows hours.
+    </div>
+  </div>
+
+  <script>
+    let cnv;
+
+    function setup() {
+      // Create our 512x512 canvas
+      cnv = createCanvas(512, 512);
+      // Attach it to the p5-canvas div
+      cnv.parent("p5-canvas");
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(255);
+
+      let hr = hour() % 12;
+      let mn = minute();
+      let sc = second();
+
+      // Move origin to canvas center, and rotate so arcs start at top
+      translate(width/2, height/2);
+      rotate(-90);
+
+      strokeWeight(8);
+      noFill();
+
+      // Seconds (outer ring)
+      stroke(0, 0, 255);
+      let scAngle = map(sc, 0, 60, 0, 360);
+      arc(0, 0, 300, 300, 0, scAngle);
+
+      // Minutes (middle ring)
+      stroke(0, 255, 0);
+      let mnAngle = map(mn, 0, 60, 0, 360);
+      arc(0, 0, 280, 280, 0, mnAngle);
+
+      // Hours (inner ring) - account for partial hour progress
+      stroke(255, 0, 0);
+      let hrAngle = map(hr, 0, 12, 0, 360) + map(mn, 0, 60, 0, 30);
+      arc(0, 0, 260, 260, 0, hrAngle);
+
+      // Move back to normal orientation for text
+      rotate(90);
+      textAlign(CENTER, CENTER);
+      textSize(32);
+      fill(0);
+      strokeWeight(1);
+      stroke(255);
+      text(nf(hour(), 2) + ":" + nf(mn, 2) + ":" + nf(sc, 2), 0, 0);
+    }
+  </script>
+</body>
+</html>

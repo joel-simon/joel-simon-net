@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Kaleidoscope</title>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* A fixed 512x512 container (for iframe) */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Kaleidoscope</strong><br><br>
+        • The background color shifts with the hour.<br>
+        • Kaleidoscope arms rotate based on minutes.<br>
+        • Inner shapes change color with seconds.<br>
+        • Watch time swirl in a mirrored dance.<br><br>
+        Hover here for instructions. Enjoy!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time Kaleidoscope
+      A fresh, time-based display:
+        - Background color shifts with the current hour.
+        - A rotating kaleidoscope pattern whose speed depends on minutes.
+        - Colors of small shapes pulse with the seconds.
+        - Hover over the canvas to see instructions.
+    */
+
+    const CANVAS_SIZE = 512;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      backgroundColorShift(hr);
+      translate(width / 2, height / 2);
+
+      // Kaleidoscope has multiple "slices"
+      // We rotate the entire pattern based on the current minute
+      rotate(frameCount * map(mn, 0, 59, 0.2, 4));
+
+      let slices = 8;
+      for (let i = 0; i < slices; i++) {
+        push();
+        rotate(i * (360 / slices));
+        drawKaleidoscopeArm(sc);
+        pop();
+      }
+
+      drawClock(hr, mn, sc);
+    }
+
+    /* The background color gradually shifts with the hour */
+    function backgroundColorShift(hr) {
+      colorMode(HSB, 24, 100, 100);
+      let hueVal = map(hr % 24, 0, 23, 0, 24); 
+      background(hueVal, 80, 80);
+      colorMode(RGB, 255);
+    }
+
+    /* Draws one "arm" of the kaleidoscope.
+       Uses the current seconds to vary shape colors and sizes. */
+    function drawKaleidoscopeArm(sc) {
+      let colorFactor = map(sc, 0, 59, 0, 255);
+      fill(colorFactor, 100, 200);
+
+      // A few shapes forming a decorative arm
+      ellipse(40, 0, 40, 40);
+      rectMode(CENTER);
+      rect(80, 0, 20, 60);
+      fill(255 - colorFactor, 200, colorFactor);
+      triangle(100, -10, 120, 0, 100, 10);
+    }
+
+    /* Optional small clock in top-left (within the mirrored center region) */
+    function drawClock(h, m, s) {
+      push();
+      // Translated up, then left of center
+      translate(-width / 2 + 10, -height / 2 + 20);
+      fill(255);
+      textSize(14);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 0, 0);
+      pop();
+    }
+  </script>
+</body>
+</html>

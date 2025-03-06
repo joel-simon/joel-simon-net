@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time-Coded Illusions</title>
+  <!-- Include p5.js -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* A fixed 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Overlay for hover instructions (hidden by default) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.8);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time-Coded Illusions<br><br>
+        • Radial gradient shifts with the hour<br>
+        • A ring of shapes determined by the minute<br>
+        • Pulsing effect based on seconds<br>
+        Hover away to explore!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time-Coded Illusions:
+      - A radial gradient background tinted by the current hour.
+      - The ring of shapes around the center changes in count based on the minute.
+      - Shapes pulse in size according to the seconds.
+    */
+
+    // Canvas size
+    const SIZE = 512;
+
+    function setup() {
+      let cnv = createCanvas(SIZE, SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100);
+      noStroke();
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // 1) Draw a radial gradient background keyed to hour
+      drawRadialGradient(h);
+
+      // 2) Draw the ring of shapes based on minute
+      let shapeCount = max(1, m);  // ensures at least 1 shape
+      drawShapeRing(shapeCount, s);
+
+      // 3) Optional time text at lower-left
+      drawClock(h, m, s);
+    }
+
+    // Draw a radial gradient influenced by current hour
+    function drawRadialGradient(hr) {
+      push();
+      translate(width / 2, height / 2);
+      for (let r = width / 2; r > 0; r -= 1) {
+        // Hour from 0..23 mapped into 0..360 for hue
+        let hueVal = map(hr, 0, 23, 0, 360);
+        let brightness = map(r, 0, width/2, 100, 30);
+        fill(hueVal, 60, brightness);
+        ellipse(0, 0, r * 2, r * 2);
+      }
+      pop();
+    }
+
+    // Draw ring of shapes around the center
+    // The number of shapes depends on the minute
+    // The size of shapes pulses with seconds
+    function drawShapeRing(count, sec) {
+      push();
+      translate(width / 2, height / 2);
+      let baseRadius = 150;
+      let pulse = map(sin(frameCount * 0.03 + sec), -1, 1, 0.8, 1.2);
+      let size = 30 * pulse;
+
+      fill(0, 0, 100); // White shapes
+      for (let i = 0; i < count; i++) {
+        let angle = (360 / count) * i;
+        let x = baseRadius * cos(angle);
+        let y = baseRadius * sin(angle);
+        push();
+        translate(x, y);
+        rotate(frameCount * 0.2 + sec * 6);
+        rectMode(CENTER);
+        rect(0, 0, size, size);
+        pop();
+      }
+      pop();
+    }
+
+    // Display digital clock in corner
+    function drawClock(h, m, s) {
+      push();
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 10, height - 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

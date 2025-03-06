@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reverse Time Assumption - Second-by-Second Shape Accumulator</title>
+  <style>
+    /* Basic resets and layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #f0f0f0;
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    /* Center container and fix size to 512x512 */
+    #p5sketch {
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Tooltip container */
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+
+    /* Tooltip text style */
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 260px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 10px;
+      position: absolute;
+      z-index: 1;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    /* Show tooltip text on hover */
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+    }
+
+    /* Cursor hint for interactivity */
+    #p5sketch:hover {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="tooltip">
+    <div id="p5sketch"></div>
+    <div class="tooltiptext">
+      <strong>How This Visual Reflects Time:</strong><br><br>
+      - Every new second, a random shape appears.<br>
+      - After 60 seconds, shapes clear.<br>
+      - The background color changes every minute.<br>
+      - Unexpected flare appears each hour!<br>
+      <br>
+      Hover away to hide instructions.
+    </div>
+  </div>
+
+  <!-- Include p5.js -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let shapes = [];        // array to store each generated shape
+    let prevSecond;         // track the moment second increments
+    let prevMinute;         // track the moment minute increments
+    let prevHour;           // track the moment hour increments
+    let backgroundHue = 0;  // keeps track of the current background color hue
+    let hourFlare = false;  // triggers an "hourly flare" effect
+
+    function setup() {
+      createCanvas(512, 512).parent('p5sketch');
+      colorMode(HSB, 360, 100, 100);
+      angleMode(DEGREES);
+
+      // Initialize time trackers
+      prevSecond = second();
+      prevMinute = minute();
+      prevHour = hour();
+    }
+
+    function draw() {
+      // If an hour flare is triggered, do a bright flash for a short duration
+      if (hourFlare) {
+        background(random(0, 360), 100, 100);
+      } else {
+        // background hue changes each minute
+        background(backgroundHue, 50, 95);
+      }
+
+      // Draw each shape stored in the shapes array
+      for (let s of shapes) {
+        s.display();
+      }
+
+      // Check time changes
+      checkTimeChanges();
+    }
+
+    // Check for increments in second, minute, hour
+    function checkTimeChanges() {
+      let currentSecond = second();
+      let currentMinute = minute();
+      let currentHour   = hour();
+
+      // If a new second has begun, add a shape
+      if (currentSecond !== prevSecond) {
+        addShape();
+        prevSecond = currentSecond;
+      }
+
+      // If seconds roll over from 59 -> 0, that indicates a new minute
+      // and we can clear the shapes array
+      if (currentMinute !== prevMinute) {
+        shapes = [];
+        backgroundHue = map(currentMinute, 0, 59, 0, 359);
+        prevMinute = currentMinute;
+      }
+
+      // If hour just changed, trigger a flare
+      if (currentHour !== prevHour) {
+        hourFlare = true;
+        prevHour = currentHour;
+        // Turn off flare after a short burst
+        setTimeout(() => {
+          hourFlare = false;
+        }, 500);
+      }
+    }
+
+    // Create a random shape by randomly deciding what type it is
+    // and store it in the shapes array
+    function addShape() {
+      let newShape;
+      let shapeType = floor(random(3)); // 0 -> circle, 1 -> rectangle, 2 -> triangle
+
+      switch(shapeType) {
+        case 0:
+          newShape = new CircleShape();
+          break;
+        case 1:
+          newShape = new RectShape();
+          break;
+        case 2:
+          newShape = new TriangleShape();
+          break;
+      }
+      shapes.push(newShape);
+    }
+
+    // Shape class templates
+    class CircleShape {
+      constructor() {
+        this.x = random(width);
+        this.y = random(height);
+        this.size = random(10, 60);
+        this.hue = random(0, 360);
+      }
+      display() {
+        fill(this.hue, 80, 90);
+        noStroke();
+        circle(this.x, this.y, this.size);
+      }
+    }
+
+    class RectShape {
+      constructor() {
+        this.x = random(width);
+        this.y = random(height);
+        this.w = random(20, 60);
+        this.h = random(20, 60);
+        this.hue = random(0, 360);
+        this.angle = random(0, 360);
+      }
+      display() {
+        push();
+        translate(this.x, this.y);
+        rotate(this.angle);
+        fill(this.hue, 80, 90);
+        noStroke();
+        rectMode(CENTER);
+        rect(0, 0, this.w, this.h);
+        pop();
+      }
+    }
+
+    class TriangleShape {
+      constructor() {
+        this.x1 = random(width);
+        this.y1 = random(height);
+        this.x2 = this.x1 + random(-30, 30);
+        this.y2 = this.y1 + random(-30, 30);
+        this.x3 = this.x1 + random(-30, 30);
+        this.y3 = this.y1 + random(-30, 30);
+        this.hue = random(0, 360);
+      }
+      display() {
+        fill(this.hue, 80, 90);
+        noStroke();
+        triangle(this.x1, this.y1, this.x2, this.y2, this.x3, this.y3);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Creative Time Display</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <style>
+    /* Center page content */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      border: 2px solid #555;
+      box-sizing: border-box;
+    }
+
+    /* Tooltip instructions shown on hover */
+    #tooltip {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.6);
+      display: none;
+      color: #fff;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+      pointer-events: none;
+    }
+
+    /* Only show instructions when hovering on container */
+    #canvas-container:hover #tooltip {
+      display: flex;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="canvas-container">
+    <div id="tooltip">
+      This creative clock displays hours, minutes, and seconds as arcs. 
+      The outer arc and longest hand represent seconds, the middle arc/minute hand for minutes, 
+      and the inner arc/shortest hand for hours.
+    </div>
+  </div>
+
+  <script>
+    function setup() {
+      // Create a 512x512 canvas inside #canvas-container
+      let cnv = createCanvas(512, 512);
+      cnv.parent("canvas-container");
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(30);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Map time values to angles
+      let scAngle = map(sc, 0, 60, 0, 360);
+      let mnAngle = map(mn, 0, 60, 0, 360);
+      let hrAngle = map(hr % 12, 0, 12, 0, 360);
+
+      // Move origin to center
+      translate(width / 2, height / 2);
+      strokeWeight(8);
+      noFill();
+
+      // Seconds (outer arc)
+      stroke(255, 100, 150);
+      arc(0, 0, 300, 300, -90, scAngle - 90);
+      push();
+        rotate(scAngle - 90);
+        line(0, 0, 100, 0);
+      pop();
+
+      // Minutes (middle arc)
+      stroke(150, 100, 255);
+      arc(0, 0, 280, 280, -90, mnAngle - 90);
+      push();
+        rotate(mnAngle - 90);
+        line(0, 0, 75, 0);
+      pop();
+
+      // Hours (inner arc)
+      stroke(150, 255, 100);
+      arc(0, 0, 260, 260, -90, hrAngle - 90);
+      push();
+        rotate(hrAngle - 90);
+        line(0, 0, 50, 0);
+      pop();
+    }
+  </script>
+</body>
+</html>

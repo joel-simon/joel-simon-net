@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Magical Redwood Aquarium</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the "Magical Redwood Aquarium"!<br><br>
+        • The background color changes with the hour.<br>
+        • The towering redwood trunk height flows with the minute.<br>
+        • Bubbles appear each second.<br>
+        • Fish swim gracefully around the submerged forest.<br><br>
+        Hover away to dive in!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let bubbles = [];  // array to store bubble objects
+    let fishX = -50;   // initial fish position
+    let fishY = 200;   // fish vertical position
+    let fishSpeed = 1; // horizontal speed of the fish
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      fishY = height * 0.5;
+    }
+
+    function draw() {
+      drawBackground();
+      drawRedwood();
+      manageBubbles();
+      drawBubbles();
+      drawFish();
+      displayClock();
+    }
+
+    // The background color is determined by the current hour.
+    function drawBackground() {
+      let h = hour();
+      // Map hour to a hue in [0..360]
+      let hueVal = map(h, 0, 23, 0, 360);
+      // We'll create a gentle vertical gradient to simulate water
+      for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        let c = color(hueVal, 70 + 180 * inter, 180);
+        stroke(c);
+        line(0, y, width, y);
+      }
+    }
+
+    // The redwood's height undulates with the current minute.
+    function drawRedwood() {
+      let m = minute();
+      // Redwood trunk baseline
+      let trunkWidth = 40;
+      let trunkBaseHeight = 180;
+      // Modulate height with minute as a gentle oscillation
+      let trunkExtra = map(sin(frameCount + m * 6), -1, 1, -20, 20); 
+      let trunkTotalHeight = trunkBaseHeight + trunkExtra;
+
+      push();
+      translate(width * 0.5, height * 0.8); // set the base
+      // trunk
+      fill(139, 69, 19);
+      noStroke();
+      rectMode(CENTER);
+      rect(0, -trunkTotalHeight / 2, trunkWidth, trunkTotalHeight);
+      
+      // simple green canopy
+      fill(34, 139, 34);
+      ellipse(0, -trunkTotalHeight, 120, 80);
+      pop();
+    }
+
+    // Manage bubble creation each second
+    function manageBubbles() {
+      // Create a new bubble when the second changes
+      // We'll track the second across frames
+      let currentSecond = second();
+      static prevSecond = -1; // to store the old second
+
+      if (currentSecond !== prevSecond) {
+        // create a bubble
+        bubbles.push({
+          x: random(width),
+          y: height,
+          size: random(5, 15),
+          speed: random(1, 3)
+        });
+        prevSecond = currentSecond;
+      }
+    }
+
+    // Draw and update all bubbles
+    function drawBubbles() {
+      for (let i = bubbles.length - 1; i >= 0; i--) {
+        let b = bubbles[i];
+        noStroke();
+        fill(255, 255, 255, 150);
+        ellipse(b.x, b.y, b.size);
+        // move upward
+        b.y -= b.speed;
+        // remove if out of the canvas
+        if (b.y < -b.size) {
+          bubbles.splice(i, 1);
+        }
+      }
+    }
+
+    // Draw a fish that swims horizontally
+    function drawFish() {
+      fishX += fishSpeed;
+      // If fish goes off screen to the right, wrap around
+      if (fishX > width + 50) {
+        fishX = -50;
+        fishY = random(100, height - 100);
+      }
+      
+      push();
+      translate(fishX, fishY);
+      noStroke();
+      fill(255, 140, 0);
+      // fish body
+      ellipse(0, 0, 50, 20);
+      // tail
+      triangle(-25, 0, -40, -10, -40, 10);
+      // eye
+      fill(0);
+      ellipse(10, 0, 5, 5);
+      pop();
+    }
+
+    // Display a basic digital clock near the bottom
+    function displayClock() {
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

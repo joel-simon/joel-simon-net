@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Solar System</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0; 
+      padding: 0; 
+      background: #000;
+    }
+    /* The container at exactly 512x512 */
+    #timeSolarSystemContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    /* Instruction overlay on hover */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      padding: 30px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #timeSolarSystemContainer:hover #instructionsOverlay {
+      display: block;
+    }
+    h1, p {
+      margin: 1em 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="timeSolarSystemContainer">
+    <div id="instructionsOverlay">
+      <h1>Time Solar System</h1>
+      <p>In this solar system, each orbiting planet corresponds to an hour, minute, or second.</p>
+      <p>• The Hour Planet orbits slowly on the innermost path.<br>
+         • The Minute Planet follows a middle path.<br>
+         • The Second Planet whips around on the outermost path.<br>
+         • Colors, sizes, and orbit speeds shift as time changes.</p>
+      <p>Hover over this area for details.</p>
+    </div>
+  </div>
+
+  <script>
+    let angleHour = 0;
+    let angleMinute = 0;
+    let angleSecond = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('timeSolarSystemContainer');
+      angleMode(DEGREES);
+      textAlign(CENTER, CENTER);
+    }
+
+    function draw() {
+      background(0);
+
+      // Get current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Translate to canvas center
+      translate(width / 2, height / 2);
+
+      // Draw the "sun" at the center
+      noStroke();
+      fill(255, 204, 0);
+      ellipse(0, 0, 60, 60);
+
+      // Adjust angles for each planet by a factor related to time
+      // Hours revolve slowly, minutes revolve at medium speed, seconds revolve quickly
+      angleHour += map(h % 12, 0, 11, 0.02, 0.2);
+      angleMinute += map(m, 0, 59, 0.2, 2);
+      angleSecond += map(s, 0, 59, 2, 6);
+
+      // Hour planet
+      push();
+      let hourDist = 80 + (h % 12 || 12) * 2; 
+      rotate(angleHour);
+      fill(150, 150, map(h, 0, 23, 50, 255));
+      ellipse(hourDist, 0, 20, 20);
+      pop();
+
+      // Minute planet
+      push();
+      let minDist = 140 + m;
+      rotate(angleMinute);
+      fill(100, map(m, 0, 59, 50, 255), 200);
+      ellipse(minDist, 0, 15, 15);
+      pop();
+
+      // Second planet
+      push();
+      let secDist = 200 + s;
+      rotate(angleSecond);
+      fill(map(s, 0, 59, 50, 255), 100, 200);
+      ellipse(secDist, 0, 10, 10);
+      pop();
+
+      // Draw digital time at the bottom
+      fill(255);
+      textSize(18);
+      let displayHour = h % 12 || 12;
+      let ampm = (h >= 12) ? "PM" : "AM";
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 0, 210);
+    }
+  </script>
+</body>
+</html>

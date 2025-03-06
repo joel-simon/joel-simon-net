@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Infinity Tunnel</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the “Time Infinity Tunnel”!<br><br>
+        • A spiraling tunnel changes size every hour.<br>
+        • Its colors shift with the passing minutes.<br>
+        • The spiral’s rotation speeds up every second.<br><br>
+        Hover away to return to the animation.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Variables for the tunnel animation
+    let rotationAngle = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      // Get current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // 1) Adjust rotation angle based on seconds
+      // Each second will add to the spiral's rotation
+      rotationAngle += 0.2 + s * 0.01;
+
+      // 2) Draw the spiraling tunnel
+      // We'll create multiple layers to form a funnel shape
+      let layers = 15;
+      let baseSize = map(h, 0, 23, 50, 140); // diameter scales with hour
+      push();
+      translate(width / 2, height / 2);
+      rotate(rotationAngle);
+
+      for (let i = 0; i < layers; i++) {
+        // The color changes with minute; each layer offset to create a gradient
+        colorMode(HSB);
+        fill((m * 6 + i * 15) % 360, 80, 90);
+        colorMode(RGB);
+
+        let scaleFactor = 1 - i * 0.05;
+        push();
+        scale(scaleFactor);
+        ellipse(0, 0, baseSize, baseSize * 1.2); // elongated circles
+        pop();
+
+        rotate(15); // offset between layers
+      }
+
+      pop();
+
+      // 3) Draw a central orb that will slightly pulsate by seconds
+      let orbSize = map(s, 0, 59, 30, 80);
+      fill(255);
+      ellipse(width / 2, height / 2, orbSize);
+
+      // 4) Digital clock display at the bottom
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+    }
+  </script>
+</body>
+</html>

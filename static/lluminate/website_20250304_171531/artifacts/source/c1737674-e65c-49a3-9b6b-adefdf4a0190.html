@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Bioluminescent Reef</title>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: sans-serif;
+      overflow: hidden;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container (for iframe) */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      border: none;
+      overflow: hidden;
+      background: #000;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    .instructions-text {
+      position: absolute;
+      width: 80%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Bioluminescent Reef</strong><br><br>
+        • Water color transitions through the day based on hour.<br>
+        • Bright tropical fish appear and disappear depending on the minute.<br>
+        • Pulsing plankton glow in sync with the seconds.<br>
+        • Observe the ever-changing undersea world with time.<br><br>
+        Hover here for instructions!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time Bioluminescent Reef
+      1) Shifting water color by hour (morning to midnight).
+      2) Tropical fish appear if current minute < 30, vanish otherwise.
+      3) Plankton spiral inwards, pulsing in color keyed to seconds.
+      4) Small textual time readout in the corner.
+    */
+
+    const CANVAS_SIZE = 512;
+    let fish = [];
+    const NUM_FISH = 10;
+    
+    // Plankton data
+    let plankton = [];
+    const NUM_PLANKTON = 50;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      noStroke();
+      initFish();
+      initPlankton();
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // 1) Draw water background
+      drawUnderseaGradient(hr);
+
+      // 2) Draw fish if minute < 30
+      if (mn < 30) {
+        drawAndUpdateFish();
+      }
+
+      // 3) Draw pulsing plankton keyed to seconds
+      drawAndUpdatePlankton(sc);
+
+      // 4) Small digital clock in top-left
+      drawClock(hr, mn, sc);
+    }
+
+    // -- FISH --
+    function initFish() {
+      // Create random fish with positions, sizes, colors
+      for (let i = 0; i < NUM_FISH; i++) {
+        fish.push({
+          x: random(width),
+          y: random(height / 3, height * 0.9),
+          speed: random(1, 3),
+          size: random(15, 30),
+          hue: random(360),
+          dir: random([1, -1]) // Some fish swim left, some right
+        });
+      }
+    }
+
+    function drawAndUpdateFish() {
+      push();
+      colorMode(HSB, 360, 100, 100);
+      for (let f of fish) {
+        fill(f.hue, 80, 90);
+        ellipse(f.x, f.y, f.size * 2, f.size); // fish body
+        // fish tail
+        triangle(
+          f.x - (f.size * 1.2 * f.dir),
+          f.y,
+          f.x - (f.size * 0.8 * f.dir),
+          f.y - f.size / 2,
+          f.x - (f.size * 0.8 * f.dir),
+          f.y + f.size / 2
+        );
+
+        // update position
+        f.x += f.speed * f.dir;
+        // wrap-around horizontally
+        if (f.dir > 0 && f.x > width + 50) {
+          f.x = -50;
+        } else if (f.dir < 0 && f.x < -50) {
+          f.x = width + 50;
+        }
+      }
+      pop();
+    }
+
+    // -- PLANKTON --
+    function initPlankton() {
+      for (let i = 0; i < NUM_PLANKTON; i++) {
+        plankton.push({
+          angle: random(360),
+          radius: random(50, width / 2),
+          speed: random(0.2, 1),
+          hueOffset: random(360)
+        });
+      }
+    }
+
+    function drawAndUpdatePlankton(sc) {
+      push();
+      translate(width / 2, height / 2);
+      colorMode(HSB, 360, 100, 100);
+
+      for (let p of plankton) {
+        let secondMapped = map(sc, 0, 60, 0, 360);
+        let hueVal = (secondMapped + p.hueOffset) % 360;
+        let x = cos(p.angle) * p.radius;
+        let y = sin(p.angle) * p.radius;
+
+        fill(hueVal, 80, 90, 0.8 * 100);
+        ellipse(x, y, 8, 8);
+
+        // Move plankton angle
+        p.angle += p.speed;
+        p.radius -= 0.02; // Slowly spiral inward
+        if (p.radius < 10) {
+          // Reset if it gets too close
+          p.angle = random(360);
+          p.radius = random(50, width / 2);
+        }
+      }
+      pop();
+    }
+
+    // Water background transitions from light in the morning to dark at night
+    function drawUnderseaGradient(hr) {
+      let topColor, bottomColor;
+      if (hr < 12) {
+        // morning to noon
+        let pct = hr / 12;
+        topColor = lerpColor(color(20, 80, 110), color(40, 120, 170), pct);
+        bottomColor = lerpColor(color(5, 40, 80), color(30, 80, 130), pct);
+      } else {
+        // afternoon to midnight
+        let pct = (hr - 12) / 12;
+        topColor = lerpColor(color(40, 120, 170), color(5, 40, 80), pct);
+        bottomColor = lerpColor(color(30, 80, 130), color(10, 20, 50), pct);
+      }
+      noFill();
+      for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        let c = lerpColor(topColor, bottomColor, inter);
+        stroke(c);
+        line(0, y, width, y);
+      }
+    }
+
+    function drawClock(hr, mn, sc) {
+      push();
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, TOP);
+      text(`${nf(hr,2)}:${nf(mn,2)}:${nf(sc,2)}`, 10, 10);
+      pop();
+    }
+  </script>
+</body>
+</html>

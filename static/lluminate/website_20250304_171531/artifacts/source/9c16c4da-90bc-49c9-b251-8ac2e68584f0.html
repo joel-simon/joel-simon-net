@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bouncing Time Bubbles</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for better contrast */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Bouncing Time Bubbles</strong><br><br>
+        • Each bubble represents hour (red), minute (green), or second (blue).<br>
+        • Bubble size changes according to the current time.<br>
+        • Watch them bounce around to see time in motion.<br><br>
+        Hover to view instructions.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    let hourBubble, minuteBubble, secondBubble;
+    
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      noStroke();
+
+      // Initialize bubble objects
+      hourBubble = createBubble(color(255, 0, 0));
+      minuteBubble = createBubble(color(0, 255, 0));
+      secondBubble = createBubble(color(0, 128, 255));
+    }
+
+    function draw() {
+      background(0);
+
+      // Get current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Map time to bubble sizes
+      // Using a range to keep minimum size visible
+      hourBubble.r = map(hr, 0, 23, 10, 60);
+      minuteBubble.r = map(mn, 0, 59, 10, 60);
+      secondBubble.r = map(sc, 0, 59, 10, 60);
+
+      // Update and display each bubble
+      updateBubble(hourBubble);
+      updateBubble(minuteBubble);
+      updateBubble(secondBubble);
+    }
+
+    // Bubble factory
+    function createBubble(col) {
+      return {
+        x: random(30, width-30),
+        y: random(30, height-30),
+        vx: random(-2, 2),
+        vy: random(-2, 2),
+        r: 30,
+        c: col
+      };
+    }
+
+    // Update bubble position, bounce off walls, and draw
+    function updateBubble(b) {
+      b.x += b.vx;
+      b.y += b.vy;
+
+      // Bounce horizontally
+      if (b.x - b.r < 0) {
+        b.x = b.r;
+        b.vx *= -1;
+      } else if (b.x + b.r > width) {
+        b.x = width - b.r;
+        b.vx *= -1;
+      }
+
+      // Bounce vertically
+      if (b.y - b.r < 0) {
+        b.y = b.r;
+        b.vy *= -1;
+      } else if (b.y + b.r > height) {
+        b.y = height - b.r;
+        b.vy *= -1;
+      }
+
+      fill(b.c);
+      circle(b.x, b.y, b.r * 2);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Blossom Garden</title>
+  <!-- Include p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <style>
+    /* Reset and center body content */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0e0e0e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* 512x512 container with relative positioning to hold canvas + hover instructions */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      background: #111;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Instructions panel appears on hover */
+    #hoverInstructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.75);
+      box-sizing: border-box;
+      pointer-events: none; /* so the mouse can still interact with the canvas */
+      text-align: center;
+      padding: 20px;
+    }
+    #canvasContainer:hover #hoverInstructions {
+      display: block;
+    }
+
+    /* Center the instructions text inside the overlay */
+    .instructionsText {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverInstructions">
+      <div class="instructionsText">
+        <strong>Time Blossom Garden</strong><br><br>
+        • Flower shape changes with the hour.<br>
+        • Flower color evolves with the minute.<br>
+        • Bees' orbital speed depends on the second.<br>
+        • Click to spawn more bees.<br>
+        • Hover here any time for details.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* 
+      Time Blossom Garden
+      - Central flower:
+          * Petal count influenced by hour
+          * Petal color mapped to current minute
+      - Bees:
+          * Orbit around the center
+          * Orbital speed changing with seconds
+      - Click:
+          * Spawns an additional bee
+    */
+
+    const SIZE = 512;
+    let bees = [];
+
+    function setup() {
+      let cnv = createCanvas(SIZE, SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      // Create a few initial bees
+      for (let i = 0; i < 5; i++) {
+        bees.push(new Bee());
+      }
+    }
+
+    function draw() {
+      background(20);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Draw a flower in the center
+      drawFlower(hr, mn);
+
+      // Update and draw bees
+      for (let b of bees) {
+        b.update(sc);
+        b.display();
+      }
+
+      // Display digital clock in the corner
+      fill(255);
+      noStroke();
+      textSize(15);
+      textAlign(LEFT, TOP);
+      text(nf(hr,2) + ":" + nf(mn,2) + ":" + nf(sc,2), 10, 10);
+    }
+
+    function drawFlower(hr, mn) {
+      push();
+      translate(width / 2, height / 2);
+      
+      // Petal count: vary from 5 up to 12 or so based on hour
+      let petalCount = constrain(hr + 5, 5, 24);
+      
+      // Petal color depends on the minute
+      // We'll map minute to a hue range from ~30 to ~330 for variety
+      let hueVal = map(mn, 0, 59, 30, 330);
+
+      // Draw center of flower
+      noStroke();
+      fill(hueVal, 100, 150);
+      ellipse(0, 0, 50, 50);
+
+      // Draw petals
+      for (let i = 0; i < petalCount; i++) {
+        push();
+        rotate(i * (360 / petalCount));
+        fill(hueVal, 80, 180);
+        ellipse(70, 0, 60, 120);
+        pop();
+      }
+      pop();
+    }
+
+    class Bee {
+      constructor() {
+        // Random angle and radius for a unique orbit
+        this.angle = random(360);
+        this.radius = random(80, 160);
+        // Bee size
+        this.size = random(10, 15);
+        // Each bee has a random color
+        this.col = color(random(50, 255), random(50, 255), random(50, 255));
+      }
+
+      update(sc) {
+        // Orbital speed influenced by second
+        let speed = map(sc, 0, 59, 0.5, 4);
+        this.angle += speed;
+      }
+
+      display() {
+        push();
+        translate(width / 2, height / 2);
+        rotate(this.angle);
+        noStroke();
+        fill(this.col);
+        ellipse(this.radius, 0, this.size, this.size);
+        pop();
+      }
+    }
+
+    // Spawn a new bee on mouse click
+    function mousePressed() {
+      // Ensure we only spawn if it's inside the canvas area
+      if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
+        bees.push(new Bee());
+      }
+    }
+  </script>
+</body>
+</html>

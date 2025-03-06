@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Kaleidoscope Spiral</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the “Time Kaleidoscope Spiral”!<br><br>
+        • Colors shift with the hour.<br>
+        • Swirl speed changes with the minute.<br>
+        • The swirl amplitude changes with the second.<br><br>
+        Hover away to see the animation.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let hueBase = 0; // Base color for the spiral
+    let swirlAngle = 0; // Used to rotate the entire spiral
+    let swirlSpeed = 0.05;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      colorMode(HSB, 360, 100, 100);
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      // Fetch current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Use hour to control the base color shift
+      hueBase = (h * 15) % 360;
+
+      // Swirl speed changes with the minute
+      swirlSpeed = map(m, 0, 59, 0.01, 0.4);
+
+      // Spiral amplitude changes with the second
+      let amplitude = map(s, 0, 59, 50, 250);
+
+      // Move and rotate for kaleidoscopic effect
+      translate(width / 2, height / 2);
+      rotate(swirlAngle);
+
+      // Draw multiple 'petals' or arcs in a spiral
+      let numPoints = 200; // total "points" in the spiral
+      for (let i = 0; i < numPoints; i++) {
+        let angle = i * 8; // spacing of spiral arms
+        let distFactor = i * (amplitude / numPoints);
+        let x = distFactor * cos(angle);
+        let y = distFactor * sin(angle);
+
+        // Each petal's color changes gradually with its index
+        let colorOffset = map(i, 0, numPoints, 0, 120);
+        fill((hueBase + colorOffset) % 360, 90, 90);
+
+        ellipse(x, y, 15, 15); 
+      }
+
+      // Adjust rotation each frame
+      swirlAngle += swirlSpeed;
+
+      // Draw a subtle digital clock at the bottom center
+      resetMatrix();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+    }
+  </script>
+</body>
+</html>

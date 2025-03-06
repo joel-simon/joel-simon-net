@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Flowing Time Ribbons</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #222;
+    color: #fff;
+    font-family: sans-serif;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Canvas container to hold the 512x512 sketch */
+  #canvasContainer {
+    width: 512px;
+    height: 512px;
+    position: relative;
+  }
+
+  /* Instructions overlay, hidden by default */
+  .instructions {
+    display: none;
+    position: absolute;
+    top: 0; 
+    left: 0;
+    width: 512px;
+    height: 512px;
+    background-color: rgba(0,0,0,0.8);
+    color: #fff;
+    font-size: 14px;
+    text-align: center;
+    padding: 1em;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Show instructions on hover */
+  #canvasContainer:hover .instructions {
+    display: flex;
+  }
+</style>
+</head>
+<body>
+<div id="canvasContainer">
+  <div class="instructions">
+    Flowing Time Ribbons: Hour, minute, and second each influence the ribbon waves. 
+    • The wave height changes with hours (0-23).<br>
+    • The wave frequency changes with minutes (0-59).<br>
+    • The color shifts with seconds (0-59).
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+<script>
+let t = 0; // Time variable
+
+function setup() {
+  let cnv = createCanvas(512, 512);
+  cnv.parent("canvasContainer");
+  noStroke();
+}
+
+function draw() {
+  background(34);
+
+  let hr = hour();
+  let mn = minute();
+  let sc = second();
+
+  // Map time values into creative parameters
+  let waveHeight = map(hr, 0, 23, 10, 100);  // amplitude influenced by the hour
+  let waveFrequency = map(mn, 0, 59, 0.01, 0.1); // frequency influenced by the minute
+  let colorShift = map(sc, 0, 59, 0, 255); // color hue influenced by the second
+
+  // Draw multiple "ribbons" across the canvas
+  let ribbonCount = 5;
+  for (let i = 0; i < ribbonCount; i++) {
+    fill((colorShift + i*20) % 255, 150, 200);
+    beginShape();
+    for (let x = 0; x <= width; x += 10) {
+      let y = height/2 
+              + (i - ribbonCount/2) * 30  // vertical offset for each ribbon
+              + sin(x * waveFrequency + t + i * 20)
+                  * waveHeight * sin(t * 0.01 + i * 5);
+      vertex(x, y);
+    }
+    vertex(width, height);
+    vertex(0, height);
+    endShape(CLOSE);
+  }
+
+  // Increment time variable for animation
+  t += 0.5;
+
+  // Display digital clock in the top-left corner
+  textSize(24);
+  fill(255);
+  textAlign(LEFT, TOP);
+  let timeStr = nf(hr, 2) + ":" + nf(mn, 2) + ":" + nf(sc, 2);
+  text(timeStr, 10, 10);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Time Kaleidoscope</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset body margin/padding and use a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container fixed at 512x512, centered */
+    #clock-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+    }
+
+    /* Instructions overlay, hidden by default */
+    #instructions {
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      display: none;
+      background-color: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      line-height: 1.5;
+      padding: 2rem;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #clock-container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="clock-container">
+  <div id="instructions">
+    <h2>Time Kaleidoscope</h2>
+    <p>
+      Each second brings a vibrant change to the kaleidoscope.<br>
+      • Move your mouse around to influence pattern movement.<br>
+      • Watch the colors shift every hour, minute, and second.<br>
+      • Enjoy the ever-changing geometric display!
+    </p>
+  </div>
+</div>
+
+<script>
+  const canvasSize = 512;
+  let angleOffset = 0;
+  let colorSet;
+
+  function setup() {
+    let myCanvas = createCanvas(canvasSize, canvasSize);
+    myCanvas.parent("clock-container");
+    angleMode(DEGREES);
+    noStroke();
+  }
+
+  function draw() {
+    background(0);
+
+    // Current time
+    let hr = hour();
+    let mn = minute();
+    let sc = second();
+
+    // Use time to create a constantly changing palette
+    // Shift the color each second, minute, and hour
+    colorSet = [
+      color((hr * 10 + mn + sc) % 360, 100, 100),
+      color((hr * 2 + mn + sc * 5) % 360, 100, 100),
+      color((hr + mn * 2 + sc * 3) % 360, 100, 100)
+    ];
+    // Use HSB for easier hue shifting
+    colorMode(HSB, 360, 100, 100);
+
+    // Slowly rotate the kaleidoscope based on time
+    angleOffset += 0.05 + (sc * 0.001);
+
+    push();
+    translate(width / 2, height / 2);
+    for (let i = 0; i < 12; i++) {
+      push();
+      rotate(i * (360 / 12) + angleOffset);
+      drawSegment(hr, mn, sc, i);
+      pop();
+    }
+    pop();
+
+    // Display current time
+    drawClock(hr, mn, sc);
+  }
+
+  // Draw one "slice" of the kaleidoscope
+  function drawSegment(hr, mn, sc, index) {
+    // Use mouse position and time to add subtle shape movement
+    let sizeFactor = map(mouseX, 0, width, 0.5, 1.5);
+    let xPos = cos(frameCount + index * 30) * 50;
+    let yPos = sin(frameCount + index * 30) * 50;
+  
+    // Choose color based on slice index
+    fill(colorSet[index % colorSet.length]);
+    ellipse(xPos, yPos, 80 * sizeFactor, 80 * sizeFactor);
+
+    fill(colorSet[(index + 1) % colorSet.length]);
+    rectMode(CENTER);
+    rotate(frameCount * 0.05 + index * 3 + sc);
+    rect(xPos * 0.5, yPos * 0.5, 40 * sizeFactor, 40 * sizeFactor);
+  }
+
+  // Draw digital time near top
+  function drawClock(hr, mn, sc) {
+    fill(255);
+    textSize(24);
+    textAlign(CENTER, TOP);
+    text(`${nf(hr,2)}:${nf(mn,2)}:${nf(sc,2)}`, width/2, 10);
+  }
+</script>
+</body>
+</html>

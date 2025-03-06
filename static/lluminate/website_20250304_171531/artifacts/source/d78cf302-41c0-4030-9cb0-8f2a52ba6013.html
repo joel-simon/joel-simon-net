@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cosmic Star Swirl</title>
+  <style>
+    /* Page setup: full viewport background, no scrollbars, center content. */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #111;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for the 512 x 512 canvas, with an overlay for instructions */
+    #container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden; /* strictly clip anything beyond 512x512 */
+    }
+
+    /* Hidden instructions that appear on hover */
+    #hover-info {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    #container:hover #hover-info {
+      display: flex;
+    }
+    #hover-info p {
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    /* Ensure the canvas is exactly 512x512 and no extra scrollbars appear */
+    canvas {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="hover-info">
+      <p>
+        Welcome to the Cosmic Star Swirl!<br><br>
+        • The wave background is mapped to hour, minute, and second.<br>
+        • Swirling particles orbit in numbers and colors based on time.<br>
+        • A star at the center rotates and changes size with time.<br>
+        • Enjoy the digital clock at the bottom.<br><br>
+        Hover away to return to the display.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <script>
+    // Wave variables
+    let waveOffset = 0; // horizontal displacement for the wave
+    const waveSpeed = 0.02; // wave scroll speed
+
+    // Star variables
+    let starRotation = 0;
+
+    // Swirl particles
+    let swirl = [];
+
+    function setup() {
+      const canvas = createCanvas(512, 512);
+      canvas.parent('container');
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100, 1);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      //////////////////////////
+      // Current time variables
+      //////////////////////////
+      let h = hour();   // 0-23
+      let m = minute(); // 0-59
+      let s = second(); // 0-59
+
+      ///////////////////////////////////
+      // 1) WAVE BACKGROUND
+      ///////////////////////////////////
+      let amplitude = map(h, 0, 23, 20, 100); // hour -> wave amplitude
+      let freq = map(m, 0, 59, 0.01, 0.2);    // minute -> wave frequency
+      let phaseShift = map(s, 0, 59, 0, TWO_PI); // second -> wave phase shift
+
+      fill(50, 100, 160);
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 5) {
+        let waveY = height / 2 + amplitude * sin(freq * (x + waveOffset) + phaseShift);
+        vertex(x, waveY);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+      waveOffset += waveSpeed; // animate wave
+
+      ///////////////////////////////////
+      // 2) SWIRLING PARTICLES
+      ///////////////////////////////////
+      // Particle count based on hour, ensuring at least some swirl
+      let swirlCount = max((h + 1) * 10, 10);
+      if (swirl.length !== swirlCount) {
+        buildSwirl(swirlCount);
+      }
+
+      // Rotation speed mapped from minutes
+      let swirlSpeed = map(m, 0, 59, 0.5, 6);
+
+      // Particle color hue from seconds
+      let swirlHue = map(s, 0, 59, 0, 360);
+
+      push();
+      translate(width / 2, height / 2);
+
+      for (let i = 0; i < swirl.length; i++) {
+        let p = swirl[i];
+        let angle = frameCount * swirlSpeed + p.angleOffset;
+        let px = p.r * cos(angle);
+        let py = p.r * sin(angle);
+
+        fill((swirlHue + p.hueOffset) % 360, 80, 100, 0.8);
+        ellipse(px, py, p.size, p.size);
+      }
+      pop();
+
+      ///////////////////////////////////
+      // 3) ROTATING STAR
+      ///////////////////////////////////
+      let starPoints = max(5, h); // star points from hour
+      starRotation += 0.2 + (m * 0.01); // faster rotation as minutes increase
+      let starSize = map(s, 0, 59, 40, 120); // star size from seconds
+
+      push();
+      translate(width / 2, height / 2);
+      rotate(starRotation);
+      fill(255, 180, 0);
+      drawStar(0, 0, starSize * 0.4, starSize, starPoints);
+      pop();
+
+      ///////////////////////////////////
+      // 4) DIGITAL TIME DISPLAY
+      ///////////////////////////////////
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, width / 2, height * 0.95);
+    }
+
+    // Build swirl array with random attributes
+    function buildSwirl(count) {
+      swirl = [];
+      for (let i = 0; i < count; i++) {
+        swirl.push({
+          r: random(40, 200),
+          angleOffset: random(0, 360),
+          hueOffset: random(0, 100),
+          size: random(5, 10)
+        });
+      }
+    }
+
+    // Draw star with given points, inner and outer radius
+    function drawStar(x, y, radius1, radius2, npoints) {
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

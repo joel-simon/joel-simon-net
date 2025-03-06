@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Kaleidoscopic Time Portal</title>
+  <style>
+    /* No scrollbars, no default margin */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #333;
+      font-family: sans-serif;
+      color: #fff;
+    }
+    /* Fixed-size container for our 512x512 canvas */
+    #container {
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      position: relative;
+    }
+    /* Hidden overlay for instructions */
+    #hover-info {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    #container:hover #hover-info {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="hover-info">
+      <p>
+        Welcome to the Kaleidoscopic Time Portal.<br><br>
+        - Each slice is generated from the current time.<br>
+        - Colors shift based on the hour, minute, and second.<br>
+        - The whole scene rotates slowly to represent continuous time flow.<br><br>
+        Hover off the panel to return to viewing the display.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  
+  <script>
+    let angleIncrement;
+    let rotationSpeed;
+
+    function setup() {
+      const canvas = createCanvas(512, 512);
+      canvas.parent('container');
+      angleMode(DEGREES);
+
+      // Divide the circle by 6 slices (60 degrees each)
+      angleIncrement = 360 / 6;
+      rotationSpeed = 0;
+    }
+
+    function draw() {
+      background(0);
+
+      // Get current hour, minute, second
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Map hour, minute, second to color channels
+      let redVal   = map(h, 0, 23, 20, 255);
+      let greenVal = map(m, 0, 59, 20, 255);
+      let blueVal  = map(s, 0, 59, 20, 255);
+
+      // Let rotation accumulate slightly with each passing second (time flow)
+      rotationSpeed += 0.01;
+
+      push();
+      // Move to center of canvas
+      translate(width / 2, height / 2);
+      rotate(rotationSpeed * 360);
+
+      // Draw 6 kaleidoscopic slices
+      for (let i = 0; i < 6; i++) {
+        push();
+        rotate(i * angleIncrement);
+        // Fill color changes with current time
+        fill(redVal, greenVal, blueVal);
+        noStroke();
+
+        // Draw elliptical shape whose size changes with time
+        let shapeW = map(s, 0, 59, 40, 120);
+        let shapeH = map(m, 0, 59, 20, 60);
+
+        // Placed outward from the center
+        ellipse(100, 0, shapeW, shapeH);
+
+        // Inner circle with hour color influence
+        fill(redVal, greenVal * 0.6, blueVal * 0.6);
+        ellipse(180, 0, shapeH, shapeH);
+
+        pop();
+      }
+      pop();
+
+      // (Optional) Low-profile digital time at the bottom center
+      textAlign(CENTER, CENTER);
+      textSize(16);
+      fill(255);
+      text(
+        nf(h,   2) + ':' + 
+        nf(m,   2) + ':' + 
+        nf(s,   2),
+        width / 2,
+        height * 0.95
+      );
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Gears Fractal Maze</title>
+  <!-- Include p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset and center body content */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0e0e0e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* 512x512 container with relative positioning to hold canvas + hover instructions */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      background: #111;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Instructions panel appears on hover */
+    #hoverInstructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.75);
+      box-sizing: border-box;
+      pointer-events: none; /* so the mouse can still interact with the canvas */
+      text-align: center;
+      padding: 20px;
+    }
+    #canvasContainer:hover #hoverInstructions {
+      display: block;
+    }
+
+    /* Center the instructions text inside the overlay */
+    .instructionsText {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverInstructions">
+      <div class="instructionsText">
+        <strong>Time Gears Fractal Maze</strong><br><br>
+        • Mosaic background shifts color each minute<br>
+        • Gear rotates with seconds<br>
+        • Fractal tree expands and contracts with hour<br>
+        • Maze regenerates on key press (space)<br>
+        • Use arrow keys to move the explorer in the maze<br>
+        • Hover here any time for details
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*
+      TIME GEARS FRACTAL MAZE
+      1) Mosaic background changes color based on the minute.
+      2) A gear rotates according to the current second.
+      3) A fractal tree grows or shrinks based on the hour.
+      4) A simple maze regenerates on space key press.
+      5) A small explorer moves using arrow keys.
+    */
+
+    // Canvas size
+    const SIZE = 512;
+
+    // Maze parameters
+    const COLS = 16;
+    const ROWS = 16;
+    const CELL_SIZE = SIZE / COLS; 
+    let maze = [];
+    let stack = [];
+    let currentCell;
+    let playerPos;
+    let visited = [];
+
+    // For fractal tree
+    let maxBranches = 7;
+
+    // For gear
+    let gearSize = 80;
+    let toothCount = 12;
+
+    // Maze cell object
+    class Cell {
+      constructor(col, row) {
+        this.col = col;
+        this.row = row;
+        this.walls = [true, true, true, true]; // top,right,bottom,left
+        this.visited = false;
+      }
+      show() {
+        let x = this.col * CELL_SIZE;
+        let y = this.row * CELL_SIZE;
+        stroke(255);
+        strokeWeight(2);
+        if (this.walls[0]) line(x, y, x + CELL_SIZE, y);                   // top
+        if (this.walls[1]) line(x + CELL_SIZE, y, x + CELL_SIZE, y + CELL_SIZE); // right
+        if (this.walls[2]) line(x + CELL_SIZE, y + CELL_SIZE, x, y + CELL_SIZE); // bottom
+        if (this.walls[3]) line(x, y + CELL_SIZE, x, y);                   // left
+      }
+      checkNeighbors() {
+        let neighbors = [];
+        let top    = getCell(this.col, this.row - 1);
+        let right  = getCell(this.col + 1, this.row);
+        let bottom = getCell(this.col, this.row + 1);
+        let left   = getCell(this.col - 1, this.row);
+        if (top    && !top.visited)    neighbors.push(top);
+        if (right  && !right.visited)  neighbors.push(right);
+        if (bottom && !bottom.visited) neighbors.push(bottom);
+        if (left   && !left.visited)   neighbors.push(left);
+
+        if (neighbors.length > 0) {
+          let idx = floor(random(neighbors.length));
+          return neighbors[idx];
+        } else {
+          return undefined;
+        }
+      }
+    }
+
+    function setup() {
+      let cnv = createCanvas(SIZE, SIZE);
+      cnv.parent("canvasContainer");
+      frameRate(30);
+      generateMaze();
+      // Player starts in top-left
+      playerPos = createVector(CELL_SIZE / 2, CELL_SIZE / 2);
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Background mosaic effect
+      drawMosaic(mn);
+
+      // Draw Maze
+      for (let c of maze) {
+        c.show();
+      }
+      // Move our tiny explorer
+      movePlayer();
+      drawPlayer();
+
+      // Gear at top-right
+      drawGear(width - 70, 70, sc);
+
+      // Fractal tree at bottom-left
+      push();
+      translate(80, height - 10);
+      rotate(radians(180));
+      let branchAdjustment = map(hr % 12, 0, 11, 0.6, 1.4);
+      fractalBranch(70 * branchAdjustment);
+      pop();
+
+      // Show digital clock
+      showClock(hr, mn, sc);
+    }
+
+    // Maze generation algorithm (recursive backtracking)
+    function generateMaze() {
+      maze = [];
+      visited = [];
+      stack = [];
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          maze.push(new Cell(c, r));
+        }
+      }
+      currentCell = maze[0];
+      currentCell.visited = true;
+      visited.push(currentCell);
+      while(true) {
+        let next = currentCell.checkNeighbors();
+        if (next) {
+          next.visited = true;
+          stack.push(currentCell);
+          removeWalls(currentCell, next);
+          currentCell = next;
+        } else if (stack.length > 0) {
+          currentCell = stack.pop();
+        } else {
+          break;
+        }
+      }
+    }
+
+    function getCell(col, row) {
+      if(col < 0 || col >= COLS || row < 0 || row >= ROWS) return undefined;
+      return maze[row * COLS + col];
+    }
+
+    function removeWalls(a, b) {
+      let x = a.col - b.col;
+      if (x === 1) {
+        a.walls[3] = false;
+        b.walls[1] = false;
+      } else if (x === -1) {
+        a.walls[1] = false;
+        b.walls[3] = false;
+      }
+      let y = a.row - b.row;
+      if (y === 1) {
+        a.walls[0] = false;
+        b.walls[2] = false;
+      } else if (y === -1) {
+        a.walls[2] = false;
+        b.walls[0] = false;
+      }
+    }
+
+    // Handle player movement
+    function movePlayer() {
+      let speed = 2;
+      if (keyIsDown(LEFT_ARROW)) {
+        playerPos.x = max( playerPos.x - speed, CELL_SIZE/2 );
+      }
+      if (keyIsDown(RIGHT_ARROW)) {
+        playerPos.x = min( playerPos.x + speed, width - CELL_SIZE/2 );
+      }
+      if (keyIsDown(UP_ARROW)) {
+        playerPos.y = max( playerPos.y - speed, CELL_SIZE/2 );
+      }
+      if (keyIsDown(DOWN_ARROW)) {
+        playerPos.y = min( playerPos.y + speed, height - CELL_SIZE/2 );
+      }
+    }
+
+    function drawPlayer() {
+      fill(255, 150, 150);
+      noStroke();
+      ellipse(playerPos.x, playerPos.y, CELL_SIZE*0.5);
+    }
+
+    // Key press to regenerate the maze
+    function keyPressed() {
+      if (key === ' ' ) {
+        generateMaze();
+        playerPos = createVector(CELL_SIZE / 2, CELL_SIZE / 2);
+      }
+    }
+
+    // Mosaic background changes color with minute
+    function drawMosaic(mn) {
+      noStroke();
+      for(let y = 0; y < height; y += 32) {
+        for(let x = 0; x < width; x += 32) {
+          let cVal = map(mn, 0, 59, 0, 255);
+          fill((x + y + cVal) % 255, 50, 100);
+          rect(x, y, 32, 32);
+        }
+      }
+    }
+
+    // Draw gear rotating with second
+    function drawGear(cx, cy, sc) {
+      push();
+      translate(cx, cy);
+      let angle = map(sc, 0, 60, 0, TWO_PI);
+      rotate(angle);
+
+      fill(90, 180, 220);
+      stroke(255);
+      strokeWeight(1);
+
+      // Gear teeth
+      let step = TWO_PI / toothCount;
+      beginShape();
+      for(let i = 0; i < toothCount; i++){
+        let a1 = i * step;
+        let a2 = a1 + step/2;
+        let r1 = gearSize * 0.5;
+        let r2 = gearSize * 0.65;
+        vertex(r1 * cos(a1), r1 * sin(a1));
+        vertex(r2 * cos(a2), r2 * sin(a2));
+      }
+      endShape(CLOSE);
+
+      // Inner circle
+      fill(150);
+      ellipse(0, 0, gearSize * 0.6);
+
+      // Center
+      fill(255);
+      ellipse(0, 0, 8);
+      pop();
+    }
+
+    // Fractal tree
+    function fractalBranch(len) {
+      stroke(200, 200, 255);
+      strokeWeight(map(len, 10, 80, 1, 4));
+      line(0, 0, 0, -len);
+      translate(0, -len);
+      if(len > 10) {
+        push();
+        rotate(radians(25));
+        fractalBranch(len * 0.7);
+        pop();
+        push();
+        rotate(radians(-20));
+        fractalBranch(len * 0.7);
+        pop();
+      }
+    }
+
+    // Digital clock
+    function showClock(h, m, s) {
+      fill(255);
+      noStroke();
+      textSize(14);
+      textAlign(LEFT, TOP);
+      text(nf(h,2) + ":" + nf(m,2) + ":" + nf(s,2), 10, 10);
+    }
+  </script>
+</body>
+</html>

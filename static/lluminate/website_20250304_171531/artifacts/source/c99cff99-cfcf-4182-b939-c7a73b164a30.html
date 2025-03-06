@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Petals Bloom</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (hidden by default, appears on hover) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.8);
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      box-sizing: border-box;
+      padding: 20px;
+      pointer-events: none;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Petals Bloom</strong><br><br>
+        • The background hue shifts with the current hour.<br>
+        • Petal length grows or shrinks according to the minute.<br>
+        • Petal colors change each second.<br>
+        • A swirl of tiny orbs is released from the center every second.<br>
+        • A small clock is displayed in the bottom corner.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Petals Bloom
+      -----------------
+      1) Background hue changes with the hour.
+      2) A ring of petals around the center, each petal's length determined by minute.
+      3) Petals' color changes according to the second.
+      4) Ephemeral orbs spiral outward each second.
+      5) A small digital clock is drawn near the bottom corner.
+    */
+
+    const CANVAS_SIZE = 512;
+    let petalCount = 12;    // number of petals in the flower
+    let orbs = [];
+    let lastSecond = -1;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      rectMode(CENTER);
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // 1) Dynamic background based on hour (smooth transitions)
+      drawDynamicBackground(h);
+
+      // 2) Draw time-based petals
+      push();
+      translate(width/2, height/2);
+      drawPetals(h, m, s);
+      pop();
+
+      // 3) Create ephemeral orbs each second
+      if (s !== lastSecond) {
+        orbs.push(new Orb());
+        lastSecond = s;
+      }
+
+      // 4) Update and display orbs
+      for (let i = orbs.length - 1; i >= 0; i--) {
+        orbs[i].update();
+        orbs[i].display();
+        if (orbs[i].isDone()) {
+          orbs.splice(i, 1);
+        }
+      }
+
+      // 5) Small clock in the corner
+      drawClock(h, m, s);
+    }
+
+    function drawDynamicBackground(h) {
+      colorMode(HSB, 360, 100, 100);
+      let backgroundHue = map(h, 0, 23, 0, 360);
+      let c1 = color(backgroundHue, 80, 30);
+      let c2 = color((backgroundHue + 60) % 360, 80, 10);
+      // Simple vertical gradient
+      for(let y = 0; y < height; y++){
+        let lerpAmt = map(y, 0, height, 0, 1);
+        let c = lerpColor(c1, c2, lerpAmt);
+        stroke(c);
+        line(0, y, width, y);
+      }
+      colorMode(RGB, 255);
+    }
+
+    // Draw petals around the center
+    function drawPetals(h, m, s) {
+      stroke(255);
+      strokeWeight(1);
+      noFill();
+
+      let angleStep = 360 / petalCount;
+      // Petal length changes with minute
+      let petalLength = map(m, 0, 59, 40, 140);
+      // Petal color changes with second
+      colorMode(HSB, 360, 100, 100);
+      let baseHue = map(s, 0, 59, 0, 360);
+
+      for (let i = 0; i < petalCount; i++) {
+        push();
+        rotate(i * angleStep);
+        // Petal shape
+        let petalColor = color((baseHue + i*10) % 360, 80, 90);
+        fill(petalColor);
+        stroke(0, 0, 0);
+        beginShape();
+        vertex(0, 0);
+        bezierVertex(petalLength / 3, -petalLength / 6, petalLength, -petalLength / 2, 0, -petalLength);
+        bezierVertex(-petalLength, -petalLength / 2, -petalLength / 3, -petalLength / 6, 0, 0);
+        endShape(CLOSE);
+        pop();
+      }
+      colorMode(RGB, 255);
+    }
+
+    // Orb class for ephemeral spirals each second
+    class Orb {
+      constructor() {
+        this.angle = random(360); // initial angle
+        this.radius = 0;          // distance from center
+        this.speed = random(1, 2);
+        this.alpha = 255;
+      }
+
+      update() {
+        this.radius += this.speed;
+        this.angle += this.speed * 2;
+        this.alpha -= 2; // fade out over time
+      }
+
+      display() {
+        push();
+        translate(width/2, height/2);
+        rotate(this.angle);
+        noStroke();
+        fill(255, this.alpha);
+        ellipse(this.radius, 0, 10, 10);
+        pop();
+      }
+
+      isDone() {
+        return this.alpha < 0;
+      }
+    }
+
+    function drawClock(h, m, s) {
+      push();
+      fill(255);
+      textSize(15);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 10, height - 16);
+      pop();
+    }
+
+  </script>
+</body>
+</html>

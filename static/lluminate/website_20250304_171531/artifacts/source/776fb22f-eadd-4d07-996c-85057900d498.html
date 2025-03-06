@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Combined Interactive Time Display</title>
+  <style>
+    /* Reset and basic styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Canvas background color */
+      font-family: sans-serif;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Instructions overlay, hidden initially */
+    #instructions {
+      display: none;
+      pointer-events: none; /* click-through */
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      box-sizing: border-box;
+      text-align: center;
+      padding: 20px;
+    }
+
+    /* Show instructions on hover of container */
+    #canvas-container:hover #instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <!-- Instructions: displayed on hover -->
+    <div id="instructions">
+      <div class="instructions-text">
+        This display merges multiple time-based elements:<br/>
+        • A wave whose color, amplitude, and frequency respond to the hour, minute, and second.<br/>
+        • A rotating star at the center, spinning and pulsing with the current time.<br/>
+        Hover to read these instructions!
+      </div>
+    </div>
+  </div>
+
+  <!-- Include p5.js from the CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <script>
+    const CANVAS_SIZE = 512;
+
+    function setup() {
+      let myCanvas = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      myCanvas.parent('canvas-container');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      // Current time
+      let hr = hour();     // 0..23
+      let mn = minute();   // 0..59
+      let sc = second();   // 0..59
+
+      // Wave color mapping
+      // R from hour, G from minute, B from second
+      let waveR = map(hr, 0, 23, 50, 255);
+      let waveG = map(mn, 0, 59, 50, 255);
+      let waveB = map(sc, 0, 59, 50, 255);
+
+      // Wave amplitude/frequency from minute/second
+      let amplitude = map(mn, 0, 59, 20, 100);
+      let frequency = map(sc, 0, 59, 0.02, 0.2);
+
+      // Draw the wave across the canvas
+      fill(waveR, waveG, waveB, 180);
+      for (let x = 0; x < width; x += 10) {
+        let y = height / 2 + sin((frameCount * frequency) + (x * 0.05)) * amplitude;
+        ellipse(x, y, 15, 15);
+      }
+
+      // Draw a rotating star in the center
+      push();
+      translate(width / 2, height / 2);
+
+      // Rotate star based on time
+      //   hour influences major rotation
+      //   second provides a small additional spin
+      let baseRotation = map(hr % 12, 0, 12, 0, 360);
+      let pulseRotation = map(sc, 0, 60, 0, 360);
+      rotate(baseRotation + pulseRotation);
+
+      // Star color changes with hour/minute/second
+      let starR = map(hr, 0, 23, 100, 255);
+      let starG = map(mn, 0, 59, 100, 255);
+      let starB = map(sc, 0, 59, 100, 255);
+      fill(starR, starG, starB);
+
+      // Star pulsing radius based on minute
+      let starSize = map(mn, 0, 59, 30, 80);
+
+      drawStar(0, 0, starSize * 0.5, starSize, 5);
+      pop();
+
+      // Draw a digital time readout top-left
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(nf(hr,2) + ':' + nf(mn,2) + ':' + nf(sc,2), 10, 10);
+    }
+
+    // Generic function to draw a star
+    function drawStar(x, y, radius1, radius2, npoints) {
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

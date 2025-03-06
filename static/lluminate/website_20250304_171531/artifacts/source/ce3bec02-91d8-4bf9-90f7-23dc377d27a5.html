@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Galactic Circus Time</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the "Galactic Circus Time"!<br><br>
+        • The outer ring’s color changes with the hour.<br>
+        • Cosmic acrobats revolve and their number matches the current hour.<br>
+        • Dashing comets appear each second, leaving trails.<br>
+        • Confetti bursts every minute for extra spectacle!<br><br>
+        Hover away to see the show.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let comets = [];
+    let confetti = [];
+    let lastMinute = -1;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      // Time variables
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Galactic ring color changes by hour
+      // Map hour to a color angle in HSB
+      colorMode(HSB);
+      let ringHue = map(h, 0, 23, 0, 360);
+      fill(ringHue, 80, 90);
+      ellipse(width/2, height/2, 400, 400);
+
+      // White center circle
+      colorMode(RGB);
+      fill(255);
+      ellipse(width/2, height/2, 100, 100);
+
+      // Acrobats revolve around center
+      push();
+      translate(width/2, height/2);
+      let numAcrobats = max(h, 1); // Avoid zero acrobats
+      let angleStep = 360 / numAcrobats;
+      for (let i = 0; i < numAcrobats; i++) {
+        push();
+        rotate(frameCount + i * angleStep);
+        let orbitRadius = 150;
+        fill(255, 150, 0);
+        ellipse(orbitRadius, 0, 20, 20);
+        pop();
+      }
+      pop();
+
+      // Create a new comet each second
+      if (frameCount % 60 == 0) {
+        comets.push(new Comet());
+      }
+      // Update and draw comets
+      for (let i = comets.length - 1; i >= 0; i--) {
+        comets[i].update();
+        comets[i].display();
+        if (comets[i].outOfBounds()) {
+          comets.splice(i, 1);
+        }
+      }
+
+      // Confetti bursts each new minute
+      if (m !== lastMinute) {
+        lastMinute = m;
+        for (let i = 0; i < 20; i++) {
+          confetti.push(new Confetto());
+        }
+      }
+      // Update and draw confetti
+      for (let i = confetti.length - 1; i >= 0; i--) {
+        confetti[i].update();
+        confetti[i].display();
+        if (confetti[i].alpha <= 0) {
+          confetti.splice(i, 1);
+        }
+      }
+
+      // Digital clock at bottom
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+    }
+
+    // Comet class
+    class Comet {
+      constructor() {
+        // Start from random side
+        this.x = random([0, width]);
+        this.y = random(height);
+        this.vx = this.x === 0 ? random(2, 4) : random(-4, -2);
+        this.vy = random(-1, 1);
+        this.trail = [];
+        this.trailLength = 8;
+        this.col = color(0, 200, 255);
+      }
+
+      update() {
+        // Update position
+        this.x += this.vx;
+        this.y += this.vy;
+        // Keep a trail
+        this.trail.push(createVector(this.x, this.y));
+        if (this.trail.length > this.trailLength) {
+          this.trail.shift();
+        }
+      }
+
+      display() {
+        // Draw trail
+        noFill();
+        stroke(this.col);
+        beginShape();
+        for (let i = 0; i < this.trail.length; i++) {
+          let pos = this.trail[i];
+          vertex(pos.x, pos.y);
+        }
+        endShape();
+        noStroke();
+        // Draw head
+        fill(this.col);
+        ellipse(this.x, this.y, 6, 6);
+      }
+
+      outOfBounds() {
+        return (this.x < 0 || this.x > width || this.y < 0 || this.y > height);
+      }
+    }
+
+    // Confetto class
+    class Confetto {
+      constructor() {
+        this.x = random(width);
+        this.y = random(height/2);
+        this.vx = random(-1, 1);
+        this.vy = random(1, 3);
+        this.size = random(5, 15);
+        this.alpha = 255;
+        this.col = color(random(255), random(255), random(255));
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.alpha -= 3;
+      }
+
+      display() {
+        noStroke();
+        fill(red(this.col), green(this.col), blue(this.col), this.alpha);
+        rectMode(CENTER);
+        push();
+        translate(this.x, this.y);
+        rotate(frameCount);
+        rect(0, 0, this.size, this.size);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

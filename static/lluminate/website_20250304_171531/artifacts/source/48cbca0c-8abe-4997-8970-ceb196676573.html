@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Mirror Portal</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page layout, background, and container styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Container for the canvas */
+    #timeMirrorContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Instructions overlay, hidden by default. Display on hover. */
+    #instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.85);
+      color: #222;
+      font-family: sans-serif;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    #timeMirrorContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="timeMirrorContainer">
+    <!-- Hover instructions -->
+    <div id="instructions">
+      <h3>Time Mirror Portal</h3>
+      <p>
+        • This portal displays a reversed version of the current time.<br/>
+        • Hours, minutes, and seconds are mirrored, creating a backward flow.<br/>
+        • Observe the pulsing circles and spinning arcs as they respond to the mirrored time.<br/>
+        • Hover anytime to revisit these instructions.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let canvasSize = 512;
+
+    function setup() {
+      let c = createCanvas(canvasSize, canvasSize);
+      c.parent("timeMirrorContainer");
+
+      angleMode(DEGREES);
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      noStroke();
+    }
+
+    function draw() {
+      // Real time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Mirrored or reversed time
+      let revHr = 23 - hr;
+      let revMn = 59 - mn;
+      let revSc = 59 - sc;
+
+      // Create a color background based on mirrored hour
+      // Map [0..23] -> [0..255] for hue-like effect
+      let bgColor = map(revHr, 0, 23, 0, 255);
+      background(bgColor, 100, 180);
+
+      // Draw circles that pulse based on mirrored minute
+      // We use revMn to size the circles from 50..300
+      let maxRadius = map(revMn, 0, 59, 50, 300);
+      fill(255 - bgColor, 180, bgColor, 120);
+      ellipse(width/2, height/2, maxRadius);
+
+      // Rotate arcs based on mirrored second
+      push();
+      translate(width/2, height/2);
+
+      // revSc in [0..59], map to 0..360 for a full rotation
+      let spinAngle = map(revSc, 0, 59, 0, 360);
+      rotate(spinAngle);
+      
+      // Draw three nested arcs, sizing them differently
+      for (let i = 0; i < 3; i++) {
+        stroke(255, 50 + i*60, 180 - i*60);
+        strokeWeight(8 - i*2);
+        noFill();
+        arc(0, 0, 180 + i*50, 180 + i*50, 0, 120 + revSc);
+      }
+
+      pop();
+
+      // Display the mirrored time
+      fill(255);
+      noStroke();
+      textSize(22);
+      let mirroredTime = nf(revHr, 2) + ":" + nf(revMn, 2) + ":" + nf(revSc, 2);
+      text("Mirrored Time: " + mirroredTime, width/2, height - 30);
+    }
+  </script>
+</body>
+</html>

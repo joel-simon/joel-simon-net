@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Orbital Universe</title>
+  <!-- Include p5.js -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic page setup to center the canvas */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      border: none;
+    }
+
+    /* Instructions overlay (hidden by default, appears on hover) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.7);
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      box-sizing: border-box;
+      padding: 20px;
+      pointer-events: none;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Orbital Universe</strong><br><br>
+        • Star color changes with the hour.<br>
+        • Planet's orbit radius adapts to the minute.<br>
+        • Orbit speed depends on the current second.<br>
+        • Asteroid ring varies with second count.<br>
+        Hover away to explore!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Orbital Universe
+      ---------------------
+      1) A star in the center whose color changes by the current hour.
+      2) A planet orbits around the star, with orbit radius determined by the minute, and motion speed by the second.
+      3) A ring of asteroids that changes in number based on the current second.
+      4) A subtle background hue shift also keyed to the hour.
+    */
+    
+    const CANVAS_SIZE = 512;
+
+    // Asteroids
+    let asteroids = [];
+    let lastSecond = -1;
+
+    // Planet orbit data
+    let angle = 0;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // (1) Dynamic background that softly shifts with hour
+      drawSky(h);
+
+      // (2) Draw a star at center, color depends on hour
+      drawCentralStar(h);
+
+      // (3) Orbit radius depends on minute, orbit speed depends on second
+      let orbitRadius = map(m, 0, 59, 50, 200);
+      // The orbit speed is scaled by the second
+      let orbitSpeed = map(s, 0, 59, 0.5, 5);
+
+      // Update the planet's angle
+      angle += orbitSpeed; 
+      push();
+      translate(width / 2, height / 2);
+      // Planet position
+      let px = orbitRadius * cos(angle);
+      let py = orbitRadius * sin(angle);
+      // Draw planet
+      fill(70, 130, 180);
+      ellipse(px, py, 30, 30);
+      pop();
+
+      // (4) Asteroid ring: number depends on second
+      if (s !== lastSecond) {
+        generateAsteroids(s);
+        lastSecond = s;
+      }
+      for (let ast of asteroids) {
+        ast.update();
+        ast.display();
+      }
+
+      // Small digital clock at bottom-left
+      drawClock(h, m, s);
+    }
+
+    // Subtle gradient in background
+    function drawSky(h) {
+      // We’ll shift background color with hour
+      colorMode(HSB, 360, 100, 100);
+      let topCol = color((h * 15) % 360, 60, 20);
+      let botCol = color(((h + 12) * 15) % 360, 60, 20);
+      for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        let c = lerpColor(topCol, botCol, inter);
+        stroke(c);
+        line(0, y, width, y);
+      }
+      colorMode(RGB, 255);
+    }
+
+    // Draw central star with color linked to hour
+    function drawCentralStar(h) {
+      push();
+      translate(width / 2, height / 2);
+      colorMode(HSB, 360, 100, 100);
+      let starHue = map(h, 0, 23, 0, 360);
+      fill(starHue, 70, 100);
+      noStroke();
+      ellipse(0, 0, 70, 70);
+      pop();
+      colorMode(RGB, 255);
+    }
+
+    // Generate asteroids based on number of seconds
+    function generateAsteroids(s) {
+      asteroids = [];
+      let count = map(s, 0, 59, 5, 40);
+      for (let i = 0; i < count; i++) {
+        asteroids.push(new Asteroid());
+      }
+    }
+
+    // Asteroid class
+    class Asteroid {
+      constructor() {
+        // Random orbit angle, radius ~ mid-range
+        this.ang = random(360);
+        this.orbit = random(220, 300);
+        this.size = random(6, 15);
+        this.speed = random(0.2, 1.2);
+      }
+      update() {
+        this.ang += this.speed;
+      }
+      display() {
+        push();
+        translate(width / 2, height / 2);
+        let x = this.orbit * cos(this.ang);
+        let y = this.orbit * sin(this.ang);
+        fill(150);
+        ellipse(x, y, this.size, this.size);
+        pop();
+      }
+    }
+
+    // Draw a small clock in bottom-left
+    function drawClock(h, m, s) {
+      push();
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 10, height - 16);
+      pop();
+    }
+  </script>
+</body>
+</html>

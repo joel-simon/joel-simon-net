@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Magical Time Aquarium</title>
+  <!-- Include p5.js -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* A fixed 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Overlay for hover instructions (hidden by default) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.75);
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Magical Time Aquarium<br><br>
+        • Giant fish size reflects the hour.<br>
+        • Fish color changes with minutes.<br>
+        • Bubbles emerge each second.<br>
+        • Background hue shifts over time.<br>
+        Hover away to dive in!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Magical Time Aquarium:
+      - A large fish whose size is tied to the current hour.
+      - Colorful smaller fish; their colors are based on the current minute.
+      - Bubbles appear every second.
+      - Gradual background hue transitions throughout the day.
+    */
+
+    const SIZE = 512;
+    let bigFish;       // The large fish
+    let smallFish = []; 
+    let bubbles = [];
+    let lastSecondDrawn = -1;
+
+    function setup() {
+      let cnv = createCanvas(SIZE, SIZE);
+      cnv.parent("canvasContainer");
+
+      // Create a single big fish
+      bigFish = new BigFish();
+
+      // Create multiple small fish
+      for (let i = 0; i < 10; i++) {
+        smallFish.push(new SmallFish());
+      }
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Change background color gradually based on time
+      drawBackground(h, m, s);
+
+      // Update and draw the big fish (size scaled by hour)
+      bigFish.update(h);
+      bigFish.display();
+
+      // Update and draw each small fish (color changes with minute)
+      for (let fish of smallFish) {
+        fish.update(m);
+        fish.display();
+      }
+
+      // Generate bubbles if second changes
+      if (s !== lastSecondDrawn) {
+        bubbles.push(new Bubble());
+        lastSecondDrawn = s;
+      }
+
+      // Update and draw bubbles
+      for (let b of bubbles) {
+        b.update();
+        b.display();
+      }
+
+      // Remove bubbles that have drifted off the top
+      bubbles = bubbles.filter(b => !b.popped);
+    }
+
+    // Background color transitions
+    function drawBackground(h, m, s) {
+      colorMode(HSB, 255);
+      let totalSeconds = h*3600 + m*60 + s;
+      // Map time to a slow color shift
+      let hueVal = map(totalSeconds % 86400, 0, 86400, 0, 255); 
+      background(hueVal, 100, 150);
+      colorMode(RGB, 255);
+    }
+
+    // Big fish class
+    class BigFish {
+      constructor() {
+        this.x = SIZE * 0.2;
+        this.y = SIZE * 0.5;
+        this.baseSize = 40;
+        this.xSpeed = 1; 
+      }
+
+      update(h) {
+        // Hour influences size
+        let dayHour = h % 12 || 12; 
+        this.currentSize = this.baseSize + dayHour * 4;
+
+        // Move from left to right, wrap around
+        this.x += this.xSpeed;
+        if (this.x > width + this.currentSize * 2) {
+          this.x = -this.currentSize * 2;
+        }
+      }
+
+      display() {
+        push();
+        translate(this.x, this.y);
+        noStroke();
+
+        // Body
+        fill(200, 100, 100);
+        ellipse(0, 0, this.currentSize * 2, this.currentSize);
+
+        // Tail
+        triangle(
+          -this.currentSize, 0,
+          -this.currentSize - this.currentSize * 0.6, -this.currentSize * 0.3,
+          -this.currentSize - this.currentSize * 0.6, this.currentSize * 0.3
+        );
+
+        // Eye
+        fill(255);
+        ellipse(this.currentSize * 0.4, -this.currentSize * 0.15, this.currentSize * 0.3, this.currentSize * 0.3);
+        fill(0);
+        ellipse(this.currentSize * 0.4, -this.currentSize * 0.15, this.currentSize * 0.15, this.currentSize * 0.15);
+
+        pop();
+      }
+    }
+
+    // Small fish class
+    class SmallFish {
+      constructor() {
+        this.x = random(width);
+        this.y = random(height);
+        this.size = random(15, 25);
+        this.xSpeed = random(0.5, 1.5);
+        this.mColor = 0; // Will change based on minute
+      }
+
+      update(m) {
+        // Map minutes to a color range
+        this.mColor = map(m, 0, 59, 0, 255);
+
+        // Simple horizontal movement
+        this.x += this.xSpeed;
+        if (this.x > width + this.size) {
+          this.x = -this.size;
+          this.y = random(height);
+        }
+      }
+
+      display() {
+        push();
+        translate(this.x, this.y);
+        noStroke();
+        colorMode(HSB, 255);
+        fill(this.mColor, 200, 200);
+        colorMode(RGB, 255);
+
+        // Body
+        ellipse(0, 0, this.size * 2, this.size);
+
+        // Tail
+        let tailOffset = this.size * 0.7;
+        triangle(
+          -this.size, 0,
+          -this.size - tailOffset, -this.size * 0.3,
+          -this.size - tailOffset, this.size * 0.3
+        );
+
+        // Eye
+        fill(255);
+        ellipse(this.size * 0.3, -this.size * 0.1, this.size * 0.4, this.size * 0.4);
+        fill(0);
+        ellipse(this.size * 0.3, -this.size * 0.1, this.size * 0.2, this.size * 0.2);
+
+        pop();
+      }
+    }
+
+    // Bubble class
+    class Bubble {
+      constructor() {
+        this.x = random(width);
+        this.y = height + 10;
+        this.size = random(5, 10);
+        this.speed = random(1, 2);
+        this.popped = false;
+      }
+
+      update() {
+        this.y -= this.speed;
+        if (this.y < -this.size) {
+          this.popped = true;
+        }
+      }
+
+      display() {
+        push();
+        translate(this.x, this.y);
+        stroke(255);
+        strokeWeight(1);
+        noFill();
+        ellipse(0, 0, this.size, this.size);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

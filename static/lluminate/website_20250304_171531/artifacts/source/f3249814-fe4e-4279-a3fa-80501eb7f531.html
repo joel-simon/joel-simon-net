@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Orbital Galaxy</title>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* A fixed 512x512 container (for iframe) */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.8);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center instructions text */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Orbital Galaxy</strong><br><br>
+        • The number of orbits is based on the hour.<br>
+        • Each orbit contains minute-based circles.<br>
+        • The rotation speed depends on seconds.<br>
+        • The distant nebula color evolves in real time.<br>
+        • Digital clock in the bottom-left corner.<br><br>
+        Hover anywhere in the canvas to see instructions.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time Orbital Galaxy
+      - Hour determines the number of orbits.
+      - Minute sets how many circles appear in each orbit.
+      - Rotation speed scales with seconds.
+      - A dynamic background simulates a shifting nebula.
+      - Displays a digital clock in the lower-left corner.
+    */
+
+    const CANVAS_SIZE = 512;
+
+    function setup() {
+      let c = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      c.parent('canvas-container');
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100);
+    }
+
+    function draw() {
+      backgroundNebula();
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // The number of orbits: from 1 to 12 (cycling with hour)
+      let orbitCount = (h % 12) || 12;
+      // Circles in each orbit is tied to the current minute
+      let circleCount = m === 0 ? 1 : m;
+      // Per-frame rotation speed influenced by seconds
+      let rotationSpeed = map(s, 0, 59, 0.5, 5);
+
+      push();
+      translate(width / 2, height / 2);
+
+      // Draw each orbit
+      for (let i = 1; i <= orbitCount; i++) {
+        let radius = map(i, 1, orbitCount, 30, 200);
+        let orbitHue = map(i, 1, orbitCount, 0, 360);
+        push();
+        rotate(frameCount * rotationSpeed * (i % 2 === 0 ? 1 : -1));
+        for (let j = 0; j < circleCount; j++) {
+          let angle = (360 / circleCount) * j;
+          let x = radius * cos(angle);
+          let y = radius * sin(angle);
+          fill((orbitHue + angle) % 360, 60, 90);
+          noStroke();
+          ellipse(x, y, 12, 12);
+        }
+        pop();
+      }
+      pop();
+
+      // Draw the clock in the bottom-left corner
+      drawDigitalClock(h, m, s);
+    }
+
+    // Background that shifts hue over time, simulating a nebula
+    function backgroundNebula() {
+      let t = frameCount * 0.1; 
+      for (let y = 0; y < height; y += 2) {
+        let rowHue = (t + y * 0.2) % 360;
+        stroke(rowHue, 40, 15);
+        line(0, y, width, y);
+      }
+    }
+
+    // Optional digital clock in bottom-left corner
+    function drawDigitalClock(h, m, s) {
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 10, height - 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

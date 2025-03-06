@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Orbit Snowglobe</title>
+  <!-- Include p5.js -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Ensure a consistent, dark background for the page */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Fixed 512x512 container for our canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      background-color: #000;
+    }
+
+    /* Hover overlay for instructions (hidden by default) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-family: sans-serif;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    /* Show the overlay text only on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <h2>Time Orbit Snowglobe</h2>
+      <p>
+        • Hours, minutes, and seconds define orbits.<br>
+        • Twinkling stars in the background.<br>
+        • Press arrow keys to shift the globe’s position.<br>
+        • Watch a digital clock at the bottom.<br>
+        Hover away to see the snowglobe in action!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Orbit Snowglobe:
+        - Background stars that twinkle gently.
+        - A central "globe" with orbits sized according to hour, minute, and second.
+        - Each orbiting circle moves around the globe at a speed linked to time.
+        - Press arrow keys to shift the globe horizontally or vertically.
+        - A digital clock displayed at the bottom of the canvas.
+    */
+
+    const SIZE = 512;
+    const STAR_COUNT = 120;
+    let stars = [];
+    let globeOffsetX = 0;
+    let globeOffsetY = 0;
+
+    function setup() {
+      let cnv = createCanvas(SIZE, SIZE);
+      cnv.parent("canvasContainer");
+      // Generate star positions
+      for (let i = 0; i < STAR_COUNT; i++) {
+        stars.push({
+          x: random(width),
+          y: random(height),
+          brightness: random(150, 255),
+          flickerSpeed: random(0.005, 0.02),
+          baseBrightness: random(150, 255)
+        });
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      // Draw stars with slight twinkle
+      noStroke();
+      for (let s of stars) {
+        let flicker = sin(frameCount * s.flickerSpeed) * 50;
+        let b = s.baseBrightness + flicker;
+        fill(b);
+        circle(s.x, s.y, 2);
+      }
+
+      // Time-based orbit parameters
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Draw the orbit system
+      push();
+      // Shift entire globe with arrow keys
+      translate(width / 2 + globeOffsetX, height / 2 + globeOffsetY);
+
+      // Draw central globe
+      noStroke();
+      fill(100, 150, 255);
+      circle(0, 0, 40);
+
+      // Orbit 1: hour
+      push();
+      rotate(radians(frameCount * 0.5 + hr));
+      stroke(150, 150, 255);
+      noFill();
+      let orbitRadiusHr = map(hr, 0, 23, 40, 130);
+      circle(0, 0, orbitRadiusHr * 2);
+      fill(255, 150, 150);
+      noStroke();
+      translate(orbitRadiusHr, 0);
+      circle(0, 0, 15);
+      pop();
+
+      // Orbit 2: minute
+      push();
+      rotate(radians(frameCount * 2 + mn * 6));
+      stroke(255, 180, 100);
+      noFill();
+      let orbitRadiusMn = map(mn, 0, 59, 60, 180);
+      circle(0, 0, orbitRadiusMn * 2);
+      fill(255, 255, 120);
+      noStroke();
+      translate(orbitRadiusMn, 0);
+      circle(0, 0, 12);
+      pop();
+
+      // Orbit 3: second
+      push();
+      rotate(radians(frameCount * 5 + sc * 6));
+      stroke(100, 255, 100);
+      noFill();
+      let orbitRadiusSc = map(sc, 0, 59, 70, 200);
+      circle(0, 0, orbitRadiusSc * 2);
+      fill(100, 255, 100);
+      noStroke();
+      translate(orbitRadiusSc, 0);
+      circle(0, 0, 10);
+      pop();
+
+      pop(); // End globe push
+
+      // Show digital clock near bottom
+      fill(255);
+      noStroke();
+      textSize(18);
+      textAlign(CENTER, CENTER);
+      text(`${hr}:${nf(mn, 2)}:${nf(sc, 2)}`, width / 2, height - 20);
+    }
+
+    // Shift the globe with arrow keys
+    function keyPressed() {
+      let step = 10;
+      if (keyCode === LEFT_ARROW) {
+        globeOffsetX -= step;
+      } else if (keyCode === RIGHT_ARROW) {
+        globeOffsetX += step;
+      } else if (keyCode === UP_ARROW) {
+        globeOffsetY -= step;
+      } else if (keyCode === DOWN_ARROW) {
+        globeOffsetY += step;
+      }
+    }
+  </script>
+</body>
+</html>

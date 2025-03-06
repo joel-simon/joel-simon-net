@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Creative Time Display - 3D Rotation</title>
+  <!-- Embedded CSS -->
+  <style>
+    /* Reset margins and padding */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+    }
+
+    /* Container for the 512x512 canvas and instructions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      /* Center container on page */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Instructions appear only on hover, overlaying the canvas */
+    #instructions {
+      pointer-events: none; /* Let mouse pass through instructions to the canvas */
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-size: 16px;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #canvas-container:hover #instructions {
+      display: block;
+    }
+    /* Style the instructions text */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      text-align: center;
+      transform: translate(-50%, -50%);
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <!-- Hover overlay instructions -->
+    <div id="instructions">
+      <div class="instructions-text">
+        This 3D object rotates based on the current time:<br/>
+        • Hour → X-axis<br/>
+        • Minute → Y-axis<br/>
+        • Second → Z-axis<br/>
+        The color is also dynamically generated from the hour, minute, and second.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <!-- Embedded p5.js Sketch -->
+  <script>
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let myCanvas = createCanvas(w, h, WEBGL);
+      myCanvas.parent('canvas-container');
+      angleMode(DEGREES);
+      // Smoother rendering
+      smooth();
+    }
+
+    function draw() {
+      background(20);
+
+      // Get current time
+      let hr = hour();   // 0..23
+      let mn = minute(); // 0..59
+      let sc = second(); // 0..59
+
+      // Map rotation angles
+      let xRot = map(hr % 12, 0, 12, 0, 360);
+      let yRot = map(mn, 0, 60, 0, 360);
+      let zRot = map(sc, 0, 60, 0, 360);
+
+      // Map color components
+      let r = map(hr, 0, 23, 50, 255);
+      let g = map(mn, 0, 59, 50, 255);
+      let b = map(sc, 0, 59, 50, 255);
+
+      // Rotate according to time
+      rotateX(xRot);
+      rotateY(yRot);
+      rotateZ(zRot);
+
+      // Fill and draw 3D shape
+      stroke(255);
+      fill(r, g, b, 200);
+      torus(100, 30, 64, 32);
+
+      // (Optional) Show a digital readout floating above the shape
+      push();
+      resetMatrix(); // Return to default orientation for text
+      translate(-width/2 + 10, -height/2 + 20, 0);
+      noStroke();
+      fill(255);
+      textSize(16);
+      text(nf(hr,2) + ':' + nf(mn,2) + ':' + nf(sc,2), 0, 0);
+      pop();
+    }
+  </script>
+</body>
+</html>

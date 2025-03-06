@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cosmic Orbit Time Display</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #111;
+    color: #fff;
+    font-family: sans-serif;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Canvas container to hold the 512x512 sketch */
+  #canvasContainer {
+    width: 512px;
+    height: 512px;
+    position: relative;
+  }
+
+  /* Instructions overlay, hidden by default */
+  .instructions {
+    display: none;
+    position: absolute;
+    top: 0; 
+    left: 0;
+    width: 512px;
+    height: 512px;
+    background-color: rgba(0,0,0,0.8);
+    color: #fff;
+    font-size: 14px;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 1em;
+  }
+
+  /* Show instructions on hover */
+  #canvasContainer:hover .instructions {
+    display: flex;
+  }
+</style>
+</head>
+<body>
+<div id="canvasContainer">
+  <div class="instructions">
+    This cosmic clock shows hours, minutes, and seconds as orbiting bodies around the star at the center. 
+    • Hour planet orbits once every 12 hours<br>
+    • Minute planet orbits once every hour<br>
+    • Second planet orbits once every minute
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+<script>
+  function setup() {
+    let cnv = createCanvas(512, 512);
+    cnv.parent("canvasContainer");
+    angleMode(DEGREES);
+  }
+
+  function draw() {
+    background(17); // dark background
+    translate(width / 2, height / 2);
+
+    let hr = hour() % 12;
+    let mn = minute();
+    let sc = second();
+
+    // Calculate angles for hours, minutes, and seconds
+    // Adding fractional parts keeps orbits moving smoothly
+    let hrAngle = map(hr + mn / 60 + sc / 3600, 0, 12, 0, 360);
+    let mnAngle = map(mn + sc / 60, 0, 60, 0, 360);
+    let scAngle = map(sc, 0, 60, 0, 360);
+
+    // Draw orbits and orbiting "planets"
+
+    // HOUR ORBIT
+    stroke(200, 100, 255);
+    noFill();
+    ellipse(0, 0, 160, 160); // hour orbit circle
+    push();
+      rotate(hrAngle);
+      fill(200, 100, 255);
+      noStroke();
+      ellipse(80, 0, 16, 16); // hour planet
+    pop();
+
+    // MINUTE ORBIT
+    stroke(100, 255, 100);
+    noFill();
+    ellipse(0, 0, 240, 240); // minute orbit circle
+    push();
+      rotate(mnAngle);
+      fill(100, 255, 100);
+      noStroke();
+      ellipse(120, 0, 12, 12); // minute planet
+    pop();
+
+    // SECOND ORBIT
+    stroke(255, 100, 100);
+    noFill();
+    ellipse(0, 0, 320, 320); // second orbit circle
+    push();
+      rotate(scAngle);
+      fill(255, 100, 100);
+      noStroke();
+      ellipse(160, 0, 8, 8); // second planet
+    pop();
+
+    // Center star
+    fill(255, 255, 0);
+    noStroke();
+    ellipse(0, 0, 20, 20);
+
+    // Digital time near the top
+    fill(255);
+    textSize(32);
+    textAlign(CENTER, CENTER);
+    let timeString = nf(hour(), 2) + ":" + nf(mn, 2) + ":" + nf(sc, 2);
+    text(timeString, 0, - (height / 2) + 32);
+  }
+</script>
+</body>
+</html>

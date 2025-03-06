@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Candy Carnival</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for better contrast */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Candy Carnival</strong><br><br>
+        • Swirling candy wave changes color with the hour.<br>
+        • Random candy pieces grow or shrink by minute.<br>
+        • A bouncing peppermint moves based on seconds.<br>
+        • Current time is displayed at the center.<br><br>
+        Hover to read instructions; watch as time updates in sweet style!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    // Candy swirl background variables
+    let swirlDetail = 150; 
+    let swirlSpeed = 0.02;
+
+    // Candy pieces array
+    let candies = [];
+    let numCandies = 25;
+
+    // Peppermint variables
+    let peppermintX, peppermintY;
+    let peppermintVx, peppermintVy;
+    let peppermintSize = 40;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+
+      // Initialize candy pieces
+      for (let i = 0; i < numCandies; i++) {
+        candies.push({
+          x: random(width),
+          y: random(height),
+          baseSize: random(10, 25),
+          color: color(random(100, 255), random(100, 255), random(100, 255))
+        });
+      }
+
+      // Initialize peppermint position and velocity
+      peppermintX = width / 2;
+      peppermintY = height / 2;
+      peppermintVx = random(-2, 2);
+      peppermintVy = random(-2, 2);
+    }
+
+    function draw() {
+      background(0);
+
+      // Current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Draw swirl background
+      drawCandySwirl(hr);
+
+      // Draw and animate candies that grow/shrink with minutes
+      drawAndAnimateCandies(mn);
+
+      // Bounce peppermint around, guided by seconds
+      bouncePeppermint(sc);
+
+      // Center time display
+      drawTimeDisplay(hr, mn, sc);
+    }
+
+    // Swirl background that changes color with hour
+    function drawCandySwirl(hr) {
+      push();
+      translate(width / 2, height / 2);
+      noFill();
+
+      // Hour-based color shift
+      let swirlCol = map(hr, 0, 23, 0, 360);
+      let swirlStroke = color(swirlCol, 100, 255);
+
+      stroke(swirlStroke);
+      beginShape();
+      for (let i = 0; i < swirlDetail; i++) {
+        let angle = i * (360 / swirlDetail) + frameCount * swirlSpeed;
+        let rad = 200 + sin(frameCount * 0.5 + i * 2) * 20;
+        let x = rad * cos(angle);
+        let y = rad * sin(angle);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+      pop();
+    }
+
+    // Candies that grow/shrink with minutes
+    function drawAndAnimateCandies(mn) {
+      for (let c of candies) {
+        let size = c.baseSize + sin(frameCount * 0.05 + mn) * 5;
+        fill(c.color);
+        noStroke();
+        ellipse(c.x, c.y, size, size);
+      }
+    }
+
+    // A peppermint that moves around the canvas, speed modulated by seconds
+    function bouncePeppermint(sc) {
+      // Increase velocity slightly with each second
+      let speedScale = map(sc, 0, 59, 1, 3);
+      peppermintX += peppermintVx * speedScale;
+      peppermintY += peppermintVy * speedScale;
+
+      // Bounce off walls
+      if (peppermintX < peppermintSize / 2 || peppermintX > width - peppermintSize / 2) {
+        peppermintVx *= -1;
+      }
+      if (peppermintY < peppermintSize / 2 || peppermintY > height - peppermintSize / 2) {
+        peppermintVy *= -1;
+      }
+
+      // Draw peppermint (spiral pattern)
+      push();
+      translate(peppermintX, peppermintY);
+      noStroke();
+      fill(255);
+      ellipse(0, 0, peppermintSize, peppermintSize);
+
+      // Red swirl detail
+      fill(255, 0, 0);
+      for (let i = 0; i < 6; i++) {
+        arc(0, 0, peppermintSize, peppermintSize, i * 60, i * 60 + 30);
+      }
+      pop();
+    }
+
+    // Time display at the center
+    function drawTimeDisplay(hr, mn, sc) {
+      push();
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      fill(255);
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, width / 2, height / 2);
+      pop();
+    }
+  </script>
+</body>
+</html>

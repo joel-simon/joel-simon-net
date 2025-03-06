@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Time Kaleidoscope</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset body margin/padding and use a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container fixed at 512x512, centered */
+    #clock-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+    }
+
+    /* Instructions overlay, hidden by default */
+    #instructions {
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      display: none;
+      background-color: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      line-height: 1.5;
+      padding: 2rem;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #clock-container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="clock-container">
+  <div id="instructions">
+    <h2>Time Kaleidoscope</h2>
+    <p>Observe the ever-changing kaleidoscope!<br>
+       • Each hour shifts its color palette.<br>
+       • Shape count depends on current minute.<br>
+       • Rotation speed changes every second.</p>
+  </div>
+</div>
+
+<script>
+  let canvasSize = 512;
+
+  function setup() {
+    let myCanvas = createCanvas(canvasSize, canvasSize);
+    myCanvas.parent("clock-container");
+    angleMode(DEGREES);
+  }
+
+  function draw() {
+    background(0);
+
+    // Gather current time values
+    let hr = hour();
+    let mn = minute();
+    let sc = second();
+
+    // The number of mirrored segments: from minutes (1..59), mapped to a range
+    // that ensures a visually interesting pattern
+    let segments = map(mn, 0, 59, 3, 12);
+
+    // The rotational speed depends on seconds, giving a dynamic, lively movement
+    let rotationSpeed = map(sc, 0, 59, 0, 5);
+
+    // Base color shifting with hour
+    // We'll set a hue from 0..330 degrees (in HSB) mapped from hour 0..23
+    colorMode(HSB, 360, 100, 100);
+    let hueValue = map(hr, 0, 23, 0, 330);
+
+    translate(width / 2, height / 2);
+
+    // Rotating loop for creating a kaleidoscope effect
+    for (let i = 0; i < segments; i++) {
+      push();
+      rotate((360 / segments) * i + frameCount * rotationSpeed);
+      fill((hueValue + i * 10) % 360, 80, 100);
+      noStroke();
+
+      // Create shape: ellipse, rectangle, or other geometry based on minute
+      // We'll alternate shape based on the minute value
+      if (mn % 3 === 0) {
+        ellipse(80, 0, 40, 40);
+      } else if (mn % 3 === 1) {
+        rect(60, -20, 40, 40);
+      } else {
+        triangle(60, -20, 100, 0, 60, 20);
+      }
+      pop();
+    }
+
+    // Draw as many radial lines as the second value (optional sparkle pattern)
+    stroke((hueValue + 180) % 360, 100, 100);
+    strokeWeight(1);
+    noFill();
+    for (let j = 0; j < sc; j += 4) {
+      ellipse(0, 0, j * 2, j * 2);
+    }
+
+    // Display digital time near the center
+    textSize(24);
+    textAlign(CENTER, CENTER);
+    fill(255);
+    colorMode(RGB, 255);
+    text(`${hr}:${nf(mn, 2)}:${nf(sc, 2)}`, 0, 0);
+  }
+</script>
+</body>
+</html>

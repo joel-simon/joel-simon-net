@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Inversion Black Hole</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Inversion Black Hole<br><br>
+        • Assumption reversed: Instead of time flowing outward, everything is pulled inward.<br>
+        • The black hole at the center shrinks as hours advance.<br>
+        • Each second spawns a new “time particle” on a random edge, pulled into the black hole.<br>
+        • Observe how everything compresses as time “inverts.”<br><br>
+        Hover away to return to the animation.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let particles = [];
+    let lastSecond = -1;
+
+    // A simple class to store particle state
+    class InvertedTimeParticle {
+      constructor() {
+        // Spawn on a random edge (top=0, right=1, bottom=2, left=3)
+        let edge = floor(random(4));
+        let offset = random(512);
+        switch(edge){
+          case 0: // top
+            this.x = offset;
+            this.y = 0;
+            break;
+          case 1: // right
+            this.x = 512;
+            this.y = offset;
+            break;
+          case 2: // bottom
+            this.x = offset;
+            this.y = 512;
+            break;
+          case 3: // left
+            this.x = 0;
+            this.y = offset;
+            break;
+        }
+        this.size = 8;
+        // Color depends on reversed hour (how many hours remain in a 24h cycle)
+        let h = hour();
+        let reversedHour = 23 - h;
+        // Optionally mix in some random variation
+        this.col = color(30 * reversedHour + random(25), 200 - 8 * reversedHour, 200 - 5 * reversedHour);
+      }
+
+      update(blackHoleX, blackHoleY, speedFactor){
+        // Move towards (blackHoleX, blackHoleY)
+        let dirX = blackHoleX - this.x;
+        let dirY = blackHoleY - this.y;
+        let len = sqrt(dirX*dirX + dirY*dirY);
+        // Normalize
+        if(len > 0){
+          dirX /= len;
+          dirY /= len;
+        }
+        // Speed factor determined by current minute
+        this.x += dirX * speedFactor;
+        this.y += dirY * speedFactor;
+      }
+
+      display(){
+        fill(this.col);
+        noStroke();
+        circle(this.x, this.y, this.size);
+      }
+
+      offScreen(){
+        // If we pass near center, we consider it 'consumed'
+        return dist(this.x, this.y, width/2, height/2) < 10;
+      }
+    }
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      ellipseMode(CENTER);
+      noStroke();
+    }
+
+    function draw() {
+      background(10);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Reversed assumption: black hole shrinks as hours advance
+      // => black hole is largest at hour=0, smallest at hour=23
+      // Map hour to black hole radius between 200 (midnight) down to 30 (11 pm)
+      let blackHoleRadius = map(h, 0, 23, 200, 30);
+
+      // Every time seconds change, spawn a new time particle
+      if(s !== lastSecond){
+        particles.push(new InvertedTimeParticle());
+        lastSecond = s;
+      }
+
+      // Update & draw each particle
+      // Speed factor slightly influenced by minute
+      let speedFactor = map(m, 0, 59, 1, 3);
+      for(let i = particles.length - 1; i >= 0; i--){
+        let p = particles[i];
+        p.update(width/2, height/2, speedFactor);
+        p.display();
+        if(p.offScreen()){
+          particles.splice(i, 1);
+        }
+      }
+
+      // Draw the black hole
+      noStroke();
+      fill(0);
+      circle(width/2, height/2, blackHoleRadius);
+
+      // Display reversed time readout
+      // "Time left" in the day as H:MM:SS from 23-hour, 59-min, etc.
+      let reversedH = 23 - h;
+      let reversedM = 59 - m;
+      let reversedS = 59 - s;
+      // If second = 59, then reversed second is 0 in the next minute, etc.
+      // We'll keep it simple and let it roll as-is
+      let hDisp = nf(reversedH, 2);
+      let mDisp = nf(reversedM, 2);
+      let sDisp = nf(reversedS, 2);
+
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      text(`${hDisp}:${mDisp}:${sDisp}`, width / 2, height - 20);
+    }
+  </script>
+</body>
+</html>

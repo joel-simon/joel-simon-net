@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reverse Time Swirl</title>
+  <style>
+    /* Ensure no scrollbars & no page margin */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      font-family: sans-serif;
+      color: #ddd;
+    }
+    /* Container for a fixed 512x512 canvas */
+    #container {
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      position: relative;
+    }
+    /* Overlay for hover instructions */
+    #hover-info {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #container:hover #hover-info {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="hover-info">
+      <p>
+        In this Reverse Time Swirl, each new second draws the swirl inward rather than outward, defying the usual flow of time. Hour and minute influence color shifts. Hover away to watch reversed time in action!
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let canvasSize = 512;
+
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent('container');
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100);
+      noStroke();
+    }
+
+    function draw() {
+      background(17);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Use "reverse" approach: Let the radius shrink as seconds increase
+      // so that at s=0, radius is largest, and it continually moves inward.
+      let baseRadius = map(60 - s, 0, 60, 30, 200);
+
+      // Color angles influenced by hour and minute
+      // So the swirl color changes over the hour and minute
+      let hueVal = map(h, 0, 23, 0, 360);
+      let satVal = map(m, 0, 59, 50, 100);
+
+      // Draw swirl
+      fill(hueVal, satVal, 100);
+      let swirlPoints = 60; // one point per second notion
+      for (let i = 0; i < swirlPoints; i++) {
+        let angle = i * (360 / swirlPoints) + (frameCount * 0.5);
+        let r = baseRadius + sin(frameCount + i * 5) * 20;
+        let x = width / 2 + r * cos(angle);
+        let y = height / 2 + r * sin(angle);
+        ellipse(x, y, 8, 8);
+      }
+
+      // Optionally, faintly show the actual local time in the center
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      fill(200);
+      text(nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2), width/2, height/2);
+    }
+  </script>
+</body>
+</html>

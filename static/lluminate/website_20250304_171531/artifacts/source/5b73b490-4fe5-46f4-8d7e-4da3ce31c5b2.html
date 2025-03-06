@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Galactic Time Orbits</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center the page content and give a neutral background */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #444;
+      padding: 8px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 220px;
+      z-index: 1;
+      color: #000;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      Three planets correspond to hour, minute, and second, orbiting the sun with radii adjusted by time.
+    </div>
+  </div>
+
+  <script>
+    let stars = [];
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      // Generate a simple starfield
+      for (let i = 0; i < 100; i++) {
+        stars.push({
+          x: random(width),
+          y: random(height),
+          brightness: random(150, 255)
+        });
+      }
+      angleMode(RADIANS);
+    }
+
+    function draw() {
+      background(0);
+      // Draw starfield
+      noStroke();
+      for (let star of stars) {
+        fill(star.brightness);
+        ellipse(star.x, star.y, 2, 2);
+      }
+
+      // Get current time
+      let hr = hour() % 12;  // range [0..11]
+      let mn = minute();     // range [0..59]
+      let sc = second();     // range [0..59]
+
+      // Calculate orbital radii (somewhat spaced out so they don't overlap too greatly)
+      let rHour = hr * 8 + 60;     // Planet A radius (hour-based)
+      let rMin = mn * 1.2 + 100;   // Planet B radius (minute-based)
+      let rSec = sc * 1 + 140;     // Planet C radius (second-based)
+
+      // Calculate orbital angles
+      let aHour = frameCount * 0.01; 
+      let aMin = frameCount * 0.02;
+      let aSec = frameCount * 0.03;
+
+      push();
+      translate(width/2, height/2);
+
+      // Draw Sun at center
+      fill(255, 204, 0);
+      noStroke();
+      ellipse(0, 0, 40, 40);
+
+      // Planet A (Hour)
+      push();
+      rotate(aHour);
+      fill(255, 120, 0);
+      noStroke();
+      ellipse(rHour, 0, 14, 14);
+      pop();
+
+      // Planet B (Minute)
+      push();
+      rotate(aMin);
+      fill(50, 130, 255);
+      noStroke();
+      ellipse(rMin, 0, 12, 12);
+      pop();
+
+      // Planet C (Second)
+      push();
+      rotate(aSec);
+      fill(0, 220, 150);
+      noStroke();
+      ellipse(rSec, 0, 10, 10);
+      pop();
+
+      // Optional: Display digital time near the center
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      text(
+        nf(hour(),2) + ':' + nf(minute(),2) + ':' + nf(second(),2),
+        0, 40
+      );
+      pop();
+    }
+  </script>
+</body>
+</html>

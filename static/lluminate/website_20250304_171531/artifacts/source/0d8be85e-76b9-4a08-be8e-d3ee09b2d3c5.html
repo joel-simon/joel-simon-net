@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creative Time Display - Fractal Tree & Bee Swarm</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for contrast */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Creative Fractal Tree & Bee Swarm Time Display</strong><br><br>
+        • A fractal tree grows based on minutes and shifts color with the hour.<br>
+        • Bees swarm around the center; their count corresponds to minutes.<br>
+        • The star in the center rotates with the seconds.<br>
+        • Current time shows at the bottom.<br><br>
+        Hover to read instructions. Enjoy this fusion of interactive elements!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    // Swarming bees (particles)
+    let bees = [];
+    
+    // Number of initial bees
+    let numBees = 0;
+    
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      frameRate(30);
+      // We'll reinitialize bees in draw() each minute for accurate count
+    }
+
+    function draw() {
+      background(0);
+
+      // Current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Create a gentle background color pulse with hour
+      // Map hour range 0-23 to hue range 0-360
+      let hueVal = map(hr, 0, 23, 0, 360);
+      colorMode(HSB, 360, 100, 100);
+      background(hueVal, 50, 20);
+      colorMode(RGB, 255);
+
+      // Draw fractal tree
+      push();
+      translate(width / 2, height); 
+      // The tree branches depend on minutes
+      let branchLen = map(mn, 0, 59, 50, 180);
+      stroke(255);
+      drawFractalTree(branchLen, mn, hr); 
+      pop();
+
+      // Reinitialize bees if minute changes
+      if (bees.length !== mn) {
+        bees = [];
+        for (let i = 0; i < mn; i++) {
+          bees.push(createBee());
+        }
+      }
+
+      // Draw bees swarming around the center
+      drawBeeSwarm(sc);
+
+      // Draw a rotating star in the center (rotates by second)
+      drawCenterStar(sc, mn);
+
+      // Show time at the bottom
+      drawTime(hr, mn, sc);
+    }
+
+    // Recursive fractal tree drawing
+    function drawFractalTree(len, mn, hr) {
+      // The color of the branch changes with hour
+      let branchColor = color(map(hr, 0, 23, 0, 255), map(mn, 0, 59, 0, 255), 200);
+      stroke(branchColor);
+      line(0, 0, 0, -len);
+      translate(0, -len);
+
+      // We'll limit recursion based on minute
+      let levels = floor(map(mn, 0, 59, 4, 8));
+      if (levels > 0) {
+        push();
+        rotate(20);
+        drawFractalTree(len * 0.7, mn-1, hr);
+        pop();
+
+        push();
+        rotate(-20);
+        drawFractalTree(len * 0.7, mn-1, hr);
+        pop();
+      }
+    }
+
+    // Bees swirl around the center
+    function drawBeeSwarm(secondVal) {
+      push();
+      translate(width / 2, height / 2);
+
+      // Let the swirl radius expand with seconds
+      let swirlRadius = map(secondVal, 0, 59, 30, 150);
+
+      for (let i = 0; i < bees.length; i++) {
+        let b = bees[i];
+        // Update angle
+        b.angle += b.speed;
+        // Calculate position offset by swirlRadius
+        let x = swirlRadius * cos(b.angle);
+        let y = swirlRadius * sin(b.angle);
+
+        // Draw the bee as a small ellipse
+        fill(255, 204, 0);
+        noStroke();
+        ellipse(x, y, 8, 8);
+      }
+      pop();
+    }
+
+    // Create bee object
+    function createBee() {
+      return {
+        angle: random(360),
+        // Random speed, some bees swirl clockwise, others swirl counterclockwise
+        speed: random(0.5,1.5) * (random() < 0.5 ? 1 : -1),
+      };
+    }
+
+    // Draw rotating star in the center
+    function drawCenterStar(sc, mn) {
+      push();
+      translate(width / 2, height / 2);
+      let rotationSpeed = map(sc, 0, 60, 0, 360);
+      rotate(rotationSpeed);
+
+      stroke(255);
+      strokeWeight(2);
+      fill(255, 100);
+      beginShape();
+      for (let i = 0; i < 10; i++) {
+        let angle = i * 36;
+        let radius = i % 2 === 0 ? 25 : 10;
+        let x = radius * cos(angle);
+        let y = radius * sin(angle);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+      pop();
+    }
+
+    // Display time near bottom
+    function drawTime(hr, mn, sc) {
+      let displayHour = hr % 12 || 12;
+      let ampm = hr >= 12 ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      let timeString = displayHour + ":" + minStr + ":" + secStr + " " + ampm;
+
+      fill(255);
+      noStroke();
+      textSize(18);
+      textAlign(CENTER, BOTTOM);
+      text(timeString, width / 2, height - 10);
+    }
+  </script>
+</body>
+</html>

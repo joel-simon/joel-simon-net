@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Momentum</title>
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center the page and remove scroll bars */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Container for the 512x512 canvas */
+    #timeMomentumContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+
+    /* Instructions overlay - hidden by default, display on hover */
+    #instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(255,255,255,0.85);
+      color: #222;
+      font-family: sans-serif;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    #timeMomentumContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="timeMomentumContainer">
+    <div id="instructions">
+      <h3>Time Momentum</h3>
+      <p>
+        • Every second, a new shape appears, orbiting around the center.<br/>
+        • Size is based on seconds, color on minutes, and orbit speed on hours.<br/>
+        • Shapes gradually fade away after 60 seconds.<br/>
+        • Hover over the canvas to see these instructions.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const canvasSize = 512;
+    let particles = [];       // Array to store orbiting shapes
+    let lastSecond = -1;      // Track the last second we've processed
+
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent("timeMomentumContainer");
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(25);
+
+      // Get current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Each second, add a new particle if we haven't already
+      if (sc !== lastSecond) {
+        lastSecond = sc;
+        let newParticle = new TimeParticle(hr, mn, sc, frameCount);
+        particles.push(newParticle);
+        
+        // Keep only up to 60 particles
+        if (particles.length > 60) {
+          particles.shift();
+        }
+      }
+
+      // Update and display all particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].display();
+      }
+
+      // Draw a small digital clock in the corner
+      fill(255);
+      textAlign(LEFT, TOP);
+      textSize(16);
+      text(nf(hr,2) + ":" + nf(mn,2) + ":" + nf(sc,2), 10, 10);
+    }
+
+    // Class representing the orbiting time-based shapes
+    class TimeParticle {
+      constructor(hr, mn, sc, startFrame) {
+        this.hr = hr;          // Hour at creation
+        this.mn = mn;          // Minute at creation
+        this.sc = sc;          // Second at creation
+        this.startFrame = startFrame; // When this was created (for timing)
+        
+        // Determine color by minute (0-59), map to a hue
+        this.hueVal = map(mn, 0, 59, 0, 360);
+        this.size = map(sc, 0, 59, 10, 80);   // Particle size based on second
+        this.orbitSpeed = map(hr % 12, 0, 11, 0.2, 3); // Speed based on hour (0-11)
+
+        // Start with random angle so each new shape is offset
+        this.angleOffset = random(0, 360);
+        
+        // Each particle will orbit at a certain radius from center
+        // let the radius vary a bit
+        this.orbitRadius = random(80, width/2 - 20);
+      }
+
+      update() {
+        // We can fade out each particle based on how long it has been displayed
+        // Max lifetime is ~60 seconds => ~60 frames * 60 = 3600 frames if 60 fps
+        // But let's do simpler: after 60 seconds, remove or fade
+        let aliveForFrames = frameCount - this.startFrame;
+        // Particle completely gone after 60 * 60 frames (one minute)
+        let fadeAmount = map(aliveForFrames, 0, 3600, 255, 0);
+        this.alpha = constrain(fadeAmount, 0, 255);
+      }
+
+      display() {
+        // Convert frames to degrees for orbit
+        let rotation = this.angleOffset + (frameCount - this.startFrame) * this.orbitSpeed;
+        
+        push();
+        translate(width/2, height/2);
+        rotate(rotation);
+        translate(this.orbitRadius, 0);
+
+        // Use HSB color mode locally to pick color by minute
+        colorMode(HSB);
+        fill(this.hueVal, 100, 100, this.alpha);
+        noStroke();
+        ellipse(0, 0, this.size, this.size);
+
+        pop();
+
+        // Reset color mode to default
+        colorMode(RGB);
+      }
+    }
+  </script>
+</body>
+</html>

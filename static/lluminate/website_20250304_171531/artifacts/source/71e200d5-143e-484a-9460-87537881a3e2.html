@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Mirror Labyrinth</title>
+  <style>
+    /* Basic page setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.75);
+      text-align: center;
+      padding: 20px;
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Mirror Labyrinth</strong><br><br>
+        • The background color follows the hour.<br>
+        • Mirrored shapes revolve and shift with minutes & seconds.<br>
+        • Click to randomize patterns.<br>
+        • A digital clock sits at the center.<br><br>
+        Hover away to see the elaborate animation.
+      </p>
+    </div>
+  </div>
+
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    // Parameters controlling the mirrored shapes
+    let numSlices = 6;       // how many mirrored slices
+    let shapeLayers = 8;     // how many arcs or lines per slice
+    let layerSpacing = 15;   // spacing between arcs
+    let maxArcSize = 60;     // largest arc radius
+
+    // Time-driven offsets
+    let rotationSpeed = 0.5; // base rotation
+    let randomSeedVal;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noFill();
+
+      // Seed random values so clicking can re-randomize
+      randomSeedVal = floor(random(100000));
+    }
+
+    function draw() {
+      randomSeed(randomSeedVal);
+
+      // Acquire current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Dynamically shift background color based on hour
+      let bgHue = map(hr, 0, 23, 0, 360);
+      colorMode(HSB);
+      background(bgHue, 50, 30); 
+      colorMode(RGB);
+
+      // Translate to center for kaleidoscopic drawing
+      push();
+      translate(width / 2, height / 2);
+
+      // Overall rotation depends on minutes & seconds
+      let overallRotation = mn * 6 + sc * rotationSpeed;
+      rotate(overallRotation);
+
+      // Draw mirrored slices
+      for (let i = 0; i < numSlices; i++) {
+        push();
+        // Rotate slice into position
+        rotate((360 / numSlices) * i);
+
+        // Draw shape layers in this slice
+        drawArcs(hr, mn, sc);
+        
+        // Mirror it across the axis (horizontal flip)
+        scale(-1, 1);
+        drawArcs(hr, mn, sc);
+        pop();
+      }
+      pop();
+
+      // Draw digital clock at the center
+      drawClock(hr, mn, sc);
+    }
+
+    // Draw arcs in the current slice
+    function drawArcs(hr, mn, sc) {
+      strokeWeight(2);
+
+      // Color shift based on seconds
+      let secHue = map(sc, 0, 59, 0, 360);
+      colorMode(HSB);
+
+      // Each layer is an arc with random offset
+      for (let i = 0; i < shapeLayers; i++) {
+        let arcSize = maxArcSize + i * layerSpacing;
+        let alphaVal = 70 + 120 * noise(i, frameCount * 0.01);
+
+        // The stroke color changes across layers
+        stroke((secHue + i * 20) % 360, 80, 80, alphaVal);
+        // Slight offset in arc angles using hour & minute
+        let arcStart = (hr * 15 + mn * 6) % 360 + i * random(30);
+        let arcEnd = arcStart + 60 * noise(i, frameCount * 0.01);
+
+        arc(0, 0, arcSize, arcSize, arcStart, arcEnd);
+      }
+      colorMode(RGB);
+    }
+
+    // Display digital clock
+    function drawClock(hr, mn, sc) {
+      push();
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      fill(255);
+      noStroke();
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, width / 2, height / 2);
+      pop();
+    }
+
+    // On mouse click, randomize the pattern's seed
+    function mouseClicked() {
+      randomSeedVal = floor(random(100000));
+    }
+  </script>
+</body>
+</html>

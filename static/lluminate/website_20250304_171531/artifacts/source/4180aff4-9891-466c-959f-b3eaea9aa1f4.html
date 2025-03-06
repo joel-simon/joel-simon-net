@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Creative Time Display</title>
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Ensure the body doesn't scroll and centers our container */
+    html, body {
+      margin: 0; 
+      padding: 0;
+      background: #222; 
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* A container that holds our canvas and the hover instructions */
+    #container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Hidden instructions by default */
+    .instructions {
+      display: none;
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: rgba(255, 255, 255, 0.9);
+      color: #000;
+      padding: 8px 12px;
+      border-radius: 4px;
+      max-width: 320px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    /* Show instructions when hovering over the container */
+    #container:hover .instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div class="instructions">
+      Hover to see instructions.<br><br>
+      This circular clock shows: <br>
+      • Red arc: seconds<br>
+      • Green arc: minutes<br>
+      • Blue arc: hours<br><br>
+      Current time is displayed in the center.
+    </div>
+  </div>
+
+  <script>
+    let myCanvas;
+
+    function setup() {
+      // Attach the canvas to the #container
+      myCanvas = createCanvas(512, 512);
+      myCanvas.parent("container");
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(30);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Map the time values onto angles
+      let secondAngle = map(s, 0, 60, 0, 360);
+      let minuteAngle = map(m, 0, 60, 0, 360);
+      let hourAngle   = map(h % 12, 0, 12, 0, 360);
+
+      // Draw arcs
+      push();
+      translate(width/2, height/2);
+      rotate(-90); // Start arcs at top
+
+      strokeWeight(8);
+      noFill();
+
+      // Seconds arc - red
+      stroke(255, 0, 0);
+      arc(0, 0, 300, 300, 0, secondAngle);
+
+      // Minutes arc - green
+      stroke(0, 255, 0);
+      arc(0, 0, 280, 280, 0, minuteAngle);
+
+      // Hours arc - blue
+      stroke(0, 0, 255);
+      arc(0, 0, 260, 260, 0, hourAngle);
+
+      pop();
+
+      // Draw the digital readout in center
+      textAlign(CENTER, CENTER);
+      textSize(32);
+      fill(255);
+      noStroke();
+      text(nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2), width/2, height/2);
+    }
+  </script>
+</body>
+</html>

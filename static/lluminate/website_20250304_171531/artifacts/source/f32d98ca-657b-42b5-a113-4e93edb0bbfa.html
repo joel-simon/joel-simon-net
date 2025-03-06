@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Origami Reef Chronicle</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the "Origami Reef Chronicle"!<br><br>
+        • The water's color shifts with the hour.<br>
+        • The origami fish alter their shape with the minute.<br>
+        • Bubbles appear more frequently as seconds progress.<br><br>
+        Hover away to explore the reef!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let bubbles = [];
+    let bubbleTimer = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      drawBackground();
+      drawOrigamiFish();
+      drawBubbles();
+      drawClock();
+      updateBubbles();
+    }
+
+    function drawBackground() {
+      // Hour influences color
+      let h = hour();
+      let baseHue = map(h, 0, 23, 0, 360);
+      // Simple radial gradient effect
+      noStroke();
+      for (let r = 512; r > 0; r -= 8) {
+        let inter = map(r, 0, 512, 1, 0);
+        let c = color(baseHue, 180 * inter, 255 * inter);
+        fill(c);
+        ellipse(width/2, height/2, r, r);
+      }
+    }
+
+    function drawOrigamiFish() {
+      // Minute changes fish shape
+      let m = minute();
+      // Map minute to "fold angle"
+      let fold = map(m, 0, 59, 5, 50);
+
+      push();
+      translate(width/2, height/2);
+      noStroke();
+      fill(255, 200, 0);
+
+      // Body polygon, shaped by "fold"
+      beginShape();
+      vertex(0, 0);
+      vertex(fold * 2, -fold);
+      vertex(fold * 4, 0);
+      vertex(fold * 4, fold * 2);
+      vertex(fold * 2, fold * 2 + fold/2);
+      vertex(0, fold * 2);
+      endShape(CLOSE);
+
+      // Tail
+      fill(255, 150, 0);
+      beginShape();
+      vertex(0, 0);
+      vertex(-fold, -fold/2);
+      vertex(-fold, fold + fold/2);
+      endShape(CLOSE);
+
+      // Eye
+      fill(0);
+      ellipse(fold * 3, fold, 5, 5);
+
+      pop();
+    }
+
+    function drawBubbles() {
+      // Draw current bubbles
+      for (let bubble of bubbles) {
+        bubble.show();
+      }
+    }
+
+    function updateBubbles() {
+      // Second influences bubble creation
+      let s = second();
+      // The higher the second, the more bubbles we'll create
+      bubbleTimer++;
+      if (bubbleTimer > map(s, 0, 59, 60, 5)) {
+        // Create a new bubble from a random x near bottom
+        let xPos = random(width * 0.2, width * 0.8);
+        bubbles.push(new Bubble(xPos, height + 10));
+        bubbleTimer = 0;
+      }
+
+      // Update each bubble
+      for (let i = bubbles.length - 1; i >= 0; i--) {
+        bubbles[i].update();
+        // Remove off-screen bubbles
+        if (bubbles[i].y < -20) {
+          bubbles.splice(i, 1);
+        }
+      }
+    }
+
+    function drawClock() {
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+      pop();
+    }
+
+    // Bubble class
+    class Bubble {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.r = random(5, 15);
+        this.speed = random(1, 2);
+      }
+
+      update() {
+        this.y -= this.speed;
+      }
+
+      show() {
+        noStroke();
+        fill(255, 255, 255, 150);
+        ellipse(this.x, this.y, this.r);
+      }
+    }
+  </script>
+</body>
+</html>

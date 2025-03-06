@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Maze Kaleidoscope</title>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas */
+    #sketch-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+    }
+
+    /* Instructions overlay (hidden by default, shown on hover) */
+    .instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      padding: 1em;
+      box-sizing: border-box;
+      text-align: center;
+      align-items: center;
+      justify-content: center;
+    }
+    #sketch-container:hover .instructions {
+      display: flex;
+    }
+    /* Cursor cue for interactivity */
+    #sketch-container:hover {
+      cursor: help;
+    }
+  </style>
+</head>
+<body>
+<div id="sketch-container">
+  <div class="instructions">
+    <h3>Time Maze Kaleidoscope</h3>
+    <p>
+      • The kaleidoscope in the background has as many segments as the current hour (1-12).<br/>
+      • The wave pattern shifts based on the current second.<br/>
+      • A new random maze appears every minute.<br/>
+      • Watch how these layers change as real time unfolds.<br/>
+      Hover away to hide instructions.
+    </p>
+  </div>
+</div>
+
+<!-- p5.js library -->
+<script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+<script>
+/*
+  This sketch combines:
+  - A kaleidoscopic pattern whose segment count depends on the current hour.
+  - A wave background that shifts according to the current second.
+  - A small maze in the center that regenerates every minute.
+*/
+
+let segments;          // Number of kaleidoscopic segments (tied to hour)
+let lastMinute;        // Track minute changes for maze regeneration
+let mazeData;          // 2D array storing the maze
+let mazeCols = 16;     // Maze columns
+let mazeRows = 16;     // Maze rows
+let cellSize = 20;     // Pixel size for each maze cell
+let waveOffset = 0;    // Controls wave animation
+
+function setup() {
+  let c = createCanvas(512, 512);
+  c.parent('sketch-container');
+  colorMode(HSB, 360, 100, 100);
+  angleMode(DEGREES);
+
+  segments = (hour() % 12) || 12;
+  lastMinute = minute();
+
+  // Generate the initial maze
+  mazeData = generateMaze(mazeCols, mazeRows);
+}
+
+function draw() {
+  let currentHour = (hour() % 12) || 12;
+  let currentMinute = minute();
+  let currentSecond = second();
+
+  // If hour changed, update kaleidoscope segments
+  if (currentHour !== segments) {
+    segments = currentHour;
+  }
+
+  // If minute changed, generate a new maze
+  if (currentMinute !== lastMinute) {
+    lastMinute = currentMinute;
+    mazeData = generateMaze(mazeCols, mazeRows);
+  }
+
+  // WAVE BACKGROUND (depends on current second)
+  background(0);
+  drawWaveBackground(currentSecond);
+
+  // KALEIDOSCOPE LAYER
+  push();
+  translate(width / 2, height / 2);
+  let angleStep = 360 / segments;
+  noStroke();
+  for (let i = 0; i < segments; i++) {
+    push();
+    rotate(i * angleStep);
+    // Color shift based on second
+    fill(map(currentSecond, 0, 59, 0, 359), 80, 90, 60);
+    ellipse(100, 0, 80, 80);
+    pop();
+  }
+  pop();
+
+  // MAZE LAYER (draw in the center)
+  push();
+  translate(width / 2 - (mazeCols * cellSize) / 2, 
+            height / 2 - (mazeRows * cellSize) / 2);
+  drawMaze(mazeData);
+  pop();
+
+  // OPTIONAL TIME TEXT
+  fill(255);
+  textSize(16);
+  textAlign(LEFT, TOP);
+  text(nf(hour(),2) + ":" + nf(currentMinute,2) + ":" + nf(currentSecond,2), 10, 10);
+}
+
+// Generate a random maze using a simple random DFS or any method
+function generateMaze(cols, rows) {
+  // We'll use a simple approach: fill with walls, carve out random passages
+  let maze = [];
+  // Initialize all cells to walls
+  for (let r = 0; r < rows; r++) {
+    maze[r] = [];
+    for (let c = 0; c < cols; c++) {
+      maze[r][c] = true; // true = wall, false = path
+    }
+  }
+  // Carve out random paths
+  let stack = [];
+  let current = {r: 0, c: 0};
+  maze[0][0] = false;
+  stack.push(current);
+
+  // Depth-first search
+  while (stack.length > 0) {
+    let neighbors = getUnvisitedNeighbors(maze, current, cols, rows);
+    if (neighbors.length > 0) {
+      let next = random(neighbors);
+      removeWallBetween(maze, current, next);
+      maze[next.r][next.c] = false;
+      stack.push(next);
+      current = next;
+    } else {
+      current = stack.pop();
+    }
+  }
+  return maze;
+}
+
+// Helper: get unvisited neighbors
+function getUnvisitedNeighbors(maze, cell, cols, rows) {
+  let deltas = [
+    {r: -1, c: 0},
+    {r: 1, c: 0},
+    {r: 0, c: -1},
+    {r: 0, c: 1}
+  ];
+  let neighbors = [];
+  for (let d of deltas) {
+    let nr = cell.r + d.r;
+    let nc = cell.c + d.c;
+    if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+      if (maze[nr][nc] === true) {
+        neighbors.push({r: nr, c: nc});
+      }
+    }
+  }
+  return neighbors;
+}
+
+// Helper: remove walls between two cells
+function removeWallBetween(maze, a, b) {
+  // This is conceptually to track walls, but for a simple approach, 
+  // we just set the target cell to false. The "wall" concept is visual-only.
+  // If needed, we can do more logic here for partial walls.
+}
+
+// Draw the maze with rectangles for walls
+function drawMaze(maze) {
+  stroke(255);
+  strokeWeight(1);
+  for (let r = 0; r < maze.length; r++) {
+    for (let c = 0; c < maze[r].length; c++) {
+      if (maze[r][c]) {
+        fill(0, 0, 100); // White walls
+      } else {
+        fill(0); // Path
+      }
+      rect(c * cellSize, r * cellSize, cellSize, cellSize);
+    }
+  }
+}
+
+// Wave background function
+function drawWaveBackground(sec) {
+  // We'll create a horizontal wave that shifts with each frame,
+  // and alter its amplitude based on the current second.
+  waveOffset += 0.02;
+  let amplitude = map(sec, 0, 59, 10, 50);
+
+  noStroke();
+  for (let y = 0; y < height; y += 5) {
+    let waveVal = sin(y * 0.05 + waveOffset) * amplitude;
+    fill(map(y, 0, height, 180, 300), 100, 30, 30);
+    rect(0, y, width / 2 + waveVal, 5);
+    fill(map(y, 0, height, 300, 180), 100, 70, 30);
+    rect(width / 2 + waveVal, y, width - (width / 2 + waveVal), 5);
+  }
+}
+</script>
+</body>
+</html>

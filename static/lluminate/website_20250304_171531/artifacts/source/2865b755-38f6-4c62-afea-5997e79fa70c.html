@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Mandala</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; 
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      border-radius: 4px;
+      padding: 10px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 240px;
+      z-index: 2;
+      line-height: 1.4em;
+    }
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+    /* Force the canvas to 512x512 */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      Hover over the canvas to explore!<br><br>
+      • Inner ring shapes reflect the current hour.<br>
+      • Middle ring expands with each minute.<br>
+      • Outer ring color pulses with the passing seconds.<br>
+      • Observe the overlapping arcs to see time’s geometry unfold.<br><br>
+      Experience the transient beauty of the Time Mandala!
+    </div>
+  </div>
+
+  <script>
+    let centerX, centerY;
+    let bgGradient;
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+
+      centerX = width / 2;
+      centerY = height / 2;
+
+      // Create a simple radial gradient background
+      bgGradient = createGraphics(width, height);
+      bgGradient.noFill();
+      for (let r = 0; r < width; r++) {
+        let inter = map(r, 0, width, 0, 1);
+        let c = lerpColor(color(0), color(30, 30, 60), inter);
+        bgGradient.stroke(c);
+        bgGradient.ellipse(centerX, centerY, r * 2, r * 2);
+      }
+    }
+
+    function draw() {
+      // Draw radial gradient background
+      image(bgGradient, 0, 0);
+
+      // Retrieve current time
+      const h = hour() % 12; // 0..11
+      const m = minute();    // 0..59
+      const s = second();    // 0..59
+
+      push();
+      translate(centerX, centerY);
+      noFill();
+
+      // -----------------------------
+      // Inner ring  (based on HOURS)
+      // -----------------------------
+      // Number of arcs depends on hour (at least 1)
+      let hourCount = max(h, 1);
+      strokeWeight(3);
+      for (let i = 0; i < hourCount; i++) {
+        let angleStep = 360 / hourCount;
+        stroke(160, 80, 200, 180); 
+        arc(0, 0, 100, 100, i * angleStep, (i + 0.75) * angleStep);
+      }
+
+      // -----------------------------
+      // Middle ring (based on MINUTES)
+      // -----------------------------
+      // Radius expands with minute
+      let middleRadius = map(m, 0, 59, 130, 250);
+      strokeWeight(2);
+      stroke(255, 160, 0, 180);
+      circle(0, 0, middleRadius);
+
+      // Draw a ring of arcs around that radius
+      let minuteSegments = 12;
+      let angleStep = 360 / minuteSegments;
+      for (let i = 0; i < minuteSegments; i++) {
+        let segAngle = angleStep*i + map(m, 0, 59, 0, 360);
+        let startAng = segAngle;
+        let stopAng = segAngle + angleStep/2;
+        arc(0, 0, middleRadius, middleRadius, startAng, stopAng);
+      }
+
+      // -----------------------------
+      // Outer ring (based on SECONDS)
+      // -----------------------------
+      // The outer ring color changes with the passing seconds
+      let secColor = color(
+        map(s, 0, 59, 100, 255), 
+        map(s, 0, 59, 200, 50),
+        map(s, 0, 59, 50, 255)
+      );
+      stroke(secColor);
+      strokeWeight(4);
+      let outerRadius = 300;
+      // Rotate ring depending on seconds
+      rotate(map(s, 0, 60, 0, 360));
+      let segments = 24;
+      angleStep = 360 / segments;
+      for (let i = 0; i < segments; i++) {
+        let startAng = i * angleStep;
+        let stopAng = startAng + angleStep * 0.8;
+        arc(0, 0, outerRadius, outerRadius, startAng, stopAng);
+      }
+
+      pop();
+    }
+  </script>
+</body>
+</html>

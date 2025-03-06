@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Origami Garden</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset default margins and background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container exactly 512x512 */
+    #timeOrigamiGardenContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    /* Instruction overlay on hover */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 30px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #timeOrigamiGardenContainer:hover #instructionsOverlay {
+      display: block;
+    }
+
+    h1, p {
+      margin: 1em 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="timeOrigamiGardenContainer">
+    <div id="instructionsOverlay">
+      <h1>Time Origami Garden</h1>
+      <p>
+        • The garden's background hue shifts by hour. <br/>
+        • The number of blooming flowers depends on the current minute. <br/>
+        • An origami crane flaps its wings in sync with the seconds. <br/>
+        • Hover again to see these instructions.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      TIME ORIGAMI GARDEN
+      - The garden's background hue smoothly transitions with the current hour.
+      - A number of flowers bloom throughout, controlled by the minute value.
+      - An origami crane flaps its wings based on the second.
+      - A small digital clock is displayed in the corner.
+    */
+
+    // Flower objects
+    let flowers = [];
+    // For crane animation
+    let craneWingAngle = 0;
+    let flapDirection = 1; // 1 or -1 to flap up/down
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('timeOrigamiGardenContainer');
+      angleMode(DEGREES);
+      // Start with some initial flowers
+      for (let i = 0; i < 10; i++) {
+        flowers.push(new Flower(random(width), random(height)));
+      }
+    }
+
+    function draw() {
+      colorMode(HSL);
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Map hour (0..23) to hue (0..360)
+      let gardenHue = map(h, 0, 23, 0, 360);
+      background(gardenHue, 80, 50);
+
+      // Adjust the number of flowers based on minute
+      // Map minutes 0..59 => 5..30
+      let targetCount = floor(map(m, 0, 59, 5, 30));
+      manageFlowers(targetCount);
+
+      // Draw each flower
+      for (let i = 0; i < flowers.length; i++) {
+        flowers[i].display();
+      }
+
+      // Draw an origami crane near the center
+      drawOrigamiCrane(width * 0.5, height * 0.5, s);
+
+      // Digital clock in the corner
+      colorMode(RGB);
+      fill(255);
+      noStroke();
+      textSize(24);
+      textAlign(LEFT, TOP);
+
+      // 12-hour format
+      let displayHour = h % 12;
+      if (displayHour === 0) displayHour = 12;
+      let ampm = (h >= 12) ? "PM" : "AM";
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      let timeString = displayHour + ":" + minStr + ":" + secStr + " " + ampm;
+      text(timeString, 10, 10);
+    }
+
+    // Function to keep the flower array at or near the target count
+    function manageFlowers(targetCount) {
+      while (flowers.length < targetCount) {
+        flowers.push(new Flower(random(width), random(height)));
+      }
+      while (flowers.length > targetCount) {
+        flowers.pop();
+      }
+    }
+
+    // Flower class
+    class Flower {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.size = random(10, 25);
+        this.hue = random(0, 360);
+      }
+
+      display() {
+        push();
+        colorMode(HSL);
+        noStroke();
+        translate(this.x, this.y);
+        fill(this.hue, 80, 60);
+        // Use a simple petal shape
+        let petals = 6;
+        for (let i = 0; i < petals; i++) {
+          ellipse(0, this.size * 0.4, this.size, this.size * 1.4);
+          rotate(360 / petals);
+        }
+        fill(40, 80, 30);
+        circle(0, 0, this.size * 0.5);
+        pop();
+      }
+    }
+
+    // Draw the origami crane
+    function drawOrigamiCrane(cx, cy, s) {
+      push();
+      translate(cx, cy);
+
+      // Wing flaps with seconds, e.g. 0..59 => angle 0..90
+      // We'll make it oscillate every second
+      let wingMaxAngle = 30;
+      if (frameCount % 60 === 0) {
+        flapDirection *= -1; 
+      }
+      // Slow flapping over the course of a second
+      craneWingAngle += flapDirection * 0.5;
+      craneWingAngle = constrain(craneWingAngle, -wingMaxAngle, wingMaxAngle);
+
+      // Body
+      fill(240);
+      noStroke();
+      triangle(0, 0, -30, 20, -20, -10);
+
+      // Left wing
+      push();
+      rotate(craneWingAngle);
+      triangle(0, 0, 0, -30, -40, -20);
+      pop();
+
+      // Right wing
+      push();
+      rotate(-craneWingAngle);
+      triangle(0, 0, 0, -30, 40, -20);
+      pop();
+
+      // Head/neck
+      triangle(0, 0, 8, -10, 4, -2);
+
+      pop();
+    }
+  </script>
+</body>
+</html>

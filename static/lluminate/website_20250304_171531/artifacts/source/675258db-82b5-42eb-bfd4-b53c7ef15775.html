@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Time Origami Bloom</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for better contrast */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Origami Bloom</strong><br><br>
+        • Each petal represents an hour in a 12-hour cycle.<br>
+        • Colors shift with minutes.<br>
+        • Petals fold and unfold with seconds.<br>
+        • Observe the seamless transitions as time flows.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour() % 12;    // 0-11
+      let mn = minute();       // 0-59
+      let sc = second();       // 0-59
+
+      // Translate to center for drawing the origami bloom.
+      translate(width/2, height/2);
+
+      // Number of petals correlates to the hour (12 petals max).
+      let petals = max(hr, 1); // to ensure at least 1 petal when hr=0
+      // Petal color changes with minute.
+      let petalColor = map(mn, 0, 59, 0, 255);
+      // A 'folding' angle that changes with seconds.
+      let foldAngle = map(sc, 0, 59, 0, 180);
+
+      // Draw each petal
+      for (let i = 0; i < petals; i++) {
+        // Rotate each petal into place
+        let angle = i * (360 / petals);
+        push();
+        rotate(angle);
+
+        // Petal shape
+        fill((petalColor + angle) % 255, 200, 180);
+        beginShape();
+        // We create a shape that folds inward based on foldAngle
+        vertex(0, 0);
+        let midRadius = 100 + 10 * sin(foldAngle); 
+        let tipRadius = 150 + 20 * sin(foldAngle / 2);
+        // Control the curvature of the petal
+        bezierVertex(midRadius, -midRadius, 
+                     midRadius, -midRadius, 
+                     0, -tipRadius);
+        endShape(CLOSE);
+
+        pop();
+      }
+
+      // Draw a subtle time text at the center
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      let displayHour = hr === 0 ? 12 : hr;
+      let ampm = (hour() >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 0, 0);
+    }
+  </script>
+</body>
+</html>

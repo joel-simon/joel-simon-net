@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Laser Maze</title>
+  <style>
+    /* Page and body reset */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    /* Overlay instructions (hidden by default; visible on hover) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 24px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.75);
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p style="max-width: 400px;">
+        Welcome to the "Time Laser Maze"!<br><br>
+        • The background gradient shifts its colors based on the hour.<br>
+        • Lasers bounce around the canvas, their speed influenced by the minutes.<br>
+        • A pulsing "portal" at the center grows and shrinks with the seconds.<br><br>
+        Hover away to resume the show!
+      </p>
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let canvasSize = 512;
+    let laserCount = 10;
+    let lasers = [];
+    let portalSize = 0;
+
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent('canvasContainer');
+      noStroke();
+
+      for (let i = 0; i < laserCount; i++) {
+        lasers.push(new Laser());
+      }
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Step 1: Dynamic background gradient changes with hour
+      drawDynamicBackground(h);
+
+      // Step 2: Update and draw bouncing lasers (minute influences speed)
+      for (let laser of lasers) {
+        laser.move(m);
+        laser.show();
+      }
+
+      // Step 3: Pulsing "portal" at center (seconds control pulse)
+      portalSize = map(sin(frameCount * 0.05 + s * 0.2), -1, 1, 50, 150);
+      push();
+      translate(width / 2, height / 2);
+      fill(200, 100, 255, 160);
+      ellipse(0, 0, portalSize, portalSize);
+      pop();
+
+      // Step 4: Optional digital time display at bottom
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      text(nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2), width / 2, height - 20);
+    }
+
+    // Draw a vertical gradient background using hour-based colors
+    function drawDynamicBackground(hr) {
+      for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        // Two colors that shift with hour
+        let c1 = color(map(hr, 0, 23, 0, 255), 50, 150);
+        let c2 = color(50, 150, map(hr, 0, 23, 255, 0));
+        let c = lerpColor(c1, c2, inter);
+        stroke(c);
+        line(0, y, width, y);
+      }
+    }
+
+    // Laser class
+    class Laser {
+      constructor() {
+        this.x1 = random(width);
+        this.y1 = random(height);
+        this.x2 = this.x1 + random(-50, 50);
+        this.y2 = this.y1 + random(-50, 50);
+        this.dx1 = random([-1, 1]);
+        this.dy1 = random([-1, 1]);
+        this.dx2 = random([-1, 1]);
+        this.dy2 = random([-1, 1]);
+        this.clr = color(random(100,255), random(100,255), random(100,255));
+      }
+
+      move(minutes) {
+        // Speed influenced by minutes
+        let spdFactor = map(minutes, 0, 59, 1, 3);
+
+        this.x1 += this.dx1 * spdFactor;
+        this.y1 += this.dy1 * spdFactor;
+        this.x2 += this.dx2 * spdFactor;
+        this.y2 += this.dy2 * spdFactor;
+
+        // Bounce off edges
+        if (this.x1 < 0 || this.x1 > width) this.dx1 *= -1;
+        if (this.y1 < 0 || this.y1 > height) this.dy1 *= -1;
+        if (this.x2 < 0 || this.x2 > width) this.dx2 *= -1;
+        if (this.y2 < 0 || this.y2 > height) this.dy2 *= -1;
+      }
+
+      show() {
+        strokeWeight(2);
+        stroke(this.clr);
+        line(this.x1, this.y1, this.x2, this.y2);
+      }
+    }
+  </script>
+</body>
+</html>

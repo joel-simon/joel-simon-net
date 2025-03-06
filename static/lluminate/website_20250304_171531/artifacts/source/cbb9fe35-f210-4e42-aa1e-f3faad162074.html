@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Creative Time Display</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      color: #333;
+      font-family: sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    .canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      border: 1px solid #aaa;
+      box-sizing: border-box;
+      cursor: help;
+    }
+
+    .instructions {
+      pointer-events: none;
+      font-size: 14px;
+      line-height: 1.4;
+      color: #000;
+      padding: 1em;
+      background: rgba(255, 255, 255, 0.8);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      box-sizing: border-box;
+    }
+
+    .canvas-container:hover .instructions {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div class="canvas-container">
+    <div class="instructions">
+      This is a creative time display. The three colored arcs represent seconds, minutes, and hours. Hover out to hide this message.
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let cnv;
+
+    function setup() {
+      cnv = createCanvas(512, 512);
+      cnv.parent(document.querySelector('.canvas-container'));
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(30);
+
+      let hr = hour() % 12;
+      let mn = minute();
+      let sc = second();
+
+      let scAngle = map(sc, 0, 60, 0, 360);
+      let mnAngle = map(mn, 0, 60, 0, 360);
+      let hrAngle = map(hr, 0, 12, 0, 360);
+
+      translate(width / 2, height / 2);
+      strokeWeight(8);
+      noFill();
+
+      // Seconds arc (red)
+      stroke(255, 100, 100);
+      arc(0, 0, 300, 300, -90, scAngle - 90);
+
+      // Minutes arc (green)
+      stroke(100, 255, 100);
+      arc(0, 0, 280, 280, -90, mnAngle - 90);
+
+      // Hours arc (blue)
+      stroke(100, 100, 255);
+      arc(0, 0, 260, 260, -90, hrAngle - 90);
+    }
+  </script>
+</body>
+</html>

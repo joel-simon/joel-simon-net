@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Kaleidoscope</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic page setup to center the canvas and keep background neat */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      border: none;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (hidden by default, appears on hover) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.7);
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      box-sizing: border-box;
+      padding: 20px;
+      pointer-events: none;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Kaleidoscope</strong><br><br>
+        • Rotates according to the hour.<br>
+        • Fractal branches change with the minute.<br>
+        • Sparks appear each second.<br>
+        • Hover away to watch the fractal symphony unfold!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /* 
+      Time Kaleidoscope
+      -----------------
+      1) The entire canvas rotates based on the current hour.
+      2) A fractal shape in each slice refreshes its color/size based on the minute.
+      3) Tiny sparks appear each second and vanish quickly.
+      4) A small clock in the corner displays the current time.
+    */
+
+    let SIZE = 512;
+    let sparkArray = [];
+    let lastSecond = -1;
+    let fractalBranches = 5; // number of fractal branches
+    let slices = 6; // how many kaleidoscopic slices
+
+    function setup() {
+      let cnv = createCanvas(SIZE, SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // (1) Rotate canvas based on hour
+      // Map hour (0-23) to a rotation of (0-360)
+      let rotationFactor = map(h, 0, 23, 0, 360) + frameCount * 0.2;
+      translate(width/2, height/2);
+      rotate(rotationFactor);
+
+      // (2) Create kaleidoscope slices
+      for (let i = 0; i < slices; i++) {
+        push();
+        rotate(i * (360 / slices));
+        drawFractalBranch(m);
+        pop();
+      }
+
+      // (3) Sparks appear each second
+      if(s !== lastSecond) {
+        sparkArray.push(new Spark());
+        lastSecond = s;
+      }
+      updateAndDrawSparks();
+
+      // (4) Digital clock
+      drawClock(h, m, s);
+    }
+
+    // Draw a fractal branch, color/size changes with minute
+    function drawFractalBranch(m) {
+      // Use minute to affect color and branch length
+      let col = map(m, 0, 59, 0, 255);
+      let branchLen = map(m, 0, 59, 60, 160);
+      fill(col, 150, 255 - col, 180);
+
+      // Draw fractal recursively
+      push();
+      branch(branchLen);
+      pop();
+    }
+
+    function branch(len) {
+      let branchAngle = 25;  // angle in degrees
+      let minLenFactor = 0.65; // how much length shrinks each recursion
+
+      // Draw main line
+      rect(-4, 0, 8, -len); // simple trunk as a rectangle
+      translate(0, -len);
+
+      if (len > 10) {
+        // Branch to the right
+        push();
+        rotate(branchAngle);
+        branch(len * minLenFactor);
+        pop();
+        // Branch to the left
+        push();
+        rotate(-branchAngle);
+        branch(len * minLenFactor);
+        pop();
+      }
+    }
+
+    // Sparks class
+    class Spark {
+      constructor() {
+        this.x = random(-width*0.5, width*0.5);
+        this.y = random(-height*0.5, height*0.5);
+        this.size = random(4, 12);
+        this.lifespan = 255;
+        this.col = color(random(200,255), random(100,200), random(100,255));
+      }
+
+      update() {
+        this.lifespan -= 5;
+      }
+
+      display() {
+        noStroke();
+        fill(red(this.col), green(this.col), blue(this.col), this.lifespan);
+        ellipse(this.x, this.y, this.size, this.size);
+      }
+    }
+
+    function updateAndDrawSparks() {
+      for (let sp of sparkArray) {
+        sp.update();
+        sp.display();
+      }
+      sparkArray = sparkArray.filter(sp => sp.lifespan > 0);
+    }
+
+    // Small clock in bottom-left corner
+    function drawClock(h, m, s) {
+      resetMatrix(); // reset transformations to draw text
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 10, height - 16);
+    }
+  </script>
+</body>
+</html>

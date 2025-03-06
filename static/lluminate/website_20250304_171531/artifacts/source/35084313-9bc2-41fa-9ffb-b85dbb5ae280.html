@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Mosaic Tapestry</title>
+  <!-- Include p5.js -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Instructions overlay, shown on hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Mosaic Tapestry<br><br>
+        • Hour sets wave amplitude.<br>
+        • Minute sets wave frequency.<br>
+        • Second drives fractal swirl rotation.<br>
+        • Mosaic squares appear on second ticks.<br>
+        • Mouse horizontally shifts color palette.<br><br>
+        Hover away to enjoy the dynamic display!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Time Mosaic Tapestry
+      --------------------
+      - Wave background influenced by current hour, minute, and second.
+      - Fractal swirl drawn in the center, rotating with time.
+      - Mosaic squares appear periodically, tied to seconds.
+      - Horizontal mouse movement shifts the color palette.
+      - Digital clock displayed at bottom right.
+    */
+
+    const CANVAS_SIZE = 512;
+
+    let waveOffset = 0;
+    let waveCount = 3;
+    let swirlAngle = 0;
+    let squares = [];
+    let lastSec = -1;
+
+    // Setup
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    // Draw loop
+    function draw() {
+      background(0);
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Calculate wave parameters
+      let amplitude = map(h, 0, 23, 40, 200);
+      let frequency = map(m, 0, 59, 0.5, 5.0);
+      let speed = map(s, 0, 59, 0.01, 0.1);
+
+      // Mouse-based color shift
+      let colorShift = map(mouseX, 0, width, 0, 255);
+
+      // Draw wave background
+      drawWaveBackground(amplitude, frequency, speed, colorShift);
+
+      // Fractal swirl in the center
+      push();
+      translate(width / 2, height / 2);
+      let swirlSpeed = map(s, 0, 59, 0, 360);
+      swirlAngle += swirlSpeed * 0.01; // slow continuous swirl
+      rotate(swirlAngle);
+      drawFractalSwirl(0, 0, 60 + amplitude * 0.25, 4);
+      pop();
+
+      // Generate new squares each second
+      if (s !== lastSec) {
+        squares.push(new MosaicSquare());
+        lastSec = s;
+      }
+
+      // Update and display squares
+      for (let i = squares.length - 1; i >= 0; i--) {
+        squares[i].update();
+        squares[i].display(colorShift);
+        if (squares[i].alpha <= 0) {
+          squares.splice(i, 1);
+        }
+      }
+
+      // Time readout
+      fill(255);
+      textSize(14);
+      textAlign(RIGHT, BOTTOM);
+      text(nf(h,2) + ":" + nf(m,2) + ":" + nf(s,2), width - 10, height - 10);
+    }
+
+    // Draw wave-like ribbons in the background
+    function drawWaveBackground(amplitude, frequency, speed, cShift) {
+      waveOffset += speed;
+      for (let i = 0; i < waveCount; i++) {
+        fill((cShift + i*80) % 255, 150, 220, 130);
+        beginShape();
+        for (let x = 0; x <= width; x += 5) {
+          let angle = (x * frequency) + waveOffset + i*50;
+          let y = (height / (waveCount + 1)) * (i + 1) + sin(angle) * amplitude;
+          vertex(x, y);
+        }
+        vertex(width, height);
+        vertex(0, height);
+        endShape(CLOSE);
+      }
+    }
+
+    // Recursive fractal swirl
+    function drawFractalSwirl(x, y, size, depth) {
+      if (depth <= 0 || size < 2) return;
+
+      push();
+      noStroke();
+      fill(255, 150);
+      ellipse(0, 0, size, size);
+      pop();
+
+      let newSize = size * 0.6;
+      let angleOffset = 45; // swirl angle
+      for (let i = 0; i < 2; i++) {
+        push();
+        rotate(i * angleOffset);
+        translate(size / 2, 0);
+        drawFractalSwirl(0, 0, newSize, depth - 1);
+        pop();
+      }
+    }
+
+    // MosaicSquare class
+    class MosaicSquare {
+      constructor() {
+        this.x = random(width);
+        this.y = random(height);
+        this.size = random(20, 40);
+        this.alpha = 255;
+        this.fadeSpeed = 3; 
+      }
+
+      update() {
+        this.alpha -= this.fadeSpeed;
+      }
+
+      display(cShift) {
+        push();
+        fill((cShift + this.x + this.y) % 255, 200, 255, this.alpha);
+        rectMode(CENTER);
+        rect(this.x, this.y, this.size, this.size);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cosmic Time Twister</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Cosmic Time Twister<br><br>
+        • Each hour reverses the swirl direction.<br>
+        • The minute value amplifies rotational intensity.<br>
+        • The second changes color and swirling speed.<br><br>
+        Hover away to see it in action!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let angleOffset = 0;
+    let starPositions = [];
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+      // Create some star positions randomly
+      for (let i = 0; i < 150; i++) {
+        starPositions.push({
+          x: random(width),
+          y: random(height)
+        });
+      }
+    }
+
+    function draw() {
+      background(0);
+      drawStars();
+      drawTimeTwister();
+      displayClock();
+    }
+
+    function drawStars() {
+      fill(255);
+      for (let i = 0; i < starPositions.length; i++) {
+        circle(starPositions[i].x, starPositions[i].y, 2);
+      }
+    }
+
+    function drawTimeTwister() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Determine direction from the hour: even hours swirl clockwise, odd hours swirl counterclockwise
+      let direction = (h % 2 === 0) ? 1 : -1;
+      // Amplify swirl by minutes
+      let swirlStrength = m * 0.5;
+      // The second changes swirl color and speed
+      let swirlSpeed = map(s, 0, 59, 0.5, 5);
+      let swirlColor = color(map(s, 0, 59, 0, 255), 100, map(s, 0, 59, 255, 100));
+
+      push();
+      translate(width / 2, height / 2);
+      rotate(direction * angleOffset);
+      angleOffset += swirlSpeed;
+
+      // Draw swirl lines
+      for (let r = 0; r < 300; r += 8) {
+        push();
+        rotate(direction * r * swirlStrength);
+        stroke(swirlColor);
+        strokeWeight(2);
+        noFill();
+        ellipse(0, 0, r, r / 2);
+        pop();
+      }
+      pop();
+    }
+
+    function displayClock() {
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Jellyfish Bloom</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0; 
+      padding: 0; 
+      background: #000; 
+      font-family: sans-serif; 
+      color: #fff;
+    }
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+      text-align: center;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the “Time Jellyfish Bloom”!<br><br>
+        • The background color shifts with hours.<br>
+        • Jellyfish size pulses with the minutes.<br>
+        • Their tentacles sway with the seconds.<br>
+        • Move your mouse to swirl the water.<br><br>
+        Hover away to explore!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let jellyfishCount = 5;
+    let jellyfishes = [];
+    let centerForce = 0.005; // mild center pull to keep them in view
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+
+      for (let i = 0; i < jellyfishCount; i++) {
+        jellyfishes.push(new Jellyfish(
+          random(width), 
+          random(height), 
+          random(0.5, 1.5)
+        ));
+      }
+      noStroke();
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Background color changes with hour
+      colorMode(HSB);
+      background((h * 15) % 360, 60, 30);
+      colorMode(RGB);
+
+      // Update and display each jellyfish
+      for (let j of jellyfishes) {
+        j.update(m, s);
+        j.display();
+      }
+
+      // A simple clock
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      text(nf(h,2) + ":" + nf(m,2) + ":" + nf(s,2), width / 2, height - 20);
+    }
+
+    function mouseMoved() {
+      // Subtle "swirl" effect on the jellyfish
+      for (let j of jellyfishes) {
+        let dx = j.x - mouseX;
+        let dy = j.y - mouseY;
+        let distSq = dx*dx + dy*dy + 0.1; 
+        // Move away from mouse slightly
+        j.vx += dx / distSq * 100;
+        j.vy += dy / distSq * 100;
+      }
+    }
+
+    // Jellyfish class
+    class Jellyfish {
+      constructor(x, y, scaleFactor) {
+        this.x = x;
+        this.y = y;
+        this.vx = random(-1, 1);
+        this.vy = random(-1, 1);
+        this.scaleFactor = scaleFactor;
+      }
+
+      update(m, s) {
+        // Pulsing size depends on the minute
+        this.radius = map(sin(frameCount * 0.05 + m), -1, 1, 15, 40) * this.scaleFactor;
+        
+        // Tentacles sway depends on the second
+        this.tentacleOffset = map(sin(frameCount * 0.1 + s), -1, 1, 0.5, 2);
+
+        // Basic movement
+        this.x += this.vx * 0.5;
+        this.y += this.vy * 0.5;
+        
+        // Soft force towards center to keep them on screen
+        let dx = width / 2 - this.x;
+        let dy = height / 2 - this.y;
+        this.vx += dx * centerForce;
+        this.vy += dy * centerForce;
+
+        // Wrap-around at edges
+        if (this.x > width + this.radius)  this.x = -this.radius;
+        if (this.x < -this.radius)         this.x = width + this.radius;
+        if (this.y > height + this.radius) this.y = -this.radius;
+        if (this.y < -this.radius)         this.y = height + this.radius;
+      }
+
+      display() {
+        push();
+        translate(this.x, this.y);
+
+        // Body of the jellyfish
+        fill(200, 100, 200, 120);
+        ellipse(0, 0, this.radius * 2, this.radius);
+
+        // Glow effect
+        fill(255, 150);
+        ellipse(0, 0, this.radius, this.radius * 0.8);
+
+        // Tentacles
+        stroke(255, 170);
+        strokeWeight(2);
+        for (let i = 0; i < 5; i++) {
+          let angle = map(i, 0, 4, -PI/2, PI/2);
+          let x1 = this.radius * 0.5 * cos(angle);
+          let y1 = this.radius * 0.5 * sin(angle);
+          let x2 = x1 + (this.radius * this.tentacleOffset) * cos(angle + 0.3);
+          let y2 = y1 + (this.radius * 2 * this.tentacleOffset) * sin(angle + 0.3);
+          line(x1, y1, x2, y2);
+        }
+
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>

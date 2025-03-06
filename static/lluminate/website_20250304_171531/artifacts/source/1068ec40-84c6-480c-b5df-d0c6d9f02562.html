@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creative Time Display</title>
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Ensure no extra margin/padding around the body */
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #efefef;
+      font-family: sans-serif;
+    }
+
+    /* Container for the 512px canvas and instructions overlay */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      top: 50%;
+      transform: translateY(-50%);
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+
+    /* The overlay instructions hidden by default */
+    #instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background-color: rgba(255,255,255,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 16px;
+      color: #333;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      padding: 1em;
+    }
+
+    /* Show instructions on hover */
+    #canvasContainer:hover #instructions {
+      opacity: 1;
+      pointer-events: all;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="instructions">
+      This clock draws arcs for hours (center), minutes (middle), and seconds (outer). Hover off to see the time!
+    </div>
+  </div>
+
+  <script>
+    function setup() {
+      // Create a 512 x 512 canvas inside the container
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(240);
+
+      // Get the current hour, minute, and second
+      let hr = hour() % 12;  // 0-11
+      let mn = minute();     // 0-59
+      let sc = second();     // 0-59
+
+      // Calculate angles for arcs
+      let scAngle = map(sc, 0, 60, 0, 360);
+      let mnAngle = map(mn, 0, 60, 0, 360);
+      let hrAngle = map(hr, 0, 12, 0, 360) + (mn / 60) * 30; // hour hand moves a bit each minute
+
+      noFill();
+      strokeCap(SQUARE);
+      translate(width / 2, height / 2);
+
+      // Seconds (outer arc)
+      strokeWeight(8);
+      stroke('#FF6B6B');
+      arc(0, 0, 300, 300, -90, scAngle - 90);
+
+      // Minutes (middle arc)
+      strokeWeight(10);
+      stroke('#4ECDC4');
+      arc(0, 0, 260, 260, -90, mnAngle - 90);
+
+      // Hours (inner arc)
+      strokeWeight(12);
+      stroke('#1A535C');
+      arc(0, 0, 220, 220, -90, hrAngle - 90);
+    }
+  </script>
+</body>
+</html>

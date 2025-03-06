@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Fusion Aquarium and Gears</title>
+  <style>
+    /* Center the page and remove default margins/padding */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+
+    /* Fixed 512x512 container */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      background: #111;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay, hidden unless hovered */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      margin: 0 auto;
+      pointer-events: none;
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Fusion Aquarium & Gears</strong><br><br>
+        • Mosaic squares in the background shift color based on hour and minute.<br>
+        • A fractal tree in the corner grows and angles itself with time.<br>
+        • Gears rotate at speeds determined by hour, minute, and second.<br>
+        • Fish swim across the screen; their color and speed match the seconds.<br>
+        • Click to add more fish into the aquarium.<br><br>
+        Hover away to watch it in motion.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    // Canvas size
+    let w = 512;
+    let h = 512;
+
+    // Mosaic background
+    let cols = 12;  // ties to hours
+    let rows = 12; 
+    let tileW, tileH;
+
+    // Gears
+    let hourGearAngle = 0;
+    let minuteGearAngle = 0;
+    let secondGearAngle = 0;
+
+    // Fractal tree parameters
+    let baseBranchLen = 60;
+
+    // Fish array
+    let fishArr = [];
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      tileW = width / cols;
+      tileH = height / rows;
+
+      // Initialize some fish
+      for (let i = 0; i < 5; i++) {
+        fishArr.push(createFish());
+      }
+    }
+
+    function draw() {
+      background(20);
+
+      // Current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      drawMosaicBackground(hr, mn, sc);
+      drawFractalTree(hr, mn, sc);
+      drawGears(hr, mn, sc);
+      updateAndDrawFish(hr, mn, sc);
+    }
+
+    // ---- Mosaic Background ----
+    function drawMosaicBackground(hr, mn, sc) {
+      push();
+      noStroke();
+      for (let c = 0; c < cols; c++) {
+        for (let r = 0; r < rows; r++) {
+          // Calculate color based on how c & r compare to hour/minute
+          let baseCol = color(40, 40, 60);
+          if (c < (hr % 12) && r < floor(mn / 5)) {
+            // Animate color according to seconds
+            let pulsing = map(sin(frameCount + c * r), -1, 1, 50, 255);
+            baseCol = color((sc * 4) % 256, 100, pulsing);
+          }
+          fill(baseCol);
+          rect(c * tileW, r * tileH, tileW, tileH);
+        }
+      }
+      pop();
+    }
+
+    // ---- Fractal Tree ----
+    function drawFractalTree(hr, mn, sc) {
+      push();
+      translate(80, height - 10);
+
+      // Base length modulated by hour
+      let len = baseBranchLen + hr * 2;
+      stroke(200);
+      branch(len, mn, sc);
+      pop();
+    }
+
+    function branch(len, mn, sc) {
+      // Draw main branch
+      line(0, 0, 0, -len);
+      translate(0, -len);
+
+      // Variation in branch angle using minute and second
+      let angleOffset = map(mn, 0, 59, 0, 30) + map(sc, 0, 59, 0, 30);
+
+      // Condition to stop recursion
+      if (len > 8) {
+        push();
+        rotate(angleOffset);
+        branch(len * 0.67, mn, sc);
+        pop();
+
+        push();
+        rotate(-angleOffset);
+        branch(len * 0.67, mn, sc);
+        pop();
+      }
+    }
+
+    // ---- Gears ----
+    function drawGears(hr, mn, sc) {
+      // Update rotation speeds
+      hourGearAngle += map(hr, 0, 23, 0.05, 0.4);
+      minuteGearAngle += map(mn, 0, 59, 0.3, 1.5);
+      secondGearAngle += map(sc, 0, 59, 1, 3);
+
+      // Draw Hour Gear
+      push();
+      translate(width * 0.6, height * 0.7);
+      drawGear(55, 12, hourGearAngle, color(160, 120, 60));
+      pop();
+
+      // Draw Minute Gear
+      push();
+      translate(width * 0.75, height * 0.7);
+      drawGear(35, 24, minuteGearAngle, color(200, 180, 100));
+      pop();
+
+      // Draw Second Gear
+      push();
+      translate(width * 0.9, height * 0.7);
+      drawGear(20, 12, secondGearAngle, color(180, 90, 90));
+      pop();
+    }
+
+    function drawGear(radius, toothCount, rotationAngle, gearColor) {
+      push();
+      rotate(rotationAngle);
+      fill(gearColor);
+
+      // Gear body
+      ellipse(0, 0, radius * 2, radius * 2);
+
+      // Gear teeth
+      for (let i = 0; i < 360; i += 360 / toothCount) {
+        push();
+        rotate(i);
+        rect(0, -radius, radius * 0.15, radius * 0.4);
+        pop();
+      }
+
+      // Center circle
+      fill(0, 0, 0, 150);
+      ellipse(0, 0, radius * 0.4);
+      pop();
+    }
+
+    // ---- Fish (Aquarium) ----
+    function createFish() {
+      return {
+        x: random(width),
+        y: random(height * 0.3, height * 0.9),
+        speed: random(1, 3),
+        col: color(random(100, 255), random(100, 255), random(100, 255))
+      };
+    }
+
+    function updateAndDrawFish(hr, mn, sc) {
+      for (let i = 0; i < fishArr.length; i++) {
+        let fish = fishArr[i];
+        // Update fish position
+        fish.x += fish.speed + map(sc, 0, 59, 0.1, 0.5);
+        if (fish.x > width + 20) {
+          fish.x = -20;
+          fish.y = random(height * 0.3, height * 0.9);
+        }
+
+        // Change fish color gradually with seconds
+        let r = map(sc, 0, 59, 100, 255);
+        fish.col = color(r, (mn * 4) % 256, random(150, 255));
+
+        // Draw fish
+        drawFish(fish.x, fish.y, fish.col);
+      }
+    }
+
+    function drawFish(x, y, c) {
+      push();
+      translate(x, y);
+      fill(c);
+      noStroke();
+      ellipse(0, 0, 20, 10);          // fish body
+      triangle(-10, 0, -15, -5, -15, 5); // tail
+      pop();
+    }
+
+    // Add new fish on mouse click
+    function mousePressed() {
+      if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
+        fishArr.push(createFish());
+      }
+    }
+  </script>
+</body>
+</html>

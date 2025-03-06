@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Inverted Time Fountain</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic page and canvasContainer setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (hidden by default, appears on hover) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.6);
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      box-sizing: border-box;
+      padding: 20px;
+      pointer-events: none;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Inverted Time Fountain</strong><br><br>
+        • Each second spawns new droplets at the bottom.<br>
+        • They flow upwards against gravity, reversing time's usual flow.<br>
+        • Droplet color changes with the hour.<br>
+        • Droplet size adjusts with the minute.<br>
+        Hover away to watch the fountain!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Inverted Time Fountain
+      ----------------------
+      1) Vertical gradient background, changing with the hour.
+      2) Droplets spawn each time the second ticks.
+      3) Droplet size mapped to the current minute.
+      4) Droplets flow upwards, giving the illusion of reversed time.
+    */
+
+    const CANVAS_SIZE = 512;
+    let droplets = [];
+    let lastSecond = -1;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      colorMode(HSB, 360, 100, 100);
+      noStroke();
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // 1) Draw a vertical gradient background based on hour
+      drawVerticalGradient(h);
+
+      // 2) Spawn droplets when the second changes
+      if (s !== lastSecond) {
+        spawnDropletCluster(h, m);
+        lastSecond = s;
+      }
+
+      // 3) Update and display droplets
+      for (let i = droplets.length - 1; i >= 0; i--) {
+        droplets[i].update();
+        droplets[i].display();
+        if (droplets[i].isOffScreen()) {
+          droplets.splice(i, 1);
+        }
+      }
+    }
+
+    // Creates a vertical gradient from one hue to a complementary hue
+    // using the current hour as a basis for color mapping
+    function drawVerticalGradient(h) {
+      // Map hour to a hue
+      let topHue = (h * 15) % 360; 
+      let bottomHue = (topHue + 180) % 360;
+      for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        let c = lerpColor(color(topHue, 60, 40), color(bottomHue, 60, 40), inter);
+        stroke(c);
+        line(0, y, width, y);
+      }
+    }
+
+    // Spawn a small cluster of droplets each second
+    function spawnDropletCluster(h, m) {
+      let clusterCount = 5; 
+      for (let i = 0; i < clusterCount; i++) {
+        droplets.push(new Droplet(h, m));
+      }
+    }
+
+    // Droplet class
+    class Droplet {
+      constructor(h, m) {
+        this.x = random(width);
+        this.y = height + 10;
+        // droplet size connected to minute
+        this.dSize = map(m, 0, 59, 5, 20) + random(-3, 3);
+        // droplet color connected to hour
+        this.dHue = (h * 15) % 360 + random(-10, 10);
+        // upward speed
+        this.speed = random(1, 3);
+        // slight horizontal drift
+        this.xDrift = random(-1, 1);
+      }
+
+      update() {
+        this.y -= this.speed;
+        this.x += this.xDrift * 0.2;
+      }
+
+      display() {
+        fill(this.dHue, 80, 90, 0.8);
+        ellipse(this.x, this.y, this.dSize, this.dSize);
+      }
+
+      isOffScreen() {
+        return (this.y < -this.dSize);
+      }
+    }
+  </script>
+</body>
+</html>

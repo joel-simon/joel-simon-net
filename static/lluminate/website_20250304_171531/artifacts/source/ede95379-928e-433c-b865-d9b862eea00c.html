@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Flower Garden</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #eaeaea;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    #timeGardenContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay, hidden by default. Display on hover. */
+    #instructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(255,255,255,0.8);
+      color: #222;
+      font-family: sans-serif;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    #timeGardenContainer:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="timeGardenContainer">
+  <div id="instructions">
+    <h3>Time Flower Garden</h3>
+    <p>
+      • Each flower’s color changes with the hour.<br/>
+      • The size of the petals grows with the minute.<br/>
+      • Notice the gentle pulsing of each petal in sync with the seconds.<br/>
+      • Enjoy watching the garden’s hue shift throughout the day!
+    </p>
+  </div>
+</div>
+
+<script>
+  let canvasSize = 512;
+  let flowers = [];
+
+  function setup() {
+    let c = createCanvas(canvasSize, canvasSize);
+    c.parent("timeGardenContainer");
+    angleMode(DEGREES);
+    noStroke();
+
+    // Create multiple flowers at random positions
+    for (let i = 0; i < 10; i++) {
+      let xPos = random(width * 0.15, width * 0.85);
+      let yPos = random(height * 0.15, height * 0.85);
+      flowers.push({ x: xPos, y: yPos });
+    }
+  }
+
+  function draw() {
+    background(getBackgroundColor());
+
+    let hr = hour() % 12;  // 0-11
+    let mn = minute();     // 0-59
+    let sc = second();     // 0-59
+
+    // Draw each flower
+    for (let f of flowers) {
+      drawFlower(f.x, f.y, hr, mn, sc);
+    }
+
+    // Display digital time in the corner
+    fill(255);
+    textAlign(RIGHT, TOP);
+    textSize(18);
+    text(nf(hour(),2) + ':' + nf(mn,2) + ':' + nf(sc,2), width - 10, 10);
+  }
+
+  // Returns a smooth background color that shifts with the hour
+  function getBackgroundColor() {
+    // Convert current hour into a fraction [0..1]
+    let hrSmooth = (hour() + minute()/60 + second()/3600) / 24;
+    // Create a blend from morning sky to dusk
+    let morning = color(200, 240, 255);
+    let dusk = color(40, 25, 60);
+    return lerpColor(morning, dusk, hrSmooth);
+  }
+
+  // Draw a single flower with properties driven by time
+  function drawFlower(x, y, hr, mn, sc) {
+    push();
+    translate(x, y);
+
+    // Number of petals based on hour
+    let petals = (hr + 1) * 2; 
+    // Petal size influenced by minutes (mapping 0-59 to 30-80)
+    let basePetalSize = map(mn, 0, 59, 30, 80);
+    // Slight pulsing with seconds
+    let pulse = map(sin(sc * 6), -1, 1, 0.8, 1.2);
+    let petalSize = basePetalSize * pulse;
+
+    // Outer petal color tinted by hour
+    let hourHue = map(hr, 0, 11, 0, 360);
+    fill(hourHue, 80, 80, 1); // We'll use HSB-like arguments in fill() for variety
+    colorMode(HSB);
+
+    // Draw petals
+    for (let i = 0; i < petals; i++) {
+      push();
+      rotate((360 / petals) * i);
+      ellipse(0, petalSize, petalSize * 0.8, petalSize * 1.5);
+      pop();
+    }
+
+    // Center of the flower
+    fill(50, 200, 200);
+    ellipse(0, 0, petalSize * 0.7, petalSize * 0.7);
+
+    // Reset color mode
+    colorMode(RGB);
+    pop();
+  }
+</script>
+</body>
+</html>

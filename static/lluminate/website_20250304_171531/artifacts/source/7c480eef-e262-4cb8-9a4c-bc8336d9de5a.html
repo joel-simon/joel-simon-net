@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Fusion Maze & Gears</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Ensure body and html occupy the full window */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hover-instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 30px;
+    }
+
+    /* Show the overlay on container hover */
+    #canvas-container:hover #hover-instructions {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <p>
+        <strong>Time Fusion Maze & Gears</strong><br><br>
+        • The background wave shifts with the hour.<br>
+        • A swirling fractal orchard grows in each corner, scaled by the current hour.<br>
+        • A new mini-maze is generated every minute.<br>
+        • Two gears rotate at speeds tied to minutes and seconds.<br>
+        • The current time is displayed at the bottom center.<br><br>
+        Hover away to see it in action!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Canvas size
+    let w = 512;
+    let h = 512;
+
+    // Wave offset for background
+    let waveOffset = 0;
+
+    // Maze variables
+    const mazeCols = 20;
+    const mazeRows = 20;
+    let mazeData = [];
+
+    // Gear rotations
+    let minuteGearAngle = 0;
+    let secondGearAngle = 0;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      generateMaze();
+    }
+
+    function draw() {
+      background(20);
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // 1) Draw wave background (affected by hour)
+      drawWave(hr);
+
+      // 2) Draw fractal orchard in corners (scale depends on hour)
+      // Top-left orchard
+      push();
+      translate(80, 80);
+      drawFractalOrchard(hr, 0);
+      pop();
+
+      // Top-right orchard
+      push();
+      translate(w - 80, 80);
+      scale(-1, 1); // Mirror horizontally
+      drawFractalOrchard(hr, 0);
+      pop();
+
+      // Bottom-left orchard
+      push();
+      translate(80, h - 80);
+      scale(1, -1); // Mirror vertically
+      drawFractalOrchard(hr, 0);
+      pop();
+
+      // Bottom-right orchard
+      push();
+      translate(w - 80, h - 80);
+      scale(-1, -1); // Mirror both horizontally & vertically
+      drawFractalOrchard(hr, 0);
+      pop();
+
+      // 3) Update and draw the maze if there's a minute change
+      // Generate new maze on the exact minute change
+      if (frameCount % 60 === 0 && second() === 0) {
+        generateMaze();
+      }
+      drawMaze();
+
+      // 4) Draw rotating gears in the center (speeds tied to minute & second)
+      minuteGearAngle += map(mn, 0, 59, 0.2, 1.5);
+      secondGearAngle += map(sc, 0, 59, 1, 3);
+
+      push();
+      translate(width / 2 - 70, height / 2);
+      drawGear(60, 30, minuteGearAngle, color(180, 150, 80));
+      pop();
+
+      push();
+      translate(width / 2 + 70, height / 2);
+      drawGear(40, 20, secondGearAngle, color(240, 80, 130));
+      pop();
+
+      // 5) Display current time
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(hr, 2);
+      let mDisp = nf(mn, 2);
+      let sDisp = nf(sc, 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, width / 2, height - 20);
+    }
+
+    // Draw wave at the bottom, color changes with hour
+    function drawWave(hr) {
+      waveOffset += 0.02;
+      let waveColor = color(map(hr, 0, 23, 0, 255), 100, 180);
+      fill(waveColor);
+      noStroke();
+      beginShape();
+      vertex(0, height);
+      for (let x = 0; x <= width; x += 5) {
+        let amplitude = map(hr % 12, 0, 11, 10, 60);
+        let y = height - 50 + sin(x * 0.02 + waveOffset) * amplitude;
+        vertex(x, y);
+      }
+      vertex(width, height);
+      endShape(CLOSE);
+    }
+
+    // Draw a fractal orchard-like shape to represent a tree
+    // We'll vary its scale with the hour
+    function drawFractalOrchard(hr, depth) {
+      let maxDepth = 4;
+      if (depth > maxDepth) return;
+
+      // Scale by hour (hr=0 => scale=0.8, hr=23 => scale=1.3)
+      let baseScale = map(hr, 0, 23, 0.8, 1.3);
+      push();
+      scale(baseScale);
+      stroke(180, 220, 100);
+      strokeWeight(2);
+      line(0, 0, 0, -40); // trunk segment
+      translate(0, -40);
+
+      // Branches
+      push();
+      rotate(-30);
+      drawFractalOrchard(hr, depth + 1);
+      pop();
+
+      push();
+      rotate(30);
+      drawFractalOrchard(hr, depth + 1);
+      pop();
+      pop();
+    }
+
+    // Maze generation using a simple randomized depth-first search approach
+    function generateMaze() {
+      // Initialize 2D array
+      mazeData = [];
+      for (let r = 0; r < mazeRows; r++) {
+        mazeData[r] = [];
+        for (let c = 0; c < mazeCols; c++) {
+          mazeData[r][c] = {
+            visited: false,
+            walls: [true, true, true, true] // top, right, bottom, left
+          };
+        }
+      }
+
+      // Depth-first search
+      let stack = [];
+      let current = {r: 0, c: 0};
+      mazeData[0][0].visited = true;
+      stack.push(current);
+
+      while (stack.length > 0) {
+        let neighbors = getUnvisitedNeighbors(current.r, current.c);
+        if (neighbors.length > 0) {
+          let next = random(neighbors);
+          removeWalls(current, next);
+          mazeData[next.r][next.c].visited = true;
+          stack.push({r: next.r, c: next.c});
+          current = next;
+        } else {
+          current = stack.pop();
+        }
+      }
+    }
+
+    function getUnvisitedNeighbors(r, c) {
+      let neighbors = [];
+      // top
+      if (r > 0 && !mazeData[r-1][c].visited) {
+        neighbors.push({r: r-1, c: c});
+      }
+      // right
+      if (c < mazeCols - 1 && !mazeData[r][c+1].visited) {
+        neighbors.push({r: r, c: c+1});
+      }
+      // bottom
+      if (r < mazeRows - 1 && !mazeData[r+1][c].visited) {
+        neighbors.push({r: r+1, c: c});
+      }
+      // left
+      if (c > 0 && !mazeData[r][c-1].visited) {
+        neighbors.push({r: r, c: c-1});
+      }
+      return neighbors;
+    }
+
+    function removeWalls(a, b) {
+      let dr = b.r - a.r;
+      let dc = b.c - a.c;
+      // b is above a
+      if (dr === -1 && dc === 0) {
+        mazeData[a.r][a.c].walls[0] = false;
+        mazeData[b.r][b.c].walls[2] = false;
+      }
+      // b is right of a
+      if (dr === 0 && dc === 1) {
+        mazeData[a.r][a.c].walls[1] = false;
+        mazeData[b.r][b.c].walls[3] = false;
+      }
+      // b is below a
+      if (dr === 1 && dc === 0) {
+        mazeData[a.r][a.c].walls[2] = false;
+        mazeData[b.r][b.c].walls[0] = false;
+      }
+      // b is left of a
+      if (dr === 0 && dc === -1) {
+        mazeData[a.r][a.c].walls[3] = false;
+        mazeData[b.r][b.c].walls[1] = false;
+      }
+    }
+
+    // Render the maze onto the canvas
+    function drawMaze() {
+      let cellWidth = width / mazeCols;
+      let cellHeight = (height / mazeRows) * 0.4; 
+      // Maze is drawn in top portion, let's move it down a little
+      push();
+      translate(0, height * 0.15);
+      stroke(255);
+      for (let r = 0; r < mazeRows; r++) {
+        for (let c = 0; c < mazeCols; c++) {
+          let x = c * cellWidth;
+          let y = r * cellHeight;
+          let walls = mazeData[r][c].walls;
+          // top
+          if (walls[0]) line(x, y, x + cellWidth, y);
+          // right
+          if (walls[1]) line(x + cellWidth, y, x + cellWidth, y + cellHeight);
+          // bottom
+          if (walls[2]) line(x, y + cellHeight, x + cellWidth, y + cellHeight);
+          // left
+          if (walls[3]) line(x, y, x, y + cellHeight);
+        }
+      }
+      pop();
+    }
+
+    // Draw a gear with specified radius, tooth count, rotation angle, and color
+    function drawGear(radius, teeth, rotationAngle, gearColor) {
+      push();
+      rotate(rotationAngle);
+      fill(gearColor);
+
+      // Gear body
+      ellipse(0, 0, radius * 2, radius * 2);
+
+      // Gear teeth
+      for (let i = 0; i < 360; i += 360 / teeth) {
+        push();
+        rotate(i);
+        rectMode(CENTER);
+        rect(0, -radius, radius * 0.15, radius * 0.4);
+        pop();
+      }
+
+      // Center circle
+      fill(0, 50);
+      ellipse(0, 0, radius * 0.4, radius * 0.4);
+      pop();
+    }
+  </script>
+</body>
+</html>

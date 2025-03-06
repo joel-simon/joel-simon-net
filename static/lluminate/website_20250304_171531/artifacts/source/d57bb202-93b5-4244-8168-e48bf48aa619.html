@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Sushi River</title>
+  <style>
+    /* Page setup for a 512x512 display */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas and overlay */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: auto;
+      overflow: hidden;
+      background-color: #111;
+    }
+
+    /* Instructions overlay hidden by default, appears on hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: none;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.8);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Sushi River</strong><br><br>
+        • Wavy water patterns shift in color with each passing hour.<br>
+        • Sushi pieces orbit, with speed guided by the current minutes & seconds.<br>
+        • Watch how ephemeral koi occasionally appear with floating chopsticks.<br><br>
+        Hover away to begin your Time Sushi journey.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    const w = 512;
+    const h = 512;
+    
+    let sushiPieces = [];
+    let koiFish = [];
+    let chopsticks = [];
+    let waveOffset = 0;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      colorMode(HSB, 360, 100, 100);
+      // Create sushi pieces for orbit
+      for (let i = 0; i < 6; i++) {
+        sushiPieces.push({
+          angle: i * (TWO_PI / 6),
+          radius: random(80, 130),
+          size: random(15, 25)
+        });
+      }
+      // Initialize koi position, they will appear randomly
+      for (let i = 0; i < 3; i++) {
+        koiFish.push({
+          x: random(width),
+          y: random(height),
+          size: random(20, 40),
+          visible: false,
+          timer: 0
+        });
+      }
+      // Initialize chopsticks that might spin in the center
+      for (let i = 0; i < 2; i++) {
+        chopsticks.push({
+          angle: i * PI,
+          length: 60
+        });
+      }
+    }
+
+    function draw() {
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Background wave color based on hour
+      background(map(hr, 0, 23, 0, 360), 60, 40);
+
+      // Draw water waves using noise or sin function
+      drawWaves(hr, mn, sc);
+
+      // Update sushi orbit
+      for (let i = 0; i < sushiPieces.length; i++) {
+        let sp = sushiPieces[i];
+        // Orbit speed influenced by minutes and seconds
+        sp.angle += 0.01 + (0.0005 * mn) + (0.0001 * sc);
+        drawSushi(sp);
+      }
+
+      // Update koi (they appear or vanish based on random intervals)
+      for (let k of koiFish) {
+        // Increase timer
+        k.timer++;
+        if (!k.visible && random() < 0.001) {
+          k.visible = true;
+          k.timer = 0;
+          k.x = random(width);
+          k.y = random(height);
+        }
+        if (k.visible) {
+          drawKoi(k);
+          // Make them vanish after some frames
+          if (k.timer > 300) {
+            k.visible = false;
+          }
+        }
+      }
+
+      // Chopsticks spinning in the middle, influenced by the second
+      for (let c of chopsticks) {
+        c.angle += (sc * 0.001);
+        drawChopstick(c);
+      }
+      
+      // Display a digital clock near the bottom
+      displayTime(hr, mn, sc);
+    }
+
+    function drawWaves(hr, mn, sc) {
+      // We'll animate waveOffset so the waves slowly move
+      waveOffset += 0.01;
+      noStroke();
+      fill(220, 50, 90, 0.1);
+      let waveCount = 10;
+      for (let i = 0; i < waveCount; i++) {
+        beginShape();
+        let waveY = (height / waveCount) * i;
+        for (let x = 0; x <= width; x += 10) {
+          let y = waveY + map(sin(0.02 * x + waveOffset + i), -1, 1, -10, 10);
+          vertex(x, y);
+        }
+        vertex(width, height);
+        vertex(0, height);
+        endShape(CLOSE);
+      }
+    }
+
+    function drawSushi(sp) {
+      push();
+      translate(width / 2, height / 2);
+      let x = cos(sp.angle) * sp.radius;
+      let y = sin(sp.angle) * sp.radius;
+
+      // Sushi drawn as a rectangle + ellipse (simple representation)
+      stroke(0, 0, 100);
+      fill(30, 70, 90);
+      // Body
+      rectMode(CENTER);
+      push();
+      translate(x, y);
+      rotate(sp.angle);
+      rect(0, 0, sp.size * 2, sp.size);
+      fill(60, 80, 90);
+      ellipse(0, 0, sp.size, sp.size);
+      pop();
+      pop();
+    }
+
+    function drawKoi(k) {
+      push();
+      fill(0, 100, 100);
+      noStroke();
+      // Just a simple ellipse for representation
+      ellipse(k.x, k.y, k.size * 1.5, k.size);
+      fill(10, 100, 100);
+      ellipse(k.x + k.size * 0.4, k.y, k.size * 0.4, k.size * 0.4);
+      pop();
+    }
+
+    function drawChopstick(c) {
+      push();
+      translate(width / 2, height / 2);
+      rotate(c.angle);
+      stroke(0, 0, 100);
+      strokeWeight(4);
+      line(0, 0, c.length, 0);
+      pop();
+    }
+
+    function displayTime(hr, mn, sc) {
+      push();
+      fill(0, 0, 100);
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      let dh = (hr % 12) || 12;
+      let ampm = hr >= 12 ? "PM" : "AM";
+      text(dh + ":" + nf(mn, 2) + ":" + nf(sc, 2) + " " + ampm, width / 2, height - 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time-Fusion Display</title>
+  <!-- Include p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Reset and center body content */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0e0e0e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      color: #fff;
+      font-family: sans-serif;
+    }
+    /* 512x512 container for the canvas and instructions overlay */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      background: #000;
+    }
+    /* Instructions panel appears on hover */
+    #hoverInstructions {
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+      pointer-events: none; /* so cursor events pass through to the canvas */
+      box-sizing: border-box;
+    }
+    #canvasContainer:hover #hoverInstructions {
+      display: block;
+    }
+    .instructionsText {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.5em;
+      max-width: 400px;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverInstructions">
+      <div class="instructionsText">
+        <strong>Time-Fusion Display</strong><br><br>
+        • Mosaic background colors shift with current hour and minute<br>
+        • Three gears rotate at speeds tied to hour, minute, and second<br>
+        • A fractal tree grows each second, branching further over time<br>
+        • Hover to see instructions anytime
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CANVAS_SIZE = 512;
+    const MOSAIC_COLS = 16;
+    const MOSAIC_ROWS = 16;
+    const CELL_SIZE = CANVAS_SIZE / MOSAIC_COLS;
+
+    // Gears
+    let gearAngleHour = 0;
+    let gearAngleMinute = 0;
+    let gearAngleSecond = 0;
+
+    // Fractal Tree parameters
+    let branchLength = 50;
+    let reductionFactor = 0.67; // how much each branch is reduced in length
+    let maxDepth = 6;          // maximum levels of branches
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(0);
+
+      // Get current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      //--- 1. Mosaic Background ---
+      drawMosaicBackground(hr, mn);
+
+      //--- 2. Gears in the Center ---
+      push();
+      translate(width / 2, height / 2);
+      drawGears(hr, mn, sc);
+      pop();
+
+      //--- 3. Fractal Tree (top-left corner) ---
+      push();
+      translate(100, height - 30); 
+      rotate( -90 ); // so the tree grows upwards
+      let treeDepth = map(sc, 0, 59, 1, maxDepth); 
+      drawFractalTree(branchLength, round(treeDepth));
+      pop();
+
+      // Display Time
+      fill(255);
+      noStroke();
+      textSize(14);
+      textAlign(LEFT, TOP);
+      text(nf(hr, 2) + ":" + nf(mn, 2) + ":" + nf(sc, 2), 10, 10);
+    }
+
+    // Draw Mosaic squares, each cell color influenced by hour & minute
+    function drawMosaicBackground(hr, mn) {
+      noStroke();
+      let baseHue = map(hr, 0, 23, 0, 255); 
+      let minuteOffset = map(mn, 0, 59, 0, 255); 
+
+      for (let r = 0; r < MOSAIC_ROWS; r++) {
+        for (let c = 0; c < MOSAIC_COLS; c++) {
+          let x = c * CELL_SIZE;
+          let y = r * CELL_SIZE;
+
+          let factorR = (r / MOSAIC_ROWS) * 0.5;
+          let factorC = (c / MOSAIC_COLS) * 0.5;
+          let colVal = (baseHue + minuteOffset * (factorR + factorC)) % 255;
+
+          fill(colVal, 100, 200);
+          rect(x, y, CELL_SIZE, CELL_SIZE);
+        }
+      }
+    }
+
+    // Draw the fractal tree using recursion
+    function drawFractalTree(len, depth) {
+      stroke(255);
+      line(0, 0, len, 0);
+
+      if (depth > 0) {
+        push();
+        translate(len, 0);
+        rotate(30);
+        drawFractalTree(len * reductionFactor, depth - 1);
+        pop();
+
+        push();
+        translate(len, 0);
+        rotate(-30);
+        drawFractalTree(len * reductionFactor, depth - 1);
+        pop();
+      }
+    }
+
+    // Draw three gears with different rotation speeds
+    function drawGears(hr, mn, sc) {
+      // Hour gear rotates slowest
+      gearAngleHour += map(hr, 0, 23, 0.1, 0.3);
+      push();
+      rotate(gearAngleHour);
+      drawGear(80, 16, color(200, 100, 100));
+      pop();
+
+      // Minute gear has intermediate speed
+      gearAngleMinute += map(mn, 0, 59, 0.5, 1.5);
+      push();
+      rotate(gearAngleMinute);
+      drawGear(50, 12, color(100, 200, 100));
+      pop();
+
+      // Second gear rotates fastest
+      gearAngleSecond += map(sc, 0, 59, 2, 6);
+      push();
+      rotate(gearAngleSecond);
+      drawGear(30, 8, color(100, 100, 200));
+      pop();
+    }
+
+    // Utility function to draw a single gear
+    // radius: gear radius
+    // toothCount: number of teeth in the gear
+    // col: color of the gear
+    function drawGear(radius, toothCount, col) {
+      stroke(0);
+      strokeWeight(2);
+      fill(col);
+
+      let angleStep = 360 / toothCount;
+      beginShape();
+      for (let a = 0; a < 360; a += angleStep) {
+        // Outer tooth
+        let outerX = radius * cos(a);
+        let outerY = radius * sin(a);
+        vertex(outerX, outerY);
+
+        // Slightly bigger radius for the tip of the tooth
+        let tipRadius = radius + 10;
+        outerX = tipRadius * cos(a + angleStep / 2);
+        outerY = tipRadius * sin(a + angleStep / 2);
+        vertex(outerX, outerY);
+      }
+      endShape(CLOSE);
+
+      // Inner circle
+      fill(0);
+      ellipse(0, 0, radius * 0.6, radius * 0.6);
+    }
+  </script>
+</body>
+</html>

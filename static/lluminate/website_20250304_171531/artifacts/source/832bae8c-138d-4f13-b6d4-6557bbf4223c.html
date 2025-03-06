@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Origami Garden Time Display</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      display: block;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to the “Origami Garden Time Display”!<br><br>
+        • A crane (upper left) flaps to represent the hour.<br>
+        • A frog (center) morphs color with each minute.<br>
+        • A butterfly (lower right) flaps its wings according to the seconds.<br>
+        Hover away to see it in motion!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Variables for animation
+    let craneFlap = 0;      // For crane wing angle
+    let butterflyFlap = 0;  // For butterfly wing angle
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+      textAlign(CENTER, CENTER);
+    }
+
+    function draw() {
+      backgroundGradient();
+      displayTimeElements();
+      drawDigitalClock();
+    }
+
+    // Draw background with a simple gradient that shifts by hour
+    function backgroundGradient() {
+      let h = hour();
+      let topColor = color((h * 15) % 360, 80, 80);
+      let bottomColor = color(((h + 12) * 15) % 360, 80, 30);
+      // Switch to HSB mode for the gradient
+      colorMode(HSB);
+      for (let y = 0; y < height; y++) {
+        let lerpVal = map(y, 0, height, 0, 1);
+        let c = lerpColor(topColor, bottomColor, lerpVal);
+        stroke(c);
+        line(0, y, width, y);
+      }
+      colorMode(RGB);
+    }
+
+    // Main function to draw crane, frog, butterfly
+    function displayTimeElements() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Crane -> representing Hour; flapping speed/angle depends on hour
+      craneFlap += map(h, 0, 23, 0.5, 3); 
+      push();
+      translate(100, 100);
+      drawCrane(h, craneFlap);
+      pop();
+
+      // Frog -> representing Minute; color changes based on minute
+      push();
+      translate(width / 2, height / 2);
+      drawFrog(m);
+      pop();
+
+      // Butterfly -> representing Second; flapping speed depends on seconds
+      butterflyFlap += map(s, 0, 59, 1, 4);
+      push();
+      translate(width - 100, height - 100);
+      drawButterfly(butterflyFlap);
+      pop();
+    }
+
+    // Draw digital clock near bottom edge
+    function drawDigitalClock() {
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      fill(255);
+      textSize(16);
+      text(`${hDisp}:${mDisp}:${sDisp}`, width / 2, height - 20);
+    }
+
+    // Crane shape: simplified origami crane
+    // Wing flap angle depends on "flapVal"
+    function drawCrane(h, flapVal) {
+      // Body
+      fill(200);
+      triangle(0, 0, -20, 50, 20, 50);
+
+      // Left wing
+      push();
+      translate(-20, 50);
+      rotate(sin(flapVal) * 20);
+      fill(180);
+      triangle(0, 0, -30, 20, -5, -30);
+      pop();
+
+      // Right wing
+      push();
+      translate(20, 50);
+      rotate(-sin(flapVal) * 20);
+      fill(180);
+      triangle(0, 0, 5, -30, 30, 20);
+      pop();
+
+      // Head/neck
+      fill(160);
+      rect(0, 10, 5, 25);
+      fill(255, 0, 0);
+      ellipse(0, -5, 10, 10);
+
+      // Hour can color the crane's body
+      // (We've already used standard fill, 
+      //  so let's demonstrate a subtle tint.)
+      let craneTint = map(h, 0, 23, 50, 255);
+      fill(255, craneTint);
+      ellipse(0, 20, 10, 5);
+    }
+
+    // Frog shape: changes color with minute
+    function drawFrog(m) {
+      colorMode(HSB);
+      let frogColor = color(map(m, 0, 59, 0, 360), 80, 80);
+      fill(frogColor);
+      colorMode(RGB);
+
+      // Body
+      ellipse(0, 0, 60, 40);
+
+      // Eyes
+      fill(255);
+      ellipse(-15, -10, 10, 10);
+      ellipse(15, -10, 10, 10);
+      fill(0);
+      ellipse(-15, -10, 5, 5);
+      ellipse(15, -10, 5, 5);
+
+      // Legs
+      fill(frogColor);
+      ellipse(-30, 10, 10, 20);
+      ellipse(30, 10, 10, 20);
+    }
+
+    // Butterfly shape: flapping wings by second
+    function drawButterfly(flapVal) {
+      // Body
+      fill(80);
+      rectMode(CENTER);
+      rect(0, 0, 5, 20);
+
+      // Wing angles
+      let wingAngle = sin(flapVal) * 25;
+
+      // Left wing
+      push();
+      rotate(-wingAngle);
+      fill(255, 150, 0);
+      ellipse(-15, 0, 30, 40);
+      pop();
+
+      // Right wing
+      push();
+      rotate(wingAngle);
+      fill(255, 150, 0);
+      ellipse(15, 0, 30, 40);
+      pop();
+    }
+  </script>
+</body>
+</html>

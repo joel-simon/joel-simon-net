@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Dream Catcher</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Dream Catcher<br><br>
+        • The outer circle’s color reflects the current hour.<br>
+        • Radiating threads twist and shift as minutes change.<br>
+        • The swirling core changes color with each second.<br>
+        • A digital clock at the bottom displays the real time.<br><br>
+        Hover away to watch the Dream Catcher in motion.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let centerX, centerY;
+    let maxDiameter;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      centerX = width / 2;
+      centerY = height / 2;
+      maxDiameter = min(width, height) * 0.7;
+      noStroke();
+    }
+
+    function draw() {
+      background(20);
+      
+      let h = hour();
+      let m = minute();
+      let s = second();
+      
+      // Outer circle's hue based on hour
+      let hourColor = map(h, 0, 23, 0, 360);
+      fill(hourColor, 80, 90, 0.6);
+      drawOuterCircle();
+      
+      // Radiating threads respond to minutes
+      // Twisting pattern of lines
+      push();
+      stroke(200);
+      strokeWeight(2);
+      noFill();
+      translate(centerX, centerY);
+      let twistAngle = map(m, 0, 59, 0, 360);
+      rotate(twistAngle);
+      drawRadiatingThreads();
+      pop();
+
+      // Swirling core changes with seconds
+      drawSwirlingCore(s);
+
+      // Digital clock
+      displayDigitalClock(h, m, s);
+    }
+
+    function drawOuterCircle() {
+      push();
+      translate(centerX, centerY);
+      // Use HSB for color mapping
+      colorMode(HSB);
+      ellipse(0, 0, maxDiameter);
+      pop();
+    }
+
+    function drawRadiatingThreads() {
+      // Draw lines from center to the edge of the circle
+      let spokes = 12;
+      for (let i = 0; i < spokes; i++) {
+        push();
+        let angleStep = 360 / spokes;
+        rotate(i * angleStep);
+        line(0, 0, 0, -maxDiameter * 0.35);
+        pop();
+      }
+    }
+
+    function drawSwirlingCore(sec) {
+      push();
+      colorMode(HSB);
+      translate(centerX, centerY);
+      let swirlColor = map(sec, 0, 59, 0, 360);
+      fill(swirlColor, 90, 90);
+      beginShape();
+      // A swirl inspired shape that changes with seconds
+      let swirlSegments = 30;
+      let swirlRadius = 60;
+      for (let i = 0; i <= swirlSegments; i++) {
+        let angle = map(i, 0, swirlSegments, 0, 720);
+        let r = swirlRadius + (i * 0.5);
+        vertex(r * cos(angle), r * sin(angle));
+      }
+      endShape(CLOSE);
+      pop();
+    }
+
+    function displayDigitalClock(h, m, s) {
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(h, 2);
+      let mDisp = nf(m, 2);
+      let sDisp = nf(s, 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, centerX, height - 20);
+    }
+  </script>
+</body>
+</html>

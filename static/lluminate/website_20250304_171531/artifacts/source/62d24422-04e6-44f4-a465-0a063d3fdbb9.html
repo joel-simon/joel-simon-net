@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Bloom</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for better contrast */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Time Bloom</strong><br><br>
+        • A central circle grows and shrinks with the hour.<br>
+        • 60 petals represent each minute; their color shifts over time.<br>
+        • The entire bloom rotates in sync with the seconds.<br>
+        • The digital clock is displayed at the center.<br><br>
+        Hover to read instructions and watch the display evolve every second.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    const w = 512, h = 512;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(0);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Translate to center for symmetrical drawing
+      translate(width / 2, height / 2);
+
+      // Entire bloom rotates with seconds
+      rotate(map(sc, 0, 60, 0, 360));
+
+      // Draw a circle in the center that changes size with the hour
+      // Hour can go from 0..23, map to some radius range
+      let centerRadius = map(hr % 12, 0, 12, 20, 80);
+      fill(255, 120, 200);
+      circle(0, 0, centerRadius * 2);
+
+      // Draw 60 petals, each representing a minute
+      // We'll color each petal based on the current minute to give variety across time
+      for (let i = 0; i < 60; i++) {
+        let angleStep = 360 / 60;
+        push();
+        rotate(i * angleStep);
+
+        // Petal color changes gradually over time so it doesn't look static
+        // Incorporate minute and second for dynamic shifting
+        let petalHue = map(mn + sc / 60, 0, 60, 0, 255);
+        fill((petalHue + i * 4) % 255, 180, 255 - (i * 3) % 255);
+
+        // Petal shape: small rectangle or ellipse
+        // Distance outward depends on the current minute
+        let distanceOut = map(mn, 0, 59, 50, 150);
+        ellipse(distanceOut, 0, 15, 30);
+        pop();
+      }
+
+      // Revert rotation to keep text upright
+      rotate(-map(sc, 0, 60, 0, 360));
+
+      // Draw digital time in the center
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(24);
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(`${displayHour}:${minStr}:${secStr} ${ampm}`, 0, 0);
+    }
+  </script>
+</body>
+</html>

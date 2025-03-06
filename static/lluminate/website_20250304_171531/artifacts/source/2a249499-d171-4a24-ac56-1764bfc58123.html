@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Vortex</title>
+  <style>
+    /* Basic resets and layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas */
+    #p5sketch-container {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Instructions overlay, hidden by default */
+    .instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      font-size: 14px;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 1em;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #p5sketch-container:hover .instructions {
+      display: flex;
+    }
+
+    /* Cursor hint for interactivity */
+    #p5sketch-container:hover {
+      cursor: help;
+    }
+  </style>
+</head>
+<body>
+  <div id="p5sketch-container">
+    <div class="instructions">
+      <strong>HOW THIS DISPLAYS TIME:</strong><br><br>
+      • Arms in the vortex: determined by the current hour.<br>
+      • Rotation speed: influenced by the current minute.<br>
+      • Colors: shift according to the current second, sometimes reversing direction.<br><br>
+      Hover away to hide instructions.
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let angleOffset = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('p5sketch-container');
+      angleMode(DEGREES);
+      colorMode(HSB, 360, 100, 100);
+      noFill();
+      strokeWeight(2);
+    }
+
+    function draw() {
+      // Slightly transparent background for a trailing effect
+      background(0, 0.1);
+      
+      let hr = hour() % 12 || 12; // 1-12
+      let mn = minute();
+      let sc = second();
+      
+      // Map the hour to determine how many "arms" the vortex has
+      // Adding 2 so there's at least some arms even at 1:00
+      let arms = hr + 2;
+
+      // Map the minute to control rotation speed
+      let rotationSpeed = map(mn, 0, 59, 0.1, 5);
+
+      // Color hue shifts with second
+      let hueValue = map(sc, 0, 59, 0, 359);
+
+      // Occasionally reverse direction if second is odd
+      let direction = (sc % 2 === 0) ? 1 : -1;
+
+      // Update the angle offset
+      angleOffset += rotationSpeed * direction;
+
+      // Map the hour to determine the outer radius of arcs
+      // (hr up to 12 mapped to 80..230 for variety)
+      let maxRadius = map(hr, 1, 12, 80, 230);
+
+      push();
+      stroke(hueValue, 90, 90);
+      translate(width / 2, height / 2);
+      
+      // Draw arms in a vortex
+      let angleStep = 360 / arms;
+      for (let i = 0; i < arms; i++) {
+        push();
+        rotate(i * angleStep + angleOffset);
+
+        // The arc extends from a smaller radius to maxRadius
+        // for a "spiral arm" effect
+        let startRadius = 20;
+        let steps = 10; // number of small arcs per arm for detail
+        for (let s = 0; s < steps; s++) {
+          let r1 = lerp(startRadius, maxRadius, s / steps);
+          let r2 = lerp(startRadius, maxRadius, (s + 1) / steps);
+
+          // Each small arc
+          arc(0, 0, r2 * 2, r2 * 2, 0, angleStep / 1.5);
+        }
+        pop();
+      }
+      pop();
+
+      // Optional digital clock readout for reference
+      push();
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(nf(hour(),2) + ":" + nf(mn,2) + ":" + nf(sc,2), 10, 10);
+      pop();
+    }
+  </script>
+</body>
+</html>

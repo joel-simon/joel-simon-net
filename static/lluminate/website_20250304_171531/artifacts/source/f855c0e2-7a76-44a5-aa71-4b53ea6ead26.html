@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Reversal Torus</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center the page content and give a neutral background */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f7f7f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvasContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip hidden by default; visible on hover */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #444;
+      padding: 8px;
+      font-family: sans-serif;
+      font-size: 14px;
+      width: 220px;
+      z-index: 1;
+    }
+
+    /* Show the tooltip when hovering over the container */
+    #canvasContainer:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="tooltip">
+      This display reverses time each day. Hour counts down from 23 to 0, minutes and seconds from 59 to 0. The torus’s motion and color shift accordingly.
+    </div>
+  </div>
+
+  <script>
+    function setup() {
+      let cnv = createCanvas(512, 512, WEBGL);
+      cnv.parent('canvasContainer');
+      noStroke();
+    }
+
+    function draw() {
+      // Standard time
+      let hr = hour();    // 0 - 23
+      let mn = minute();  // 0 - 59
+      let sc = second();  // 0 - 59
+
+      // Reverse each time component
+      // After midnight, reversed values wrap from 23/59/59 down to 0
+      let rhr = 23 - hr;
+      let rmn = 59 - mn;
+      let rsc = 59 - sc;
+
+      // Create a background that changes with reversed hour, minute, second
+      let bgR = map(rhr, 0, 23, 0, 255);
+      let bgG = map(rmn, 0, 59, 0, 255);
+      let bgB = map(rsc, 0, 59, 0, 255);
+      background(bgR, bgG, bgB);
+
+      // Rotate the torus based on reversed seconds
+      // This rotation will slow or speed as time ticks backward
+      rotateY(radians(rsc * 6)); 
+      rotateX(radians(rmn * 3));
+
+      // The torus color is the "inverse" of the background, for contrast
+      fill(255 - bgR, 255 - bgG, 255 - bgB);
+      torus(120, 30);
+
+      // Draw reversed time text near the bottom of the canvas
+      push();
+      // Move closer to screen for text visibility
+      translate(0, 150, 0);
+      rotateY(-radians(rsc * 6));
+      rotateX(-radians(rmn * 3));
+      fill(50);
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      text(
+        nf(rhr,2) + ':' + nf(rmn,2) + ':' + nf(rsc,2),
+        0, 0
+      );
+      pop();
+    }
+  </script>
+</body>
+</html>

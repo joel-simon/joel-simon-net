@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mosaic Fractal Tree Time Display</title>
+  <style>
+    /* Ensure no scrollbars & no page margin */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      font-family: sans-serif;
+      color: #ddd;
+    }
+    /* Container for a fixed 512x512 canvas */
+    #container {
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      position: relative;
+    }
+    /* Overlay for hover instructions */
+    #hover-info {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #container:hover #hover-info {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="hover-info">
+      <p>
+        Welcome to the Mosaic Fractal Tree! The background squares highlight the current hour and minute. A fractal tree at the center grows and shifts based on time. Move your mouse away to see it in action.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let canvasSize = 512;
+    let cols = 24;  // 24 hours
+    let rows = 60;  // 60 minutes
+    let tileW, tileH;
+    let maxBranchDepth = 7; // maximum fractal tree depth
+
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent('container');
+      tileW = width / cols;
+      tileH = height / rows;
+      colorMode(HSB, 360, 100, 100);
+      angleMode(DEGREES);
+      noStroke();
+      frameRate(30);
+    }
+
+    function draw() {
+      background(17);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Draw Mosaic Background
+      drawMosaic(h, m, s);
+
+      // Draw Fractal Tree in the center
+      push();
+      translate(width / 2, height * 0.7); // Move to bottom center
+      let angle = map(sin(s * 6), -1, 1, 15, 45); // degrees variation
+      let hueVal = map(h, 0, 23, 0, 360); // hour-based color
+      stroke(hueVal, 100, 80);
+      strokeWeight(2);
+      branch(m, angle, maxBranchDepth); // pass minute as length factor
+      pop();
+
+      // Display current time
+      noStroke();
+      fill(220);
+      textSize(20);
+      textAlign(CENTER, BOTTOM);
+      text(
+        nf(h, 2) + ":" + nf(m, 2) + ":" + nf(s, 2),
+        width / 2,
+        height - 5
+      );
+    }
+
+    function drawMosaic(h, m, s) {
+      noStroke();
+      for (let col = 0; col < cols; col++) {
+        for (let row = 0; row < rows; row++) {
+          if (col < h && row < m) {
+            // Make the color pulse with seconds
+            fill((s * 4) % 360, 80, 80);
+          } else {
+            fill(0, 0, 30);
+          }
+          rect(col * tileW, row * tileH, tileW, tileH);
+        }
+      }
+    }
+
+    function branch(minuteVal, angle, depth) {
+      if (depth === 0) return;
+
+      // Length of the branch depends on minute (shorter if minute is low)
+      let branchLen = map(minuteVal, 0, 60, 20, 80);
+
+      line(0, 0, 0, -branchLen);
+      translate(0, -branchLen);
+
+      push();
+      rotate(angle);
+      branch(minuteVal, angle, depth - 1);
+      pop();
+
+      push();
+      rotate(-angle);
+      branch(minuteVal, angle, depth - 1);
+      pop();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Celestial Swirl</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Basic resets and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Welcome to "Time Celestial Swirl"!<br><br>
+        • The background color changes with each hour.<br>
+        • The star swirl's speed adjusts minute by minute.<br>
+        • A new star is born every second.<br>
+        • Watch them glow and vanish over time.<br><br>
+        Hover away to explore!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let lastSecond = -1;
+    let stars = [];
+    let swirlAngle = 0;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      colorMode(HSB, 255);
+      noStroke();
+    }
+
+    function draw() {
+      backgroundForHour();
+      updateSwirl();
+      drawSwirl();
+      manageStars();
+      drawStars();
+      drawTimeIndicator();
+    }
+
+    function backgroundForHour() {
+      // Background hue changes with hour
+      let h = hour();
+      let bgHue = map(h, 0, 23, 0, 255);
+      background(bgHue, 100, 60);
+    }
+
+    function updateSwirl() {
+      // Swirl speed depends on current minute
+      let m = minute();
+      let swirlSpeed = map(m, 0, 59, 0.2, 3);
+      swirlAngle += swirlSpeed;
+    }
+
+    function drawSwirl() {
+      // Draw a swirling pattern in the center
+      push();
+      translate(width / 2, height / 2);
+      fill(255, 50); // faint glow
+      let swirlPoints = 200;
+      for (let i = 0; i < swirlPoints; i++) {
+        let radius = i * 1.5;
+        let angle = swirlAngle + i * 4;
+        let x = radius * cos(radians(angle));
+        let y = radius * sin(radians(angle));
+        ellipse(x, y, 5, 5);
+      }
+      pop();
+    }
+
+    function manageStars() {
+      // Every new second, spawn a star
+      let s = second();
+      if (s !== lastSecond) {
+        createStar();
+        lastSecond = s;
+      }
+      // Update and remove old stars
+      for (let i = stars.length - 1; i >= 0; i--) {
+        stars[i].life -= 2;
+        if (stars[i].life <= 0) {
+          stars.splice(i, 1);
+        }
+      }
+    }
+
+    function createStar() {
+      // Each star has random position, color, and a life
+      let star = {
+        x: random(width),
+        y: random(height),
+        hue: random(255),
+        life: 255
+      };
+      stars.push(star);
+    }
+
+    function drawStars() {
+      // Draw each star
+      for (let i = 0; i < stars.length; i++) {
+        let star = stars[i];
+        fill(star.hue, 255, 255, star.life);
+        ellipse(star.x, star.y, 8, 8);
+      }
+    }
+
+    function drawTimeIndicator() {
+      // Draw hour/minute/second text
+      push();
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, width / 2, height - 20);
+      pop();
+    }
+  </script>
+</body>
+</html>

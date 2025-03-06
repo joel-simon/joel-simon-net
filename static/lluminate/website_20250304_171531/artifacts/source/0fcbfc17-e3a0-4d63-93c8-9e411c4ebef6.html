@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Inverted Planetary Time Orbits</title>
+  <!-- Include p5.js -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* A fixed 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Overlay for hover instructions (hidden by default) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.75);
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Inverted Planetary Time Orbits<br><br>
+        • Hour Planet whirls the fastest (in reverse).<br>
+        • Minute Planet orbits at a moderate speed (also reversed).<br>
+        • Second Planet barely moves or drifts randomly.<br>
+        • Observe how time's usual speed hierarchy is flipped!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Inverted Planetary Time Orbits:
+      - The typical idea is that seconds update fastest and hours slowest.
+      - Here, we reverse that assumption:
+        * Hour Planet orbits the fastest (in reverse direction).
+        * Minute Planet orbits moderately (also reversed).
+        * Second Planet is sluggish and occasionally drifts.
+    */
+
+    const CANVAS_SIZE = 512;
+
+    // Orbit radius multipliers
+    const HOUR_ORBIT_RADIUS = 100;
+    const MINUTE_ORBIT_RADIUS = 150;
+    const SECOND_ORBIT_RADIUS = 200;
+
+    // Angular speeds (degrees per frame) but reversed hierarchy:
+    // hour moves fastest, minute at moderate speed, second is slow
+    const HOUR_SPEED = -2.5;   // negative => reverse direction
+    const MINUTE_SPEED = -1.5;
+    let secondSpeed = 0;       // will subtly change
+
+    // Angle trackers
+    let hourAngle = 0;
+    let minuteAngle = 0;
+    let secondAngle = 0;
+
+    // Drift direction for second planet
+    let secondDriftDirection = 1;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(30);
+      translate(width / 2, height / 2);
+
+      // Current Time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      /*
+        We'll add an extra twist:
+        The second planet's speed will follow a random drift logic
+        that changes slightly each second to illustrate inertia
+        or to emphasize it isn't the fastest anymore.
+      */
+      if (frameCount % 60 === 0) {
+        secondSpeed = random(-0.5, 0.5);
+        secondDriftDirection = secondSpeed < 0 ? -1 : 1;
+      }
+
+      // Update angles
+      // We DO use the actual hour, minute, second as "time references",
+      // but ironically their orbits are reversed in speed hierarchy.
+      let hourFrac = (h % 12) + m / 60.0 + s / 3600.0;   // fraction of 12 hours
+      let minuteFrac = m + s / 60.0;                    // fraction of 60 minutes
+
+      // Faster spin for hour planet (plus a scaled actual hour offset)
+      hourAngle += HOUR_SPEED;
+      // shift angle slightly based on actual hour fraction
+      hourAngle += map(hourFrac, 0, 12, 0.005, 0.01);
+
+      // Moderate spin for minute planet
+      minuteAngle += MINUTE_SPEED;
+      minuteAngle += map(minuteFrac, 0, 60, 0.001, 0.005);
+
+      // Very slow or minimal drift for the second planet
+      secondAngle += secondSpeed * secondDriftDirection;
+
+      // Draw orbits
+      noFill();
+      stroke(80);
+      strokeWeight(1);
+      ellipse(0, 0, HOUR_ORBIT_RADIUS * 2, HOUR_ORBIT_RADIUS * 2);
+      ellipse(0, 0, MINUTE_ORBIT_RADIUS * 2, MINUTE_ORBIT_RADIUS * 2);
+      ellipse(0, 0, SECOND_ORBIT_RADIUS * 2, SECOND_ORBIT_RADIUS * 2);
+
+      // Draw "Sun" or "Center"
+      noStroke();
+      fill(255, 240, 0);
+      ellipse(0, 0, 30, 30);
+
+      // Draw Hour Planet (fast orbit)
+      push();
+      rotate(hourAngle);
+      translate(HOUR_ORBIT_RADIUS, 0);
+      fill(0, 180, 255);
+      ellipse(0, 0, 20, 20);
+      pop();
+
+      // Draw Minute Planet (medium orbit)
+      push();
+      rotate(minuteAngle);
+      translate(MINUTE_ORBIT_RADIUS, 0);
+      fill(255, 100, 120);
+      ellipse(0, 0, 18, 18);
+      pop();
+
+      // Draw Second Planet (very slow or random drift)
+      push();
+      rotate(secondAngle);
+      translate(SECOND_ORBIT_RADIUS, 0);
+      fill(180, 255, 180);
+      ellipse(0, 0, 12, 12);
+      pop();
+    }
+  </script>
+</body>
+</html>

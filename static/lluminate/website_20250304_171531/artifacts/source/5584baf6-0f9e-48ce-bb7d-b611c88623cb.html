@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Lava Lamp Universe</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #fff;
+    }
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    p {
+      margin: 0;
+      line-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Lava Lamp Universe<br><br>
+        • The swirling background shifts color with the hour.<br>
+        • Bubbles emerge every second, tinted by the minute.<br>
+        • Bubble sizes pulse with time and fade away.<br><br>
+        Hover away to see it in action!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let bubbles = [];
+    let swirlRotation = 0;
+
+    function setup() {
+      const cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+      frameRate(60);
+    }
+
+    function draw() {
+      drawSwirlBackground();
+      swirlRotation += 0.3;
+      updateAndDrawBubbles();
+      displayClock();
+    }
+
+    // Draw a simple swirling background whose color depends on the current hour
+    function drawSwirlBackground() {
+      let h = hour();
+      // Map hour to a base hue for the swirl
+      let swirlHue = map(h, 0, 23, 0, 360);
+      background(20);
+      push();
+      translate(width / 2, height / 2);
+      rotate(swirlRotation);
+      for (let r = 200; r > 0; r -= 12) {
+        let portion = map(r, 0, 200, 1, 0);
+        let col = color(swirlHue, 80 * portion, 200 * portion, 150);
+        fill(col);
+        arc(0, 0, r * 2, r * 2, 0, 180);
+      }
+      pop();
+    }
+
+    function updateAndDrawBubbles() {
+      // Every second, create a new bubble
+      if (frameCount % 60 === 0) {
+        let m = minute();
+        // Bubble color is based on the minute
+        let bubbleColor = color(
+          map(m, 0, 59, 0, 255),
+          100 + random(55),
+          200 + random(55),
+          200
+        );
+        bubbles.push(new Bubble(random(width), random(height), bubbleColor));
+      }
+
+      // Update and draw each bubble
+      for (let i = bubbles.length - 1; i >= 0; i--) {
+        bubbles[i].update();
+        bubbles[i].display();
+        // Remove bubbles that are fully faded
+        if (bubbles[i].alpha <= 0) {
+          bubbles.splice(i, 1);
+        }
+      }
+    }
+
+    // Bubble class
+    class Bubble {
+      constructor(x, y, col) {
+        this.x = x;
+        this.y = y;
+        this.col = col;
+        this.size = random(10, 30);
+        this.growth = random(0.1, 0.3);
+        this.alpha = 255;
+      }
+      update() {
+        // Use the second to modulate bubble size expansions
+        let s = second();
+        let pulse = map(s, 0, 59, 0.5, 2.0);
+        this.size += this.growth * pulse;
+        this.alpha -= 1.5; // fade out
+      }
+      display() {
+        fill(red(this.col), green(this.col), blue(this.col), this.alpha);
+        ellipse(this.x, this.y, this.size);
+      }
+    }
+
+    function displayClock() {
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      text(hDisp + ":" + mDisp + ":" + sDisp, width / 2, height - 20);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Gravity Vortex</title>
+  <style>
+    /* Basic page reset and layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: Arial, sans-serif;
+      color: #fff;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Container for fixed 512x512 sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0,0,0,0.8);
+      cursor: pointer;
+    }
+
+    /* Instructions overlay (appears on hover) */
+    #infoOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    #canvasContainer:hover #infoOverlay {
+      display: flex;
+    }
+
+    /* Exactly 512x512 canvas */
+    #defaultCanvas0 {
+      width: 512px !important;
+      height: 512px !important;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="infoOverlay">
+      <p>
+        Time Gravity Vortex<br><br>
+        • Orbs orbit the center at speeds based on the current time.<br>
+        • The vortex in the center rotates with seconds.<br>
+        • Click and drag the mouse to repel orbs.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Time Gravity Vortex
+      - Multiple orbs orbit a central vortex. 
+      - Hour, minute, and second values influence each orb’s orbit radius and speed.
+      - The central vortex rotates based on seconds.
+      - Clicking and dragging repels nearby orbs.
+    */
+
+    let orbCount = 40;
+    let orbs = [];
+    let dragging = false;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      noStroke();
+      initOrbs();
+    }
+
+    function draw() {
+      background(0);
+
+      // Time-based parameters
+      let h = hour() % 24;
+      let m = minute();
+      let s = second();
+
+      // Central vortex swirl
+      push();
+      translate(width / 2, height / 2);
+      rotate(radians(s * 6));
+      fill(50, 50, 150);
+      ellipse(0, 0, 120, 120);
+
+      // Additional swirling arcs for visual effect
+      noFill();
+      stroke(100, 100, 200);
+      strokeWeight(3);
+      arc(0, 0, 180, 180, 0, HALF_PI);
+      arc(0, 0, 180, 180, PI, PI + HALF_PI);
+      pop();
+      noStroke();
+
+      // Update and draw orbs
+      for (let orb of orbs) {
+        orb.update(h, m, s);
+        orb.display();
+      }
+    }
+
+    function initOrbs() {
+      for (let i = 0; i < orbCount; i++) {
+        let angle = random(TWO_PI);
+        orbs.push(new Orb(width / 2, height / 2, angle));
+      }
+    }
+
+    class Orb {
+      constructor(cx, cy, angle) {
+        this.cx = cx; 
+        this.cy = cy;
+        this.angle = angle; 
+        this.baseRadius = random(50, 120);
+        this.color = color(random(150,255), random(80,150), random(80,150));
+        this.radiusOffset = random(0.5, 1.5);
+      }
+
+      update(h, m, s) {
+        // Radius changes with hour + minute
+        let r = this.baseRadius + map(h, 0, 23, 0, 80) + map(m, 0, 59, 0, 20) * this.radiusOffset;
+        // Orbit speed changes with second
+        let speed = 0.01 + s * 0.0004;
+
+        // Repulsion effect if dragging 
+        if (dragging) {
+          let d = dist(mouseX, mouseY, (width/2) + cos(this.angle)*r, (height/2) + sin(this.angle)*r);
+          if (d < 100) {
+            r += 3; 
+          }
+        }
+
+        this.angle += speed;
+        this.x = this.cx + r * cos(this.angle);
+        this.y = this.cy + r * sin(this.angle);
+      }
+
+      display() {
+        fill(this.color);
+        ellipse(this.x, this.y, 12, 12);
+      }
+    }
+
+    function mousePressed() {
+      dragging = true;
+    }
+    function mouseReleased() {
+      dragging = false;
+    }
+
+    // Utility function
+    function map(value, start1, stop1, start2, stop2) {
+      return start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1));
+    }
+  </script>
+</body>
+</html>

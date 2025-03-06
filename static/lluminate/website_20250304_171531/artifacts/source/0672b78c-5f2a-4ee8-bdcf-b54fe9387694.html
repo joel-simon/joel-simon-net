@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Fusion Display</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Ensure no default margin/padding and a dark background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for a fixed 512x512 canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto; /* center horizontally */
+      overflow: hidden;
+    }
+
+    /* Hidden instructions overlay, shown upon hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px;
+      box-sizing: border-box;
+      background: rgba(0,0,0,0.7);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time Fusion Display</strong><br><br>
+        • Mosaic squares shift color with the current hour.<br>
+        • A fractal tree grows or shrinks based on the minute.<br>
+        • Gears rotate at speeds guided by the seconds.<br>
+        • Stars sparkle more intensely with every passing second.<br><br>
+        Hover away to immerse in the fusion of time-based visuals!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Canvas dimensions
+    const CANVAS_SIZE = 512;
+
+    // Mosaic grid dimensions
+    let mosaicCols = 12;  // fewer columns for a clearer effect
+    let mosaicRows = 12;
+    let tileW, tileH;
+
+    // Gear angles
+    let gearAngle = 0;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvasContainer');
+
+      tileW = width / mosaicCols;
+      tileH = height / mosaicRows;
+
+      angleMode(DEGREES);
+      rectMode(CENTER);
+      noStroke();
+    }
+
+    function draw() {
+      background(17);
+
+      // Get current time
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // 1) Draw mosaic background based on hour
+      drawMosaicBackground(h, m, s);
+
+      // 2) Draw star field that intensifies with seconds
+      drawStarField(s);
+
+      // 3) Draw the fractal tree in the center, influenced by minute
+      push();
+      translate(width / 2, height * 0.9);
+      stroke(255);
+      strokeWeight(2);
+      drawFractalTree( map(m, 0, 59, 50, 150), 7, map(m, 0, 59, 0.3, 1.0) );
+      pop();
+
+      // 4) Update and draw a gear that rotates with seconds
+      gearAngle += map(s, 0, 59, 2, 5);
+      push();
+      translate(width / 2, height / 2 - 50);
+      drawGear(60, 12, gearAngle, color(200, 180, 100));
+      pop();
+
+      // 5) Display digital clock near bottom
+      fill(255);
+      textSize(18);
+      textAlign(CENTER, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, width / 2, height - 20);
+    }
+
+    // Mosaic squares shift color with current hour
+    function drawMosaicBackground(h, m, s) {
+      for (let c = 0; c < mosaicCols; c++) {
+        for (let r = 0; r < mosaicRows; r++) {
+          // Color relation to hour
+          // The 'baseColor' cycles every hour, from 0 to 255
+          let baseColor = map(h, 0, 23, 0, 255);
+          // Subtle pulsing factor with seconds
+          let pulsing = map( sin(frameCount * 0.03 + s), -1, 1, 0, 50 );
+          fill(
+            (baseColor + c * 5 + pulsing) % 256,
+            (100 + r * 10 + pulsing) % 256,
+            (150 + baseColor / 2) % 256
+          );
+          rect(c * tileW + tileW / 2, r * tileH + tileH / 2, tileW, tileH);
+        }
+      }
+    }
+
+    // Draw a random field of stars that increases with second
+    function drawStarField(s) {
+      let starCount = map(s, 0, 59, 50, 200);
+      noStroke();
+      for (let i = 0; i < starCount; i++) {
+        let x = random(width);
+        let y = random(height);
+        let size = random(1, 3);
+        fill(255, random(80, 255));
+        circle(x, y, size);
+      }
+    }
+
+    // Recursive fractal tree, length/angle influenced by minute
+    function drawFractalTree(len, depth, angle) {
+      if (depth <= 0) return;
+      strokeWeight(map(depth, 0, 7, 1, 3));
+      line(0, 0, 0, -len);
+      translate(0, -len);
+
+      push();
+      rotate(angle * 30);
+      drawFractalTree(len * 0.7, depth - 1, angle);
+      pop();
+
+      push();
+      rotate(-angle * 30);
+      drawFractalTree(len * 0.7, depth - 1, angle);
+      pop();
+    }
+
+    // Draw gear with specified radius, tooth count, rotationAngle, color
+    function drawGear(radius, teeth, rotationAngle, gearColor) {
+      push();
+      rotate(rotationAngle);
+      fill(gearColor);
+
+      // Gear core
+      ellipse(0, 0, radius * 2);
+
+      // Teeth
+      for (let i = 0; i < 360; i += 360 / teeth) {
+        push();
+        rotate(i);
+        rect(0, -radius, radius * 0.15, radius * 0.3);
+        pop();
+      }
+
+      // Center highlight
+      fill(0, 80);
+      ellipse(0, 0, radius * 0.5);
+      pop();
+    }
+  </script>
+</body>
+</html>

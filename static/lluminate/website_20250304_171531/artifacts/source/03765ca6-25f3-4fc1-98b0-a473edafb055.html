@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Expanding Orbit Bubbles Clock</title>
+  <style>
+    /* Reset and body styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      font-family: sans-serif;
+    }
+
+    /* Container for our 512x512 clock */
+    #container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      cursor: default;
+    }
+
+    /* Instructions overlay is hidden by default */
+    #instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: #eeeeee;
+      display: none;
+      text-align: center;
+      padding-top: 40%;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions on hover */
+    #container:hover #instructions {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="instructions">
+      Hover over this time display for details.<br><br>
+      • The largest red bubble represents the hour (on a 12-hour cycle).<br>
+      • The medium green bubble tracks the minutes.<br>
+      • The smallest blue bubble follows the seconds.<br><br>
+      Each bubble orbits the center and expands or contracts to show its value.
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let myCanvas;
+
+    function setup() {
+      myCanvas = createCanvas(512, 512);
+      myCanvas.parent('container');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(30);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Create a dynamic background color based on time
+      // (H, M, S) -> (R, G, B) kind of mapping
+      let bgColor = color(
+        (hr * 20) % 256,
+        (mn * 4) % 256,
+        (sc * 4) % 256
+      );
+      background(bgColor);
+
+      // Center the drawing
+      translate(width / 2, height / 2);
+
+      // Map hour, minute, second to angles
+      let hourAngle = map(hr % 12, 0, 12, 0, 360);
+      let minuteAngle = map(mn, 0, 60, 0, 360);
+      let secondAngle = map(sc, 0, 60, 0, 360);
+
+      // Map the current time to radius sizes
+      let hrRadius = map(hr % 12, 0, 12, 50, 200);
+      let mnRadius = map(mn, 0, 60, 70, 220);
+      let scRadius = map(sc, 0, 60, 40, 180);
+
+      // HOUR BUBBLE
+      push();
+      rotate(hourAngle);
+      translate(40, 0); // Orbit distance for hours
+      fill(255, 100, 100);
+      ellipse(0, 0, hrRadius, hrRadius);
+      pop();
+
+      // MINUTE BUBBLE
+      push();
+      rotate(minuteAngle);
+      translate(80, 0); // Orbit distance for minutes
+      fill(100, 255, 100);
+      ellipse(0, 0, mnRadius, mnRadius);
+      pop();
+
+      // SECOND BUBBLE
+      push();
+      rotate(secondAngle);
+      translate(120, 0); // Orbit distance for seconds
+      fill(100, 100, 255);
+      ellipse(0, 0, scRadius, scRadius);
+      pop();
+    }
+  </script>
+</body>
+</html>

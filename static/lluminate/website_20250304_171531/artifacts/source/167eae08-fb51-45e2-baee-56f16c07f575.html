@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Blooming Lotus</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* A fixed 512x512 container for the sketch */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Overlay for instructions, hidden by default */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* Reveal the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Time Blooming Lotus<br><br>
+        • Observe how the sky glows differently each hour.<br>
+        • The lotus blossom in the center expands and contracts with the current minute.<br>
+        • Bright orbs appear in the air, growing more frequent with each passing second.<br>
+        • The current time is shown at the bottom of the canvas.<br><br>
+        Hover away to enjoy the scene.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let orbs = [];
+    let lastSecond;
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      noStroke();
+      lastSecond = second();
+    }
+
+    function draw() {
+      drawSky();
+      drawLotus();
+      createOrbs();
+      updateAndShowOrbs();
+      displayTime();
+    }
+
+    // Sky color transitions according to hour
+    function drawSky() {
+      let h = hour();
+      // Map hour to a gradient from darker purples to lighter pinkish tones
+      let topR = map(h, 0, 23, 30, 255);
+      let topG = map(h, 0, 23, 30, 180);
+      let topB = map(h, 0, 23, 70, 200);
+
+      let botR = map(h, 0, 23, 0, 50);
+      let botG = map(h, 0, 23, 0, 20);
+      let botB = map(h, 0, 23, 50, 90);
+
+      for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        let r = lerp(topR, botR, inter);
+        let g = lerp(topG, botG, inter);
+        let b = lerp(topB, botB, inter);
+        stroke(r, g, b);
+        line(0, y, width, y);
+      }
+    }
+
+    // Lotus that changes size with minute
+    function drawLotus() {
+      push();
+      translate(width / 2, height / 2);
+      let m = minute();
+      // Petal spread size
+      let lotusSize = map(m, 0, 59, 50, 150);
+      let numPetals = 12;
+      fill(255, 200, 220, 180);
+
+      for (let i = 0; i < numPetals; i++) {
+        push();
+        rotate(360 / numPetals * i);
+        ellipse(0, -lotusSize / 2, lotusSize, lotusSize * 1.5);
+        pop();
+      }
+
+      // Center of the lotus
+      fill(255, 245, 180);
+      ellipse(0,0, 40, 40);
+      pop();
+    }
+
+    // Generate orbs more frequently with each new second
+    function createOrbs() {
+      let s = second();
+      // When the second changes, create a burst of orbs
+      if (s !== lastSecond) {
+        let orbCount = map(s, 0, 59, 2, 10);
+        for (let i = 0; i < orbCount; i++) {
+          orbs.push(new Orb(random(width), random(height / 2, height / 1.2)));
+        }
+      }
+      lastSecond = s;
+    }
+
+    // Update orbs positions and draw them
+    function updateAndShowOrbs() {
+      for (let i = orbs.length - 1; i >= 0; i--) {
+        orbs[i].update();
+        orbs[i].display();
+        if (orbs[i].life <= 0) {
+          orbs.splice(i, 1);
+        }
+      }
+    }
+
+    // Show current time at the bottom
+    function displayTime() {
+      fill(255);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      let hDisp = nf(hour(), 2);
+      let mDisp = nf(minute(), 2);
+      let sDisp = nf(second(), 2);
+      text(`${hDisp}:${mDisp}:${sDisp}`, width / 2, height - 20);
+    }
+
+    // Orb class for floating orbs
+    class Orb {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.life = 255; // how long it remains visible
+        this.xSpeed = random(-1, 1);
+        this.ySpeed = random(-1, -2);
+        this.size = random(5, 15);
+        this.color = color(random(150, 255), random(150, 255), random(200, 255), this.life);
+      }
+
+      update() {
+        this.x += this.xSpeed;
+        this.y += this.ySpeed;
+        this.life -= 3;
+        this.color.setAlpha(this.life);
+      }
+
+      display() {
+        fill(this.color);
+        ellipse(this.x, this.y, this.size, this.size);
+      }
+    }
+  </script>
+</body>
+</html>

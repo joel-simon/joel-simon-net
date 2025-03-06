@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Combined Interactive Time Display</title>
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Center the page content with a neutral background */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f3f3f3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: sans-serif;
+    }
+
+    /* Container for the 512x512 canvas */
+    #sketchContainer {
+      width: 512px;
+      height: 512px;
+      position: relative;
+    }
+
+    /* Tooltip styling (hidden by default) */
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      padding: 30px;
+      box-sizing: border-box;
+      text-align: center;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Show tooltip on hover */
+    #sketchContainer:hover .tooltip {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="sketchContainer">
+    <div class="tooltip">
+      <p>
+        • Watch waves in the background shift according to the current minute.<br>
+        • A fractal tree grows and changes angle with the current hour.<br>
+        • The rotating star in the center changes size based on the seconds.<br>
+        • Current time is displayed at the bottom.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      const cnv = createCanvas(w, h);
+      cnv.parent('sketchContainer');
+      angleMode(DEGREES);
+      noStroke();
+    }
+
+    function draw() {
+      background(30);
+
+      // Get current time
+      let hr = hour() % 12;  // 12-hour format
+      let mn = minute();
+      let sc = second();
+
+      // 1) Draw wave background
+      drawWaves(mn);
+
+      // 2) Draw fractal tree in center (changes angle, branches with hour)
+      push();
+      translate(width / 4, height - 50); 
+      stroke(255);
+      drawFractal(60 + (hr * 10), 5 + hr); // angle depends on hour, branch depth depends on hour
+      pop();
+
+      // 3) Draw rotating star (size changes with seconds)
+      push();
+      translate(width - width / 4, height / 2);
+      let starAngle = map(sc, 0, 60, 0, 360);
+      rotate(starAngle);
+      drawStar(0, 0, map(sc, 0, 60, 20, 80), map(sc, 0, 60, 10, 40), 5);
+      pop();
+
+      // 4) Display numeric time
+      fill(255);
+      noStroke();
+      textSize(20);
+      textAlign(CENTER, CENTER);
+      text(nf(hour(), 2) + ':' + nf(mn, 2) + ':' + nf(sc, 2), width / 2, height - 20);
+    }
+
+    // Draw wave lines across the canvas
+    function drawWaves(minuteValue) {
+      fill(60);
+      let freq = 0.003 * minuteValue + 0.01; 
+      let amp = 15 + minuteValue * 0.3; 
+      for (let y = 0; y < height; y += 6) {
+        let xOffset = sin((frameCount + y) * freq) * amp;
+        rect(0 + xOffset, y, width, 4);
+      }
+    }
+
+    // Recursive fractal tree
+    function drawFractal(angle, depth) {
+      if (depth === 0) return;
+      strokeWeight(map(depth, 0, 10, 1, 3));
+      line(0, 0, 0, -60);
+      translate(0, -60);
+      push();
+      rotate(angle);
+      drawFractal(angle, depth - 1);
+      pop();
+      push();
+      rotate(-angle);
+      drawFractal(angle, depth - 1);
+      pop();
+    }
+
+    // Draw a star (from p5.js examples)
+    function drawStar(x, y, radius1, radius2, npoints) {
+      stroke(255, 200, 0);
+      strokeWeight(2);
+      fill(255, 180, 0);
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2.0;
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

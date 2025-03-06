@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Combined Time Wave, Rotating Star & Spirograph</title>
+  <style>
+    /* Basic page styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    /* Container for the 512x512 canvas */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: auto;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    /* Hover instructions overlay */
+    #hover-instructions {
+      pointer-events: none;
+      display: none;
+      position: absolute;
+      width: 512px;
+      height: 512px;
+      top: 0;
+      left: 0;
+      background: rgba(0,0,0,0.65);
+      color: #fff;
+      font-family: sans-serif;
+      font-size: 14px;
+      box-sizing: border-box;
+      padding: 20px;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    .instruction-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.3em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instruction-text">
+        This display combines three time-reactive elements:<br><br>
+        • Wave background shaped by the current hour<br>
+        • Rotating star influenced by minute values<br>
+        • Spirograph loops tied to seconds<br><br>
+        And a digital clock at the center.
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent("canvas-container");
+      angleMode(DEGREES);
+      noFill();
+    }
+
+    function draw() {
+      background(0);
+
+      // Retrieve current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // WAVE BACKGROUND
+      // Amplitude grows with hour, wave frequency based on minute
+      stroke(150);
+      noFill();
+      strokeWeight(2);
+      let amplitude = map(hr % 12, 0, 12, 30, 100);
+      let waveFrequency = map(mn, 0, 60, 0.01, 0.03);
+      beginShape();
+      for (let x = 0; x < width; x++) {
+        let y = height / 2 + sin(x * waveFrequency + frameCount * 2) * amplitude;
+        vertex(x, y);
+      }
+      endShape();
+
+      // TRANSLATE & DRAW SPIROGRAPH + STAR IN CENTER
+      push();
+      translate(w / 2, h / 2);
+
+      // SPIROGRAPH (influenced by seconds)
+      // Adapt the approach from a standard hypotrochoid/epitrochoid
+      let r1 = 80; // fixed big radius
+      let r2 = 50; // smaller radius
+      let d = map(sc, 0, 60, 20, 70); // distance for spirograph pen
+      strokeWeight(1.5);
+      let hueVal = map(sc, 0, 60, 0, 360);
+      stroke(`hsba(${hueVal}, 100%, 100%, 0.8)`);
+      beginShape();
+      for (let a = 0; a <= 360; a++) {
+        let x = (r1 - r2) * cos(a) + d * cos(((r1 - r2) / r2) * a);
+        let y = (r1 - r2) * sin(a) - d * sin(((r1 - r2) / r2) * a);
+        vertex(x, y);
+      }
+      endShape();
+
+      // ROTATING STAR (influenced by minute)
+      push();
+      let rotationAngle = map(mn, 0, 60, 0, 360);
+      rotate(rotationAngle);
+      drawStar(0, 0, 50, 20, 6); // star size is fixed for aesthetics
+      pop();
+
+      // DIGITAL TIME DISPLAY
+      noStroke();
+      fill(255);
+      textSize(20);
+      textAlign(CENTER, CENTER);
+      let timeString = nf(hr, 2) + ":" + nf(mn, 2) + ":" + nf(sc, 2);
+      text(timeString, 0, 0);
+
+      pop();
+    }
+
+    // Draw a star shape
+    function drawStar(x, y, outerRadius, innerRadius, npoints) {
+      let angle = 360 / npoints;
+      let halfAngle = angle / 2;
+      stroke(255, 255, 0);
+      strokeWeight(1.5);
+      fill(255, 255, 150, 150);
+      beginShape();
+      for (let a = 0; a < 360; a += angle) {
+        let sx = x + cos(a) * outerRadius;
+        let sy = y + sin(a) * outerRadius;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * innerRadius;
+        sy = y + sin(a + halfAngle) * innerRadius;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

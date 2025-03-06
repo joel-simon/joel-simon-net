@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Cauldron</title>
+  <style>
+    /* Page styling to center 512x512 canvas */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #1a1a1a;
+      height: 100vh;
+      width: 100vw;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    /* Tooltip container */
+    .info-tip {
+      position: relative;
+      font-family: sans-serif;
+      user-select: none;
+      cursor: pointer;
+      color: #ccc;
+      margin-bottom: 0.75em;
+    }
+
+    /* Tooltip text (hidden by default) */
+    .info-content {
+      visibility: hidden;
+      width: 300px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 10px;
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.85em;
+      line-height: 1.4em;
+      z-index: 1;
+    }
+
+    /* Show the tooltip text when hovering over the tooltip container */
+    .info-tip:hover .info-content {
+      visibility: visible;
+    }
+
+    /* Ensure the canvas is exactly 512x512 with no extra scrollbars */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px !important;
+      height: 512px !important;
+      box-shadow: 0 0 8px rgba(0,0,0,0.7);
+    }
+  </style>
+</head>
+<body>
+  <div class="info-tip">
+    Hover for instructions
+    <div class="info-content">
+      Time Cauldron Instructions:
+      • Cauldron color changes each hour.<br>
+      • A number of floating bubbles corresponds to the current minute.<br>
+      • The swirling brew's motion speed reflects the seconds.<br>
+      • New bubble positions re-generate every minute.
+    </div>
+  </div>
+
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <script>
+    /*
+      TIME CAULDRON
+      =============
+      - The cauldron's swirling brew color is determined by the current hour.
+      - Bubbles (equal to the current minute) float up from the center.
+      - The swirling motion speed is tied to the seconds.
+      - Each minute, the cauldron refreshes with an updated bubble count.
+    */
+
+    let bubbleArray = [];
+    let lastMinute = -1;
+    let swirlAngle = 0;
+
+    function setup() {
+      createCanvas(512, 512);
+      noStroke();
+      fill(255);
+    }
+
+    function draw() {
+      background(30);
+
+      const h = hour();
+      const m = minute();
+      const s = second();
+
+      // Refresh bubble array if the minute changed
+      if (m !== lastMinute) {
+        rebuildBubbles(m);
+        lastMinute = m;
+      }
+
+      // Draw cauldron in center
+      drawCauldron();
+
+      // Draw swirling brew inside
+      swirlAngle += 0.01 * s; // swirl speed depends on seconds
+      drawBrew(h, swirlAngle);
+
+      // Update and display bubbles
+      updateBubbles();
+      displayBubbles();
+    }
+
+    // Rebuild the bubble array with 'm' bubbles
+    function rebuildBubbles(m) {
+      bubbleArray = [];
+      for (let i = 0; i < m; i++) {
+        // Start bubbles near the bottom center of the cauldron
+        bubbleArray.push({
+          x: width / 2 + random(-20, 20),
+          y: height / 2 + 40 + random(0, 15),
+          radius: random(5, 15),
+          ySpeed: random(0.5, 1.5),
+          xDrift: random(-0.5, 0.5),
+        });
+      }
+    }
+
+    // Draw a big black cauldron
+    function drawCauldron() {
+      push();
+      fill(0);
+      stroke(70);
+      strokeWeight(4);
+      // Main oval
+      ellipse(width/2, height/2+60, 300, 200);
+
+      // Cauldron body
+      arc(width/2, height/2, 300, 250, 0, PI);
+
+      // Cauldron rim
+      noFill();
+      stroke(120);
+      strokeWeight(6);
+      ellipse(width/2, height/2, 300, 100);
+      pop();
+    }
+
+    // Draw swirling brew
+    function drawBrew(h, angle) {
+      push();
+      // Change color based on hour
+      let colorOption = map(h % 12, 0, 11, 0, 360);
+      colorMode(HSB);
+      fill(colorOption, 80, 80);
+      noStroke();
+
+      // Clip area: only draw swirl inside top opening
+      translate(width/2, height/2);
+      beginShape();
+      ellipse(0, 0, 300, 100);
+      clip();
+      // Draw swirl
+      for (let i = 0; i < 10; i++) {
+        let swirlRadius = 140 - i*8;
+        let offset = angle + i * 0.2;
+        let x = cos(offset) * swirlRadius;
+        let y = sin(offset*0.7) * 10; 
+        ellipse(x, y, swirlRadius*2, 40);
+      }
+      endShape();
+      pop();
+    }
+
+    // Update bubble positions
+    function updateBubbles() {
+      for (let i = 0; i < bubbleArray.length; i++) {
+        bubbleArray[i].y -= bubbleArray[i].ySpeed;
+        bubbleArray[i].x += bubbleArray[i].xDrift;
+        // If bubble goes out of the top, recycle it at the bottom
+        if (bubbleArray[i].y < height/2 - 60) {
+          bubbleArray[i].x = width/2 + random(-20, 20);
+          bubbleArray[i].y = height/2 + 50;
+        }
+      }
+    }
+
+    // Display bubble ellipses
+    function displayBubbles() {
+      push();
+      fill(200, 220);
+      noStroke();
+      for (let i = 0; i < bubbleArray.length; i++) {
+        ellipse(bubbleArray[i].x, bubbleArray[i].y, bubbleArray[i].radius*2);
+      }
+      pop();
+    }
+
+  </script>
+</body>
+</html>

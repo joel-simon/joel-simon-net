@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time In Motion</title>
+  <style>
+    /* Page setup for a 512x512 display */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+      color: #fff;
+    }
+
+    /* Container for the 512x512 canvas and overlay */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: auto;
+      overflow: hidden;
+      background-color: #111;
+    }
+
+    /* Instructions overlay hidden by default, appears on hover */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: none;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.8);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+    #hoverOverlay p {
+      pointer-events: none;
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        <strong>Time In Motion</strong><br><br>
+        • Time stands still until you move your mouse.<br>
+        • Each pixel of mouse movement pushes the clock forward by one second.<br>
+        • Embrace the idea: Your motion drives time.<br><br>
+        Hover away to see the animation.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512, h = 512;
+    let totalTime = 0;    // total "seconds" of the clock
+    let firstFrame = true;
+    let prevMouseX, prevMouseY;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(20);
+
+      // Calculate how much the mouse moved since last frame
+      if(!firstFrame) {
+        let distMoved = dist(prevMouseX, prevMouseY, mouseX, mouseY);
+        totalTime += distMoved;  // 1 pixel = 1 second
+      } else {
+        firstFrame = false;
+      }
+
+      // Update previous positions
+      prevMouseX = mouseX;
+      prevMouseY = mouseY;
+
+      // Convert totalTime to hours, minutes, seconds (12-hour format)
+      let t = floor(totalTime) % 43200; // 12 hours = 43200 seconds
+      let hr = floor(t / 3600);
+      let remainder = t % 3600;
+      let mn = floor(remainder / 60);
+      let sc = remainder % 60;
+
+      // Draw a minimal clock face
+      drawClockFace(hr, mn, sc);
+    }
+
+    function drawClockFace(h, m, s) {
+      push();
+      // Move to center
+      translate(width / 2, height / 2);
+
+      // Draw clock background circle
+      stroke(200);
+      strokeWeight(2);
+      fill(40);
+      ellipse(0, 0, 300, 300);
+
+      // Markers for hours
+      for(let i = 0; i < 12; i++){
+        let angle = map(i, 0, 12, 0, 360);
+        let x = cos(angle - 90) * 120;
+        let y = sin(angle - 90) * 120;
+        noStroke();
+        fill(180);
+        ellipse(x, y, 8, 8);
+      }
+
+      // Hour hand
+      let hourAngle = (h % 12) * 30 + (m / 60) * 30;
+      push();
+      rotate(hourAngle - 90);
+      stroke(255);
+      strokeWeight(4);
+      line(0, 0, 60, 0);
+      pop();
+
+      // Minute hand
+      let minuteAngle = m * 6 + (s / 60) * 6;
+      push();
+      rotate(minuteAngle - 90);
+      stroke(200);
+      strokeWeight(3);
+      line(0, 0, 90, 0);
+      pop();
+
+      // Second hand
+      let secondAngle = s * 6;
+      push();
+      rotate(secondAngle - 90);
+      stroke(150, 0, 0);
+      strokeWeight(2);
+      line(0, 0, 100, 0);
+      pop();
+
+      // Center circle
+      fill(255);
+      noStroke();
+      ellipse(0, 0, 8, 8);
+
+      pop();
+    }
+  </script>
+</body>
+</html>

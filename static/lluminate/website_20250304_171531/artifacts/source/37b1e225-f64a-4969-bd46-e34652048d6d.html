@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ethereal Time Constellation</title>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* A fixed 512x512 container (for iframe) */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      border: none;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Ethereal Time Constellation</strong><br><br>
+        • Starfield regenerates each hour.<br>
+        • Lines connect stars every 5 minutes.<br>
+        • Star colors shift continuously with each second.<br>
+        • Click to add a shooting star.<br><br>
+        Hover here for instructions!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Ethereal Time Constellation
+
+      1) A starfield is generated anew each hour.
+      2) Constellation lines appear every 5 minutes.
+      3) Star brightness pulses according to seconds.
+      4) Clicking spawns a shooting star.
+    */
+
+    const CANVAS_SIZE = 512;
+    let stars = [];       // Holds star positions and brightness
+    let hourStamp = -1;   // Track last hour used for star generation
+    let shootingStars = [];
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvas-container');
+      noStroke();
+      generateStars();
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Regenerate starfield if the hour changes
+      if (h !== hourStamp) {
+        generateStars();
+        hourStamp = h;
+      }
+
+      // (1) Draw starfield
+      drawStarfield(s);
+
+      // (2) Draw constellation lines if minute multiple of 5
+      if (m % 5 === 0) {
+        drawConstellationLines();
+      }
+
+      // (3) Show shooting stars
+      updateShootingStars();
+    }
+
+    // Generate a fresh set of stars each hour
+    function generateStars() {
+      stars = [];
+      let starCount = 100 + int(random(50)); // Vary star count
+      for (let i = 0; i < starCount; i++) {
+        stars.push({
+          x: random(width),
+          y: random(height),
+          baseBrightness: random(120, 255)
+        });
+      }
+    }
+
+    // Draw each star, pulsing brightness based on the second
+    function drawStarfield(s) {
+      for (let st of stars) {
+        let pulse = sin((frameCount + s) * 0.1) * 30;
+        let c = st.baseBrightness + pulse;
+        fill(c);
+        circle(st.x, st.y, 2);
+      }
+    }
+
+    // Connect some stars with lines for a constellation effect
+    // (only if minute % 5 == 0)
+    function drawConstellationLines() {
+      stroke(255, 100);
+      strokeWeight(1);
+      // Connect every nth star for a minimal web
+      for (let i = 0; i < stars.length; i += 10) {
+        for (let j = i+10; j < stars.length; j += 20) {
+          line(stars[i].x, stars[i].y, stars[j].x, stars[j].y);
+        }
+      }
+      noStroke();
+    }
+
+    // Shooting star object manager
+    function updateShootingStars() {
+      // Draw and move each shooting star
+      for (let i = shootingStars.length - 1; i >= 0; i--) {
+        let sh = shootingStars[i];
+        fill(255, sh.alpha);
+        circle(sh.x, sh.y, 6);
+        sh.x += sh.vx;
+        sh.y += sh.vy;
+        sh.alpha -= 5;
+        if (sh.alpha <= 0) {
+          shootingStars.splice(i, 1);
+        }
+      }
+    }
+
+    // On mouse click, spawn a new shooting star near top-left
+    function mousePressed() {
+      shootingStars.push({
+        x: random(30),
+        y: random(30),
+        vx: random(3, 6),
+        vy: random(1, 3),
+        alpha: 255
+      });
+    }
+  </script>
+</body>
+</html>

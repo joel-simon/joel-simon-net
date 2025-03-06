@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Combined Time Wave & Rotation</title>
+  <!-- Include p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page reset for consistent sizing and style */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111; /* A subtle dark background */
+    }
+
+    /* Container for the 512x512 canvas and hover instructions */
+    #timeFusionContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Overlay with instructions, hidden by default */
+    #instructionsOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      text-align: center;
+      padding: 30px;
+      box-sizing: border-box;
+    }
+
+    /* Show instructions upon hovering over the container */
+    #timeFusionContainer:hover #instructionsOverlay {
+      display: block;
+    }
+
+    h2, p {
+      margin: 1em 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="timeFusionContainer">
+    <div id="instructionsOverlay">
+      <h2>Combined Time Wave & Rotation</h2>
+      <p>Observe the wave background changing with the hour and minute, while the rotating star in the center matches the current seconds.</p>
+      <p>Hover here any time to see these instructions again.</p>
+    </div>
+  </div>
+
+  <script>
+    let waveOffset = 0;  // Used to animate the wave
+    let rotationAngle = 0; // Used for the rotating star
+
+    function setup() {
+      let cnv = createCanvas(512, 512);
+      cnv.parent('timeFusionContainer');
+      angleMode(RADIANS);
+    }
+
+    function draw() {
+      background(20);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Map amplitude from hour (0-23) => (30 - 100)
+      let waveAmplitude = map(h, 0, 23, 30, 100);
+      // Map wave frequency from minute (0-59) => (0.01 - 0.06)
+      let waveFrequency = map(m, 0, 59, 0.01, 0.06);
+      // Map the rotation speed from seconds (0-59) => (0.002 - 0.05)
+      let rotationSpeed = map(s, 0, 59, 0.002, 0.05);
+
+      // Draw a simple wave in the background
+      noFill();
+      stroke(100, 150, 255);
+      strokeWeight(2);
+      beginShape();
+      for (let x = 0; x < width; x++) {
+        let y = height / 2 + waveAmplitude * sin(x * waveFrequency + waveOffset);
+        vertex(x, y);
+      }
+      endShape();
+
+      // Increment wave offset to animate
+      waveOffset += 0.03;
+
+      // Translate to center for rotating star
+      push();
+      translate(width / 2, height / 2);
+      rotate(rotationAngle);
+      drawStar(0, 0, 30, 70, 8);
+      pop();
+
+      // Increase angle by seconds-based rotation speed
+      rotationAngle += rotationSpeed;
+
+      // Digital time readout in bottom-left corner
+      fill(255);
+      noStroke();
+      textSize(18);
+      textAlign(LEFT, CENTER);
+      let displayHour = h % 12;
+      displayHour = (displayHour === 0) ? 12 : displayHour;
+      let ampm = (h >= 12) ? "PM" : "AM";
+      let minStr = nf(m, 2);
+      let secStr = nf(s, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 10, height - 25);
+    }
+
+    // Utility function to draw a star shape
+    // Adapted from typical p5.js star-drawing logic
+    function drawStar(cx, cy, innerRadius, outerRadius, points) {
+      let angle = TWO_PI / points;
+      let halfAngle = angle / 2;
+      beginShape();
+      for (let i = 0; i < TWO_PI; i += angle) {
+        let sx = cx + cos(i) * outerRadius;
+        let sy = cy + sin(i) * outerRadius;
+        vertex(sx, sy);
+        sx = cx + cos(i + halfAngle) * innerRadius;
+        sy = cy + sin(i + halfAngle) * innerRadius;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+  </script>
+</body>
+</html>

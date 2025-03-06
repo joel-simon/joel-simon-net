@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creative Time Fusion</title>
+  <style>
+    /* Reset and background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100%;
+      width: 100%;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    /* 512x512 container to match iframe dimension */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    /* Instructions overlay: appears on hover */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0,0,0,0.7);
+      box-sizing: border-box;
+      pointer-events: none;
+      text-align: center;
+      padding: 20px;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Creative Time Fusion</strong><br><br>
+        • Fractal Tree: Branch length tied to the current minute.<br>
+        • Branch Angle: Adjusts based on the hour (in 12-hour format).<br>
+        • Orbiting Orb: Revolves around the tree center based on the seconds.<br>
+        • Background Stars: Randomly placed, shimmering softly.<br>
+        • Current time displayed in the top-left corner.<br><br>
+        Hover to see instructions!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    const CANVAS_SIZE = 512;
+    let stars = [];
+    let starCount = 100; // number of background stars
+    let orbAngle = 0;    // angle for orbiting orb
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+
+      // Create random star positions
+      for(let i = 0; i < starCount; i++){
+        stars.push({
+          x: random(width),
+          y: random(height),
+          size: random(1,3)
+        });
+      }
+    }
+
+    function draw() {
+      background(0);
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Draw starry background
+      drawStars(sc);
+
+      // Translate to center to draw fractal tree
+      push();
+      translate(width/2, height);
+      stroke(200);
+      let branchLen = map(mn, 0, 59, 50, 150);      // branch length depends on minute
+      let treeAngle = map(hr % 12, 0, 11, 15, 45);  // angle depends on hour, in 12-hr range
+      drawBranch(branchLen, treeAngle);
+      pop();
+
+      // Draw orbiting orb near the center of the canvas
+      push();
+      translate(width/2, height/2);
+      fill(255, 100, 0);
+      noStroke();
+      let orbDist = 80; // radius from center
+      orbAngle += map(sc, 0, 60, 1, 3); // revolve speed changes with seconds
+      let x = orbDist * cos(orbAngle);
+      let y = orbDist * sin(orbAngle);
+      ellipse(x, y, 20, 20); 
+      pop();
+
+      // Display time top-left
+      displayTime(hr, mn, sc);
+    }
+
+    // Recursive fractal tree
+    function drawBranch(len, angle) {
+      line(0, 0, 0, -len);
+      translate(0, -len);
+      if(len > 5) {
+        // right branch
+        push();
+        rotate(angle);
+        drawBranch(len * 0.67, angle);
+        pop();
+
+        // left branch
+        push();
+        rotate(-angle);
+        drawBranch(len * 0.67, angle);
+        pop();
+      }
+    }
+
+    // Draw shimmering stars
+    function drawStars(sc) {
+      noStroke();
+      for (let i = 0; i < starCount; i++){
+        let s = stars[i];
+        // Slight shimmering effect based on seconds
+        let pulse = map(sin(frameCount*0.1 + sc), -1, 1, 0.5, 1.5);
+        fill(255);
+        ellipse(s.x, s.y, s.size * pulse);
+      }
+    }
+
+    // Display time in top-left corner
+    function displayTime(hr, mn, sc){
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let displayHour = (hr % 12) || 12;
+      let ampm = hr >= 12 ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(`${displayHour}:${minStr}:${secStr} ${ampm}`, 10, 10);
+    }
+  </script>
+</body>
+</html>

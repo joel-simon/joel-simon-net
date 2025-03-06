@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Combined Interactive Time Display</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for better contrast */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }    
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Combined Interactive Time Display</strong><br><br>
+        • Waves in the background shift with the hour & minute.<br>
+        • Particles swirl, reflecting current hour.<br>
+        • Star in the center rotates with seconds.<br>
+        • Time is displayed at the center.<br><br>
+        Hover to read instructions; watch as time updates continuously.
+      </div>
+    </div>
+  </div>
+  
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let particles = [];
+    let numParticles = 40;
+    let w = 512;
+    let h = 512;
+
+    function setup() {
+      let cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+      // Initialize particle array
+      for (let i = 0; i < numParticles; i++) {
+        particles.push(createParticle());
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      // Get current time
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Draw wave background
+      drawWaves(hr, mn);
+
+      // Update & draw particles swirling based on hour
+      drawSwirlingParticles(hr);
+
+      // Center star rotating by second
+      push();
+      translate(width / 2, height / 2);
+      let rotationSpeed = map(sc, 0, 60, 0, 360);
+      rotate(rotationSpeed);
+
+      // Star shape
+      stroke(255);
+      strokeWeight(2);
+      fill(255, 100);
+      beginShape();
+      for (let i = 0; i < 10; i++) {
+        let angle = i * 36;
+        let r = i % 2 === 0 ? 30 : 10;
+        let x = r * cos(angle);
+        let y = r * sin(angle);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+
+      // Digital time at center
+      rotate(-rotationSpeed); // revert for text
+      noStroke();
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 0, 5);
+      pop();
+    }
+
+    // Draw wave pattern in background
+    function drawWaves(hr, mn) {
+      noFill();
+      stroke(255, 150);
+      strokeWeight(1);
+      let amplitude = map(hr, 0, 23, 10, 100);
+      let frequency = map(mn, 0, 59, 0.01, 0.1);
+      for (let y = 0; y < height; y += 20) {
+        beginShape();
+        for (let x = 0; x < width; x += 10) {
+          let wave = sin((x + frameCount) * frequency) * amplitude;
+          vertex(x, y + wave);
+        }
+        endShape();
+      }
+    }
+
+    // Create swirling particles whose radius depends on hour
+    function drawSwirlingParticles(hr) {
+      push();
+      translate(width / 2, height / 2);
+      stroke(255);
+      strokeWeight(2);
+      noFill();
+
+      // The swirl radius depends on hour
+      let swirlRadius = map(hr % 12, 0, 12, 50, 200);
+
+      for (let p of particles) {
+        // Update angle
+        p.angle += p.speed;
+        // Calculate position
+        let x = swirlRadius * cos(p.angle);
+        let y = swirlRadius * sin(p.angle);
+        point(x, y);
+      }
+      pop();
+    }
+
+    // Particle factory
+    function createParticle() {
+      return {
+        angle: random(360),
+        speed: random(0.5, 2) * (random() < 0.5 ? 1 : -1)
+      };
+    }
+  </script>
+</body>
+</html>

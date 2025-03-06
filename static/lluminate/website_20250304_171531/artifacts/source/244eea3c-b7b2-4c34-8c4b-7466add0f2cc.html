@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Surreal Time Garden</title>
+  <style>
+    /* Basic window/body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for contrast */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* A 512x512 container for the canvas */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      text-align: center;
+      pointer-events: none;
+      box-sizing: border-box;
+      padding: 20px;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+
+    .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Surreal Time Garden</strong><br><br>
+        • The swirling water waves depend on the hour.<br>
+        • A fractal tree grows branches based on the minute.<br>
+        • A glowing star rotates with each passing second.<br>
+        • The maze regenerates at every minute mark.<br><br>
+        Hover here for instructions and watch time unfold!
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    /*
+      Surreal Time Garden
+      - A wave background whose amplitude scales with the hour.
+      - A fractal tree that scales branches by the minute.
+      - A star at the center that rotates with seconds.
+      - A simple maze that regenerates each minute.
+      Shows a clock in bottom-left corner.
+    */
+
+    const CANVAS_SIZE = 512;
+
+    // Maze generation parameters
+    const MAZE_ROWS = 8;
+    const MAZE_COLS = 8;
+    let cellSize;
+
+    // Maze storage
+    let walls = [];
+    let lastMinute = -1;
+
+    // Variables for fractal tree
+    let baseBranchLen = 80;
+
+    function setup() {
+      let cnv = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      cnv.parent('canvas-container');
+      angleMode(DEGREES);
+
+      cellSize = width / MAZE_COLS;
+      // Generate maze initially
+      generateMaze();
+    }
+
+    function draw() {
+      background(10, 15, 35);
+
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Regenerate maze if a new minute
+      if (mn !== lastMinute) {
+        generateMaze();
+        lastMinute = mn;
+      }
+
+      // Draw wave background
+      drawWaves(hr);
+
+      // Draw the fractal tree in top center
+      push();
+      translate(width / 2, height * 0.55);
+      stroke(180);
+      drawFractalTree(baseBranchLen, mn);
+      pop();
+
+      // Maze lines
+      stroke(255);
+      strokeWeight(2);
+      for (let w of walls) {
+        line(w.x1, w.y1, w.x2, w.y2);
+      }
+
+      // Rotating star in the center
+      drawRotatingStar(sc);
+
+      // Small digital clock in the corner
+      drawClock(hr, mn, sc);
+    }
+
+    /* (1) Wave background: amplitude depends on hour */
+    function drawWaves(h) {
+      push();
+      noFill();
+      stroke(100, 150, 220, 150);
+      strokeWeight(1);
+
+      // amplitude: larger with later hours
+      let waveAmp = map(h % 12, 0, 12, 10, 80);
+      let freq = 0.02;
+      for (let y = 0; y < height; y += 20) {
+        beginShape();
+        for (let x = 0; x < width; x += 10) {
+          let wave = sin((x + frameCount) * freq) * waveAmp;
+          vertex(x, y + wave);
+        }
+        endShape();
+      }
+      pop();
+    }
+
+    /* (2) Fractal Tree: number of branches depends on the minute */
+    function drawFractalTree(branchLen, m) {
+      // The minute influences tree complexity
+      // e.g., we subdivide branches more if m > 30
+      line(0, 0, 0, -branchLen);
+      translate(0, -branchLen);
+
+      let branchFactor = map(m, 0, 59, 0.5, 1.5);
+      let newLen = branchLen * branchFactor * 0.67;
+
+      if (branchLen > 5) {
+        push();
+        rotate(25);
+        drawFractalTree(newLen, m);
+        pop();
+
+        push();
+        rotate(-25);
+        drawFractalTree(newLen, m);
+        pop();
+      }
+    }
+
+    /* (3) Rotating star: rotates with seconds at the center */
+    function drawRotatingStar(s) {
+      push();
+      translate(width / 2, height / 2);
+      let rotationSpeed = map(s, 0, 59, 0, 360);
+      rotate(rotationSpeed);
+      fill(255, 230, 50, 180);
+      stroke(255, 220, 100);
+      strokeWeight(2);
+
+      beginShape();
+      for (let i = 0; i < 10; i++) {
+        let angle = i * 36;
+        let r = (i % 2 === 0) ? 20 : 8;
+        let x = r * cos(angle);
+        let y = r * sin(angle);
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+      pop();
+    }
+
+    /* (4) Generate a simple Maze each minute */
+    function generateMaze() {
+      walls = [];
+
+      // Maze cells
+      let disjointSet = [];
+      for (let r = 0; r < MAZE_ROWS; r++) {
+        for (let c = 0; c < MAZE_COLS; c++) {
+          disjointSet.push({ row: r, col: c, parent: r * MAZE_COLS + c });
+        }
+      }
+
+      // Potential edges
+      let edges = [];
+      for (let r = 0; r < MAZE_ROWS; r++) {
+        for (let c = 0; c < MAZE_COLS; c++) {
+          if (r < MAZE_ROWS - 1) {
+            edges.push({ c1: {r, c}, c2: {r: r+1, c} });
+          }
+          if (c < MAZE_COLS - 1) {
+            edges.push({ c1: {r, c}, c2: {r, c: c+1} });
+          }
+        }
+      }
+      // Shuffle edges
+      edges.sort(() => random() - 0.5);
+
+      // Helper: find root of set
+      function findSet(idx) {
+        if (disjointSet[idx].parent !== idx) {
+          disjointSet[idx].parent = findSet(disjointSet[idx].parent);
+        }
+        return disjointSet[idx].parent;
+      }
+
+      // Helper: union sets
+      function unionSet(i, j) {
+        let rootA = findSet(i);
+        let rootB = findSet(j);
+        disjointSet[rootB].parent = rootA;
+      }
+
+      // Kruskal's MST
+      let finalEdges = [];
+      for (let e of edges) {
+        let idx1 = e.c1.r * MAZE_COLS + e.c1.c;
+        let idx2 = e.c2.r * MAZE_COLS + e.c2.c;
+        if (findSet(idx1) !== findSet(idx2)) {
+          unionSet(idx1, idx2);
+          finalEdges.push(e);
+        }
+      }
+
+      // Walls = edges not in MST
+      for (let e of edges) {
+        if (!finalEdges.includes(e)) {
+          let x1 = e.c1.c * cellSize;
+          let y1 = e.c1.r * cellSize;
+          let x2 = e.c2.c * cellSize;
+          let y2 = e.c2.r * cellSize;
+          walls.push({ x1, y1, x2, y2 });
+        }
+      }
+
+      // Borders
+      for (let r = 0; r <= MAZE_ROWS; r++) {
+        walls.push({ x1: 0, y1: r*cellSize, x2: 0, y2: r*cellSize });
+        walls.push({ x1: MAZE_COLS*cellSize, y1: r*cellSize, x2: MAZE_COLS*cellSize, y2: r*cellSize });
+      }
+      for (let c = 0; c <= MAZE_COLS; c++) {
+        walls.push({ x1: c*cellSize, y1: 0, x2: c*cellSize, y2: 0 });
+        walls.push({ x1: c*cellSize, y1: MAZE_ROWS*cellSize, x2: c*cellSize, y2: MAZE_ROWS*cellSize });
+      }
+    }
+
+    /* (5) Display clock in bottom-left corner */
+    function drawClock(hr, mn, sc) {
+      push();
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, BOTTOM);
+      text(nf(hr,2) + ":" + nf(mn,2) + ":" + nf(sc,2), 10, height - 10);
+      pop();
+    }
+  </script>
+</body>
+</html>

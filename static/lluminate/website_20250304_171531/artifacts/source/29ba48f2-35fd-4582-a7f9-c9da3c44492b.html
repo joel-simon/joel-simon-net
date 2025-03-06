@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Creative Time Display</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #212121;
+      font-family: sans-serif;
+    }
+    .container {
+      width: 512px;
+      height: 512px;
+      position: relative;
+      margin: 0 auto;
+    }
+    /* The default p5 canvas element has id="defaultCanvas0" */
+    /* Ensure it stays 512x512, and instructions overlay it on hover */
+    #defaultCanvas0 {
+      display: block;
+      width: 512px;
+      height: 512px;
+    }
+    .instructions {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background-color: rgba(0,0,0,0.6);
+      display: none;
+      color: #fff;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .container:hover .instructions {
+      display: flex;
+    }
+    .instructions p {
+      margin: 0 auto;
+      max-width: 80%;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="instructions">
+      <p>
+        Hover away from this text to view the creative time display. 
+        The arcs represent seconds, minutes, and hours. The digital format 
+        is shown in the center. Enjoy!
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+
+  <script>
+    function setup() {
+      // Create the canvas and nest it inside the .container div
+      let canvas = createCanvas(512, 512);
+      canvas.parent(document.querySelector('.container'));
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      background(30);
+
+      // Get time components
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      // Convert to angles
+      let scAngle = map(sc, 0, 60, 0, 360);
+      let mnAngle = map(mn, 0, 60, 0, 360);
+      let hrAngle = map(hr % 12, 0, 12, 0, 360);
+
+      // Move origin to center
+      translate(width / 2, height / 2);
+      rotate(-90);
+
+      // Seconds arc
+      strokeWeight(8);
+      noFill();
+      stroke(255, 100, 150);
+      arc(0, 0, 300, 300, 0, scAngle);
+
+      // Minutes arc
+      stroke(100, 255, 150);
+      arc(0, 0, 280, 280, 0, mnAngle);
+
+      // Hours arc
+      stroke(150, 100, 255);
+      arc(0, 0, 260, 260, 0, hrAngle);
+
+      // Digital time text
+      rotate(90);
+      noStroke();
+      fill(255);
+      textSize(32);
+      textAlign(CENTER, CENTER);
+      text(nf(hr, 2) + ":" + nf(mn, 2) + ":" + nf(sc, 2), 0, 0);
+    }
+  </script>
+</body>
+</html>

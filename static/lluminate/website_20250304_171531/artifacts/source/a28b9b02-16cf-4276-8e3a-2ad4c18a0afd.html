@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Celestial Maze Garden</title>
+  <!-- Include p5.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <style>
+    /* Page and container setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* A fixed 512x512 container for the canvas */
+    #canvasContainer {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    /* Overlay for hover instructions (hidden by default) */
+    #hoverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.8);
+    }
+
+    /* Show the overlay text on hover */
+    #canvasContainer:hover #hoverOverlay {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div id="hoverOverlay">
+      <p>
+        Celestial Maze Garden<br><br>
+        • Minute-based maze updates.<br>
+        • Fractal tree grows with hour.<br>
+        • Star rotates with seconds.<br>
+        • Background resonates with time.<br>
+        Hover away to explore!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Celestial Maze Garden:
+      - Maze changes with the minute.
+      - A fractal tree grows based on the hour.
+      - A rotating star in the center synchronized with the seconds.
+      - Dynamic mosaic background reacts subtly to time.
+    */
+
+    const SIZE = 512;
+    let cellSize;         // for the maze
+    let cols = 8;
+    let rows = 8;
+    let walls = [];
+    let lastMinute = -1;
+
+    function setup() {
+      let cnv = createCanvas(SIZE, SIZE);
+      cnv.parent("canvasContainer");
+      angleMode(DEGREES);
+      cellSize = width / cols;
+      generateMaze();
+    }
+
+    function draw() {
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Regenerate the maze if minute changes
+      if (m !== lastMinute) {
+        generateMaze();
+        lastMinute = m;
+      }
+
+      // Draw mosaic background
+      drawMosaic(m);
+
+      // Draw the maze
+      stroke(255);
+      strokeWeight(3);
+      for (let w of walls) {
+        line(w.x1, w.y1, w.x2, w.y2);
+      }
+
+      // Draw fractal tree (based on hour) near bottom
+      push();
+      translate(width * 0.8, height);
+      stroke(200);
+      branch(40 + (h % 12) * 4);
+      pop();
+
+      // Rotating star (seconds-based) in the center
+      drawRotatingStar(s);
+
+      // Optional digital clock overlay (small text)
+      drawClock(h, m, s);
+    }
+
+    /* Maze Generation using a lightweight approach */
+    function generateMaze() {
+      walls = [];
+      let mazeCells = [];
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          mazeCells.push({ row: r, col: c, set: r * cols + c });
+        }
+      }
+
+      // Edges between adjacent cells
+      let edges = [];
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (r < rows - 1) {
+            edges.push({ c1: {r, c}, c2: {r: r+1, c} });
+          }
+          if (c < cols - 1) {
+            edges.push({ c1: {r, c}, c2: {r, c: c+1} });
+          }
+        }
+      }
+
+      // Shuffle edges
+      edges.sort(() => random() - 0.5);
+
+      // Simple union-find
+      function findSet(i) {
+        if (mazeCells[i].set !== i) {
+          mazeCells[i].set = findSet(mazeCells[i].set);
+        }
+        return mazeCells[i].set;
+      }
+      function unionSet(i, j) {
+        let si = findSet(i);
+        let sj = findSet(j);
+        mazeCells[sj].set = si;
+      }
+
+      // Build a Minimal Spanning Tree
+      let mst = [];
+      for (let e of edges) {
+        let i1 = e.c1.r * cols + e.c1.c;
+        let i2 = e.c2.r * cols + e.c2.c;
+        if (findSet(i1) !== findSet(i2)) {
+          unionSet(i1, i2);
+          mst.push(e);
+        }
+      }
+
+      // Add walls for edges not in MST
+      for (let e of edges) {
+        if (!mst.includes(e)) {
+          let x1 = e.c1.c * cellSize;
+          let y1 = e.c1.r * cellSize;
+          let x2 = e.c2.c * cellSize;
+          let y2 = e.c2.r * cellSize;
+          walls.push({ x1, y1, x2, y2 });
+        }
+      }
+
+      // Outer boundaries
+      for (let r = 0; r <= rows; r++) {
+        walls.push({ x1: 0, y1: r*cellSize, x2: 0, y2: r*cellSize });
+        walls.push({ x1: cols*cellSize, y1: r*cellSize, x2: cols*cellSize, y2: r*cellSize });
+      }
+      for (let c = 0; c <= cols; c++) {
+        walls.push({ x1: c*cellSize, y1: 0, x2: c*cellSize, y2: 0 });
+        walls.push({ x1: c*cellSize, y1: rows*cellSize, x2: c*cellSize, y2: rows*cellSize });
+      }
+    }
+
+    /* Mosaic background that shifts in hue with minute */
+    function drawMosaic(minutes) {
+      push();
+      colorMode(HSB, 360, 100, 100);
+      let baseHue = map(minutes, 0, 59, 0, 360);
+      noStroke();
+      let tileSize = 32;
+      for (let y = 0; y < height; y += tileSize) {
+        for (let x = 0; x < width; x += tileSize) {
+          let localHue = (baseHue + (x + y)*0.03) % 360;
+          fill(localHue, 50, 25);
+          rect(x, y, tileSize, tileSize);
+        }
+      }
+      pop();
+    }
+
+    /* Recursive fractal tree for hour-based growth */
+    function branch(len) {
+      line(0, 0, 0, -len);
+      translate(0, -len);
+      if (len > 10) {
+        push();
+        rotate(25);
+        branch(len * 0.7);
+        pop();
+
+        push();
+        rotate(-25);
+        branch(len * 0.7);
+        pop();
+      }
+    }
+
+    /* Rotating star at center, based on seconds */
+    function drawRotatingStar(sec) {
+      push();
+      translate(width / 2, height / 2);
+      rotate(frameCount * 0.5 + sec * 6);
+      noStroke();
+      fill(255, 255, 100);
+      beginShape();
+      for (let i = 0; i < 10; i++) {
+        let r = (i % 2 === 0) ? 35 : 15;
+        let angle = i * 36;
+        vertex(r * cos(angle), r * sin(angle));
+      }
+      endShape(CLOSE);
+      pop();
+    }
+
+    /* Simple digital clock overlay in bottom-left corner */
+    function drawClock(h, m, s) {
+      push();
+      resetMatrix();
+      translate(10, height - 20);
+      fill(255);
+      textSize(14);
+      textAlign(LEFT, CENTER);
+      text(`${nf(h,2)}:${nf(m,2)}:${nf(s,2)}`, 0, 0);
+      pop();
+    }
+  </script>
+</body>
+</html>

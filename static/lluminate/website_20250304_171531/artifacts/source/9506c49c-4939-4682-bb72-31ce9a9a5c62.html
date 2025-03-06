@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Neon City Time</title>
+  <style>
+    /* Basic window and body setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000; /* Dark background for better contrast */
+      font-family: sans-serif;
+      color: #fff;
+      height: 100%;
+    }
+    /* 512x512 container to match iframe dimensions */
+    #canvas-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    /* Instructions overlay (shows on hover) */
+    #hover-instructions {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      background: rgba(0, 0, 0, 0.7);
+      box-sizing: border-box;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #canvas-container:hover #hover-instructions {
+      display: block;
+    }
+    /* Center the instructions text */
+    #hover-instructions .instructions-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hover-instructions">
+      <div class="instructions-text">
+        <strong>Neon City Time</strong><br><br>
+        • The background color changes along with the hour.<br>
+        • Building windows flicker in patterns tied to the current minute.<br>
+        • Traffic lines scroll across the screen in sync with the seconds.<br>
+        • Current time is displayed in the top-left corner.<br><br>
+        Hover to read instructions and watch the city evolve with time.
+      </div>
+    </div>
+  </div>
+
+  <!-- p5.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let w = 512;
+    let h = 512;
+
+    // Variables for traffic
+    let trafficPositions = [];
+    // We'll track last second to know when to add a new traffic line
+    let lastSecond = -1;
+
+    function setup() {
+      const cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+      textFont('sans-serif');
+      angleMode(DEGREES);
+    }
+
+    function draw() {
+      backgroundCity();
+      let hr = hour();
+      let mn = minute();
+      let sc = second();
+
+      drawBuildings(mn);
+      handleTraffic(sc);
+      displayTime(hr, mn, sc);
+    }
+
+    function backgroundCity() {
+      // Hour-based background color gradient
+      let hr = hour();
+      let baseColor1 = color(0, 0, 30);
+      let baseColor2 = color(100, 0, 100);
+      let blendFactor = map(hr % 24, 0, 23, 0, 1);
+
+      // Interpolate between two colors based on hour
+      let c = lerpColor(baseColor1, baseColor2, blendFactor);
+      background(c);
+    }
+
+    function drawBuildings(mn) {
+      // Make 6 buildings of various widths and heights
+      noStroke();
+      for (let i = 0; i < 6; i++) {
+        // Building position & size
+        let bldWidth = 50 + i * 20;
+        let bldHeight = 200 + (i * 30);
+        let xPos = 30 + i * 70;
+        let yPos = height - bldHeight;
+
+        // Building color
+        fill(20 + i * 10, 10, 60 + i * 20);
+        rect(xPos, yPos, bldWidth, bldHeight);
+
+        // Windows: flicker pattern changes each minute
+        fill(255, 255, 0);
+        let winRows = 5;
+        let winCols = 3;
+        let winWidth = bldWidth / (winCols + 1);
+        let winHeight = (bldHeight - 20) / (winRows + 1);
+
+        for (let r = 0; r < winRows; r++) {
+          for (let c = 0; c < winCols; c++) {
+            let winX = xPos + (winWidth * (c + 1));
+            let winY = yPos + (winHeight * (r + 1));
+
+            // Random flicker based on minute
+            // If (minute + row + col) is even -> window lit, else dark
+            let flickerCheck = (mn + r + c) % 2;
+            if (flickerCheck === 0) {
+              fill(255, 220, 100);
+            } else {
+              fill(40);
+            }
+            rect(winX, winY, winWidth * 0.6, winHeight * 0.6);
+          }
+        }
+      }
+    }
+
+    function handleTraffic(sc) {
+      // Each second, add a new traffic line from the left
+      if (sc !== lastSecond) {
+        lastSecond = sc;
+        trafficPositions.push({
+          x: 0,
+          y: random(height * 0.6, height - 20), // traffic near bottom
+          r: random(60, 255),
+          g: random(60, 255),
+          b: random(60, 255)
+        });
+      }
+
+      // Move traffic lines and draw them
+      for (let i = 0; i < trafficPositions.length; i++) {
+        let l = trafficPositions[i];
+        l.x += 2; // speed
+
+        stroke(l.r, l.g, l.b);
+        strokeWeight(3);
+        line(l.x, l.y, l.x + 20, l.y);
+
+        // remove lines that go off-screen
+        if (l.x > width + 20) {
+          trafficPositions.splice(i, 1);
+          i--;
+        }
+      }
+    }
+
+    function displayTime(hr, mn, sc) {
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(LEFT, TOP);
+      let displayHour = hr % 12 || 12;
+      let ampm = (hr >= 12) ? "PM" : "AM";
+      let minStr = nf(mn, 2);
+      let secStr = nf(sc, 2);
+      text(displayHour + ":" + minStr + ":" + secStr + " " + ampm, 10, 10);
+    }
+
+  </script>
+</body>
+</html>

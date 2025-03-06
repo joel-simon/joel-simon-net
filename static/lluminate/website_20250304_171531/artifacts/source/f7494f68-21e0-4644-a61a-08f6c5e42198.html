@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Time Moiré</title>
+  <style>
+    /* Ensure no scrollbars & no page margin */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      color: #ddd;
+    }
+    /* Container is sized to hold a 512x512 canvas */
+    #container {
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      position: relative;
+    }
+    /* Overlay for hover instructions */
+    #hover-info {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: none;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #container:hover #hover-info {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="hover-info">
+      <p>
+        Observe this moiré pattern evolving with the hours, minutes, and seconds. Lines shift and rotate to produce illusions as time changes. Move your mouse away to keep watching.
+      </p>
+    </div>
+  </div>
+
+  <!-- p5.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+  <script>
+    let canvasSize = 512;
+    let angle = 0;
+
+    function setup() {
+      let cnv = createCanvas(canvasSize, canvasSize);
+      cnv.parent('container');
+      angleMode(DEGREES);
+      noFill();
+      strokeWeight(1);
+    }
+
+    function draw() {
+      background(0);
+
+      let h = hour();
+      let m = minute();
+      let s = second();
+
+      // Map current time to colors
+      let r = map(h, 0, 23, 80, 255);
+      let g = map(m, 0, 59, 80, 255);
+      let b = map(s, 0, 59, 80, 255);
+
+      // Rotate the entire pattern slightly over time
+      angle += 0.25;
+
+      push();
+      translate(width / 2, height / 2);
+      rotate(angle);
+
+      // Generate two sets of radial lines to create a moiré effect
+      // The spacing and offset vary according to the time
+      let steps1 = map(m, 0, 59, 8, 20);
+      let steps2 = map(s, 0, 59, 8, 20);
+      stroke(r, g, b);
+
+      // First pattern of lines
+      for (let a = 0; a < 360; a += steps1) {
+        push();
+        rotate(a);
+        line(0, 0, width * 0.5, 0);
+        pop();
+      }
+
+      // Second pattern of lines, offset differently
+      push();
+      rotate(frameCount * 0.1); // a slow drift
+      stroke(255 - r, 255 - g, 255 - b);
+      for (let a = 0; a < 360; a += steps2) {
+        push();
+        rotate(a);
+        line(0, 0, width * 0.5, 0);
+        pop();
+      }
+      pop();
+
+      pop();
+
+      // Display time as text near bottom
+      fill(255);
+      noStroke();
+      textAlign(CENTER, CENTER);
+      textSize(14);
+      text(`${nf(h, 2)}:${nf(m, 2)}:${nf(s, 2)}`, width / 2, height - 20);
+    }
+  </script>
+</body>
+</html>

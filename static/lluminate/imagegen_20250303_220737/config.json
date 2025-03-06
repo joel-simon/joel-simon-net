@@ -1,0 +1,16 @@
+{
+  "random_seed": 42,
+  "prompt": "an architectural style that has never been seen before",
+  "initial_population_size": 20,
+  "population_size": 20,
+  "children_per_generation": 10,
+  "num_generations": 60,
+  "k_neighbors": 3,
+  "max_workers": 5,
+  "artifact_class": "ImageGenArtifact",
+  "evolution_mode": "variation",
+  "reasoning_effort": "low",
+  "use_creative_strategies": true,
+  "use_summary": true,
+  "crossover_rate": 0.3
+}
