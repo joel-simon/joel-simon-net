@@ -1,13 +1,11 @@
 <script lang="ts">
   import ShaderManager from "./components/MultiShaders/ShaderManager.svelte";
   import ShaderGrid from "./components/ShaderGrid.svelte";
-  import gameTestHTML from "./data/gametest.html?raw";
   import { loadShadersFromZip } from "./shaderLoader";
   import { onMount } from "svelte";
   import ShaderGridGeneration from "./components/ShaderGridGeneration.svelte";
   import Algorithm from "./sections/Algorithm.svelte";
-  // import ClocksViewer from "./components/ClocksViewer.svelte";
-  import TextRadioButton from "$lib/components/TextRadioButton.svelte";
+  // import TextRadioButton from "$lib/components/TextRadioButton.svelte";
   import ArtifactGrid from "./components/ArtifactGrid.svelte";
   import ClockGallery from "./components/ClockGallery.svelte";
 
@@ -146,7 +144,6 @@
 </div> -->
 <div class="">
   <!-- {#if selected === "clocks"} -->
-  <!-- <ClocksViewer /> -->
   <!-- <ArtifactGrid /> -->
   <!-- <h2>Clocks</h2> -->
   <ClockGallery />
