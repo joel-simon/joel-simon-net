@@ -43,7 +43,9 @@
       {@const citation = citationsData.find((c) => c.paperName === name)}
       <li>
         {#if citation}
-          <p>{index + 1}. {citation.fullCitation}</p>
+          <p id={`citation_${citation.paperName}`}>
+            {index + 1}. {citation.fullCitation}
+          </p>
         {:else}
           {name} <!-- Fallback if citation data is missing -->
         {/if}

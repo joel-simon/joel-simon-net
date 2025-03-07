@@ -1,0 +1,168 @@
+{
+    "strategies": [
+        {
+            "name": "Replacement Template",
+            "theory_base": "Goldenberg et al.'s Creativity Templates",
+            "description": "Replace a symbol associated with a trait with the subject in a context where that trait is essential",
+            "operations": [
+                {
+                    "name": "identify_trait",
+                    "instruction": "Identify the key trait T of subject P that should be highlighted"
+                },
+                {
+                    "name": "find_symbol",
+                    "instruction": "Find a symbol S that is universally associated with trait T"
+                },
+                {
+                    "name": "create_context",
+                    "instruction": "Create a context where trait T is essential for S to function"
+                },
+                {
+                    "name": "replace",
+                    "instruction": "Replace S with P in this context"
+                }
+            ],
+            "example": "To showcase Nike-Air's shock absorption, replace a firefighter's life net (symbol of shock absorption) with the shoe in a rescue scenario"
+        },
+        {
+            "name": "Forced Connections",
+            "theory_base": "Arthur Koestler's Bisociation Theory",
+            "description": "Create novel ideas by connecting two unrelated concepts or domains that have not been previously associated",
+            "operations": [
+                {
+                    "name": "select_domains",
+                    "instruction": "Identify your primary domain and select a distant, unrelated domain"
+                },
+                {
+                    "name": "map_elements",
+                    "instruction": "Identify key elements, principles, or structures in both domains"
+                },
+                {
+                    "name": "transfer_elements",
+                    "instruction": "Transfer elements from the random domain to the primary domain"
+                },
+                {
+                    "name": "synthesize",
+                    "instruction": "Create a coherent synthesis incorporating elements from both domains"
+                }
+            ],
+            "example": "To create a novel children's toy, combine principles of quantum physics (uncertainty, superposition) with traditional playground equipment - resulting in a 'Quantum Playground' where slides have multiple possible endpoints that aren't determined until a child reaches them"
+        },
+        {
+            "name": "Assumption Reversal",
+            "theory_base": "Edward de Bono's Lateral Thinking",
+            "description": "Identify core assumptions in a domain and systematically reverse or challenge them to generate unexpected ideas",
+            "operations": [
+                {
+                    "name": "list_assumptions",
+                    "instruction": "Identify fundamental assumptions or 'rules' in the domain you're exploring"
+                },
+                {
+                    "name": "select_assumption",
+                    "instruction": "Choose the most fundamental or taken-for-granted assumption"
+                },
+                {
+                    "name": "reverse_assumption",
+                    "instruction": "Reverse this assumption or imagine it doesn't exist"
+                },
+                {
+                    "name": "explore_consequences",
+                    "instruction": "Develop a practical idea based on this reversal"
+                }
+            ],
+            "example": "In restaurant design, reverse the assumption that 'customers come to the restaurant' - create a concept where the restaurant comes to customers, not just delivery but the entire dining experience configurable in any location"
+        },
+        {
+            "name": "SCAMPER Transformation",
+            "theory_base": "Alex Osborn and Bob Eberle's SCAMPER Technique",
+            "description": "Transform existing concepts by applying targeted operations from the SCAMPER framework (Substitute, Combine, Adapt, Modify/Magnify, Put to other uses, Eliminate, Reverse)",
+            "operations": [
+                {
+                    "name": "select_base",
+                    "instruction": "Select a base concept, product, or service to transform"
+                },
+                {
+                    "name": "choose_operations",
+                    "instruction": "Select 2-3 SCAMPER operations that seem most promising (Substitute, Combine, Adapt, Modify, Purpose, Eliminate, or Reverse)"
+                },
+                {
+                    "name": "apply_operations",
+                    "instruction": "Apply your chosen operations to transform the base concept"
+                },
+                {
+                    "name": "synthesize",
+                    "instruction": "Integrate the transformations into a coherent new concept"
+                }
+            ],
+            "example": "Transforming a traditional umbrella: Substitute fabric with solar panels, combine with smartphone charging, reverse so it collects water instead of repelling it - creating a multi-functional device that both protects from rain and harvests energy/water"
+        },
+        {
+            "name": "Conceptual Blending",
+            "theory_base": "Fauconnier and Turner's Conceptual Blending Theory",
+            "description": "Merge two conceptual spaces to create an emergent structure with properties that neither input space contains",
+            "operations": [
+                {
+                    "name": "select_inputs",
+                    "instruction": "Select two distinct but potentially complementary conceptual spaces"
+                },
+                {
+                    "name": "map_crossspace",
+                    "instruction": "Identify correspondences and shared structures between the input spaces"
+                },
+                {
+                    "name": "blend_selectively",
+                    "instruction": "Selectively project elements from both inputs into a blended space"
+                },
+                {
+                    "name": "develop_emergent",
+                    "instruction": "Develop the unique emergent properties that arise in the blended space"
+                }
+            ],
+            "example": "Blending 'tree' and 'database' conceptual spaces to create a 'knowledge tree' visualization where data grows organically, has seasonal cycles of revision, and produces 'fruits' of insight when branches of information connect in new ways"
+        },
+        {
+            "name": "Distance Association",
+            "theory_base": "Margaret Boden's Conceptual Spaces and Ronald Finke's Geneplore Model",
+            "description": "Generate ideas by creating associations between concepts at varying levels of semantic distance, prioritizing medium-distance associations",
+            "operations": [
+                {
+                    "name": "anchor_concept",
+                    "instruction": "Establish the central concept you're working with"
+                },
+                {
+                    "name": "generate_associations",
+                    "instruction": "Generate concepts at varying distances from the anchor (near, medium, far)"
+                },
+                {
+                    "name": "select_medium",
+                    "instruction": "Select medium-distance concepts that are not obvious but still connectable"
+                },
+                {
+                    "name": "develop_association",
+                    "instruction": "Create a meaningful connection between the anchor and the medium-distance concept"
+                }
+            ],
+            "example": "Starting with 'coffee shop' as the anchor: Near concepts (café, barista) are too obvious; Far concepts (quantum physics, deep sea) are too disconnected; Medium concepts (theater, ritual, garden) have creative potential - leading to a 'performance coffee shop' where brewing is theatrical and customers participate in the process"
+        },
+        {
+            "name": "Oblique Strategies",
+            "theory_base": "Brian Eno and Peter Schmidt's Oblique Strategies Cards",
+            "description": "Overcome creative blocks by applying random, often paradoxical or lateral constraints that force new perspectives on a problem",
+            "operations": [
+                {
+                    "name": "draw_random_card",
+                    "instruction": "Select a random cryptic directive such as 'Honor thy error as a hidden intention,' 'Use an old idea,' or 'What would your closest friend do?'"
+                },
+                {
+                    "name": "interpret_directive",
+                    "instruction": "Interpret how this seemingly unrelated directive could apply to your problem"
+                },
+                {
+                    "name": "apply_insight",
+                    "instruction": "Apply the resulting insight to develop an unexpected solution"
+                }
+            ],
+            "example": "When designing a new music composition interface, drawing the card 'Use an unacceptable color' led to creating an interface where 'wrong' notes are embraced rather than corrected, resulting in a system that encourages musical exploration and happy accidents"
+        }
+    ]
+}

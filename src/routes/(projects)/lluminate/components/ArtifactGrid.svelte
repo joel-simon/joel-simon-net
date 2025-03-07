@@ -2,6 +2,7 @@
   import { fetchJson } from "$lib/Network";
   import { onMount } from "svelte";
   import { type GridPositions } from "../shaderLoader";
+  import ShaderViewer from "./MultiShaders/ShaderViewer.svelte";
 
   let singleViewId: string | null = null;
   export let runId = "website_20250304_171531";
@@ -31,6 +32,7 @@
   ];
 
   let gridDataPromise: Promise<GridPositions> | null = null;
+  let gridData: GridPositions | null = null;
 
   const iframeUrl = (key: string) =>
     `/lluminate/${runId}/artifacts/source/${key}.html`;
@@ -39,6 +41,19 @@
   const imageUrl = (key: string) =>
     `/lluminate/${runId}/artifacts/images/${key}.jpg`;
 
+  const shaderMap = new Map<string, string>();
+  const getShaderSource = async (key: string) => {
+    if (shaderMap.has(key)) {
+      return shaderMap.get(key);
+    }
+    const response = await fetch(
+      `/lluminate/${runId}/artifacts/source/${key}.glsl`
+    );
+    const text = await response.text();
+    shaderMap.set(key, text);
+    return text;
+  };
+
   function randomKey(gridData: GridPositions) {
     return Object.keys(gridData.grid_positions)[
       Math.floor(Math.random() * Object.keys(gridData.grid_positions).length)
@@ -46,16 +61,13 @@
   }
 
   let iframeElement: HTMLIFrameElement;
-  function triggerMouseoverOnIframe() {}
 
-  onMount(() => {
+  onMount(async () => {
     gridDataPromise = fetchJson<GridPositions>(
       `/lluminate/${runId}/grid_positions.json`
     );
-
-    if (singleViewId && iframeElement) {
-      triggerMouseoverOnIframe();
-    }
+    gridData = await gridDataPromise;
+    singleViewId = randomKey(gridData);
   });
 </script>
 
@@ -67,67 +79,91 @@
   {#each startGeneration as key}
     <div
       class="grid-cell cursor-pointer"
+      class:!w-[36px]={artifactType == "shaders"}
+      class:!h-[36px]={artifactType == "shaders"}
       on:mouseover={() => (singleViewId = key)}
       on:click={() => {
         singleViewId = key;
-        triggerMouseoverOnIframe();
       }}
       class:active={singleViewId === key}
     >
-      <img src={thumbnailUrl(key)} class="w-full h-full" />
+      {#if artifactType == "shaders"}
+        {#await getShaderSource(key) then source}
+          <ShaderViewer
+            fragmentShader={source}
+            classes="w-full h-full aspect-square cursor-pointer"
+          />
+        {/await}
+      {:else}
+        <img
+          src={thumbnailUrl(key)}
+          class="w-full h-full aspect-square cursor-pointer"
+        />
+      {/if}
     </div>
   {/each}
 </div>
 <div
-  class="shader-grid-container w-full px-2 flex flex-col-reverse md:flex-row-reverse gap-2 justify-center items-center"
+  class="shader-grid-container w-full px-2 flex flex-col-reverse md:flex-row-reverse gap-4 justify-center items-center mt-4"
 >
-  {#if gridDataPromise}
-    {#await gridDataPromise}
-      <p>Loading grid data...</p>
-    {:then gridData}
-      <div class="flex w-[512px] h-[512px] scale-75">
-        {#if artifactType === "website"}
-          <iframe
-            bind:this={iframeElement}
-            width="512"
-            height="512"
-            src={iframeUrl(singleViewId ?? randomKey(gridData))}
-            class="w-full h-full cursor-pointer bg-white"
-          ></iframe>
-        {:else if artifactType == "image-gen"}
-          <img
-            src={imageUrl(singleViewId ?? randomKey(gridData))}
-            class="w-full h-full object-cover"
+  {#if gridData && singleViewId}
+    <div class="flex w-[384px] h-[384px] m-4">
+      {#if artifactType === "website"}
+        <iframe
+          bind:this={iframeElement}
+          width="384"
+          height="384"
+          src={iframeUrl(singleViewId)}
+          class="w-full h-full cursor-pointer bg-white"
+        ></iframe>
+      {:else if artifactType == "shaders"}
+        <!-- <div class="w-[384px] h-[384px] drop-shadow"> -->
+        {#await getShaderSource(singleViewId) then source}
+          <ShaderViewer
+            fragmentShader={source}
+            classes="w-[full] h-[full] aspect-square
+               cursor-pointer"
           />
-        {/if}
-      </div>
-      <!-- {:else} -->
-      <div class="flex flex-col grow-0">
-        <p>Evolved</p>
-        <div
-          class="shader-grid w-[350px] h-[350px] md:w-[450px] md:h-[450px]"
-          style="grid-template-rows: repeat({gridData.rows}, 1fr); grid-template-columns: repeat({gridData.cols}, 1fr);"
-        >
-          {#each Object.entries(gridData.grid_positions) as [id, cell]}
-            <div
-              class="generation-item cursor-pointer"
-              style="grid-column: {cell.j + 1}; grid-row: {cell.i + 1};"
-              class:active={singleViewId === id}
-              on:mouseover={() => (singleViewId = id)}
-              on:click={() => {
-                singleViewId = id;
-                triggerMouseoverOnIframe();
-              }}
-            >
+        {/await}
+        <!-- </div> -->
+      {:else if artifactType == "image-gen"}
+        <img src={imageUrl(singleViewId)} class="w-full h-full object-cover" />
+      {/if}
+    </div>
+    <!-- {:else} -->
+    <div class="flex flex-col grow-0">
+      <p>Evolved</p>
+      <div
+        class="shader-grid w-[350px] h-[350px] md:w-[450px] md:h-[450px]"
+        style="grid-template-rows: repeat({gridData.rows}, 1fr); grid-template-columns: repeat({gridData.cols}, 1fr);"
+      >
+        {#each Object.entries(gridData.grid_positions) as [id, cell]}
+          <div
+            class="generation-item cursor-pointer"
+            style="grid-column: {cell.j + 1}; grid-row: {cell.i + 1};"
+            class:active={singleViewId === id}
+            on:mouseover={() => (singleViewId = id)}
+            on:click={() => {
+              singleViewId = id;
+            }}
+          >
+            {#if artifactType == "shaders"}
+              {#await getShaderSource(id) then source}
+                <ShaderViewer
+                  fragmentShader={source}
+                  classes="w-full h-full aspect-square cursor-pointer"
+                />
+              {/await}
+            {:else}
               <img
                 src={thumbnailUrl(id)}
                 class="w-full h-full aspect-square cursor-pointer"
               />
-            </div>
-          {/each}
-        </div>
+            {/if}
+          </div>
+        {/each}
       </div>
-    {/await}
+    </div>
   {/if}
 </div>
 
@@ -186,8 +222,8 @@
 
   .generation-grid {
     display: grid;
-    grid-template-columns: repeat(10, 48px);
-    grid-template-rows: repeat(2, 48px);
+    grid-template-columns: repeat(10, auto);
+    grid-template-rows: repeat(2, auto);
     gap: 0px;
     width: fit-content;
     margin: 0 auto;

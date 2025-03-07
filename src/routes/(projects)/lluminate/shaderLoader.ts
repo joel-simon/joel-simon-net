@@ -38,6 +38,7 @@ export interface ShaderLoadResult {
 export async function loadShadersFromZip(
   zipUrl: string
 ): Promise<ShaderLoadResult> {
+  console.time("loadShadersFromZip");
   const result: ShaderLoadResult = {
     shaderMap: new Map(),
     populationData: [],
@@ -96,6 +97,7 @@ export async function loadShadersFromZip(
     //   result.initialGenomes = result.populationData[0].genome_ids;
     // }
 
+    console.timeEnd("loadShadersFromZip");
     return result;
   } catch (err) {
     console.error("Error loading shaders:", err);

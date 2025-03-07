@@ -15,9 +15,17 @@
   onDestroy(() => {
     // Implement if you need to unregister citations on component destroy
   });
+  function onClick() {
+    console.log("clicked");
+    const citationId = `citation_${name[0]}`;
+    const citationElement = document.getElementById(citationId);
+    if (citationElement) {
+      citationElement.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }
 </script>
 
-<span class="citation-wrapper">
+<span class="citation-wrapper" on:click={onClick}>
   <i>
     <slot></slot>
   </i>

@@ -1,12 +1,13 @@
 flowchart LR
     A[User Prompt] --> B[Initialize Population]
+    A --> E[Generate via LLM]
     B --> C[Evolution Loop]
     
     subgraph C[Evolution Loop]
-        D[Apply Operators] --> E[Generate via LLM]
-        E --> F[Select by Novelty]
-        F --> G[Generate Summary]
-        G --> D
+        G["Step 1: Generate Summary"] --> D["Step 2: Apply Operators"]
+        D --> E["Step 3: Generate via LLM"]
+        E --> F["Step 4: Select by Novelty"]
+        F --> G
     end
     
     H[Creative Strategies] --> D
