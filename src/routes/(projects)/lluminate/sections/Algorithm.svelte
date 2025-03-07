@@ -347,7 +347,7 @@
       significantly more novel outputs than simpler configurations.
     </p>
 
-    <h2>Discussion</h2>
+    <h2 id="discussion">Discussion</h2>
     <p>
       Our findings reveal several important insights about creativity in
       language models and the effectiveness of evolutionary approaches for
