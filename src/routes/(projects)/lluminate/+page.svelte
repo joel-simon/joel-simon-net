@@ -23,14 +23,15 @@
 </script>
 
 <div class="text_body">
-  <h1>Creative Exploration with LLMs</h1>
+  <h1>Creative Exploration with Reasoning LLMs</h1>
   <p>
     This research introduces Lluminate, an algorithm for open-ended discovery
-    and exploration (illumination) with large language models (LLMs). It is an
-    LLM based genetic algorithm that combines foundation models, self-reflection
+    and exploration (illumination). It is a evolutionary algorithm based on
+    reasoning based large language models (LLMs) that combines self-reflection
     and creative thinking strategies from psychology. The goal is to both probe
     the creative boundaries of LLMs and explore new possibilities for assisted
-    creative exploration. Below I demonstrate experiments across multiple
+    creative exploration. It also introduces the idea of evolvable creative
+    thinking strategies for LLM. Below I demonstrate experiments across multiple
     domains as well as ablation studies, the results of which shed some light on
     the the creative process of LLMs.
   </p>

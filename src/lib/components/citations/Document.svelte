@@ -38,7 +38,7 @@
 <!-- <hr /> -->
 <div class="text_body">
   <h2>References</h2>
-  <ol>
+  <ol class="references-list">
     {#each orderedCitations as name, index}
       {@const citation = citationsData.find((c) => c.paperName === name)}
       <li>
@@ -53,3 +53,14 @@
     {/each}
   </ol>
 </div>
+
+<style>
+  .references-list li {
+    margin-bottom: 0.75rem; /* Adds space between list items */
+  }
+
+  .references-list p {
+    margin: 0; /* Removes default paragraph margins */
+    line-height: 1.2; /* Reduces spacing between lines within paragraphs */
+  }
+</style>
