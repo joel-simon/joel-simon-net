@@ -71,7 +71,7 @@
   });
 </script>
 
-<h2 class="my-8">
+<h2 class="my-4">
   Prompt: <span class="italic">{prompt}</span>
 </h2>
 <p>Baseline</p>

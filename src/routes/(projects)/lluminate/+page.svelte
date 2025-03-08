@@ -24,6 +24,19 @@
 
 <div class="text_body">
   <h1>Creative Exploration with Reasoning LLMs</h1>
+  <div class="flex gap-2 mb-2 bg-white">
+    <div class="flex flex-row gap-2 items-center justify-center w-full">
+      {#each ["demos", "background", "algorithm", "results", "discussion"] as section}
+        <a
+          class="!no-underline hover:!underline capitalize"
+          href={`#${section}`}
+        >
+          {section}
+        </a>
+      {/each}
+    </div>
+  </div>
+
   <p>
     This research introduces Lluminate, an algorithm for open-ended discovery
     and exploration (illumination). It is a evolutionary algorithm based on
@@ -35,16 +48,6 @@
     domains as well as ablation studies, the results of which shed some light on
     the the creative process of LLMs.
   </p>
-
-  <div class="flex gap-2 mt-2 bg-white">
-    <div class="flex flex-row gap-2 items-center justify-center w-full">
-      {#each ["demos", "background", "algorithm", "results", "discussion"] as section}
-        <a class="!no-underline hover:!underline" href={`#${section}`}>
-          {section}
-        </a>
-      {/each}
-    </div>
-  </div>
 
   <ShaderManager>
     <!-- {#if shaderDataPromise}
@@ -66,6 +69,7 @@
         <ShaderGrid {shaderData} bind:singleViewId /> -->
     <div id="demos" />
     <ArtifactGrid
+      prompt="make an interesting shader"
       artifactType="shaders"
       runId="long-run"
       startGeneration={[
@@ -218,7 +222,7 @@
     />
   </RenderWhenVisible>
   <div class="text_body">
-    <p class="!text-sm">
+    <p class="!text-sm mt-2">
       Image descriptions are evolved and converted into images with the flux-dev
       model. The baseline images have a consistent bobby white and neon blue
       color palette. The evolved images are more diverse and include a variety
