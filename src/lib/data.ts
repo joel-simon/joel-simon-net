@@ -54,6 +54,16 @@ export const projects: Project[] = [
       "Collaborative online puppet studio and theater. An experiment in creative tools based on principles of craft, play and collaboration by StudioMorphogen.",
   },
   {
+    name: "Masterpiece, best quality, highres",
+    path: "masterpiece",
+    year: 2024,
+    labels: ["AI"],
+
+    img: "imgs/masterpiece/preview.jpg",
+    description:
+      "Exploration of how AI upscalers absurdly transform abstract shapes into containers of feminine features whenever prompted for 'masterpiece' quality.",
+  },
+  {
     name: "LatentScape",
     year: 2024,
     externalPath: "https://latentscape.com",
