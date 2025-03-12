@@ -37,10 +37,16 @@
     was done between reasoning strength and use of creative strategies. Then
     ablation was done on use of strategies and summary and crossover. Additionally mode -->
   <RenderWhenVisible>
-    <p class="!w-full !text-center font-bold !text-sm">
-      Shader Domain, "make an interesting shader"
-    </p>
-    <img src="/lluminate/ShaderArtifact_novelty_and_length_comparison_2.png" />
+    <ClickToModal let:isOpen>
+      <p class="!w-full !text-center font-bold !text-sm">
+        Shader Domain, "make an interesting shader"
+      </p>
+      <img
+        class:w-[75%]={!isOpen}
+        alt="novelty and length comparison"
+        src="/lluminate/ShaderArtifact_novelty_and_length_comparison_2.png"
+      />
+    </ClickToModal>
   </RenderWhenVisible>
   <p class="!text-sm">
     Test were conducting on the shader and clock (website with p5.js library)

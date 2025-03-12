@@ -195,7 +195,7 @@
 <style>
   .modal-wrapper {
     display: inline-block;
-    cursor: pointer;
+    cursor: zoom-in;
   }
 
   .modal-backdrop {

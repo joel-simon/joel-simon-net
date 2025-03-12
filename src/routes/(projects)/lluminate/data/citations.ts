@@ -14,11 +14,7 @@ export const citationsData: CitationType[] = [
     fullCitation:
       "Holland, J. H. (1975). Adaptation in natural and artificial systems: An introductory analysis with applications to biology, control, and artificial intelligence. University of Michigan Press.",
   },
-  {
-    paperName: "novelty-search",
-    fullCitation:
-      "Lehman, J., & Stanley, K. O. (2011). Abandoning objectives: Evolution through the search for novelty alone. Evolutionary computation, 19(2), 189-223.",
-  },
+
   {
     paperName: "map-elites",
     fullCitation:

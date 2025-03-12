@@ -10,6 +10,9 @@
 
 <div class="text_body">
   <h2 id="algorithm">Algorithm</h2>
+  <a target="_blank" href="https://github.com/joel-simon/lluminate"
+    >Source Code</a
+  >
   <p>
     The algorithm is combination of evolutionary computation principles with
     large language models to create an open-ended discovery system. All
