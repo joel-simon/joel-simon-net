@@ -1,6 +1,6 @@
 <div class="text_body">
   <h1>Creative Exploration with Reasoning LLMs</h1>
-  <div class="flex gap-2 mb-2 bg-white">
+  <!-- <div class="flex gap-2 mb-2 bg-white">
     <div class="flex flex-row gap-2 items-center justify-center w-full">
       {#each ["demos", "background", "algorithm", "results", "discussion"] as section}
         <a
@@ -11,7 +11,7 @@
         </a>
       {/each}
     </div>
-  </div>
+  </div> -->
 
   <!-- When you ask
     ChatGPT to create something the results tend to be conventional and lack
