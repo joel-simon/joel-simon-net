@@ -24,6 +24,14 @@ export const projects: Project[] = [
     path: "/about",
   },
   {
+    name: "Lluminate",
+    path: "lluminate",
+    labels: ["generative", "AI", "research-art"],
+    img: "lluminate/preview-2.jpg",
+    year: 2025,
+    description: "An evolutionary algorithm for creative exploration.",
+  },
+  {
     name: "Webpage of Forgotten Dreams",
     year: 2024,
     labels: ["web", "tool"],
