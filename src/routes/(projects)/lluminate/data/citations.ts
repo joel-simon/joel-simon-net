@@ -64,7 +64,7 @@ export const citationsData: CitationType[] = [
     fullCitation: "Koestler, A. (1964). The act of creation. Hutchinson.",
   },
   {
-    paperName: "creativity and artificial intelligence",
+    paperName: "creativity-and-artificial-intelligence",
     fullCitation: `Boden, Margaret A. "Creativity and artificial intelligence." Artificial intelligence 103.1-2 (1998).`,
   },
   {
@@ -89,5 +89,19 @@ export const citationsData: CitationType[] = [
     paperName: "minimal-conditions-oee",
     fullCitation:
       "Soros, L., & Stanley, K. O. (2014). Identifying minimal conditions for open-ended evolution through the artificial life world of Chromaria. Artificial Life Conference Proceedings 14, 793-800.",
+  },
+  {
+    paperName: "few-shot-learners",
+    fullCitation:
+      "Brown, T. B., et al. (2020). Language models are few-shot learners. Advances in Neural Information Processing Systems, 33, 1877-1901.",
+  },
+  {
+    paperName: "chain-of-thought",
+    fullCitation:
+      "Wei, J., et al. (2022). Chain-of-thought prompting elicits reasoning in large language models. arXiv preprint arXiv:2201.11903.",
+  },
+  {
+    paperName: "open-endedness-matters",
+    fullCitation: `Stanley, Kenneth O. "Why open-endedness matters." Artificial life 25.3 (2019): 232-235.`,
   },
 ];

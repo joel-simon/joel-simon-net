@@ -4,6 +4,7 @@
   import { type GridPositions } from "../shaderLoader";
   import HTMLContainer from "$lib/components/HTMLContainer.svelte";
   import { shuffle } from "$lib/Random";
+  import ClickToModal from "$lib/components/ClickToModal.svelte";
 
   export let runId = "website_20250304_171531";
   export let prompt = "a creative time display.";
@@ -54,12 +55,20 @@
 <p>Baseline</p>
 <div class="flex w-screen overflow-x-auto gap-2 px-2 pb-4">
   {#each startGeneration as key}
-    <HTMLContainer
-      htmlSource={iframeUrl(key)}
-      width="256px"
-      height="256px"
-      scale={0.5}
-    />
+    <ClickToModal let:isOpen classes="relative">
+      {#if !isOpen}
+        <div
+          class="w-[256px] h-[256px] absolute top-0 left-0 z-10 pointer-events-auto cursor-pointer"
+          style="pointer-events: auto;"
+        ></div>
+      {/if}
+      <HTMLContainer
+        htmlSource={iframeUrl(key)}
+        width={isOpen ? "512px" : "256px"}
+        height={isOpen ? "512px" : "256px"}
+        scale={isOpen ? 1 : 0.5}
+      />
+    </ClickToModal>
   {/each}
 </div>
 <div class="flex flex-col w-full">

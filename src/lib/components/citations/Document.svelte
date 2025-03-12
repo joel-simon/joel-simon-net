@@ -41,10 +41,11 @@
   <ol class="references-list">
     {#each orderedCitations as name, index}
       {@const citation = citationsData.find((c) => c.paperName === name)}
-      <li>
+      <li class="!text-md">
         {#if citation}
+          <!-- {index + 1}.  -->
           <p id={`citation_${citation.paperName}`}>
-            {index + 1}. {citation.fullCitation}
+            {citation.fullCitation}
           </p>
         {:else}
           {name} <!-- Fallback if citation data is missing -->
@@ -55,6 +56,10 @@
 </div>
 
 <style>
+  .references-list li {
+    /* list-style-type: none !important;
+    padding-left: 0; */
+  }
   .references-list li {
     margin-bottom: 0.75rem; /* Adds space between list items */
   }

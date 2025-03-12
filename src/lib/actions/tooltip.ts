@@ -9,17 +9,32 @@ export function tooltip(element: HTMLElement): { destroy: () => void } {
     element.removeAttribute("title");
 
     div = document.createElement("div");
-    div.textContent = title;
+
+    // Handle line breaks by splitting the text and creating paragraph elements
+    if (title) {
+      const paragraphs = title.split("\n");
+      paragraphs.forEach((paragraph, index) => {
+        const p = document.createElement("p");
+        p.textContent = paragraph;
+        p.style.textAlign = "left"; // Ensure each paragraph is left-aligned
+        if (index < paragraphs.length - 1) {
+          p.style.marginBottom = "8px";
+        }
+        div.appendChild(p);
+      });
+    }
+
     div.style.cssText = `
 			text-align: left;
 			border: 1px solid #ddd;
 			box-shadow: 1px 1px 1px #ddd;
 			background: white;
 			border-radius: 4px;
-			padding: 4px;
+			padding: 8px;
 			position: absolute;
 			top: ${event.pageY + 5}px;
 			left: ${event.pageX + 5}px;
+			max-width: 300px;
 		`;
     document.body.appendChild(div);
   }

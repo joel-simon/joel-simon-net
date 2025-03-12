@@ -2,96 +2,127 @@
   import Citation from "$lib/components/citations/Citation.svelte";
 </script>
 
-<h2 id="background">Background</h2>
+<div class="text_body">
+  <h2 id="background">Background</h2>
 
-<p>
-  Language models generate coherent text but their creative boundaries remain
-  underexplored. Traditional prompt-based approaches produce predictable outputs
-  without systematically exploring novel possibilities. Reasoning models using
-  reinforcement learning can solve computer science problems, but focus
-  primarily on math and logic rather than divergent thinking.
-</p>
+  <!-- <p>
+    Language models generate coherent text but their creative boundaries remain
+    underexplored. Traditional prompt-based approaches produce predictable
+    outputs without systematically exploring novel possibilities. Reasoning
+    models using reinforcement learning can solve computer science problems, but
+    focus primarily on math and logic rather than divergent thinking.
+  </p> -->
 
-<p>
-  Genetic algorithms (GAs) mimic natural selection to efficiently explore
-  complex solution spaces <Citation name={["holland"]} />. While extensively
-  applied in neural architecture search and procedural content generation, their
-  integration with LLMs for creative exploration is still emerging.
-</p>
+  <p>
+    Genetic algorithms (GAs) mimic natural selection to efficiently explore
+    complex solution spaces <Citation name={["holland"]} />. While extensively
+    applied in neural architecture search and procedural content generation,
+    their integration with LLMs for creative exploration is still emerging.
+  </p>
 
-<p>
-  Recent evolutionary computation has explored quality-diversity algorithms,
-  seeking diverse high-performing solutions rather than a single optimum.
-  Novelty Search <Citation name={["novelty-search"]} /> rewards behavioral diversity,
-  while MAP-Elites <Citation name={["map-elites"]} /> maintains an archive of diverse
-  solutions along dimensions of interest. These approaches have succeeded in robot
-  locomotion, game design, and molecule discovery.
-</p>
+  <p>
+    Recent evolutionary computation has explored quality-diversity algorithms,
+    seeking diverse high-performing solutions rather than a single optimum.
+    Novelty Search <Citation
+      name={["novelty-search", "abandoning-objectives"]}
+    /> rewards behavioral diversity, while MAP-Elites <Citation
+      name={["map-elites"]}
+    /> maintains an archive of diverse solutions along dimensions of interest. These
+    approaches have demonstrate how rewarding behavioral novelty rather than fixed
+    goals can drive ongoing innovation, mirroring biological evolution's diversity.
+  </p>
+  <!-- locomotion, game design, and molecule discovery.  Approaches like Lehman and Stanley's novelty search <Citation
+name={["abandoning-objectives"]}
+/> and Soros and Stanley's minimal criterion coevolution <Citation
+name={["minimal-conditions-oee"]}
+/>
+demonstrate how rewarding behavioral novelty rather than fixed goals can drive
+ongoing innovation, mirroring biological evolution's diversity.
+</p> -->
 
-<p>
-  Open-endedness—systems producing novel artifacts indefinitely without external
-  input—represents a grand AI challenge <Citation name={["llm-creativity"]} />.
-  Wang et al. <Citation name={["qdlm"]} /> demonstrated quality diversity techniques
-  for language generation, while Lehman et al. <Citation
-    name={["evolution-large-models"]}
-  /> explored evolutionary approaches to prompt engineering.
-</p>
+  <p>
+    Open-endedness expands on the insights of novelty search and aims to create
+    systems that continually produce novel, increasingly complex forms
+    <Citation name={["open-endedness-matters"]} />. Soros et al. <Citation
+      name={["creativity-and-open-endedness"]}
+    /> bridged computational creativity and open-endedness research although it has
+    not been applied to language models.
+  </p>
+  <!-- <Citation name={["llm-creativity"]} />. Wang et al. <Citation
+  name={["qdlm"]}
+/> demonstrated quality diversity techniques for language generation, while Lehman
+et al. <Citation name={["evolution-large-models"]} /> explored evolutionary approaches
+to prompt engineering. -->
 
-<p>
-  Open-ended Evolution (OEE) seeks to create systems that continually produce
-  novel, increasingly complex forms. Approaches like Lehman and Stanley's
-  novelty search <Citation name={["abandoning-objectives"]} /> and Soros and Stanley's
-  minimal criterion coevolution <Citation name={["minimal-conditions-oee"]} /> show
-  how rewarding behavioral novelty rather than fixed goals can drive ongoing innovation.
-</p>
-
-<p>
-  Open-endedness and creativity enhance human-AI collaboration. Soros et al. <Citation
-    name={["creativity-and-open-endedness"]}
-  /> bridged computational creativity and open-endedness research. While traditional
-  LLM interactions often homogenize ideas <Citation
-    name={["homogenization"]}
-  />, open-ended systems counteract this by generating diverse outputs.
-  Incorporating open-ended evolution principles—rewarding novelty over
-  optimization and implementing minimal quality criteria—creates tools that
-  expand creative possibilities.
-</p>
-
-<p>
-  In parallel, Artificial Life researchers at Sakana AI <Citation
-    name={["sakana-ai"]}
-  /> introduced ASAL (Automated Search for Artificial Life), using vision-language
-  models to discover diverse artificial lifeforms across simulation environments.
-  While ASAL focuses on parameter search within predefined simulation substrates,
-  this approach goes further by evolving the actual code that defines the simulations,
-  potentially enabling a more comprehensive exploration of the creative space.
-</p>
-
-<p>
-  Our approach differs from previous methods by introducing creative strategies
-  as dynamic guidance mechanisms that adapt to evolving populations. We leverage
-  LLMs' generative capabilities throughout the evolutionary process and
-  incorporate population-level summaries as collective memory, enabling
-  deliberate exploration of novel territories.
-</p>
-
-<p>
-  A key innovation is our systematic application of formal creativity theories.
-  Drawing from Margaret Boden's conceptual spaces theory <Citation
-    name={["boden"]}
-  /> and her foundational work on creativity and artificial intelligence <Citation
-    name={["creativity-and-artificial-intelligence"]}
-  />, we implement strategies pushing language models beyond conventional
-  outputs. We also incorporate Brian Eno's Oblique Strategies <Citation
-    name={["oblique-strategies"]}
-  />, Edward de Bono's lateral thinking <Citation
-    name={["lateral-thinking"]}
-  />, Arthur Koestler's bisociation theory <Citation name={["koestler"]} />, and
-  Fauconnier and Turner's conceptual blending <Citation
-    name={["conceptual-blending"]}
-  />—approaches proven effective in human creativity but not previously applied
-  systematically to language model generation.
-</p>
+  <!-- <p> -->
+  <!-- Open-ended Evolution (OEE) seeks to create systems that continually produce
+    novel, increasingly complex forms 
+  </p> -->
+  <!-- </p> -->
+  <!-- <p>
+    Open-endedness and creativity enhance human-AI collaboration. While
+    traditional LLM interactions often homogenize ideas <Citation
+      name={["homogenization"]}
+    />
+  </p> -->
+  <!-- 
+  <p>
+    In parallel, Artificial Life researchers at Sakana AI <Citation
+      name={["sakana-ai"]}
+    /> introduced ASAL (Automated Search for Artificial Life), using vision-language
+    models to discover diverse artificial lifeforms across simulation environments.
+    While ASAL focuses on parameter search within predefined simulation substrates,
+    this approach goes further by evolving the actual code that defines the simulations,
+    potentially enabling a more comprehensive exploration of the creative space.
+  </p> -->
+  <!-- 
+  <p>
+    This approach differs from previous methods by introducing creative
+    strategies as dynamic guidance mechanisms that adapt to evolving
+    populations. We leverage LLMs' generative capabilities throughout the
+    evolutionary process and incorporate population-level summaries as
+    collective memory, enabling deliberate exploration of novel territories.
+  </p> -->
+  <!-- <p>Within the language model domain, there has be</p> -->
+  <p>
+    For large language models prompting has emerged as a crucial skill in
+    effectively leveraging LLM's. This involves crafting prompts, often by
+    providing context, examples, or specific instructions. Techniques like
+    few-shot learning <Citation name={["few-shot-learners"]}></Citation>
+    and chain-of-thought prompting <Citation name={["chain-of-thought"]}
+    ></Citation> have shown significant improvements in task performance. Recently,
+    OpenAI released their
+    <a
+      target="_blank"
+      href="https://openai.com/index/introducing-openai-o1-preview/"
+    >
+      reasoning</a
+    >
+    that use reinforcement learning to generate prompts. This is very effective for
+    convergent logic problem like programming and math but did worse on creative
+    tasks. In contrast to the expansive creativity of open endedness, language models
+    has proven to increase teh homogenization of ideas <Citation
+      name={["homogenization"]}
+    />
+  </p>
+  <p>
+    A key and novel component in this work is the systematic application of
+    formal creativity theories to facilitate creative thinking. Drawing from
+    Margaret Boden's conceptual spaces theory <Citation name={["boden"]} /> and her
+    foundational work on creativity and artificial intelligence <Citation
+      name={["creativity-and-artificial-intelligence"]}
+    />, we implement strategies pushing language models beyond conventional
+    outputs. We also incorporate Brian Eno's Oblique Strategies <Citation
+      name={["oblique-strategies"]}
+    />, Edward de Bono's lateral thinking <Citation
+      name={["lateral-thinking"]}
+    />, Arthur Koestler's bisociation theory <Citation name={["koestler"]} />,
+    and Fauconnier and Turner's conceptual blending <Citation
+      name={["conceptual-blending"]}
+    />—approaches proven effective in human creativity but not previously
+    applied systematically to language model generation.
+  </p>
+</div>
 <!-- <h2 id="background">Background</h2>
 
 <p>

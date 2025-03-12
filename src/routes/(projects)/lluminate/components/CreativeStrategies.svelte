@@ -52,9 +52,9 @@
         <div class="theory-base">Based on: {strategy.theory_base}</div>
       </div>
 
-      <div class="card-description">
+      <!-- <div class="card-description">
         <p>{strategy.description}</p>
-      </div>
+      </div> -->
 
       <div class="card-operations">
         <h3>Process:</h3>
@@ -69,8 +69,8 @@
           {/each}
         </ol>
       </div>
-      <!-- 
-      <div class="card-example">
+
+      <!-- <div class="card-example">
         <h3>Example:</h3>
         <p>{strategy.example}</p>
       </div> -->
