@@ -30,4 +30,11 @@
     generated or are hard to articulate (such as shaders which are hard to describe
     in text). Potential future work could look to bridge this gap.
   </p>
+  <p>
+    <strong>Creative Reasoning Analysis:</strong> It would be illuminating to view
+    and analyze the model's reasoning on the different strategies to better understand
+    how it is interpreting the creative strategies. The API from OpenAI does not
+    enable viewing the reasoning output, but open source reasoning models are rapidly
+    improving.
+  </p>
 </div>

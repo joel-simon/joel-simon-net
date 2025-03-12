@@ -56,5 +56,13 @@
   </div>
 </div>
 
-<h2>Example Strategies</h2>
+<div class="text_body">
+  <h2>Creative Strategies</h2>
+  <p>
+    The classic prompt of "think step by step" famously improved the ability of
+    language models to solve logical problems. To test the ability to improve
+    creative thinking, the reasoning model was prompted to follow the steps from
+    one of the creative strategies before creating new artifacts.
+  </p>
+</div>
 <CreativeStrategies />

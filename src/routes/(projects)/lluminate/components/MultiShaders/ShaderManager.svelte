@@ -40,15 +40,19 @@
   }
 
   // Provide the manager API via context.
+
   const context: ShaderManagerContext = { register, unregister, updateChild };
   setContext("shaderManager", context);
 
   let frameHandle: { cancel: () => void };
 
   onMount(() => {
-    canvas.width = window.innerWidth * window.devicePixelRatio;
+    // Use document.documentElement.clientWidth instead of window.innerWidth
+    // clientWidth excludes the scrollbar width
+    canvas.width =
+      document.documentElement.clientWidth * window.devicePixelRatio;
     canvas.height = window.innerHeight * window.devicePixelRatio;
-    canvas.style.width = `${window.innerWidth}px`;
+    canvas.style.width = `${document.documentElement.clientWidth}px`;
     canvas.style.height = `${window.innerHeight}px`;
 
     // Create a shared REGL instance.
@@ -135,9 +139,10 @@
 
   function handleResize() {
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = window.innerWidth * dpr;
+    // Use document.documentElement.clientWidth here too
+    canvas.width = document.documentElement.clientWidth * dpr;
     canvas.height = window.innerHeight * dpr;
-    canvas.style.width = `${window.innerWidth}px`;
+    canvas.style.width = `${document.documentElement.clientWidth}px`;
     canvas.style.height = `${window.innerHeight}px`;
   }
 
@@ -156,7 +161,7 @@
 <!-- <p>renderedShaders: {renderedShaders}</p> -->
 <canvas
   bind:this={canvas}
-  class="absolute top-0 left-0 w-full h-full pointer-events-none"
+  class="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden"
   style="z-index: {zIndex}"
 ></canvas>
 <!-- The manager can wrap children. Their actual rendering happens via the shared canvas. -->

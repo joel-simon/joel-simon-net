@@ -53,7 +53,7 @@
   Prompt: <span class="italic">{prompt}</span>
 </h2>
 <p>Baseline</p>
-<div class="flex w-screen overflow-x-auto gap-2 px-2 pb-4">
+<div class="flex w-full overflow-x-auto gap-2 px-2 pb-4">
   {#each startGeneration as key}
     <!-- <ClickToModal let:isOpen classes="relative">
       {#if !isOpen}
@@ -70,11 +70,10 @@
       />
     </ClickToModal> -->
     <HTMLContainer
-      classes="w-[200px] h-[200px]"
       htmlSource={iframeUrl(key)}
       width="200px"
       height="200px"
-      scale={200 / 500}
+      scale={192 / 500}
     />
   {/each}
 </div>
@@ -85,7 +84,7 @@
     {:then gridData}
       <div class="flex w-full flex-col">
         <p>Evolved</p>
-        <div class="flex w-screen overflow-x-auto gap-2 px-2 pb-4">
+        <div class="flex w-full overflow-x-auto gap-2 px-2 pb-4">
           {#each randomKeyOrdering(gridData) as id}
             <HTMLContainer
               classes="w-[300px] h-[300px]"

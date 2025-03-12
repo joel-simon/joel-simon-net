@@ -20,13 +20,19 @@
     Large Language Models (LLMs) generate coherent text but tend to produce
     homogeneous outputs when prompted for creative content. To overcome this, I
     introduce Lluminate, an LLM based evolutionary algorithm that explores
-    diverse creations by combining evolutionary computation with creative
-    thinking strategies from psychology. The findings demonstrate that
-    integrating evolutionary pressure with formalized creative strategies
-    enables sustained open-ended exploration (illumination) of latent creative
-    spaces, offering new possibilities for assisted creative exploration and AI
-    system evaluation.
+    diverse creations by combining evolutionary methods with principled creative
+    thinking strategies. The findings demonstrate that integrating evolutionary
+    pressure with formalized creative strategies enables sustained open-ended
+    exploration (illumination) of latent creative spaces, offering new
+    possibilities for assisted creative exploration, countering homogenization,
+    and perhaps even enabling the discovery of new ideas.
   </p>
+  <!-- The findings
+  demonstrate that integrating evolutionary pressure with formalized creative
+  strategies enables sustained open-ended exploration (illumination) of latent
+  creative spaces, offering new possibilities for assisted creative
+  exploration and countering homogenization., and perhaps even the discovery
+  of new ideas -->
 
   <!-- 
   Large Language Models (LLMs) generate coherent text but tend to produce

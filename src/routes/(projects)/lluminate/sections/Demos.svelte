@@ -10,7 +10,7 @@
   import RenderWhenVisible from "$lib/components/RenderWhenVisible.svelte";
 </script>
 
-<div class="text_body">
+<div class="text_body w-[100vw] overflow-x-hidden">
   <ShaderManager>
     <div id="demos" />
     <ArtifactGrid
@@ -46,16 +46,18 @@
       represents what you could get by asking a chatbot such as ChatGPT to "make
       an interesting shader". The results are fairly homogeneous with a bias
       towards saturated colors and rotating spiral patterns. This is the classic
-      case of the language models defaulting towards average solutions. Through
-      Lluminate we can evolve a more diverse set of results including varied
+      case of the language models defaulting towards average solutions.
+      Lluminate can evolve a more diverse set of results including varied
       shapes, structures and colors.
     </p>
     <h2 class="w-full !text-center">Novelty analysis</h2>
     <p>
       The system explicitly searches for a set of novel solutions and works for
-      any type of text or image output. These are represented in a model like
-      CLIP's (Contrastive Language-Image Pretraining) latent space. We can
-      analyze the increase in novelty for the run that produced the above
+      any type of text or image output. These are represented in a semantic
+      space using CLIP (Contrastive Language-Image Pretraining), an AI model
+      that understands relationships between images and text. This allows us to
+      measure how different and innovative each solution is compared to others.
+      We can analyze the increase in novelty for the run that produced the above
       shaders.
     </p>
     <div class="flex flex-row gap-2 w-full justify-center h-fit my-2">
@@ -92,9 +94,6 @@
 </div>
 
 <div class="">
-  <!-- {#if selected === "clocks"} -->
-  <!-- <ArtifactGrid /> -->
-  <!-- <h2>Clocks</h2> -->
   <ClockGallery />
   <div class="text_body">
     <p class="!text-sm">
@@ -104,8 +103,7 @@
       exact radial format with minor color variation.
     </p>
   </div>
-  <!-- {:else if selected == "image-gen"} -->
-  <!-- <h2>Images</h2> -->
+
   <RenderWhenVisible>
     <ArtifactGrid
       artifactType="image-gen"
@@ -187,8 +185,4 @@
       </div>
     </div>
   </div>
-
-  <!-- {:else if selected == "genetic-algorithms"}
-      <p>TODO</p>
-    {/if} -->
 </div>
