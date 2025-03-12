@@ -18,17 +18,24 @@
     diversity.  -->
   <p>
     Large Language Models (LLMs) generate coherent text but tend to produce
-    homogeneous outputs when prompted for creative content. This work introduces
-    Lluminate, an evolutionary algorithm based on reasoning LLMs that combines
-    self-reflection and creative thinking strategies from psychology. The
-    algorithm systematically explores the creative boundaries of LLMs
-    (illuminates) across multiple domains, producing significantly more diverse
-    and novel outputs compared to direct prompting. My findings demonstrate that
-    integrating evolutionary pressure with formalized creative heuristics
-    enables sustained open-ended exploration of latent creative spaces, offering
-    new possibilities for assisted creative exploration and AI system
-    evaluation.
+    homogeneous outputs when prompted for creative content. To overcome this, I
+    introduce Lluminate, an LLM based evolutionary algorithm that explores
+    diverse creations by combining evolutionary computation with creative
+    thinking strategies from psychology. The findings demonstrate that
+    integrating evolutionary pressure with formalized creative strategies
+    enables sustained open-ended exploration (illumination) of latent creative
+    spaces, offering new possibilities for assisted creative exploration and AI
+    system evaluation.
   </p>
+
+  <!-- 
+  Large Language Models (LLMs) generate coherent text but tend to produce
+  homogeneous outputs when prompted for creative content. This work introduces
+  Lluminate, an evolutionary algorithm based on reasoning LLMs that aims to
+  explore teh full space (illumination).
+   algorithm systematically explores the
+  creative boundaries of LLMs (illuminates) across multiple domains, producing
+  significantly more diverse and novel outputs compared to direct prompting. -->
   <!-- <p>
     AI-generated content often feels predictable and homogeneous. For tasks like
     proofreading or summarizing this is sufficient, but limiting for creative

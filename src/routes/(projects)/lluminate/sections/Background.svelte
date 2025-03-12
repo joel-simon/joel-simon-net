@@ -23,13 +23,11 @@
   <p>
     Recent evolutionary computation has explored quality-diversity algorithms,
     seeking diverse high-performing solutions rather than a single optimum.
-    Novelty Search <Citation
-      name={["novelty-search", "abandoning-objectives"]}
-    /> rewards behavioral diversity, while MAP-Elites <Citation
-      name={["map-elites"]}
-    /> maintains an archive of diverse solutions along dimensions of interest. These
-    approaches have demonstrate how rewarding behavioral novelty rather than fixed
-    goals can drive ongoing innovation, mirroring biological evolution's diversity.
+    Novelty Search <Citation name={["abandoning-objectives"]} /> rewards behavioral
+    diversity, while MAP-Elites <Citation name={["map-elites"]} /> maintains an archive
+    of diverse solutions along dimensions of interest. These approaches have demonstrate
+    how rewarding behavioral novelty rather than fixed goals can drive ongoing innovation,
+    mirroring biological evolution's diversity.
   </p>
   <!-- locomotion, game design, and molecule discovery.  Approaches like Lehman and Stanley's novelty search <Citation
 name={["abandoning-objectives"]}
