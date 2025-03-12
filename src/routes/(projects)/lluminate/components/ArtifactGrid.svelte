@@ -79,8 +79,8 @@
   {#each startGeneration as key}
     <div
       class="grid-cell cursor-pointer"
-      class:!w-[36px]={artifactType == "shaders"}
-      class:!h-[36px]={artifactType == "shaders"}
+      class:md:!w-[36px]={artifactType == "shaders"}
+      class:md:!h-[36px]={artifactType == "shaders"}
       on:mouseover={() => (singleViewId = key)}
       on:click={() => {
         singleViewId = key;
@@ -89,8 +89,9 @@
     >
       {#if artifactType == "shaders"}
         {#await getShaderSource(key) then source}
+          <!-- <p>{source?.length}</p> -->
           <ShaderViewer
-            fragmentShader={source}
+            fragmentShader={source ?? ""}
             classes="w-full h-full aspect-square cursor-pointer"
           />
         {/await}
@@ -107,7 +108,7 @@
   class="shader-grid-container w-full px-2 flex flex-col-reverse md:flex-row-reverse gap-4 justify-center items-center mt-4"
 >
   {#if gridData && singleViewId}
-    <div class="flex w-[384px] h-[384px] m-4">
+    <div class="flex w-full h-[300px] md:w-[384px] md:h-[384px] m-4 relative">
       {#if artifactType === "website"}
         <iframe
           bind:this={iframeElement}
@@ -120,9 +121,9 @@
         <!-- <div class="w-[384px] h-[384px] drop-shadow"> -->
         {#await getShaderSource(singleViewId) then source}
           <ShaderViewer
-            fragmentShader={source}
-            classes="w-[full] h-[full] aspect-square
-               cursor-pointer"
+            fragmentShader={source ?? ""}
+            classes="w-full h-full aspect-square
+               cursor-pointer "
           />
         {/await}
         <!-- </div> -->
@@ -239,26 +240,26 @@
   /* Add responsive sizing for mobile */
   @media (max-width: 768px) {
     .generation-grid {
-      grid-template-columns: repeat(10, 36px);
-      grid-template-rows: repeat(2, 36px);
+      grid-template-columns: repeat(10, auto);
+      grid-template-rows: repeat(2, auto);
     }
 
     .grid-cell {
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
     }
   }
 
   /* For very small screens */
   @media (max-width: 480px) {
     .generation-grid {
-      grid-template-columns: repeat(10, 36px);
-      grid-template-rows: repeat(2, 36px);
+      grid-template-columns: repeat(10, auto);
+      grid-template-rows: repeat(2, auto);
     }
 
     .grid-cell {
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
     }
   }
 

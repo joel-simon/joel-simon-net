@@ -150,37 +150,37 @@
       60 generation each.
     </p>
     <div
-      class="flex flex-row gap-2 items-center justify-center w-full relative"
+      class="flex flex-row gap-2 items-center md:justify-center w-full relative overflow-x-auto"
     >
-      <div class="flex flex-col w-fit">
+      <div class="flex flex-col w-fit shrink-0">
         <ClickToModal let:isOpen>
           <p class="label">Shaders</p>
           <img
             src="/lluminate/long-run/novelty_plot.png"
             alt="novelty plot"
-            class="h-full w-auto object-contain"
+            class="h-full w-auto object-contain min-w-[200px]"
             class:h-[200px]={!isOpen}
           />
         </ClickToModal>
       </div>
-      <div class="flex flex-col w-fit">
+      <div class="flex flex-col w-fit shrink-0">
         <ClickToModal let:isOpen>
           <p class="label">p5js Clocks</p>
           <img
             src="/lluminate/website_20250304_171531/novelty_plot.png"
             alt="clock novelty plot"
-            class="h-full w-auto object-contain h-[200px]"
+            class="h-full w-auto object-contain h-[200px] min-w-[200px]"
             class:h-[200px]={!isOpen}
           />
         </ClickToModal>
       </div>
-      <div class="flex flex-col w-fit">
+      <div class="flex flex-col w-fit shrink-0">
         <ClickToModal let:isOpen>
           <p class="label">Image Prompts</p>
           <img
             src="/lluminate/imagegen_20250303_220737/novelty_plot.png"
             alt="novelty plot"
-            class="h-full w-auto object-contain h-[200px]"
+            class="h-full w-auto object-contain h-[200px] min-w-[200px]"
             class:h-[200px]={!isOpen}
           />
         </ClickToModal>

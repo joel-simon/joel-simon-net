@@ -55,7 +55,7 @@
 <p>Baseline</p>
 <div class="flex w-screen overflow-x-auto gap-2 px-2 pb-4">
   {#each startGeneration as key}
-    <ClickToModal let:isOpen classes="relative">
+    <!-- <ClickToModal let:isOpen classes="relative">
       {#if !isOpen}
         <div
           class="w-[256px] h-[256px] absolute top-0 left-0 z-10 pointer-events-auto cursor-pointer"
@@ -68,7 +68,14 @@
         height={isOpen ? "512px" : "256px"}
         scale={isOpen ? 1 : 0.5}
       />
-    </ClickToModal>
+    </ClickToModal> -->
+    <HTMLContainer
+      classes="w-[200px] h-[200px]"
+      htmlSource={iframeUrl(key)}
+      width="200px"
+      height="200px"
+      scale={200 / 500}
+    />
   {/each}
 </div>
 <div class="flex flex-col w-full">
@@ -81,10 +88,11 @@
         <div class="flex w-screen overflow-x-auto gap-2 px-2 pb-4">
           {#each randomKeyOrdering(gridData) as id}
             <HTMLContainer
+              classes="w-[300px] h-[300px]"
               htmlSource={iframeUrl(id)}
-              width="256px"
-              height="256px"
-              scale={0.5}
+              width="300px"
+              height="300px"
+              scale={300 / 512}
             />
           {/each}
         </div>

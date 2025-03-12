@@ -50,7 +50,7 @@
       src="/lluminate/diagram5.png"
       width="1410"
       height="475"
-      class="w-10/12"
+      class="md:w-10/12"
       alt="lluminate algorithm diagram"
     />
   </div>
