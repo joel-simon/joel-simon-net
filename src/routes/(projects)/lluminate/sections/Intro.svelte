@@ -18,7 +18,7 @@
     diversity.  -->
   <p>
     Large Language Models (LLMs) generate coherent text but tend to produce
-    homogeneous outputs when prompted for creative content. I introduce
+    homogeneous outputs when prompted for creative content. This work introduces
     Lluminate, an evolutionary algorithm based on reasoning LLMs that combines
     self-reflection and creative thinking strategies from psychology. The
     algorithm systematically explores the creative boundaries of LLMs
