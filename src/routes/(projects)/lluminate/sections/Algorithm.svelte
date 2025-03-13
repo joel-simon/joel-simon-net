@@ -22,11 +22,6 @@
   <!-- For text domains the text embedding can be used. -->
   <ol class="!text-left mt-2">
     <li>
-      <span class="font-bold">Embedding and Novelty Calculation:</span> Measure how
-      different each artifact is from others using embeddings (average distance to
-      k nearest neighbors)
-    </li>
-    <li>
       <span class="font-bold">Summary Generation:</span> Create a summary of the
       current population to provide context for future generations
     </li>
@@ -38,6 +33,11 @@
       <span class="font-bold">Evolutionary Operators:</span> Create new artifacts
       by modifying or combining existing ones via prompts using the current summary
       and strategies.
+    </li>
+    <li>
+      <span class="font-bold">Embedding and Novelty Calculation:</span> Measure how
+      different each artifact is from others using embeddings (average distance to
+      k nearest neighbors)
     </li>
     <li>
       <span class="font-bold">Population Management:</span> Select the most diverse

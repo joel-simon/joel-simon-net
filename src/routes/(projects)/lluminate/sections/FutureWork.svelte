@@ -10,15 +10,15 @@
   </p>
   <p>
     <strong>Quality and Constraints:</strong>
-    This algorithm fails to produce valid outputs when any constraints are innately
-    satisfied by the prompt, but does not have a way to repair infeasible solutions
-    or any kind of minimal criteria. Potential improvements could be to apply a minimal
-    criteria to the reproducing population or use the multimodal qualities of the
-    models to "see" the outputs via image inputs. At the time of writing this, image
-    capacities were not yet available in the o3-api, but this will likely change
-    soon. Potentially - if costs lower - the entire population could be provided
-    together as images allowing pressure to be applied from the phenotypes (images)
-    instead of the summaries of genomes (text).
+    This algorithm can fail to produce valid outputs when the constraints are not
+    innately satisfied by the LLM. Currently, it lacks mechanisms to repair infeasible
+    solutions or enforce minimal quality criteria. Potential improvements include
+    applying selection criteria to the reproducing population or leveraging the multimodal
+    capabilities of models to "see" outputs via image inputs. At the time of writing,
+    image capabilities were not yet available in the o3-api, though this will likely
+    change soon. In the future, if costs decrease, the entire population could be
+    presented as images, allowing selection pressure to be applied based on phenotypes
+    (visual outputs) rather than textual summaries of genomes.
   </p>
   <p>
     <strong>Concept / Implementation barrier:</strong>
