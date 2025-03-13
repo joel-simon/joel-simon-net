@@ -104,7 +104,7 @@
     </p>
   </div>
 
-  <RenderWhenVisible>
+  <!-- <RenderWhenVisible>
     <ArtifactGrid
       artifactType="image-gen"
       prompt="a full glass of wine"
@@ -132,7 +132,7 @@
         "9e1a9b68-5843-4cb6-9506-88ebafe62366",
       ]}
     />
-  </RenderWhenVisible>
+  </RenderWhenVisible> -->
   <RenderWhenVisible>
     <ArtifactGrid
       artifactType="image-gen"
