@@ -10,7 +10,7 @@
   import RenderWhenVisible from "$lib/components/RenderWhenVisible.svelte";
 </script>
 
-<div class="text_body w-[100vw] overflow-x-hidden">
+<div class="text_body overflow-x-hidden">
   <ShaderManager>
     <div id="demos" />
     <ArtifactGrid
@@ -77,18 +77,18 @@
       </div>
     </div>
     <p class="!text-sm">
-      This figure illustrates the evolutionary progression of our system across
-      60 generations, viewed through complementary perspectives. The novelty
-      metric (left-blue), measuring average cosine distance to k=3 nearest
-      neighbors, shows two distinct phases: rapid initial exploration
-      (generations 0-15), steady incremental growth (15-60). Genome length
-      (left-red) - which is the length of the code in characters - follows a
-      similar trajectory. The UMAP visualization (right) confirms this
-      progression spatially, showing early generations (purple) concentrated in
-      the lower left, with a gradual expansion toward upper and rightward
-      regions and rightward regions in later generations (yellow). Together,
-      these patterns demonstrate sustained exploration of latent space with
-      intriguing dynamics between novelty discovery and genomic complexity.
+      This figure illustrates the evolutionary progression across 60
+      generations, viewed through complementary perspectives. The novelty metric
+      (left-blue), measuring average cosine distance to k=3 nearest neighbors,
+      shows two distinct phases: rapid initial exploration (generations 0-15),
+      steady incremental growth (15-60). Genome length (left-red) - which is the
+      length of the code in characters - follows a similar trajectory. The UMAP
+      visualization (right) confirms this progression spatially, showing early
+      generations (purple) concentrated in the lower left, with a gradual
+      expansion toward upper and rightward regions and rightward regions in
+      later generations (yellow). Together, these patterns demonstrate sustained
+      exploration of latent space with intriguing dynamics between novelty
+      discovery and genomic complexity.
     </p>
   </ShaderManager>
 </div>
@@ -104,6 +104,35 @@
     </p>
   </div>
 
+  <RenderWhenVisible>
+    <ArtifactGrid
+      artifactType="image-gen"
+      prompt="a full glass of wine"
+      runId="image_gen_20250312_143222"
+      startGeneration={[
+        "a3aaccf7-36c9-4de2-9d4f-03abab4bdea1",
+        "7a66996a-ca98-4988-95e5-802aee3de163",
+        "3363f24b-ecf1-4e2b-abd0-9cc3aa89af8a",
+        "5f661d0f-2b48-44c6-98ae-554960410447",
+        "a1760403-38d0-4999-8ce0-ddd44b24ea04",
+        "47844208-2cd5-4f60-89e0-100188afce21",
+        "e640e91b-3921-4d8b-8e8e-cba2d62cead7",
+        "d98b4a58-806d-4be9-99da-f6a4d0aa1c0f",
+        "dbf866c4-42fc-461f-9a42-b6d81a816e95",
+        "88d09f63-c615-49f1-bfc8-a3994d6012b5",
+        "d029a783-777b-44be-8851-7a5554dcf12f",
+        "8fd640eb-2bc9-43a7-8ddf-d69753e6d7a5",
+        "c0680555-0875-4b37-a1d7-780626d98c5c",
+        "c01a46f1-5e10-423c-975b-3862539f3e3d",
+        "f4f52ec7-c2af-4649-85f6-e455971b4174",
+        "8c5c2246-361a-49cb-b5fe-b7c6ec41d4cc",
+        "b0667824-3992-486e-8d14-dfccc3819107",
+        "f86b5e57-0661-4424-8b09-852ec98dcb95",
+        "a0391a4c-8226-4c63-8458-f27a6a4ad481",
+        "9e1a9b68-5843-4cb6-9506-88ebafe62366",
+      ]}
+    />
+  </RenderWhenVisible>
   <RenderWhenVisible>
     <ArtifactGrid
       artifactType="image-gen"
