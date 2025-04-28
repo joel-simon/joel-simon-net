@@ -109,8 +109,8 @@ to prompt engineering. -->
     Margaret Boden's conceptual spaces theory <Citation name={["boden"]} /> and her
     foundational work on creativity and artificial intelligence <Citation
       name={["creativity-and-artificial-intelligence"]}
-    />, we implement strategies pushing language models beyond conventional
-    outputs. We also incorporate Brian Eno's Oblique Strategies <Citation
+    />, I implement strategies pushing language models beyond conventional
+    outputs. I also incorporate Brian Eno's Oblique Strategies <Citation
       name={["oblique-strategies"]}
     />, Edward de Bono's lateral thinking <Citation
       name={["lateral-thinking"]}

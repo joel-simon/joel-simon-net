@@ -85,10 +85,10 @@
       length of the code in characters - follows a similar trajectory. The UMAP
       visualization (right) confirms this progression spatially, showing early
       generations (purple) concentrated in the lower left, with a gradual
-      expansion toward upper and rightward regions and rightward regions in
-      later generations (yellow). Together, these patterns demonstrate sustained
-      exploration of latent space with intriguing dynamics between novelty
-      discovery and genomic complexity.
+      expansion toward upper and rightward regions in later generations
+      (yellow). Together, these patterns demonstrate sustained exploration of
+      latent space with intriguing dynamics between novelty discovery and
+      genomic complexity.
     </p>
   </ShaderManager>
 </div>

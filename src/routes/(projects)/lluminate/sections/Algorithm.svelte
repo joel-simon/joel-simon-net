@@ -14,7 +14,7 @@
     >Source Code</a
   >
   <p>
-    The algorithm is combination of evolutionary computation principles with
+    The algorithm is a combination of evolutionary computation principles with
     large language models to create an open-ended discovery system. All
     mutations happen on the genetic code and are rendered as a phenotype for
     embedding.

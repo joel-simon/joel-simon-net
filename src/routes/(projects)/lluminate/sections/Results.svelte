@@ -26,7 +26,7 @@
   <h2 id="results">Results</h2>
   <p>
     Test were conducted on the shader and clock (website with p5.js library)
-    domains. Each configuration was run with the 30-mini model from OpenAI. It
+    domains. Each configuration was run with the 3o-mini model from OpenAI. It
     is worth noting that small change in cosine distance can correspond to large
     perceptual changes. Two prompt-modes for evolution were tested, variation
     means a random artifact is mutated while "creation" means a wholly new
@@ -50,7 +50,7 @@
   </RenderWhenVisible>
   <p class="!text-sm">
     Comparing final population novelty and genome length (source code string
-    length) of each configuration. Each was run with the 30-mini model from
+    length) of each configuration. Each was run with the 3o-mini model from
     OpenAI with 30 generation and population size of 20 and 10 new children per
     generation. All tests were repeated three times. Novelty is the average
     distance to 3 nearest neighbors for each member of final population. Above
