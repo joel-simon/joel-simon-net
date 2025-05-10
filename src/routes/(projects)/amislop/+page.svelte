@@ -1,182 +1,40 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import {
-    env,
-    AutoTokenizer,
-    AutoModelForCausalLM,
-    type PreTrainedTokenizer,
-    type PreTrainedModel,
-  } from "@xenova/transformers";
-  import * as tf from "@tensorflow/tfjs";
-  import { getNextTokenProbabilities } from "./custom";
-  // Disable remote models, use browser cache
-  env.allowLocalModels = false;
-  env.useBrowserCache = true;
+    SlopAnalyzer,
+    type AnalysisResults,
+    type AnalysisResultItem,
+  } from "./SlopClassifier";
 
   // --- Component State ---
   let inputText = "The quick brown fox jumps over the lazy dog.";
-  let selectedModel = "distilgpt2"; // 'distilgpt2' or 'gpt2'
+  let selectedModel = "gpt2"; // 'distilgpt2' or 'gpt2'
   let loading = false;
   let progress = 0;
   let statusText = "Ready to analyze text.";
   let analysisResults: AnalysisResults | null = null;
   let errorMessage: string | null = null;
 
-  // Track which model is currently loaded
-  let currentModelName = "";
-
-  // References to tokenizer & model
-  let tokenizer: PreTrainedTokenizer | null = null;
-  let model: PreTrainedModel | null = null;
-
-  // --- Types ---
-  interface AnalysisResultItem {
-    token: string;
-    tokenId: number;
-    probability: number;
-    logProbability: number;
-  }
-
-  interface AnalysisResults {
-    tokens: string[];
-    results: AnalysisResultItem[];
-    averageLogProb: number;
-    perplexity: number;
-  }
+  // Reference to the analyzer
+  let slopAnalyzer: SlopAnalyzer;
 
   // Update loading bar & status
-  function updateProgress(p: number, text: string) {
+  function updateProgressExternal(p: number, text: string) {
     progress = p;
     statusText = text;
   }
 
-  // Load tokenizer & model for a given name
-  async function loadModel(modelName: string) {
-    errorMessage = null;
-    try {
-      updateProgress(0.1, `Loading tokenizer...`);
-      tokenizer = await AutoTokenizer.from_pretrained(`Xenova/${modelName}`);
-      updateProgress(0.4, `Loading model weights...`);
-      model = await AutoModelForCausalLM.from_pretrained(`Xenova/${modelName}`);
-      currentModelName = modelName;
-      updateProgress(1, "Model loaded successfully!");
-    } catch (err: any) {
-      console.error("Error loading model:", err);
-      errorMessage = `Error loading model: ${err.message}`;
-      statusText = "Error loading model.";
-      tokenizer = null;
-      model = null;
-      throw err;
-    }
+  function setErrorMessageExternal(message: string | null) {
+    errorMessage = message;
   }
-  /**
-   * Gets probabilities for the next token in a sequence.
-   * @param {import('./generation/parameters.js').GenerationFunctionParameters} options
-   * @returns {Promise<Object>} The output containing next token probabilities
-   */
 
-  // Compute per-token probabilities & log-probs
-  async function calculateTokenProbabilities(
-    text: string
-  ): Promise<AnalysisResults> {
-    if (!tokenizer || !model) {
-      throw new Error("Model or tokenizer not loaded.");
-    }
-    errorMessage = null; // Clear previous errors
-    const tensorsToDispose: tf.Tensor[] = []; // Keep for tf.js specific tensors if any future use, though not used in this flow now
-
-    try {
-      updateProgress(0.1, "Tokenizing text...");
-      // Tokenize the entire input text once
-      const { input_ids, attention_mask } = await tokenizer(text, {
-        add_special_tokens: false, // Usually false for this kind of analysis
-        padding: false, // No padding needed for the full sequence analysis here
-        truncation: true, // Truncate if too long for the model
-        // return_tensors: "pt" // Not strictly needed here as we operate on IDs directly
-      });
-
-      const tokenIds = Array.from(input_ids.data).map(Number); // Convert BigInt64Array to number[]
-
-      if (!tokenIds.length) {
-        throw new Error("No tokens returned by tokenizer.");
-      }
-
-      const tokens = tokenIds.map((id) =>
-        tokenizer!.decode([id], { skip_special_tokens: true })
-      );
-
-      updateProgress(0.2, "Computing token-level stats...");
-      const results: AnalysisResultItem[] = [];
-
-      // We can only calculate probability for tokens from the second one onwards,
-      // as the first token has no preceding context in this simple setup.
-      for (let i = 0; i < tokenIds.length - 1; i++) {
-        const prefixTokenIds = tokenIds.slice(0, i + 1);
-        const targetTokenId = tokenIds[i + 1];
-        const targetTokenString = tokens[i + 1];
-
-        // Decode prefix token IDs to string for the custom function
-        // We need to be careful here: tokenizer.decode might add/remove spaces differently
-        // than how tokens were originally joined. For P(target | prefix),
-        // the prefix should ideally be what the model saw to produce that target.
-        // Let's decode the prefix and pass it. custom.ts will re-tokenize this prefix.
-        const prefixText = tokenizer.decode(prefixTokenIds, {
-          skip_special_tokens: true,
-        });
-
-        updateProgress(
-          0.2 + ((i + 1) / (tokenIds.length - 1)) * 0.7,
-          `Analyzing token ${i + 2}/${tokenIds.length}: '${targetTokenString}'`
-        );
-
-        const probability = await getNextTokenProbabilities(
-          model,
-          tokenizer,
-          prefixText,
-          targetTokenString
-        );
-
-        const logProbability =
-          probability > 0 ? Math.log(probability) : -Infinity;
-
-        results.push({
-          token: targetTokenString,
-          tokenId: targetTokenId,
-          probability: probability,
-          logProbability: logProbability,
-        });
-      }
-
-      const logs = results.map((r) => r.logProbability).filter(Number.isFinite);
-      const avgLog = logs.length
-        ? logs.reduce((a, b) => a + b, 0) / logs.length
-        : -Infinity;
-
-      updateProgress(1, "Done.");
-      return {
-        tokens: tokens, // Full list of token strings from the input
-        results, // Results for tokens 1 to N (predictability of token k given 0..k-1)
-        averageLogProb: avgLog,
-        perplexity: isFinite(avgLog) ? Math.exp(-avgLog) : Infinity,
-      };
-    } catch (err: any) {
-      console.error("Error in calculateTokenProbabilities:", err);
-      errorMessage =
-        err.message || "An unexpected error occurred during analysis.";
-      statusText = "Error during analysis.";
-      // Return a dummy/error result to satisfy the Promise type if needed, or rethrow
-      // For now, let's ensure it always returns an AnalysisResults object or throws.
-      // If an error is caught, it should be handled by the caller, but we need to satisfy the type.
-      return {
-        tokens: [],
-        results: [],
-        averageLogProb: -Infinity,
-        perplexity: Infinity,
-      };
-    } finally {
-      tf.dispose(tensorsToDispose); // Dispose any tf.js tensors if they were used
-    }
-  }
+  onMount(() => {
+    // Initialize the SlopAnalyzer with callback functions
+    slopAnalyzer = new SlopAnalyzer(
+      updateProgressExternal,
+      setErrorMessageExternal
+    );
+  });
 
   // Pick a color based on how "expected" a log-probability is
   function getProbabilityColor(logProb: number): string {
@@ -201,25 +59,49 @@
       errorMessage = "Please enter some text.";
       return;
     }
+    if (!slopAnalyzer) {
+      errorMessage = "Analyzer not initialized. Please refresh.";
+      return;
+    }
 
     loading = true;
     analysisResults = null;
-    errorMessage = null;
-    updateProgress(0, "Starting…");
+    // errorMessage = null; // Error message will be set by the analyzer via callback
+    updateProgressExternal(
+      0,
+      "Starting analysis with " + selectedModel + "..."
+    );
 
     try {
-      // Reload model if selection changed
-      if (!model || currentModelName !== selectedModel) {
-        await loadModel(selectedModel);
-      }
-      updateProgress(0.6, "Computing token-level stats…");
-      analysisResults = await calculateTokenProbabilities(inputText);
-      updateProgress(1, "Done.");
+      analysisResults = await slopAnalyzer.analyzeText(
+        inputText,
+        selectedModel
+      );
+      // Progress and final status ("Analysis complete." or error status) are set by slopAnalyzer via callbacks.
+      // If analyzeText throws, it will be caught below. If it returns an error-like AnalysisResults,
+      // the UI will display that (e.g., perplexity Infinity).
     } catch (err: any) {
-      console.error(err);
-      if (!errorMessage) errorMessage = err.message;
+      console.error("Error during analysis:", err);
+      // The slopAnalyzer's analyzeText method is designed to set the error message
+      // via callback and return a default/error AnalysisResults object.
+      // So, direct setting of errorMessage here might be redundant if slopAnalyzer always handles it.
+      if (!errorMessage) {
+        // Fallback if analyzer didn't set one (should not happen with current design)
+        errorMessage = err.message || "An unexpected error occurred.";
+      }
+      statusText = "Analysis failed."; // General status update
     } finally {
       loading = false;
+      // If analysisResults is still null here due to a deeper error not caught gracefully by analyzer,
+      // ensure it's at least an empty structure to prevent UI errors.
+      if (!analysisResults) {
+        analysisResults = {
+          tokens: [],
+          results: [],
+          averageLogProb: -Infinity,
+          perplexity: Infinity,
+        };
+      }
     }
   }
 
@@ -234,7 +116,7 @@
 
 <div class="max-w-3xl mx-auto p-6 md:p-8 my-8 bg-white rounded-lg shadow-lg">
   <h1 class="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-6">
-    Text Averageness Analyzer
+    Are you Slop?
   </h1>
   <p class="text-gray-600 mb-6 text-center">
     Analyze how "average" or predictable your text is using a language model.
