@@ -35,13 +35,18 @@ export class SlopAnalyzer {
 
   private updateProgressCallback: (p: number, text: string) => void;
   private setErrorMessageCallback: (message: string | null) => void;
+  private onTokenProcessedCallback?: (
+    item: AnalysisResultItem | string
+  ) => void; // Can be a single token string (first token) or an item
 
   constructor(
     updateProgressCallback: (p: number, text: string) => void,
-    setErrorMessageCallback: (message: string | null) => void
+    setErrorMessageCallback: (message: string | null) => void,
+    onTokenProcessedCallback?: (item: AnalysisResultItem | string) => void
   ) {
     this.updateProgressCallback = updateProgressCallback;
     this.setErrorMessageCallback = setErrorMessageCallback;
+    this.onTokenProcessedCallback = onTokenProcessedCallback;
   }
 
   private async _loadModel(modelName: string): Promise<void> {
@@ -96,11 +101,13 @@ export class SlopAnalyzer {
       }
 
       this.updateProgressCallback(0.1, "Tokenizing text...");
+      console.time("Tokenizing text");
       const { input_ids } = await this.tokenizer(text, {
         add_special_tokens: false,
         padding: false,
         truncation: true,
       });
+      console.timeEnd("Tokenizing text");
 
       const tokenIds = Array.from(input_ids.data).map(Number);
 
@@ -117,6 +124,11 @@ export class SlopAnalyzer {
       const tokens = tokenIds.map((id) =>
         this.tokenizer!.decode([id], { skip_special_tokens: true })
       );
+
+      // Immediately provide the first token if the callback exists
+      if (this.onTokenProcessedCallback && tokens.length > 0) {
+        this.onTokenProcessedCallback(tokens[0]);
+      }
 
       this.updateProgressCallback(0.2, "Computing token-level stats...");
       const results: AnalysisResultItem[] = [];
@@ -146,12 +158,14 @@ export class SlopAnalyzer {
           `Analyzing token ${i + 2}/${tokenIds.length}: '${targetTokenString}'`
         );
 
+        console.time("getNextTokenProbabilities");
         const probability = await getNextTokenProbabilities(
           this.model,
           this.tokenizer,
           prefixText,
           targetTokenString
         );
+        console.timeEnd("getNextTokenProbabilities");
 
         const logProbability =
           probability > 0 ? Math.log(probability) : -Infinity;
@@ -162,6 +176,14 @@ export class SlopAnalyzer {
           probability: probability,
           logProbability: logProbability,
         });
+
+        // Provide the processed item if the callback exists
+        if (this.onTokenProcessedCallback) {
+          this.onTokenProcessedCallback(results[results.length - 1]);
+        }
+
+        // Yield to the event loop to allow UI updates
+        await new Promise((resolve) => setTimeout(resolve, 0));
       }
 
       const logs = results.map((r) => r.logProbability).filter(Number.isFinite);

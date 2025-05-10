@@ -5,15 +5,21 @@
     type AnalysisResults,
     type AnalysisResultItem,
   } from "./SlopClassifier";
+  import TokenTableAnalysis from "./TokenTableAnalysis.svelte";
+  import ScaledTextView from "./ScaledTextView.svelte";
 
   // --- Component State ---
   let inputText = "The quick brown fox jumps over the lazy dog.";
-  let selectedModel = "gpt2"; // 'distilgpt2' or 'gpt2'
+  let selectedModel = "distilgpt2"; // 'distilgpt2' or 'gpt2'
   let loading = false;
   let progress = 0;
   let statusText = "Ready to analyze text.";
   let analysisResults: AnalysisResults | null = null;
   let errorMessage: string | null = null;
+
+  // For progressive updates to ScaledTextView
+  let progressiveTokensArray: string[] = [];
+  let progressiveResultsArray: AnalysisResultItem[] = [];
 
   // Reference to the analyzer
   let slopAnalyzer: SlopAnalyzer;
@@ -28,11 +34,32 @@
     errorMessage = message;
   }
 
+  // Callback for progressively processed tokens/results
+  function onTokenProcessedExternal(item: AnalysisResultItem | string) {
+    if (typeof item === "string") {
+      // This is the first token
+      progressiveTokensArray = [item];
+      progressiveResultsArray = []; // Reset results when a new first token comes in
+    } else {
+      // This is an AnalysisResultItem for subsequent tokens
+      // Ensure the first token is in progressiveTokensArray if not already set
+      if (
+        progressiveTokensArray.length === 0 &&
+        analysisResults &&
+        analysisResults.tokens.length > 0
+      ) {
+        progressiveTokensArray = [analysisResults.tokens[0]];
+      }
+      progressiveResultsArray = [...progressiveResultsArray, item];
+    }
+  }
+
   onMount(() => {
     // Initialize the SlopAnalyzer with callback functions
     slopAnalyzer = new SlopAnalyzer(
       updateProgressExternal,
-      setErrorMessageExternal
+      setErrorMessageExternal,
+      onTokenProcessedExternal // Add the new callback
     );
   });
 
@@ -66,6 +93,8 @@
 
     loading = true;
     analysisResults = null;
+    progressiveTokensArray = []; // Clear previous progressive results
+    progressiveResultsArray = []; // Clear previous progressive results
     // errorMessage = null; // Error message will be set by the analyzer via callback
     updateProgressExternal(
       0,
@@ -107,6 +136,27 @@
 
   // Make spaces visible
   const formatToken = (tok: string) => tok.replace(/ /g, "␣");
+
+  function getProbabilitySize(logProb: number): string {
+    const minSizeEm = 0.7; // For very predictable tokens
+    const maxSizeEm = 2.2; // For very unpredictable tokens
+
+    if (!isFinite(logProb)) {
+      // Typically -Infinity for highly unexpected tokens
+      return `${maxSizeEm.toFixed(2)}em`;
+    }
+
+    // Normalize logProb: (logProb + 15) / 15.
+    // norm = 0 (e.g., logProb <= -15) is "unexpected"
+    // norm = 1 (e.g., logProb >= 0) is "very expected"
+    const norm = Math.max(0, Math.min(1, (logProb + 15) / 15));
+
+    // Inverse relationship: lower norm (more unexpected) -> larger size
+    // If norm = 0 (unexpected), size = maxSizeEm.
+    // If norm = 1 (expected), size = minSizeEm.
+    const size = maxSizeEm - norm * (maxSizeEm - minSizeEm);
+    return `${size.toFixed(2)}em`;
+  }
 </script>
 
 <svelte:head>
@@ -220,110 +270,34 @@
 
   <!-- Results Section -->
   {#if analysisResults && !loading}
-    <div class="mt-8">
-      <!-- Summary -->
-      <div class="bg-blue-50 p-4 rounded-md mb-6 border border-blue-200">
-        <h3 class="text-lg font-semibold text-gray-800 mb-2">
-          Analysis Summary
-        </h3>
-        <p class="text-gray-700">
-          Overall Perplexity Score:
-          <strong class="text-blue-700">
-            {isFinite(analysisResults.perplexity)
-              ? analysisResults.perplexity.toFixed(2)
-              : "Infinity"}
-          </strong>
-        </p>
-        <p class="text-sm text-gray-600 mt-1">
-          (Lower perplexity indicates more predictable/average text based on the
-          model.)
-        </p>
-      </div>
-
-      <!-- Token Analysis -->
-      <div>
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">
-          Token-by-Token Analysis
-        </h3>
-
-        <!-- Legend -->
-        <div class="flex justify-between mb-3 text-xs text-gray-600 px-1">
-          <div class="flex items-center">
-            <span
-              class="w-4 h-2.5 rounded-sm mr-1.5"
-              style="background-color: #ff6b6b;"
-            ></span> Unexpected
-          </div>
-          <div class="flex items-center">
-            <span
-              class="w-4 h-2.5 rounded-sm mr-1.5"
-              style="background-color: #ffe66d;"
-            ></span> Average
-          </div>
-          <div class="flex items-center">
-            <span
-              class="w-4 h-2.5 rounded-sm mr-1.5"
-              style="background-color: #4ecdc4;"
-            ></span> Expected
-          </div>
-        </div>
-
-        <!-- Token Grid -->
-        <div class="space-y-1">
-          <!-- Header -->
-          <div
-            class="grid grid-cols-[minmax(100px,_auto)_1fr_auto] gap-x-3 items-center text-sm font-medium text-gray-500 px-1 pb-1 border-b border-gray-200"
-          >
-            <div>Token</div>
-            <div>Predictability</div>
-            <div class="text-right">LogProb</div>
-          </div>
-          <!-- Data Rows -->
-          {#each analysisResults.results as result, i (result.tokenId + "-" + i)}
-            {@const tokenText = formatToken(result.token)}
-            {@const logProb = result.logProbability}
-            {@const color = getProbabilityColor(logProb)}
-            {@const normalizedProb = isFinite(logProb)
-              ? Math.max(0, Math.min(1, (logProb + 15) / 15))
-              : 0}
-
-            <div
-              class="grid grid-cols-[minmax(100px,_auto)_1fr_auto] gap-x-3 items-center text-sm py-1 px-1 hover:bg-gray-50 rounded"
-            >
-              <!-- Token Text -->
-              <div
-                class="font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-800 truncate"
-                title={tokenText}
-              >
-                {tokenText}
-              </div>
-              <!-- Probability Bar -->
-              <div
-                class="h-5 bg-gray-200 rounded relative overflow-hidden my-0.5"
-              >
-                <div
-                  class="absolute top-0 left-0 h-full rounded"
-                  style="width: {normalizedProb *
-                    100}%; background-color: {color};"
-                  title={`LogProb: ${
-                    isFinite(logProb) ? logProb.toFixed(2) : "N/A"
-                  }`}
-                ></div>
-              </div>
-              <!-- Log Probability Value -->
-              <div class="text-right text-gray-700 font-mono text-xs">
-                {isFinite(logProb) ? logProb.toFixed(2) : "-Inf"}
-              </div>
-            </div>
-          {/each}
-        </div>
-        {#if analysisResults.tokens.length > 0 && analysisResults.results.length === 0}
-          <p class="text-sm text-gray-500 mt-4 px-1">
-            Only one token was provided. Cannot calculate predictability for the
-            first token.
-          </p>
-        {/if}
-      </div>
+    <!-- Summary -->
+    <div class="bg-blue-50 p-4 rounded-md mb-6 border border-blue-200 mt-8">
+      <h3 class="text-lg font-semibold text-gray-800 mb-2">Analysis Summary</h3>
+      <p class="text-gray-700">
+        Overall Perplexity Score:
+        <strong class="text-blue-700">
+          {isFinite(analysisResults.perplexity)
+            ? analysisResults.perplexity.toFixed(2)
+            : "Infinity"}
+        </strong>
+      </p>
+      <p class="text-sm text-gray-600 mt-1">
+        (Lower perplexity indicates more predictable/average text based on the
+        model.)
+      </p>
     </div>
+
+    <!-- <TokenTableAnalysis
+      results={analysisResults.results} 
+      tokens={analysisResults.tokens}
+      {formatToken} 
+      {getProbabilityColor} 
+    /> -->
+    <ScaledTextView
+      tokens={progressiveTokensArray}
+      results={progressiveResultsArray}
+      {getProbabilityColor}
+      {getProbabilitySize}
+    />
   {/if}
 </div>

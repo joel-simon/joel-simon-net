@@ -125,7 +125,9 @@ export async function getNextTokenProbabilities(
   }
 
   // Run model forward pass
+  console.time("model.forward");
   const output = await model.forward(model_inputs);
+  console.timeEnd("model.forward");
 
   // Get logits for the last token prediction (shape [batch_size, 1, vocab_size])
   // Since prefixText is a single string, batch_size is 1.
