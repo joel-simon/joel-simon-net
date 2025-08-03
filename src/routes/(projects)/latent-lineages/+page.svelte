@@ -2,10 +2,10 @@
   import ImageGallery from "$lib/components/ImageGallery.svelte";
 
   const urls = [
-    "/e5d34030a7dd0ae2a2b0956edf7d_4096_neato_layout.jpeg",
-    "/0de234950ed25bbdea8085f7e650_4096_sfdp_layout.jpeg",
-    "/40cef9bdd29d3384fa5f630945ba_1024_sfdp_layout.jpeg",
-    "/2ed186e54b66618a7167_4096_sfdp_layout_original.jpeg",
+    "e5d34030a7dd0ae2a2b0956edf7d_4096_neato_layout.jpeg",
+    "0de234950ed25bbdea8085f7e650_4096_sfdp_layout.jpeg",
+    "40cef9bdd29d3384fa5f630945ba_1024_sfdp_layout.jpeg",
+    "2ed186e54b66618a7167_4096_sfdp_layout_original.jpeg",
   ].map((url) => `/imgs/latent-lineages/${url}`);
 </script>
 
