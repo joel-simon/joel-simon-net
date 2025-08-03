@@ -24,6 +24,17 @@ export const projects: Project[] = [
     path: "/about",
   },
   {
+    name: "Latent Lineages",
+    path: "latent-lineages",
+    labels: ["generative", "AI", "research-art"],
+    img: "imgs/latent-lineages/2ed186e54b66618a7167_icon.jpg",
+    // img: "imgs/latent-lineages/40cef9bdd29d3384fa5f630945ba_icon.png",
+    // img: "imgs/latent-lineages/e5d34030a7dd0ae2a2b0956edf7d_4096_neato_layout.jpeg",
+    year: 2025,
+    description:
+      "Visualizing the genealogical networks of individual images from Artbreeder.",
+  },
+  {
     name: "Lluminate",
     path: "lluminate",
     labels: ["generative", "AI", "research-art"],
