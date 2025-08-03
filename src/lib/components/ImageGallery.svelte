@@ -108,7 +108,7 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    max-width: 768px;
+    /* max-width: 1000px; */
     width: 100%;
   }
 
