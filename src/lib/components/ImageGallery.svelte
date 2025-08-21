@@ -110,6 +110,7 @@
     gap: 16px;
     /* max-width: 1000px; */
     width: 100%;
+    max-width: 80vh;
   }
 
   .gallery-image {

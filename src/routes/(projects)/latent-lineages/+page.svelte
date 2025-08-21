@@ -2,10 +2,11 @@
   import ImageGallery from "$lib/components/ImageGallery.svelte";
 
   const urls = [
+    "IMG_8761.jpg",
     "e5d34030a7dd0ae2a2b0956edf7d_4096_neato_layout.jpeg",
     "0de234950ed25bbdea8085f7e650_4096_sfdp_layout.jpeg",
     "40cef9bdd29d3384fa5f630945ba_1024_sfdp_layout.jpeg",
-    "2ed186e54b66618a7167_4096_sfdp_layout_original.jpeg",
+    "2ed186e54b66618a7167_4096_sfdp_layout_original_4k.jpeg",
   ].map((url) => `/imgs/latent-lineages/${url}`);
 </script>
 
@@ -25,13 +26,22 @@
     Shown at the <a target="_blank" href="https://www.automata.art/"
       >Automata Gallery</a
     >
-    at Art Basel 2025. You can read more about the project in this
+    at Art Basel 2025. You can read more about the project in these interviews:
+  </p>
+  <p>
     <a
       target="_blank"
       href="https://www.automata.art/editorial/jenni-pasanen-artbreeder-interview/"
-      >interview</a
+      >"Finding the Missing Piece: Jenni Pasanen on Artbreeder and Joel Simon's
+      Lasting Impact"</a
     >
-    with artist Jenni Pasanen about Artbreeder.
+  </p>
+  <p>
+    <a
+      target="_blank"
+      href="https://www.automata.art/editorial/ganbrood-interview/"
+      >"From Breeding Images to Interrogating Reality: The Ganbrood Story"</a
+    >
   </p>
   <ImageGallery images={urls} />
 </div>
