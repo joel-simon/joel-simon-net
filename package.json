@@ -3,7 +3,7 @@
     "version": "2.0.0",
     "private": true,
     "engines": {
-        "node": "22.x"
+        "node": "20.x"
     },
     "scripts": {
         "dev": "npm run build:jade && vite dev",
@@ -16,9 +16,9 @@
         "format": "prettier --write ."
     },
     "devDependencies": {
-        "@sveltejs/adapter-auto": "^3.0.0",
-        "@sveltejs/adapter-static": "^3.0.0",
-        "@sveltejs/kit": "~2.0.0",
+        "@sveltejs/adapter-auto": "3.0.0",
+        "@sveltejs/adapter-static": "3.0.0",
+        "@sveltejs/kit": "2.0.6",
         "@types/hull.js": "^1.0.4",
         "@types/node": "^20.11.0",
         "@typescript-eslint/eslint-plugin": "^6.13.2",
