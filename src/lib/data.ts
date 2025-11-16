@@ -24,6 +24,17 @@ export const projects: Project[] = [
     path: "/about",
   },
   {
+    name: "Brushbloom",
+    externalPath: "https://www.brushbloom.art",
+    img: "imgs/brushbloom.jpg",
+    // img: "imgs/brushbloom_screenshot2.png",
+    year: 2025,
+    description:
+      "An experimental digital painting tool with user generated brushes.",
+    // path: "brushbloom",
+    labels: ["generative", "AI", "tool"],
+  },
+  {
     name: "Latent Lineages",
     path: "latent-lineages",
     labels: ["generative", "AI", "research-art"],
