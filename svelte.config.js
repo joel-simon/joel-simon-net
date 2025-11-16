@@ -1,7 +1,7 @@
 import adapter from '@sveltejs/adapter-auto'
 // import adapter from '@sveltejs/adapter-static'
 
-import { vitePreprocess } from '@sveltejs/kit/vite'
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte'
 import { mdsvex } from 'mdsvex'
 
 // Set up Markdown support.

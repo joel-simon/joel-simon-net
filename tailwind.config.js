@@ -23,6 +23,12 @@ export default {
           900: '#A5371B'
         }
       },
+      width: {
+        '1/8': '12.5%',
+        '3/8': '37.5%',
+        '5/8': '62.5%',
+        '7/8': '87.5%',
+      },
       boxShadow: {
         sm: '0 0 2px rgba(0, 0, 0, 0.05)',  // Subtle non-directional shadow similar to shadow-sm
         DEFAULT: '0 0 3px rgba(0, 0, 0, 0.1)',  // Non-directional shadow similar to shadow
