@@ -4,13 +4,31 @@
   import HeadTags from "$lib/components/HeadTags.svelte";
   import { labels, projects } from "$lib/data";
   import { writable, type Writable } from "svelte/store";
+  import { browser } from "$app/environment";
 
-  const selectedLabel: Writable<string | null> = writable(null);
+  // Initialize from URL hash if present
+  function getInitialLabel(): string | null {
+    if (browser && window.location.hash) {
+      const hash = window.location.hash.slice(1); // Remove the '#'
+      return hash || null;
+    }
+    return null;
+  }
+
+  const selectedLabel: Writable<string | null> = writable(getInitialLabel());
+
+  // Handle hash changes (e.g., browser back/forward buttons)
+  function handleHashChange() {
+    const hash = window.location.hash.slice(1);
+    selectedLabel.set(hash || null);
+  }
 </script>
+
+<svelte:window on:hashchange={handleHashChange} />
 
 <HeadTags
   title="Joel Simon"
-  description="Joel Simon Website portfolio project"
+  description="Joel Simons Website"
   imagePath="/imgs/cornered-hands/1.jpg"
   type="blog"
 />
