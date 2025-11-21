@@ -1,64 +1,107 @@
 <script lang="ts">
   import RenderWhenVisible from "$lib/components/RenderWhenVisible.svelte";
-  import Header from "./Header.svelte";
-  import TurnIdeasGraphic from "./TurnIdeasGraphic.svelte";
+  // import Header from "./Header.svelte";
+  // import TurnIdeasGraphic from "./TurnIdeasGraphic.svelte";
 </script>
 
-<Header />
+<!-- <Header /> -->
 
 <div class="text_body mx-auto px-4 py-8">
-  <section id="introduction">
+  <section id="introduction" class="space-y-4">
+    <!-- <p>
+      In 2018, I created GANbreeder—a tool where people could breed AI images
+      like organisms, exploring the latent space together. Everything was public
+      domain. What mattered wasn't the outputs but the act of collaborative
+      exploration. People discovered strange hybrid aesthetics that emerged from
+      the model itself, not from imitating existing art.
+    </p> -->
+
     <p>
-      I've spent the last five years building tools for AI image generation. I
-      created Artbreeder in 2018, and over the years I've watched millions of
-      people explore AI image generation. Yet despite all this activity, I
-      struggle to appreciate most of what generative AI produces now.
+      Since launching Ganbreeder in 2018 I've been explring the potential of AI
+      to augment our creative processes. Ganbreder was a collaborative tool to
+      explroe the latent space via breeding. I've seen things I never
+      imagined—strange hybrid aesthetics that emerged from the model itself, not
+      from imitating existing art.
+      <!-- <p>
+      It showed me these models contained vast emergent richness. The problem
+      wasn't the models—it was how we let people interact with them.
+    </p> -->
+    </p>
+    <p>
+      Five years later, the models are far more powerful. And yet something's
+      gone wrong. The more powerful the tools become, the less I can feel the
+      person behind the work.
     </p>
 
     <p>
-      We have a name for it: <b>slop</b>—images that crudely imitate existing
-      styles, where outputs resemble each other more than they resemble their
-      creators. They fill underspecified prompts with averageness. Perfect for
-      memes, but you can't feel the artist behind it.
+      We have a name for it: <b>slop</b>. Images that crudely imitate existing
+      styles. Outputs that resemble each other more than they resemble their
+      creators. They fill underspecified prompts with averageness—perfect for
+      memes, but you can't feel the artist behind them.
+    </p>
+
+    <!-- <p>This bothers me. A lot.</p> -->
+    <!--  -->
+    <p>
+      I'm not interested in dismissing all AI as soulless slop—that's too easy.
+      And I'm not interested in breathlessly hyping it as the future of
+      creativity—that ignores the real problems. I've worked with machine
+      learning as an artist for years. I've seen what it can do. And I think
+      there's genuine potential here that we're missing. I also work with
+      traditional mediums like wood and paint and care deeply about the process
+      of making things.
+    </p>
+
+    <p>
+      So this is my attempt to figure out what's going wrong. And what we could
+      do instead.
+    </p>
+
+    <p>
+      I think the problems rooted in bad <i>ideas</i> about what creativity is. Consider
+      the marketing slogan: "Turn your ideas into reality!" You've probably seen
+      it everywhere. It sounds perfect, right? Exactly what creative tools should
+      do.
     </p>
 
     <!-- IMAGE: "Turn your ideas into reality" slide with red X -->
 
     <p>
-      This marketing slogan captures the problem perfectly. "Turn your ideas
-      into reality!" It sounds like exactly what creative tools should do. But
-      it reflects a fundamental misunderstanding of how creativity actually
-      works—one that I believe is responsible for most of what's wrong with
-      current generative AI.
+      But think about what it's actually saying. It assumes your ideas already
+      exist, fully formed, just waiting to be executed. It assumes creativity is
+      about having ideas and then manifesting them.
+    </p>
+    <!-- <p>I don't think that's how creativity works at all.</p> -->
+
+    <!-- <TurnIdeasGraphic /> -->
+
+    <h1>Why This Matters</h1>
+
+    <p>
+      Think about the last time you made something with your hands. Maybe you
+      were cooking, or woodworking, or sketching. What made it satisfying?
     </p>
 
     <p>
-      I'm not interested in dismissing AI as soulless slop or breathlessly
-      hyping it as the future. As someone who created Artbreeder and has worked
-      with machine learning as an artist for years, I'm exploring its unmet
-      potential. There's a real problem here—one that's getting worse, not
-      better.
-    </p>
-    <img
-      src="beyond-slop/prompt-boxes.png"
-      alt="Turn your ideas into reality"
-      class="w-full rounded"
-    />
-
-    <h2>Why This Matters</h2>
-
-    <p>
-      As a toolmaker, I'm most excited when users create something new and
-      unexpected. A good tool needs expressive capacity for users to make the
-      outputs their own. Otherwise it's a tech demo or a production machine.
+      I'd guess it wasn't just the final result. It was the process—the way the
+      thing surprised you as it took shape. The unexpected turn. The happy
+      accident. The moment you discovered something you didn't know you were
+      trying to make.
     </p>
 
     <p>
-      Finding your creative voice is how you express and discover yourself. The
-      outputs that move us are those where you can feel the creator's
-      personality coming through. I see my lamps as an extension of myself, and
-      I imagine many artists feel the same about their work. This is what I want
-      my tools to enable.
+      As a toolmaker, that's what I'm chasing. I'm most excited when I see
+      someone use a tool I made and create something I never imagined. Something
+      that's unmistakably <i>theirs</i>. Without that expressive
+      capacity—without the ability for people to make the outputs their own—you
+      just have a tech demo. A production machine.
+    </p>
+
+    <p>
+      Finding your creative voice is how you express and discover yourself. I
+      see my lamp making practice as an extension of myself. I imagine many
+      artists feel the same about their work. This is what I want my tools to
+      enable.
     </p>
 
     <p>
@@ -69,14 +112,20 @@
       we're caging their potential.
     </p>
 
-    <!-- <h2>The Core Misunderstanding: Output Over Process</h2> -->
+    <h2>The Core Misunderstanding: Output Over Process</h2>
 
     <p>
-      To understand what's missing, we need to look at what creativity actually
-      is. It's not what most AI tools assume.
+      So what's going wrong? I think it comes down to a fundamental
+      misunderstanding about what creativity is.
     </p>
 
-    <TurnIdeasGraphic />
+    <p>
+      Most AI tools treat creativity as if you have an idea in your head, and
+      the tool's job is to manifest it. Input → output. Prompt → image. This
+      seems reasonable, right?
+    </p>
+
+    <p>But watch what actually happens when someone creates something.</p>
 
     <h1>A style is an expansion of a map, not a point within</h1>
 
@@ -114,7 +163,7 @@
 
     <!-- VIDEO: Picasso painting documentary clip (1956) showing transformation -->
     <!-- Caption: Picasso's painting evolves from flower to fish to chicken to face—each step  building on the last -->
-    <RenderWhenVisible margin={200}>
+    <!-- <RenderWhenVisible margin={200}>
       <video
         class="w-full rounded-md"
         src="beyond-slop/picasso-paint.mp4"
@@ -125,7 +174,7 @@
         muted
         playsinline
       ></video>
-    </RenderWhenVisible>
+    </RenderWhenVisible> -->
     <p>
       In the 1956 documentary "The Mystery of Picasso," we <a
         href="https://youtu.be/Nxes8pyHkJc?si=nquj6EKkEoR2Fiw0"
@@ -199,7 +248,7 @@
       through emergent process, not mechanical assembly.
     </p>
 
-    <h3>Why Current AI Tools Miss the Mark</h3>
+    <h2>Why Current AI Tools Miss the Mark</h2>
 
     <!-- IMAGE: Typical text-to-image interface diagram with prompt box and parameter controls -->
 
